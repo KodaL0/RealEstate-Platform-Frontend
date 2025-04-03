@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5001";
+const API_URL = import.meta.env.VITE_API_URL || "http://10.247.39.5:5001";
 
 /**
  * A generic fetch wrapper that automatically attempts a token refresh.
