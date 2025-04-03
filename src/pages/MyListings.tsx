@@ -33,13 +33,6 @@ const MyListings = () => {
       return;
     }
 
-    // Redirect if not logged in
-    if (!user) {
-      console.log('No user found, redirecting to login...');
-      navigate('/login');
-      return;
-    }
-
     const fetchMyListings = async () => {
       try {
         console.log('Fetching listings for user:', user.id);
