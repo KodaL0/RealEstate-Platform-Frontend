@@ -31,7 +31,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get<{ user: User }>("http://localhost:5001/api/users/get_user", {
+      const res = await axios.get<{ user: User }>("https://propertprobackend.onrender.com/api/users/get_user", {
         withCredentials: true, // Send cookies with request
       });
 
