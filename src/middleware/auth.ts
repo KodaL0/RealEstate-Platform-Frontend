@@ -1,4 +1,4 @@
-const API_URL = import.meta.env.VITE_API_URL || "https://propertprobackend.onrender.com";
+const API_URL = import.meta.env.VITE_API_URL || "https://propertprodjango.onrender.com";
 
 /**
  * A generic fetch wrapper that automatically attempts a token refresh.
