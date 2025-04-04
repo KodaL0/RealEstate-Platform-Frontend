@@ -3,7 +3,7 @@ import axios from "axios";
 
 // Define the User type
 type User = {
-  id: string;
+  id: integer;
   username: string;
   email: string;
 };
