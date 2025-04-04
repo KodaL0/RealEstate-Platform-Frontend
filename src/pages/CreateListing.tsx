@@ -104,7 +104,7 @@ const CreateListing = () => {
       });
   
       const response = await axios.post(
-        'http://localhost:5001/api/properties/create_property',
+        'https://propertprobackend.onrender.com/api/properties/create_property',
         formDataToSend,
         {
           headers: {
