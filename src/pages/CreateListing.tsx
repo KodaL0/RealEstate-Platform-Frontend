@@ -3,7 +3,18 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { Home, DollarSign, MapPin, Building2, Bed, Bath, DotSquare as SquareFootage, Upload, X, Loader2 } from 'lucide-react';
+import { 
+  Home, 
+  DollarSign, 
+  MapPin, 
+  Building2, 
+  Bed, 
+  Bath, 
+  DotSquare as SquareFootage, 
+  Upload,
+  X,
+  Loader2
+} from 'lucide-react';
 
 interface ListingForm {
   title: string;
@@ -123,7 +134,6 @@ const CreateListing = () => {
       images: [...prev.images, ...acceptedFiles]
     }));
 
-    // Generate preview URLs
     const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
     setPreviewImages(prev => [...prev, ...newPreviews]);
   }, []);
@@ -134,7 +144,7 @@ const CreateListing = () => {
       'image/*': ['.jpeg', '.jpg', '.png', '.webp']
     },
     maxFiles: 10,
-    maxSize: 5242880 // 5MB
+    maxSize: 5242880
   });
 
   const removeImage = (index: number) => {
@@ -143,7 +153,6 @@ const CreateListing = () => {
       images: prev.images.filter((_, i) => i !== index)
     }));
     
-    // Clean up preview URL
     URL.revokeObjectURL(previewImages[index]);
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
   };
@@ -205,7 +214,6 @@ const CreateListing = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Add all form fields
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'images') {
           value.forEach((file: File) => {
@@ -246,18 +254,19 @@ const CreateListing = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-4 max-w-4xl">
-        <div className="bg-white shadow-lg rounded-xl overflow-hidden">
-          <div className="bg-blue-600 px-6 py-4">
-            <h1 className="text-2xl font-bold text-white flex items-center">
-              <Home className="mr-2" />
+    <div className="min-h-screen bg-gray-50 pt-24 pb-12">
+      <div className="container mx-auto px-6 max-w-6xl">
+        <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+          <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+            <h1 className="text-3xl font-bold text-white flex items-center">
+              <Home className="mr-3 h-8 w-8" />
               Create New Property Listing
             </h1>
+            <p className="text-blue-100 mt-2">Fill in the details below to list your property</p>
           </div>
 
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 m-6">
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-8 my-6">
               <div className="flex">
                 <div className="flex-shrink-0">
                   <X className="h-5 w-5 text-red-400" />
@@ -269,10 +278,9 @@ const CreateListing = () => {
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="p-6 space-y-8">
-            {/* Basic Information */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
+          <form onSubmit={handleSubmit} className="p-8 space-y-10">
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
@@ -353,9 +361,8 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Property Details */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Property Details</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
@@ -477,9 +484,8 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Images Upload */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Property Images</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
               <div 
                 {...getRootProps()} 
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -517,9 +523,8 @@ const CreateListing = () => {
               )}
             </section>
 
-            {/* Amenities */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Amenities</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {AMENITIES.map((amenity) => (
                   <div key={amenity.id} className="flex items-center space-x-2">
@@ -538,9 +543,8 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Additional Features */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Additional Features</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Features</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {ADDITIONAL_FEATURES.map((feature) => (
                   <div key={feature.id} className="flex items-center space-x-2">
@@ -559,9 +563,8 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Description */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Description</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
                 id="description"
                 name="description"
@@ -574,9 +577,8 @@ const CreateListing = () => {
               />
             </section>
 
-            {/* Contact Information */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Contact Information</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
@@ -611,9 +613,8 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Virtual Tour & Video */}
-            <section>
-              <h2 className="text-xl font-semibold text-gray-800 mb-4">Virtual Tour & Video</h2>
+            <section className="bg-gray-50 p-6 rounded-xl">
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="virtualTourUrl" className="block text-sm font-medium text-gray-700 mb-1">
@@ -646,22 +647,21 @@ const CreateListing = () => {
               </div>
             </section>
 
-            {/* Submit Button */}
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
                 disabled={isSubmitting}
                 className={`
-                  flex items-center px-6 py-3 rounded-lg text-white font-semibold
+                  flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
                   ${isSubmitting 
                     ? 'bg-blue-400 cursor-not-allowed' 
                     : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'}
-                  transition-colors duration-200
+                  transition-colors duration-200 shadow-lg
                 `}
               >
                 {isSubmitting ? (
                   <>
-                    <Loader2 className="animate-spin -ml-1 mr-2 h-5 w-5" />
+                    <Loader2 className="animate-spin -ml-1 mr-3 h-6 w-6" />
                     Creating Listing...
                   </>
                 ) : (
