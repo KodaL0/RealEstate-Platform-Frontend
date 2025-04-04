@@ -48,10 +48,13 @@ const Navbar = () => {
       navigate("/login");
     }
   };
-  
 
   return (
-    <nav className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-md py-2" : "bg-transparent py-4"}`}>      
+    <nav
+      className={`fixed w-full z-50 transition-all duration-300 ${
+        scrolled ? "bg-white shadow-md py-2" : "bg-transparent py-4"
+      }`}
+    >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center">
           <Link to="/" className="flex items-center space-x-2">
@@ -62,13 +65,28 @@ const Navbar = () => {
           </Link>
 
           <div className="hidden md:flex items-center space-x-8">
-            <Link to="/" className={`font-medium ${isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"} transition-colors`}>
+            <Link
+              to="/"
+              className={`font-medium ${
+                isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+              } transition-colors`}
+            >
               Home
             </Link>
-            <Link to="/buy" className={`font-medium ${isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"} transition-colors`}>
+            <Link
+              to="/buy"
+              className={`font-medium ${
+                isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+              } transition-colors`}
+            >
               Buy
             </Link>
-            <Link to="/rent" className={`font-medium ${isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"} transition-colors`}>
+            <Link
+              to="/rent"
+              className={`font-medium ${
+                isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+              } transition-colors`}
+            >
               Rent
             </Link>
             <div className="relative group">
@@ -76,13 +94,22 @@ const Navbar = () => {
                 Services <ChevronDown className="ml-1 h-4 w-4" />
               </button>
               <div className="absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-left z-50">
-                <Link to="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                <Link
+                  to="#"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                >
                   Mortgage Calculator
                 </Link>
-                <Link to="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                <Link
+                  to="#"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                >
                   Property Management
                 </Link>
-                <Link to="#" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                <Link
+                  to="#"
+                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                >
                   Investment Advisory
                 </Link>
               </div>
@@ -96,13 +123,7 @@ const Navbar = () => {
 
             {user ? (
               <>
-                <Link
-                  to="/create-listing"
-                  className="flex items-center space-x-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                >
-                  <Plus className="h-5 w-5" />
-                  <span>Create Listing</span>
-                </Link>
+                {/* Removed the Create Listing button */}
                 <div className="relative group">
                   <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
                     <User className="h-5 w-5" />
@@ -116,8 +137,8 @@ const Navbar = () => {
                     <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
                       My Listings
                     </Link>
-                    <button 
-                      onMouseDown={handleLogout} // Prevents dropdown from closing before execution
+                    <button
+                      onMouseDown={handleLogout}
                       className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-blue-50"
                     >
                       Logout
@@ -126,7 +147,10 @@ const Navbar = () => {
                 </div>
               </>
             ) : (
-              <Link to="/account-selection" className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
+              <Link
+                to="/account-selection"
+                className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+              >
                 <User className="h-5 w-5" />
                 <span>Account</span>
               </Link>
@@ -134,7 +158,11 @@ const Navbar = () => {
           </div>
 
           <button className="md:hidden p-2" onClick={toggleMenu}>
-            {isOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+            {isOpen ? (
+              <X className="h-6 w-6 text-gray-700" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-700" />
+            )}
           </button>
         </div>
 
@@ -142,20 +170,30 @@ const Navbar = () => {
         {isOpen && (
           <div className="md:hidden mt-4 bg-white rounded-lg shadow-lg p-4">
             <div className="flex flex-col space-y-4">
-              <Link to="/" className={`font-medium ${isActive("/") ? "text-blue-600" : "text-gray-700"}`}>
+              <Link
+                to="/"
+                className={`font-medium ${
+                  isActive("/") ? "text-blue-600" : "text-gray-700"
+                }`}
+              >
                 Home
               </Link>
-              <Link to="/buy" className={`font-medium ${isActive("/buy") ? "text-blue-600" : "text-gray-700"}`}>
+              <Link
+                to="/buy"
+                className={`font-medium ${
+                  isActive("/buy") ? "text-blue-600" : "text-gray-700"
+                }`}
+              >
                 Buy
               </Link>
-              <Link to="/rent" className={`font-medium ${isActive("/rent") ? "text-blue-600" : "text-gray-700"}`}>
+              <Link
+                to="/rent"
+                className={`font-medium ${
+                  isActive("/rent") ? "text-blue-600" : "text-gray-700"
+                }`}
+              >
                 Rent
               </Link>
-              {user && (
-                <Link to="/create-listing" className="font-medium text-green-600">
-                  Create Listing
-                </Link>
-              )}
               {user ? (
                 <>
                   <Link to="/profile" className="font-medium text-gray-700">
