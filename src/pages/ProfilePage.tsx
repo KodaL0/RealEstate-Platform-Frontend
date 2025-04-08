@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { User as UserIcon, Lock, ChevronRight } from 'lucide-react';
-import { authFetch } from '../middleware/auth';
+import { fetchUser } from '../middleware/auth';
 
 const ProfilePage: React.FC = () => {
   const { user, setUser } = useUser();
@@ -15,7 +15,7 @@ const ProfilePage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5001';
+  const API_URL = import.meta.env.VITE_API_URL || 'https://propertprodjango.onrender.com';
 
   useEffect(() => {
     if (!user) {
