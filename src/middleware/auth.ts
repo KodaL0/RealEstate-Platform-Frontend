@@ -76,12 +76,13 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
-    
-    // Save the access token in a cookie if returned in the response
+    // Save both tokens in cookies if returned in the response
     if (response.data.access_token) {
       document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
     }
-    
+    if (response.data.refresh_token) {
+      document.cookie = `refresh_token_cookie=${response.data.refresh_token}; path=/;`;
+    }
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
