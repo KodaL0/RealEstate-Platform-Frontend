@@ -2,6 +2,11 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || "https://propertprodjango.onrender.com";
 
+// Extend AxiosRequestConfig to include a custom _retry flag for token refresh
+interface CustomAxiosRequestConfig extends AxiosRequestConfig {
+  _retry?: boolean;
+}
+
 // Create an Axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
@@ -29,11 +34,11 @@ apiClient.interceptors.request.use(
 
 // RESPONSE INTERCEPTOR: Handle token refresh on 401 errors
 apiClient.interceptors.response.use(
-  (response) => response,
+  response => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config;
+    const originalRequest = error.config as CustomAxiosRequestConfig;
     
-    // Only retry if we get a 401 response and haven't retried yet
+    // Only retry if we get a 401 response and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
@@ -41,13 +46,15 @@ apiClient.interceptors.response.use(
       try {
         // Attempt to refresh the access token
         const refreshResponse = await apiClient.post('/api/users/refresh');
+        
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          
-          // Get the new access token from the response or cookie
+          // Get new token from the response or from the updated cookie
           const newAccessToken = refreshResponse.data.access_token || getCookie("access_token_cookie");
           if (newAccessToken) {
-            // Update the original request header and retry the request
+            // If desired, update the cookie with the new token
+            document.cookie = `access_token_cookie=${newAccessToken}; path=/;`;
+            originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
             return apiClient(originalRequest);
           } else {
@@ -69,6 +76,12 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
+    
+    // Save the access token in a cookie if returned in the response
+    if (response.data.access_token) {
+      document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
+    }
+    
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
