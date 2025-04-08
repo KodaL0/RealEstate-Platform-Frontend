@@ -107,10 +107,28 @@ export async function register(username: string, email: string, password: string
  */
 export async function logout() {
   try {
-    const response = await apiClient.post('/api/users/logout');
+    // Get the refresh token from localStorage
+    const refresh_token = localStorage.getItem('refresh_token');
+    if (!refresh_token) {
+      console.error("No refresh token found");
+      return { error: "No refresh token found" };
+    }
+ 
+    // Send the refresh token to the backend
+    const response = await apiClient.post('/api/users/logout', {
+      refresh_token: refresh_token
+    });
+ 
+    // Clear local storage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+ 
     return response.data;
   } catch (error: any) {
     console.error("Logout Error:", error);
+    // Even if the backend request fails, clear local storage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
     return { error: "Network error" };
   }
 }
