@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-import axios from "axios";
+// Import the custom fetchUser function from your auth.ts file
+import { fetchUser as apiFetchUser } from "../middleware/auth";
 
-// Define the User type
+// Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
-  id: integer;
+  id: number;
   username: string;
   email: string;
 };
@@ -28,15 +29,14 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Use the custom fetchUser from auth.ts which includes token handling
   const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const res = await axios.get<{ user: User }>("https://propertprodjango.onrender.com/api/users/get_user", {
-        withCredentials: true, // Send cookies with request
-      });
-
-      if (res.data && res.data.user) {
-        setUser(res.data.user);
+      const data = await apiFetchUser();
+      // Check if the backend returns an object that contains a "user" property
+      if (data && data.user) {
+        setUser(data.user);
       } else {
         setUser(null);
       }
@@ -48,7 +48,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   };
 
-  // Move refreshUser outside of useEffect
+  // Expose refreshUser to let other parts of the app force a refresh
   const refreshUser = async () => {
     await fetchUser();
   };
@@ -64,7 +64,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   );
 };
 
-// Custom hook to use the UserContext
+// Custom hook to use the UserContext in your components
 export const useUser = (): UserContextType => {
   const context = useContext(UserContext);
   if (!context) {
