@@ -32,22 +32,39 @@ const Navbar = () => {
   const isActive = (path: string) => location.pathname === path;
 
   const handleLogout = async () => {
-    try {
-      // Attempt to logout
-      await axios.post(
-        "https://propertprodjango.onrender.com/api/users/logout",
-        {},
-        { withCredentials: true } // Ensure cookies are included
-      );
-    } catch (error) {
-      const err = error as { response?: ErrorResponse };
-      console.error("Logout failed:", err.response?.data || "An error occurred during logout");
-    } finally {
-      // Always clear user state and redirect, even if logout API fails
+  try {
+    // Get the refresh token from localStorage
+    const refresh_token = localStorage.getItem('refresh_token');
+    if (!refresh_token) {
+      console.error("No refresh token found");
       setUser(null);
       navigate("/login");
+      return;
     }
-  };
+ 
+    // Send the refresh token to the backend
+    await axios.post(
+      "https://propertprobackend.onrender.com/api/users/logout",
+      { refresh_token },  // Send refresh token in request body
+      { withCredentials: true }
+    );
+ 
+    // Clear tokens from localStorage
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    // Clear user state and redirect
+    setUser(null);
+    navigate("/login");
+  } catch (error) {
+    const err = error as { response?: ErrorResponse };
+    console.error("Logout failed:", err.response?.data || "An error occurred during logout");
+    // Even if the backend request fails, clear tokens and redirect
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    setUser(null);
+    navigate("/login");
+  }
+};
 
   return (
     <nav
