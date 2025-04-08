@@ -35,7 +35,7 @@ const Navbar = () => {
     try {
       // Attempt to logout
       await axios.post(
-        "http://localhost:5001/api/users/logout",
+        "https://propertprodjango.onrender.com/api/users/logout",
         {},
         { withCredentials: true } // Ensure cookies are included
       );
