@@ -28,30 +28,33 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    // Only retry if we get a 401 response and we haven't retried yet
+
+    // Avoid infinite loops by not retrying if already attempted or if it's a login request.
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
- 
+
       try {
         // The browser sends cookies automatically because of withCredentials:true.
-        // The backend should read the refresh token from the cookie (e.g., "refresh_token_cookie").
         const refreshResponse = await apiClient.post('/api/users/refresh');
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // When refreshed successfully, the backend should ideally update the cookies.
-          // Retry the original request.
+          // Retry the original request after successful refresh.
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Optionally, redirect to login if refresh fails.
-        window.location.href = '/login';
+        // Only redirect if not already on the login page.
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
+
     return Promise.reject(error);
   }
 );
+
  
 /**
  * Login user and return response data.
