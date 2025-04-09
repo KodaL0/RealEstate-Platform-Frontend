@@ -26,12 +26,10 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    // Only retry if a 401 occurs and we haven't retried yet.
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
       try {
-        // Attempt to refresh the token (cookies are sent automatically because of withCredentials:true)
         const refreshResponse = await apiClient.post(
           '/api/users/refresh',
           {},
@@ -39,23 +37,21 @@ apiClient.interceptors.response.use(
         );
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // Retry the original request after refresh.
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear cookies on refresh failure—use the same domain attribute the cookies were set with.
-        // Adjust the domain string to match your backend's cookie setting.
+        // Clear cookies on refresh failure if needed.
         document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        if (window.location.pathname !== '/login') {
-          window.location.href = '/login';
-        }
+        // Instead of redirecting here, simply reject the error so that 
+        // your application can handle the unauthenticated state gracefully.
       }
     }
     return Promise.reject(error);
   }
 );
+
 
 /**
  * Login user and return response data.
