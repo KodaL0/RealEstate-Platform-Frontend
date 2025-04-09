@@ -42,16 +42,14 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear any existing cookies on refresh failure
-        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // Redirect to login page
-        window.location.href = '/login';
+        // Instead of redirecting, simply reject the error or handle it in your UI
+        // Optionally, you can update a global auth state here to indicate the user is logged out.
       }
     }
     return Promise.reject(error);
   }
 );
+
  
  
  
