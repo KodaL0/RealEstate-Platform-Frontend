@@ -92,8 +92,8 @@ export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
     // Clear cookies on logout
-    document.cookie = 'access_token=; path=/; domain=www.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'refresh_token=; path=/; domain=www.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Logout Error:", error);
