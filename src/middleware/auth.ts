@@ -43,8 +43,8 @@ apiClient.interceptors.response.use(
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
         // Clear any existing cookies on refresh failure
-        document.cookie = 'access_token=; path=/; domain=www.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refresh_token=; path=/; domain=www.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'refresh_token=; path=/; domain=propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       }
     }
     return Promise.reject(error);
