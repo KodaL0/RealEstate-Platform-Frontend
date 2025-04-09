@@ -1,24 +1,24 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
-
+ 
 const API_URL = import.meta.env.VITE_API_URL || "https://propertprodjango.onrender.com";
-
+ 
 // Extend AxiosRequestConfig to include a custom _retry flag for token refresh
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
-
+ 
 // Create an Axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true, // Ensures cookies are sent on each request
 });
-
+ 
 // Utility function to get a cookie value by name
 const getCookie = (name: string): string | null => {
   const cookie = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`));
   return cookie ? cookie.split('=')[1] : null;
 };
-
+ 
 // REQUEST INTERCEPTOR: Automatically attach the access token to headers
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
@@ -31,26 +31,27 @@ apiClient.interceptors.request.use(
   },
   (error) => Promise.reject(error)
 );
-
+ 
 // RESPONSE INTERCEPTOR: Handle token refresh on 401 errors
 apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    
     // Only retry if we get a 401 response and we haven't retried yet
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
-      
+ 
       try {
-        // Attempt to refresh the access token. The browser will send cookies,
-        // including the refresh token cookie if it has been set properly.
-        const refreshResponse = await apiClient.post('/api/users/refresh');
-        
+        // Retrieve the refresh token from the cookie
+        const refreshToken = getCookie("refresh_token_cookie");
+        // Attempt to refresh the access token by including the refresh token in the body
+        const refreshResponse = await apiClient.post('/api/users/refresh', {
+          refresh_token: refreshToken
+        });
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // Get new token from the response or from the updated cookie
+          // Get new access token from the response or from the updated cookie
           const newAccessToken = refreshResponse.data.access_token || getCookie("access_token_cookie");
           if (newAccessToken) {
             // Update the access token cookie with the new token
@@ -66,38 +67,34 @@ apiClient.interceptors.response.use(
         console.error("Token refresh failed.", refreshError);
       }
     }
-    
     return Promise.reject(error);
   }
 );
-
+ 
 /**
- * Login user and return response data.
- */
+* Login user and return response data.
+*/
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
-    
     // Save the access token in a cookie if returned in the response
     if (response.data.access_token) {
       document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
     }
-    
     // Save the refresh token in a cookie as well
     if (response.data.refresh_token) {
       document.cookie = `refresh_token_cookie=${response.data.refresh_token}; path=/;`;
     }
-    
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
     return { error: error.response?.data?.error || "Network error" };
   }
 }
-
+ 
 /**
- * Register a new user.
- */
+* Register a new user.
+*/
 export async function register(username: string, email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/register', { username, email, password });
@@ -107,23 +104,27 @@ export async function register(username: string, email: string, password: string
     return { error: error.response?.data?.error || "Network error" };
   }
 }
-
+ 
 /**
- * Logout the user.
- */
+* Logout the user.
+*/
 export async function logout() {
   try {
-    const response = await apiClient.post('/api/users/logout');
+    // Retrieve the refresh token from the cookie
+    const refreshToken = getCookie("refresh_token_cookie");
+    const response = await apiClient.post('/api/users/logout', {
+      refresh_token: refreshToken
+    });
     return response.data;
   } catch (error: any) {
     console.error("Logout Error:", error);
     return { error: "Network error" };
   }
 }
-
+ 
 /**
- * Fetch the current user details.
- */
+* Fetch the current user details.
+*/
 export async function fetchUser() {
   try {
     const response = await apiClient.get('/api/users/get_user');
@@ -133,10 +134,10 @@ export async function fetchUser() {
     return { error: "Failed to fetch user data." };
   }
 }
-
+ 
 /**
- * Get protected user data.
- */
+* Get protected user data.
+*/
 export async function getProtectedData() {
   try {
     const response = await apiClient.get('/api/users/protected');
@@ -146,10 +147,10 @@ export async function getProtectedData() {
     return { error: "Failed to fetch protected data." };
   }
 }
-
+ 
 /**
- * Create a new property listing.
- */
+* Create a new property listing.
+*/
 export async function createProperty(propertyData: FormData) {
   try {
     const response = await apiClient.post('/api/properties/create_property', propertyData, {
@@ -163,10 +164,10 @@ export async function createProperty(propertyData: FormData) {
     throw error;
   }
 }
-
+ 
 /**
- * Fetch all properties.
- */
+* Fetch all properties.
+*/
 export async function getProperties() {
   try {
     const response = await apiClient.get('/api/properties/get_properties');
