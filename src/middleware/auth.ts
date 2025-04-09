@@ -13,10 +13,11 @@ const apiClient: AxiosInstance = axios.create({
   withCredentials: true, // Ensures cookies are sent on each request
 });
  
-// REQUEST INTERCEPTOR: Automatically attach the access token to headers
+// REQUEST INTERCEPTOR: Automatically attach the access token if needed
+// (In this version, we assume the cookies are automatically attached,
+// so we don't need to modify the headers.)
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
-    // No need to manually set token, it's handled by cookies
     return config;
   },
   (error) => Promise.reject(error)
@@ -33,16 +34,18 @@ apiClient.interceptors.response.use(
       console.warn("Access token expired, attempting refresh...");
  
       try {
-        // No need to send refresh token, it's in cookies
+        // The browser sends cookies automatically because of withCredentials:true.
+        // The backend should read the refresh token from the cookie (e.g., "refresh_token_cookie").
         const refreshResponse = await apiClient.post('/api/users/refresh');
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // Retry the original request
+          // When refreshed successfully, the backend should ideally update the cookies.
+          // Retry the original request.
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Redirect to login if refresh fails
+        // Optionally, redirect to login if refresh fails.
         window.location.href = '/login';
       }
     }
@@ -51,11 +54,21 @@ apiClient.interceptors.response.use(
 );
  
 /**
-* Login user and return response data.
-*/
+ * Login user and return response data.
+ */
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
+    
+    // Manually set cookies for tokens if they are returned in the response.
+    // Adjust the cookie names/attributes as needed.
+    if (response.data.access_token) {
+      document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
+    }
+    if (response.data.refresh_token) {
+      document.cookie = `refresh_token_cookie=${response.data.refresh_token}; path=/;`;
+    }
+    
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
@@ -64,8 +77,8 @@ export async function login(email: string, password: string) {
 }
  
 /**
-* Register a new user.
-*/
+ * Register a new user.
+ */
 export async function register(username: string, email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/register', { username, email, password });
@@ -77,12 +90,14 @@ export async function register(username: string, email: string, password: string
 }
  
 /**
-* Logout the user.
-*/
+ * Logout the user.
+ */
 export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
-    // Clear any client-side state
+    // Optionally clear cookies here if necessary.
+    // You may want to clear document.cookie entries.
+    // Redirecting to login after logout:
     window.location.href = '/login';
     return response.data;
   } catch (error: any) {
@@ -92,8 +107,8 @@ export async function logout() {
 }
  
 /**
-* Fetch the current user details.
-*/
+ * Fetch the current user details.
+ */
 export async function fetchUser() {
   try {
     const response = await apiClient.get('/api/users/get_user');
@@ -105,8 +120,8 @@ export async function fetchUser() {
 }
  
 /**
-* Get protected user data.
-*/
+ * Get protected user data.
+ */
 export async function getProtectedData() {
   try {
     const response = await apiClient.get('/api/users/protected');
@@ -118,8 +133,8 @@ export async function getProtectedData() {
 }
  
 /**
-* Create a new property listing.
-*/
+ * Create a new property listing.
+ */
 export async function createProperty(propertyData: FormData) {
   try {
     const response = await apiClient.post('/api/properties/create_property', propertyData, {
@@ -135,8 +150,8 @@ export async function createProperty(propertyData: FormData) {
 }
  
 /**
-* Fetch all properties.
-*/
+ * Fetch all properties.
+ */
 export async function getProperties() {
   try {
     const response = await apiClient.get('/api/properties/get_properties');
