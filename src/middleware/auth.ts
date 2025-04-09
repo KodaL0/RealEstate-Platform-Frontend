@@ -42,15 +42,18 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Instead of redirecting, simply reject the error or handle it in your UI
-        // Optionally, you can update a global auth state here to indicate the user is logged out.
+        // Clear any existing cookies on refresh failure
+        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Redirect to login page
+        window.location.href = '/login';
       }
     }
     return Promise.reject(error);
   }
 );
-
-
+ 
+ 
  
 /**
  * Login user and return response data.
@@ -58,16 +61,6 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
-    
-    // Manually set cookies for tokens if they are returned in the response.
-    // Adjust the cookie names/attributes as needed.
-    if (response.data.access_token) {
-      document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
-    }
-    if (response.data.refresh_token) {
-      document.cookie = `refresh_token_cookie=${response.data.refresh_token}; path=/;`;
-    }
-    
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
@@ -94,69 +87,70 @@ export async function register(username: string, email: string, password: string
 export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
-    // Optionally clear cookies here if necessary.
-    // You may want to clear document.cookie entries.
-    // Redirecting to login after logout:
+    // Clear cookies on logout
+    document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    // Redirect to login page
     window.location.href = '/login';
-    return response.data;
+    return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Logout Error:", error);
-    return { error: "Network error" };
+    return { error: error.response?.data?.error || "Logout failed" };
   }
 }
  
 /**
- * Fetch the current user details.
+ * Fetch the current user's data.
  */
 export async function fetchUser() {
   try {
-    const response = await apiClient.get('/api/users/get_user');
+    const response = await apiClient.get('/api/users/get_user/');
     return response.data;
   } catch (error: any) {
     console.error("Fetch User Error:", error);
-    return { error: "Failed to fetch user data." };
-  }
-}
- 
-/**
- * Get protected user data.
- */
-export async function getProtectedData() {
-  try {
-    const response = await apiClient.get('/api/users/protected');
-    return response.data;
-  } catch (error: any) {
-    console.error("Get Protected Data Error:", error);
-    return { error: "Failed to fetch protected data." };
-  }
-}
- 
-/**
- * Create a new property listing.
- */
-export async function createProperty(propertyData: FormData) {
-  try {
-    const response = await apiClient.post('/api/properties/create_property', propertyData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response.data;
-  } catch (error: any) {
-    console.error("Error creating property:", error);
     throw error;
   }
 }
  
 /**
- * Fetch all properties.
+ * Get protected data that requires authentication.
+ */
+export async function getProtectedData() {
+  try {
+    const response = await apiClient.get('/api/protected/');
+    return response.data;
+  } catch (error: any) {
+    console.error("Protected Data Error:", error);
+    throw error;
+  }
+}
+ 
+/**
+ * Create a new property.
+ */
+export async function createProperty(propertyData: FormData) {
+  try {
+    const response = await apiClient.post('/api/properties/', propertyData, {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error("Create Property Error:", error);
+    throw error;
+  }
+}
+ 
+/**
+ * Get all properties.
  */
 export async function getProperties() {
   try {
-    const response = await apiClient.get('/api/properties/get_properties');
+    const response = await apiClient.get('/api/properties/');
     return response.data;
   } catch (error: any) {
-    console.error("Error fetching properties:", error);
-    return { error: "Failed to fetch properties." };
+    console.error("Get Properties Error:", error);
+    throw error;
   }
 }
