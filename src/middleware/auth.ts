@@ -14,14 +14,14 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 // REQUEST INTERCEPTOR: Since cookies are automatically attached by the browser,
-// we do not need to modify the headers here.
+// we don’t need to modify the headers here.
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => config,
   (error) => Promise.reject(error)
 );
 
 // RESPONSE INTERCEPTOR: Handle token refresh on 401 errors.
-// It assumes the backend reads the refresh token from the cookie.
+// It assumes your backend reads the refresh token from cookies.
 apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
@@ -31,8 +31,7 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
       try {
-        // Attempt to refresh the token.
-        // Cookies are sent automatically because withCredentials is true.
+        // Attempt to refresh the token (cookies are sent automatically because of withCredentials:true)
         const refreshResponse = await apiClient.post(
           '/api/users/refresh',
           {},
@@ -45,12 +44,10 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear cookies on refresh failure.
-        // IMPORTANT: The domain attribute must match exactly what the cookies were set with.
-        // If your backend sets cookies with Domain=.propertpro.com, then use that:
+        // Clear cookies on refresh failure—use the same domain attribute the cookies were set with.
+        // Adjust the domain string to match your backend's cookie setting.
         document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // Optionally, you can redirect to the login page here.
         if (window.location.pathname !== '/login') {
           window.location.href = '/login';
         }
@@ -62,12 +59,12 @@ apiClient.interceptors.response.use(
 
 /**
  * Login user and return response data.
- * The backend is responsible for setting the tokens as cookies via Set-Cookie headers.
+ * The backend is expected to set the authentication cookies via Set-Cookie headers.
  */
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
-    // No need to set cookies client-side; rely on backend.
+    // No client-side cookie setting is done; rely on the backend.
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
@@ -97,7 +94,7 @@ export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
     // Clear cookies.
-    // Adjust the domain if necessary—ensure it exactly matches the domain used when cookies were set.
+    // Use the domain attribute that matches how the cookies were set.
     document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return { status: response.status, ...response.data };
@@ -163,4 +160,5 @@ export async function getProperties() {
   }
 }
 
+// Export the apiClient to be used elsewhere if needed.
 export { apiClient };
