@@ -1,39 +1,38 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
- 
+
 const API_URL = import.meta.env.VITE_API_URL || "https://propertprodjango.onrender.com";
- 
+
 // Extend AxiosRequestConfig to include a custom _retry flag for token refresh
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
   _retry?: boolean;
 }
- 
+
 // Create an Axios instance with default configuration
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_URL,
   withCredentials: true, // Ensures cookies are sent on each request
 });
- 
-// REQUEST INTERCEPTOR: Automatically attach the access token if needed
-// (In this version, we assume the cookies are automatically attached,
-// so we don't need to modify the headers.)
+
+// REQUEST INTERCEPTOR: Since cookies are automatically attached by the browser,
+// we do not need to modify the headers here.
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    return config;
-  },
+  (config: AxiosRequestConfig) => config,
   (error) => Promise.reject(error)
 );
- 
-// RESPONSE INTERCEPTOR: Handle token refresh on 401 errors
+
+// RESPONSE INTERCEPTOR: Handle token refresh on 401 errors.
+// It assumes the backend reads the refresh token from the cookie.
 apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    // Only retry if a 401 occurs and we haven't retried yet
+    // Only retry if a 401 occurs and we haven't retried yet.
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
       try {
-        // Attempt to refresh the token (force sending cookies with credentials)
+        // Attempt to refresh the token.
+        // Cookies are sent automatically because withCredentials is true.
         const refreshResponse = await apiClient.post(
           '/api/users/refresh',
           {},
@@ -41,37 +40,41 @@ apiClient.interceptors.response.use(
         );
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // Retry the original request
+          // Retry the original request after refresh.
           return apiClient(originalRequest);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear any existing cookies on refresh failure (use consistent domain)
-        document.cookie =
-          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie =
-          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Clear cookies on refresh failure.
+        // IMPORTANT: The domain attribute must match exactly what the cookies were set with.
+        // If your backend sets cookies with Domain=.propertpro.com, then use that:
+        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Optionally, you can redirect to the login page here.
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
       }
     }
     return Promise.reject(error);
   }
 );
- 
- 
- 
+
 /**
  * Login user and return response data.
+ * The backend is responsible for setting the tokens as cookies via Set-Cookie headers.
  */
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
+    // No need to set cookies client-side; rely on backend.
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
     return { error: error.response?.data?.error || "Login failed" };
   }
 }
- 
+
 /**
  * Register a new user.
  */
@@ -84,14 +87,17 @@ export async function register(username: string, email: string, password: string
     return { error: error.response?.data?.error || "Registration failed" };
   }
 }
- 
+
 /**
  * Logout the user.
+ * Calls the logout endpoint and then clears the cookies.
+ * Ideally, your backend should clear the cookies via Set-Cookie headers.
  */
 export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
-    // Clear cookies on logout
+    // Clear cookies.
+    // Adjust the domain if necessary—ensure it exactly matches the domain used when cookies were set.
     document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return { status: response.status, ...response.data };
@@ -100,7 +106,7 @@ export async function logout() {
     return { error: error.response?.data?.error || "Logout failed" };
   }
 }
- 
+
 /**
  * Fetch the current user's data.
  */
@@ -113,7 +119,7 @@ export async function fetchUser() {
     throw error;
   }
 }
- 
+
 /**
  * Get protected data that requires authentication.
  */
@@ -126,7 +132,7 @@ export async function getProtectedData() {
     throw error;
   }
 }
- 
+
 /**
  * Create a new property.
  */
@@ -143,7 +149,7 @@ export async function createProperty(propertyData: FormData) {
     throw error;
   }
 }
- 
+
 /**
  * Get all properties.
  */
@@ -156,3 +162,5 @@ export async function getProperties() {
     throw error;
   }
 }
+
+export { apiClient };
