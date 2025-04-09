@@ -15,7 +15,7 @@ const apiClient: AxiosInstance = axios.create({
 
 // Utility function to get a cookie value by name
 const getCookie = (name: string): string | null => {
-  const cookie = document.cookie.split('; ').find(row => row.startsWith(`${name}=`));
+  const cookie = document.cookie.split('; ').find((row) => row.startsWith(`${name}=`));
   return cookie ? cookie.split('=')[1] : null;
 };
 
@@ -44,7 +44,8 @@ apiClient.interceptors.response.use(
       console.warn("Access token expired, attempting refresh...");
       
       try {
-        // Attempt to refresh the access token
+        // Attempt to refresh the access token. The browser will send cookies,
+        // including the refresh token cookie if it has been set properly.
         const refreshResponse = await apiClient.post('/api/users/refresh');
         
         if (refreshResponse.status === 200) {
@@ -52,7 +53,7 @@ apiClient.interceptors.response.use(
           // Get new token from the response or from the updated cookie
           const newAccessToken = refreshResponse.data.access_token || getCookie("access_token_cookie");
           if (newAccessToken) {
-            // If desired, update the cookie with the new token
+            // Update the access token cookie with the new token
             document.cookie = `access_token_cookie=${newAccessToken}; path=/;`;
             originalRequest.headers = originalRequest.headers || {};
             originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -76,13 +77,17 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     const response = await apiClient.post('/api/users/login', { email, password });
-    // Save both tokens in cookies if returned in the response
+    
+    // Save the access token in a cookie if returned in the response
     if (response.data.access_token) {
       document.cookie = `access_token_cookie=${response.data.access_token}; path=/;`;
     }
+    
+    // Save the refresh token in a cookie as well
     if (response.data.refresh_token) {
       document.cookie = `refresh_token_cookie=${response.data.refresh_token}; path=/;`;
     }
+    
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
@@ -108,28 +113,10 @@ export async function register(username: string, email: string, password: string
  */
 export async function logout() {
   try {
-    // Get the refresh token from localStorage
-    const refresh_token = localStorage.getItem('refresh_token');
-    if (!refresh_token) {
-      console.error("No refresh token found");
-      return { error: "No refresh token found" };
-    }
- 
-    // Send the refresh token to the backend
-    const response = await apiClient.post('/api/users/logout', {
-      refresh_token: refresh_token
-    });
- 
-    // Clear local storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
- 
+    const response = await apiClient.post('/api/users/logout');
     return response.data;
   } catch (error: any) {
     console.error("Logout Error:", error);
-    // Even if the backend request fails, clear local storage
-    localStorage.removeItem('access_token');
-    localStorage.removeItem('refresh_token');
     return { error: "Network error" };
   }
 }
