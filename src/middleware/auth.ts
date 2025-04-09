@@ -33,8 +33,12 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
       try {
-        // Attempt to refresh the token (cookies are sent automatically)
-        const refreshResponse = await apiClient.post('/api/users/refresh');
+        // Attempt to refresh the token (force sending cookies with credentials)
+        const refreshResponse = await apiClient.post(
+          '/api/users/refresh',
+          {},
+          { withCredentials: true }
+        );
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
           // Retry the original request
@@ -42,9 +46,11 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear any existing cookies on refresh failure
-        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refresh_token=; path=/; domain=propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Clear any existing cookies on refresh failure (use consistent domain)
+        document.cookie =
+          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie =
+          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
       }
     }
     return Promise.reject(error);
