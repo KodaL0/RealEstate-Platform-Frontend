@@ -46,7 +46,7 @@ const MyListings = () => {
         setLoading(true);
 
         // Let the browser automatically send cookies (which include your token)
-        const response = await axios.get<Property[]>('https://propertprobackend.onrender.com/api/properties/my-properties', {
+        const response = await axios.get<Property[]>('https://propertprodjango.onrender.com/api/properties/my-properties', {
           withCredentials: true,
           headers: {
             'Content-Type': 'application/json'
