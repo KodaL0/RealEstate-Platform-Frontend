@@ -143,7 +143,7 @@ export async function getProtectedData() {
  */
 export async function createProperty(propertyData: FormData) {
   try {
-    const response = await apiClient.post('/api/properties/', propertyData, {
+    const response = await apiClient.post('/api/properties/create_property/', propertyData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
