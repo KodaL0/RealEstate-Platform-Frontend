@@ -38,20 +38,26 @@ apiClient.interceptors.response.use(
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
           return apiClient(originalRequest);
+        } else {
+          // If status is not as expected, reject immediately.
+          return Promise.reject(error);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
         // Clear cookies on refresh failure if needed.
-        document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // Instead of redirecting here, simply reject the error so that 
-        // your application can handle the unauthenticated state gracefully.
+        // Make sure the domain matches your cookie settings.
+        document.cookie =
+          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        document.cookie =
+          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Optionally: redirect to login page to force re-authentication
+        // window.location.href = '/login';
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
   }
 );
-
 
 /**
  * Login user and return response data.
@@ -90,9 +96,10 @@ export async function logout() {
   try {
     const response = await apiClient.post('/api/users/logout');
     // Clear cookies.
-    // Use the domain attribute that matches how the cookies were set.
-    document.cookie = 'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie = 'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie =
+      'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+    document.cookie =
+      'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Logout Error:", error);
