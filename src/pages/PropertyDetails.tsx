@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { allProperties } from '../data/properties';
-import { Property } from '../types';
+import { ListingFrom } from '../types';
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
