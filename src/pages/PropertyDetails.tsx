@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { Heart, Share2, MapPin, Bed, Bath, Square, Calendar, Home, Car, Wifi, Droplets, Thermometer, Shield } from 'lucide-react';
+import { 
+  Heart, 
+  Share2, 
+  MapPin, 
+  Bed, 
+  Bath, 
+  Square, 
+  Calendar, 
+  Home, 
+  Car, 
+  Wifi, 
+  Droplets, 
+  Thermometer, 
+  Shield 
+} from 'lucide-react';
+import { apiClient } from '../middleware/auth';
 import { allProperties } from '../data/properties';
 import { Property } from '../types';
 
@@ -10,14 +25,20 @@ const PropertyDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [showAllImages, setShowAllImages] = useState(false);
 
- useEffect(() => {
-  async function fetchPropertyData() {
-    const response = await axios.get(`https://propertprodjango.onrender.com/api/properties/${id}`);
-    setProperty(response.data);
-  }
-  fetchPropertyData();
-}, [id]);
+  useEffect(() => {
+    async function fetchPropertyData() {
+      try {
+        // Use the custom apiClient to fetch property data from your backend
+        const response = await apiClient.get(`/api/properties/${id}`);
+        setProperty(response.data);
+      } catch (error) {
+        console.error("Error fetching property:", error);
+      }
+    }
+    fetchPropertyData();
+  }, [id]);
 
+  // Fallback: If no property data is available, show "Property Not Found"
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -32,7 +53,7 @@ const PropertyDetails = () => {
     );
   }
 
-  // Additional property images (in a real app, these would come from the property data)
+  // Additional property images (in a real app, these would be part of the property data)
   const additionalImages = [
     property.imageUrl,
     "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
