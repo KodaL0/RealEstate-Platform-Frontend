@@ -26,10 +26,13 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
+    // Only attempt a refresh if we get a 401 and haven't already retried this request
     if (error.response?.status === 401 && !originalRequest._retry) {
       originalRequest._retry = true;
       console.warn("Access token expired, attempting refresh...");
       try {
+        // Attempt to refresh the token. We send an empty body, 
+        // and let the backend read the refresh token from cookies.
         const refreshResponse = await apiClient.post(
           '/api/users/refresh',
           {},
@@ -37,20 +40,21 @@ apiClient.interceptors.response.use(
         );
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
+          // Retry the original request with the new token.
           return apiClient(originalRequest);
         } else {
-          // If status is not as expected, reject immediately.
+          // If the refresh response is not successful, reject immediately.
           return Promise.reject(error);
         }
       } catch (refreshError) {
         console.error("Token refresh failed:", refreshError);
-        // Clear cookies on refresh failure if needed.
-        // Make sure the domain matches your cookie settings.
+        // Clear the cookies for access and refresh tokens using the API domain.
+        // Adjust the domain here to match how cookies are actually set on your API.
         document.cookie =
-          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          'access_token=; path=/; domain=propertprodjango.onrender.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie =
-          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // Optionally: redirect to login page to force re-authentication
+          'refresh_token=; path=/; domain=propertprodjango.onrender.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        // Optionally: Redirect to the login page to force re-authentication.
         // window.location.href = '/login';
         return Promise.reject(refreshError);
       }
@@ -58,6 +62,7 @@ apiClient.interceptors.response.use(
     return Promise.reject(error);
   }
 );
+
 
 /**
  * Login user and return response data.
