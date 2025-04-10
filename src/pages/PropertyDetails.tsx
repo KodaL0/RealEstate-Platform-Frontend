@@ -10,13 +10,13 @@ const PropertyDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [showAllImages, setShowAllImages] = useState(false);
 
-  useEffect(() => {
-    // In a real app, you would fetch the property data from an API
-    const foundProperty = allProperties.find(p => p.id === id);
-    if (foundProperty) {
-      setProperty(foundProperty);
-    }
-  }, [id]);
+ useEffect(() => {
+  async function fetchPropertyData() {
+    const response = await axios.get(`https://propertprodjango.onrender.com/api/properties/${id}`);
+    setProperty(response.data);
+  }
+  fetchPropertyData();
+}, [id]);
 
   if (!property) {
     return (
