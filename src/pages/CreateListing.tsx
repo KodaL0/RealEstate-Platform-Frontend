@@ -1,6 +1,5 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { 
@@ -15,7 +14,9 @@ import {
   X,
   Loader2
 } from 'lucide-react';
+import { apiClient } from '../middleware/auth';
 
+// Define the ListingForm interface
 interface ListingForm {
   title: string;
   description: string;
@@ -43,6 +44,7 @@ interface ListingForm {
   additionalFeatures: string[];
 }
 
+// Lists for select options and checkboxes
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
@@ -228,22 +230,25 @@ const CreateListing = () => {
         }
       });
 
-      const response = await axios.post(
-        'https://propertprodjango.onrender.com/api/properties/create_property/',
+      // Use apiClient here instead of axios.post
+      const response = await apiClient.post(
+        '/api/properties/create_property/',
         formDataToSend,
         {
           headers: {
             'Content-Type': 'multipart/form-data'
-          },
-          withCredentials: true
+          }
         }
       );
 
-      if (response.status === 201) {
+      // Adjust status check if your backend returns 200, 201, or both
+      if (response.status === 200 || response.status === 201) {
         toast.success('Listing created successfully!');
         navigate('/my-listings');
+      } else {
+        console.warn('Unexpected status code:', response.status);
       }
-    } catch (error) {
+    } catch (error: any) {
       const err = error as { response?: { data?: { error?: string } } };
       const errorMessage = err.response?.data?.error || 'An error occurred while creating the listing';
       setError(errorMessage);
