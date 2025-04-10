@@ -14,7 +14,7 @@ import {
   X,
   Loader2
 } from 'lucide-react';
-import { apiClient } from '../middleware/auth';
+
 
 // Define the ListingForm interface
 interface ListingForm {
