@@ -229,7 +229,7 @@ const CreateListing = () => {
       });
 
       const response = await axios.post(
-        'https://propertprobackend.onrender.com/api/properties/create_property',
+        'https://propertprodjango.onrender.com/api/properties/create_property',
         formDataToSend,
         {
           headers: {
