@@ -8,14 +8,14 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
-  const { id, title, price, address, bedrooms, bathrooms, area, imageUrl, type, forSale } = property;
+  const { id, title, price, address, bedrooms, bathrooms, area, image, type, forSale } = property;
 
   return (
     <div className={`bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ${featured ? 'col-span-2' : ''}`}>
       <div className="relative">
         <Link to={`/property/${id}`}>
           <img 
-            src={imageUrl} 
+            src={image} 
             alt={title} 
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
