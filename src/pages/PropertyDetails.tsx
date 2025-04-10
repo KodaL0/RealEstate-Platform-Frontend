@@ -16,8 +16,22 @@ import {
   Shield 
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
-import { allProperties } from '../data/properties';
 import { Property } from '../types';
+
+// Optional: if the API response does not match your Property interface,
+// define a mapping function. If it does match, you can skip this step.
+const mapPropertyData = (data: any): Property => ({
+  id: data.id,
+  title: data.property_title || data.title, // fallback if different key names
+  price: data.property_price || data.price,
+  address: data.property_address || data.address,
+  bedrooms: data.bedroom_count || data.bedrooms,
+  bathrooms: data.bathroom_count || data.bathrooms,
+  area: data.property_area || data.area,
+  imageUrl: data.property_image_url || data.imageUrl,
+  type: data.property_type || data.type,
+  forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
+});
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -28,17 +42,20 @@ const PropertyDetails = () => {
   useEffect(() => {
     async function fetchPropertyData() {
       try {
-        // Use the custom apiClient to fetch property data from your backend
         const response = await apiClient.get(`/api/properties/${id}`);
-        setProperty(response.data);
+        // If mapping is needed, use the mapPropertyData function.
+        const mappedProperty = mapPropertyData(response.data);
+        setProperty(mappedProperty);
       } catch (error) {
         console.error("Error fetching property:", error);
       }
     }
-    fetchPropertyData();
+    if (id) {
+      fetchPropertyData();
+    }
   }, [id]);
 
-  // Fallback: If no property data is available, show "Property Not Found"
+  // Fallback: If property is not found, display error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -53,13 +70,17 @@ const PropertyDetails = () => {
     );
   }
 
-  // Additional property images (in a real app, these would be part of the property data)
+  // Fallback for property.type
+  const propertyTypeDisplay = property.type?.toLowerCase() || 'property';
+
+  // Here, assume additionalImages are now part of the property data.
+  // For demonstration, we'll use property.imageUrl and some placeholders.
   const additionalImages = [
     property.imageUrl,
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2053&q=80",
-    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80"
+    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80",
+    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
   ];
 
   return (
@@ -180,7 +201,7 @@ const PropertyDetails = () => {
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  This stunning {property.type.toLowerCase()} offers the perfect blend of luxury and comfort. Nestled in a prime location, this property boasts exceptional craftsmanship and attention to detail throughout. The spacious floor plan features {property.bedrooms} bedrooms and {property.bathrooms} bathrooms, providing ample space for both relaxation and entertainment.
+                  This stunning {propertyTypeDisplay} offers the perfect blend of luxury and comfort. Nestled in a prime location, this property boasts exceptional craftsmanship and attention to detail throughout. The spacious floor plan features {property.bedrooms} bedrooms and {property.bathrooms} bathrooms, providing ample space for both relaxation and entertainment.
                 </p>
                 <p className="text-gray-700 leading-relaxed mb-6">
                   The gourmet kitchen is equipped with high-end stainless steel appliances, custom cabinetry, and a large center island, making it a chef's dream. The open-concept living area is bathed in natural light and offers seamless indoor-outdoor flow to the beautifully landscaped backyard.
