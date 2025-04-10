@@ -8,7 +8,8 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
-  const { id, title, price, address, bedrooms, bathrooms, area, porperty_images, type, forSale } = property;
+  // Fixed the destructuring; using "property_images" instead of "porperty_images"
+  const { id, title, price, address, bedrooms, bathrooms, area, property_images, type, forSale } = property;
 
   return (
     <div className={`bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 ${featured ? 'col-span-2' : ''}`}>
