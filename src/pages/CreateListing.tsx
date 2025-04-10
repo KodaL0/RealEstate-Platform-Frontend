@@ -17,8 +17,6 @@ import {
 
 import { apiClient } from '../middleware/auth';
 
-
-
 // Define the ListingForm interface
 interface ListingForm {
   title: string;
@@ -134,6 +132,7 @@ const CreateListing = () => {
   });
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
+    console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
       ...prev,
       images: [...prev.images, ...acceptedFiles]
@@ -153,6 +152,7 @@ const CreateListing = () => {
   });
 
   const removeImage = (index: number) => {
+    console.log("Removing image at index:", index);
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
@@ -164,6 +164,7 @@ const CreateListing = () => {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    console.log(`Input changed: ${name} = ${value}`);
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -171,6 +172,7 @@ const CreateListing = () => {
   };
 
   const handleCheckboxChange = (id: string, type: 'amenities' | 'additionalFeatures') => {
+    console.log(`Checkbox toggled: ${id} in ${type}`);
     setFormData(prev => {
       const currentArray = prev[type];
       const updatedArray = currentArray.includes(id)
@@ -185,54 +187,58 @@ const CreateListing = () => {
   };
 
   const validateForm = (): boolean => {
+    console.log("Validating form...", formData);
     if (!formData.images.length) {
       toast.error('Please upload at least one image');
       return false;
     }
-
     if (!formData.title.trim() || !formData.description.trim()) {
       toast.error('Title and description are required');
       return false;
     }
-
     if (!formData.contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       toast.error('Please enter a valid email address');
       return false;
     }
-
     if (!formData.contactPhone.match(/^\+?[\d\s-]{10,}$/)) {
       toast.error('Please enter a valid phone number');
       return false;
     }
-
     return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (!validateForm()) return;
-    
+    console.log("handleSubmit fired");
+    if (!validateForm()) {
+      console.log("Validation failed.");
+      return;
+    }
     setError('');
     setIsSubmitting(true);
     
     try {
       const formDataToSend = new FormData();
-      
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'images') {
-          value.forEach((file: File) => {
+          (value as File[]).forEach((file) => {
             formDataToSend.append('images[]', file);
           });
         } else if (Array.isArray(value)) {
-          value.forEach(item => {
+          (value as string[]).forEach(item => {
             formDataToSend.append(`${key}[]`, item);
           });
         } else if (value) {
           formDataToSend.append(key, value);
         }
       });
-
+      
+      console.log("FormData entries:");
+      for (let [key, val] of formDataToSend.entries()) {
+        console.log(key, val);
+      }
+      
+      console.log("Sending property creation request...");
       // Use apiClient here instead of axios.post
       const response = await apiClient.post(
         '/api/properties/create_property/',
@@ -243,7 +249,8 @@ const CreateListing = () => {
           }
         }
       );
-
+      
+      console.log("Response received:", response);
       // Adjust status check if your backend returns 200, 201, or both
       if (response.status === 200 || response.status === 201) {
         toast.success('Listing created successfully!');
@@ -252,6 +259,7 @@ const CreateListing = () => {
         console.warn('Unexpected status code:', response.status);
       }
     } catch (error: any) {
+      console.error("Error in handleSubmit:", error);
       const err = error as { response?: { data?: { error?: string } } };
       const errorMessage = err.response?.data?.error || 'An error occurred while creating the listing';
       setError(errorMessage);
@@ -272,7 +280,7 @@ const CreateListing = () => {
             </h1>
             <p className="text-blue-100 mt-2">Fill in the details below to list your property</p>
           </div>
-
+  
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-8 my-6">
               <div className="flex">
@@ -285,7 +293,7 @@ const CreateListing = () => {
               </div>
             </div>
           )}
-
+  
           <form onSubmit={handleSubmit} className="p-8 space-y-10">
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
@@ -326,7 +334,7 @@ const CreateListing = () => {
                     ))}
                   </select>
                 </div>
-
+  
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                     Price
@@ -347,7 +355,7 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
+  
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                     Location
@@ -368,7 +376,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -395,7 +403,7 @@ const CreateListing = () => {
                     </select>
                   </div>
                 </div>
-
+  
                 <div>
                   <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bedrooms
@@ -415,7 +423,7 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
+  
                 <div>
                   <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bathrooms
@@ -436,7 +444,7 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
+  
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
                     Living Area (sq ft)
@@ -456,7 +464,7 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-
+  
                 <div>
                   <label htmlFor="yearBuilt" className="block text-sm font-medium text-gray-700 mb-1">
                     Year Built
@@ -473,7 +481,7 @@ const CreateListing = () => {
                     placeholder="Year of construction"
                   />
                 </div>
-
+  
                 <div>
                   <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
                     Lot Size (sq ft)
@@ -491,7 +499,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
               <div 
@@ -508,7 +516,7 @@ const CreateListing = () => {
                   Maximum 10 images, up to 5MB each. Supported formats: JPG, PNG, WebP
                 </p>
               </div>
-
+  
               {previewImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                   {previewImages.map((preview, index) => (
@@ -530,7 +538,7 @@ const CreateListing = () => {
                 </div>
               )}
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -550,7 +558,7 @@ const CreateListing = () => {
                 ))}
               </div>
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Features</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -570,7 +578,7 @@ const CreateListing = () => {
                 ))}
               </div>
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
@@ -584,7 +592,7 @@ const CreateListing = () => {
                 placeholder="Provide a detailed description of the property..."
               />
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -620,7 +628,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -654,7 +662,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
