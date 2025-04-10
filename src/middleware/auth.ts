@@ -51,9 +51,9 @@ apiClient.interceptors.response.use(
         // Clear the cookies for access and refresh tokens using the API domain.
         // Adjust the domain here to match how cookies are actually set on your API.
         document.cookie =
-          'access_token=; path=/; domain=propertprodjango.onrender.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie =
-          'refresh_token=; path=/; domain=propertprodjango.onrender.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         // Optionally: Redirect to the login page to force re-authentication.
         // window.location.href = '/login';
         return Promise.reject(refreshError);
