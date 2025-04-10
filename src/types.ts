@@ -8,7 +8,7 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   area: number;
-  imageUrl: string;
+  property_images: string;
   type: string;
   forSale: boolean;
 }
