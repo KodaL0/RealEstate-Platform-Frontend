@@ -11,12 +11,14 @@ export interface Property {
   imageUrl: string;
   type: string;
   forSale: boolean;
+  // Use camelCase on the frontend for consistency
   builtYear?: number;
   description?: string;
   additionalImages?: string[];
   features?: string[];
-  // ... any additional fields
+  // ... add any other fields if needed
 }
+
 
 
 export interface ListingForm {
