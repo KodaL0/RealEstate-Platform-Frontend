@@ -17,7 +17,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         <Link to={`/property/${id}`}>
           <img 
             src={property_images} 
-            alt={title} 
+            alt=""
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
