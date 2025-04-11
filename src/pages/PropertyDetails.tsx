@@ -29,7 +29,7 @@ const mapPropertyData = (data: any): Property => ({
   imageUrl: data.property_image_url || data.imageUrl,
   type: data.property_type || data.type,
   forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
-  builtYear: data.built_year, // dynamically fetched
+  yearBuilt: data.year_built, // dynamically fetched
   description: data.property_description || data.description,
   additionalImages: data.additional_images, // dynamic array
   features: data.features, // dynamic features
