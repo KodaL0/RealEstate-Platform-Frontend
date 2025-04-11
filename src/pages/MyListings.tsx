@@ -131,7 +131,7 @@ const MyListings = () => {
             {properties.map((property) => (
               <div
                 key={property.id}
-                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
+                className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 onClick={() => navigate(`/property/${property.id}`)}
               >
                 {/* Image Section */}
@@ -141,12 +141,27 @@ const MyListings = () => {
                     alt={property.title}
                     className="w-full h-64 object-cover"
                   />
+                  {/* Badges: For Sale and Property Type */}
                   <div className="absolute top-4 left-4 flex space-x-2">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500 text-white">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        property.forSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                      }`}
+                    >
+                      {property.forSale ? 'For Sale' : 'For Rent'}
+                    </span>
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        property.property_type.toLowerCase() === 'apartment'
+                          ? 'bg-gray-900/70 text-white'
+                          : 'bg-blue-600 text-white'
+                      }`}
+                    >
                       {property.property_type}
                     </span>
                   </div>
                 </div>
+
                 {/* Details Section */}
                 <div className="p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-between items-start mb-2">
@@ -158,9 +173,24 @@ const MyListings = () => {
                     </p>
                   </div>
                   <div className="flex items-center text-gray-500 mb-4">
-                    <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <svg
+                      className="w-4 h-4 mr-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                      />
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                      />
                     </svg>
                     <span className="text-sm">{property.location}</span>
                   </div>
