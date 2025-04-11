@@ -14,6 +14,7 @@ import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 
 const mapPropertyData = (data: any): Property => {
+  // Get the primary image (if any) using the is_primary flag.
   const primaryImage = data.images && data.images.length > 0
     ? data.images.find((img: any) => img.is_primary) || data.images[0]
     : null;
@@ -77,13 +78,8 @@ const PropertyDetails = () => {
       <div className="pt-20 min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-gray-800 mb-4">Property Not Found</h2>
-          <p className="text-gray-600 mb-6">
-            The property you're looking for doesn't exist or has been removed.
-          </p>
-          <Link
-            to="/"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors"
-          >
+          <p className="text-gray-600 mb-6">The property you're looking for doesn't exist or has been removed.</p>
+          <Link to="/" className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors">
             Back to Home
           </Link>
         </div>
@@ -91,15 +87,13 @@ const PropertyDetails = () => {
     );
   }
 
-  const mainImageUrl =
-    property.images && property.images.length > 0
-      ? property.images[activeImage].image
-      : '';
+  const mainImageUrl = property.images && property.images.length > 0 
+    ? property.images[activeImage].image 
+    : '';
 
-  const additionalImages =
-    property.images && property.images.length > 0
-      ? property.images.map((img) => img.image)
-      : [];
+  const additionalImages = property.images && property.images.length > 0 
+    ? property.images.map(img => img.image)
+    : [];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -107,42 +101,54 @@ const PropertyDetails = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image Container */}
+            {/* Main Image Container with forced inline styles */}
             <div className="lg:w-2/3">
-              <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
-                <img
-                  src={mainImageUrl}
-                  alt={property.title}
+              <div
+                className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden"
+                style={{ position: 'relative' }}
+              >
+                <img 
+                  src={mainImageUrl} 
+                  alt={property.title} 
                   className="w-full h-full object-cover"
                 />
                 {/* Badges at Top-Left */}
-                <div className="absolute top-4 left-4 flex space-x-2 z-30">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === 'for_sale'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-blue-500 text-white'
-                    }`}
-                  >
-                    {property.property_status === 'for_sale'
-                      ? 'For Sale'
-                      : 'For Rent'}
+                <div
+                  style={{ zIndex: 9998, position: 'absolute', top: '16px', left: '16px' }}
+                  className="flex space-x-2"
+                >
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    property.property_status === 'for_sale'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-blue-500 text-white'
+                  }`}>
+                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
-                {/* Property Title Overlay at Bottom-Left */}
+                {/* Title Overlay at Bottom-Left */}
                 <div
-                  style={{ zIndex: 9999 }}
-                  className="absolute bottom-4 left-4"
+                  style={{
+                    zIndex: 10000,
+                    position: 'absolute',
+                    bottom: '16px',
+                    left: '16px',
+                    background: 'rgba(0, 0, 0, 0.5)',
+                    padding: '8px 12px',
+                    borderRadius: '4px',
+                  }}
                 >
-                  <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
+                  <h1 style={{ fontSize: '2.5rem', fontWeight: 800 }} className="text-white drop-shadow-lg">
                     {property.title}
                   </h1>
                 </div>
                 {/* Action Buttons at Top-Right */}
-                <div className="absolute top-4 right-4 flex space-x-2 z-30">
+                <div
+                  style={{ zIndex: 9998, position: 'absolute', top: '16px', right: '16px' }}
+                  className="flex space-x-2"
+                >
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
                   </button>
@@ -152,26 +158,26 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-
+            
             {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
-                <div
+                <div 
                   key={index}
                   className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => setActiveImage(index + 1)}
                 >
-                  <img
-                    src={img}
-                    alt={`${property.title} - view ${index + 1}`}
+                  <img 
+                    src={img} 
+                    alt={`${property.title} - view ${index + 1}`} 
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                   {index === 3 && additionalImages.length > 5 && (
-                    <div
+                    <div 
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Optionally open a modal
+                        // Optionally, open a modal to view all images.
                       }}
                     >
                       +{additionalImages.length - 5} more
@@ -189,6 +195,7 @@ const PropertyDetails = () => {
         <div className="flex flex-col lg:flex-row lg:space-x-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
+            {/* Removed duplicate title here */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                 <div>
@@ -208,7 +215,7 @@ const PropertyDetails = () => {
                   )}
                 </div>
               </div>
-
+              
               <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
                 <div className="flex items-center">
                   <Bed className="h-5 w-5 mr-2 text-gray-500" />
@@ -231,7 +238,7 @@ const PropertyDetails = () => {
                   <p className="font-medium">Built in {property.year_built}</p>
                 </div>
               </div>
-
+              
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
@@ -239,7 +246,7 @@ const PropertyDetails = () => {
                 </p>
               </div>
             </div>
-
+            
             {property.amenities && property.amenities.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
@@ -253,7 +260,7 @@ const PropertyDetails = () => {
                 </div>
               </div>
             )}
-
+            
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
               <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
@@ -265,7 +272,7 @@ const PropertyDetails = () => {
               </div>
             </div>
           </div>
-
+          
           <div className="lg:w-1/3 mt-8 lg:mt-0">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
