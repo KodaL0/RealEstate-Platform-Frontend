@@ -9,7 +9,7 @@ interface PropertyCardProps {
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
   // Destructure the needed fields.
-  // Note: Adjust property_images if your Property type uses another field name
+  // Note: Adjust property_images if your Property type uses another field name.
   const { id, title, price, address, bedrooms, bathrooms, area, property_images, type, forSale } = property;
 
   return (
@@ -22,7 +22,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         <Link to={`/property/${id}`}>
           <img 
             src={property_images} 
-            alt=""  // Setting alt="" ensures no fallback text is shown if the image fails to load.
+            alt=""  // No fallback text when image fails to load.
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
@@ -56,18 +56,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </p>
         </div>
         
-        {/* Address & Edit Listing Button */}
-        <div className="flex justify-between items-center text-gray-500 mb-4">
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span className="text-sm">{address}</span>
-          </div>
-          <Link
-            to={`/create-listing/${id}`}
-            className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-          >
-            Edit Listing
-          </Link>
+        {/* Address Row */}
+        <div className="flex items-center text-gray-500 mb-4">
+          <MapPin className="h-4 w-4 mr-1" />
+          <span className="text-sm">{address}</span>
         </div>
         
         {/* Stats: Beds, Baths, Area */}
@@ -84,6 +76,22 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             <Square className="h-5 w-5 mr-2 text-gray-500" />
             <span>{area.toLocaleString()} sq ft</span>
           </div>
+        </div>
+
+        {/* Actions Row: View Details & Edit Listing */}
+        <div className="flex justify-end mt-4 space-x-4">
+          <Link 
+            to={`/property/${id}`} 
+            className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            View Details
+          </Link>
+          <Link 
+            to={`/create-listing/${id}`} 
+            className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            Edit Listing
+          </Link>
         </div>
       </div>
     </div>
