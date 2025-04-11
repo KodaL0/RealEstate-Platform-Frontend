@@ -98,7 +98,7 @@ const PropertyDetails = () => {
     ? property.images[activeImage].image 
     : '';
 
-  // Prepare additional images array for thumbnail grid.
+  // Prepare additional images for the thumbnail grid.
   const additionalImages = property.images && property.images.length > 0 
     ? property.images.map(img => img.image)
     : [];
@@ -117,7 +117,8 @@ const PropertyDetails = () => {
                   alt={property.title} 
                   className="w-full h-full object-cover"
                 />
-                <div className="absolute top-4 left-4 flex space-x-2">
+                {/* Badges */}
+                <div className="absolute top-4 left-4 flex space-x-2 z-20">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
                     {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
@@ -125,7 +126,12 @@ const PropertyDetails = () => {
                     {property.property_type}
                   </span>
                 </div>
-                <div className="absolute top-4 right-4 flex space-x-2">
+                {/* Property Title Overlay */}
+                <div className="absolute bottom-4 left-4 z-30">
+                  <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">{property.title}</h1>
+                </div>
+                {/* Action Buttons */}
+                <div className="absolute top-4 right-4 flex space-x-2 z-20">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
                   </button>
@@ -172,6 +178,7 @@ const PropertyDetails = () => {
         <div className="flex flex-col lg:flex-row lg:space-x-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
+            {/* If you wish, you can remove this duplicate title here */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                 <div>
@@ -185,7 +192,7 @@ const PropertyDetails = () => {
                   <p className="text-3xl font-bold text-emerald-600">
                     ${property.price.toLocaleString()}
                   </p>
-                  {property.property_status === 'for_sale' && property.price && (
+                  {property.property_status === 'for_sale' && (
                     <p className="text-gray-600 text-sm">
                       Est. ${Math.round(property.price / 360).toLocaleString()}/mo
                     </p>
@@ -220,7 +227,7 @@ const PropertyDetails = () => {
               </div>
             </div>
             
-            {/* Features & Amenities */}
+            {/* Amenities */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
