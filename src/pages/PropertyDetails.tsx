@@ -113,7 +113,6 @@ const PropertyDetails = () => {
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img
                   src={mainImageUrl}
-                  alt={property.title}
                   className="w-full h-full object-cover"
                 />
                 {/* Badges positioned at the Top-Left */}
