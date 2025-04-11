@@ -1,24 +1,46 @@
 // types.ts
+export interface PropertyImage {
+  image: string;
+  is_primary: boolean;
+}
+
+export interface Owner {
+  id: string;
+  email: string;
+  // add additional owner fields if needed
+}
 
 export interface Property {
   id: string;
   title: string;
+  description: string;
   price: number;
-  address: string;
+  location: string;
+  property_type: string;
   bedrooms: number;
   bathrooms: number;
   area: number;
-  imageUrl: string;
-  type: string;
-  forSale: boolean;
-  // Use camelCase on the frontend for consistency
-  builtYear?: number;
-  description?: string;
-  additionalImages?: string[];
-  features?: string[];
-  // ... add any other fields if needed
+  year_built: number;
+  parking_spaces: number;
+  lot_size?: number;
+  property_status: string;
+  energy_rating?: string;
+  construction_material?: string;
+  floor_level?: number;
+  total_floors?: number;
+  available_from?: string;
+  contact_phone: string;
+  contact_email: string;
+  virtual_tour_url?: string;
+  video_url?: string;
+  amenities: string[];
+  additional_features: string[];
+  owner: Owner;
+  is_published: boolean;
+  created_at: string;
+  updated_at: string;
+  images: PropertyImage[];
 }
-
 
 
 export interface ListingForm {
