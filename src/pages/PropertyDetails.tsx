@@ -73,7 +73,6 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
-  // Fallback for property not found.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -88,12 +87,12 @@ const PropertyDetails = () => {
     );
   }
 
-  // Determine the main image URL using the activeImage index from the images array.
+  // Determine the main image URL using the activeImage index.
   const mainImageUrl = property.images && property.images.length > 0 
     ? property.images[activeImage].image 
     : '';
 
-  // Prepare additional images array for the thumbnail grid.
+  // Prepare additional images array for thumbnails.
   const additionalImages = property.images && property.images.length > 0 
     ? property.images.map(img => img.image)
     : [];
@@ -112,7 +111,7 @@ const PropertyDetails = () => {
                   alt={property.title} 
                   className="w-full h-full object-cover"
                 />
-                {/* Badges positioned at the Top-Left */}
+                {/* Badges at the Top-Left */}
                 <div className="absolute top-4 left-4 z-30 flex space-x-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     property.property_status === 'for_sale' 
@@ -125,13 +124,13 @@ const PropertyDetails = () => {
                     {property.property_type}
                   </span>
                 </div>
-                {/* Property Title Overlay at the Bottom-Left */}
-                <div className="absolute bottom-4 left-4 z-30">
+                {/* Property Title Overlay at the Bottom-Left with Higher z-index */}
+                <div className="absolute bottom-4 left-4 z-40">
                   <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
                     {property.title}
                   </h1>
                 </div>
-                {/* Action Buttons (Heart & Share) at the Top-Right */}
+                {/* Action Buttons at the Top-Right */}
                 <div className="absolute top-4 right-4 flex space-x-2 z-30">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
@@ -179,11 +178,11 @@ const PropertyDetails = () => {
         <div className="flex flex-col lg:flex-row lg:space-x-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            {/* You can remove the duplicate title from here if the overlay is sufficient */}
+            {/* Removed duplicate title here */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                 <div>
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
+                  {/* Removed duplicate h1 title */}
                   <div className="flex items-center text-gray-600 mb-4">
                     <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                     <span>{property.location}</span>
@@ -204,11 +203,15 @@ const PropertyDetails = () => {
               <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
                 <div className="flex items-center">
                   <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</p>
+                  <p className="font-medium">
+                    {property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}
+                  </p>
                 </div>
                 <div className="flex items-center">
                   <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</p>
+                  <p className="font-medium">
+                    {property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
+                  </p>
                 </div>
                 <div className="flex items-center">
                   <Square className="h-5 w-5 mr-2 text-gray-500" />
@@ -262,7 +265,9 @@ const PropertyDetails = () => {
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
               <div className="mb-4">
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
+                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Date
+                </label>
                 <input
                   type="date"
                   id="date"
@@ -270,7 +275,9 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
+                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                  Preferred Time
+                </label>
                 <select
                   id="time"
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
@@ -281,7 +288,9 @@ const PropertyDetails = () => {
                 </select>
               </div>
               <div className="mb-4">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Your Name
+                </label>
                 <input
                   type="text"
                   id="name"
@@ -290,7 +299,9 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                  Email Address
+                </label>
                 <input
                   type="email"
                   id="email"
@@ -299,7 +310,9 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                  Phone Number
+                </label>
                 <input
                   type="tel"
                   id="phone"
@@ -308,7 +321,9 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-6">
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message (Optional)</label>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                  Message (Optional)
+                </label>
                 <textarea
                   id="message"
                   rows={3}
