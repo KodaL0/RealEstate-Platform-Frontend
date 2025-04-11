@@ -14,7 +14,6 @@ import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 
 const mapPropertyData = (data: any): Property => {
-  // Get the primary image (if any) using the is_primary flag.
   const primaryImage = data.images && data.images.length > 0
     ? data.images.find((img: any) => img.is_primary) || data.images[0]
     : null;
@@ -92,11 +91,11 @@ const PropertyDetails = () => {
     );
   }
 
+  // Main image and thumbnails
   const mainImageUrl =
     property.images && property.images.length > 0
       ? property.images[activeImage].image
       : '';
-
   const additionalImages =
     property.images && property.images.length > 0
       ? property.images.map((img) => img.image)
@@ -108,14 +107,16 @@ const PropertyDetails = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image Container */}
+            {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
-                <img
-                  src={mainImageUrl}
+                {/* alt="" => no text behind badges */}
+                <img 
+                  src={mainImageUrl} 
+                  alt=""
                   className="w-full h-full object-cover"
                 />
-                {/* Badges positioned at the Top-Left */}
+                {/* Badges at Top-Left */}
                 <div className="absolute top-4 left-4 flex space-x-2 z-30">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -130,7 +131,7 @@ const PropertyDetails = () => {
                     {property.property_type}
                   </span>
                 </div>
-                {/* Action Buttons positioned at the Top-Right */}
+                {/* Action Buttons at Top-Right */}
                 <div className="absolute top-4 right-4 flex space-x-2 z-30">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
@@ -141,18 +142,18 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-
+            
             {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
-                <div
+                <div 
                   key={index}
                   className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => setActiveImage(index + 1)}
                 >
                   <img
                     src={img}
-                    alt={`${property.title} - view ${index + 1}`}
+                    alt=""
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                   {index === 3 && additionalImages.length > 5 && (
@@ -160,7 +161,6 @@ const PropertyDetails = () => {
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Optionally: open a modal to view all images.
                       }}
                     >
                       +{additionalImages.length - 5} more
@@ -179,22 +179,33 @@ const PropertyDetails = () => {
           {/* Main Content */}
           <div className="lg:w-2/3">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-              {/* Display property title only in the details section */}
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
-              <div className="flex items-center text-gray-600 mb-4">
-                <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                <span>{property.location}</span>
-              </div>
-              <div className="mt-4 md:mt-0">
-                <p className="text-3xl font-bold text-emerald-600">
-                  ${property.price.toLocaleString()}
-                </p>
-                {property.property_status === 'for_sale' && (
-                  <p className="text-gray-600 text-sm">
-                    Est. ${Math.round(property.price / 360).toLocaleString()}/mo
+              {/* Flex container to keep title/price in one row: justify-between */}
+              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
+                <div>
+                  {/* Property Title */}
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                    {property.title}
+                  </h1>
+                  {/* Location */}
+                  <div className="flex items-center text-gray-600 mb-4">
+                    <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.location}</span>
+                  </div>
+                </div>
+                {/* Price in top-right */}
+                <div className="mt-4 md:mt-0 text-right">
+                  {/* Make the price text blue */}
+                  <p className="text-3xl font-bold text-blue-600">
+                    ${property.price.toLocaleString()}
                   </p>
-                )}
+                  {property.property_status === 'for_sale' && (
+                    <p className="text-gray-600 text-sm">
+                      Est. ${Math.round(property.price / 360).toLocaleString()}/mo
+                    </p>
+                  )}
+                </div>
               </div>
+
               <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
                 <div className="flex items-center">
                   <Bed className="h-5 w-5 mr-2 text-gray-500" />
@@ -214,9 +225,12 @@ const PropertyDetails = () => {
                 </div>
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">Built in {property.year_built}</p>
+                  <p className="font-medium">
+                    Built in {property.year_built}
+                  </p>
                 </div>
               </div>
+
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
@@ -224,6 +238,8 @@ const PropertyDetails = () => {
                 </p>
               </div>
             </div>
+
+            {/* Amenities Section */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
@@ -237,6 +253,8 @@ const PropertyDetails = () => {
                 </div>
               </div>
             )}
+
+            {/* Location Section */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
               <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
@@ -248,11 +266,18 @@ const PropertyDetails = () => {
               </div>
             </div>
           </div>
+
+          {/* Sidebar: Schedule a Viewing */}
           <div className="lg:w-1/3 mt-8 lg:mt-0">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-6">
+                Schedule a Viewing
+              </h3>
               <div className="mb-4">
-                <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="date"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Preferred Date
                 </label>
                 <input
@@ -262,7 +287,10 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="time"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Preferred Time
                 </label>
                 <select
@@ -275,7 +303,10 @@ const PropertyDetails = () => {
                 </select>
               </div>
               <div className="mb-4">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="name"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Your Name
                 </label>
                 <input
@@ -286,7 +317,10 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Email Address
                 </label>
                 <input
@@ -297,7 +331,10 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-4">
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="phone"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Phone Number
                 </label>
                 <input
@@ -308,7 +345,10 @@ const PropertyDetails = () => {
                 />
               </div>
               <div className="mb-6">
-                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                <label
+                  htmlFor="message"
+                  className="block text-sm font-medium text-gray-700 mb-1"
+                >
                   Message (Optional)
                 </label>
                 <textarea
@@ -324,7 +364,10 @@ const PropertyDetails = () => {
               <div className="mt-4 text-center">
                 <p className="text-gray-600 text-sm">
                   or call us at{' '}
-                  <a href="tel:+18001234567" className="text-emerald-600 font-medium">
+                  <a
+                    href="tel:+18001234567"
+                    className="text-emerald-600 font-medium"
+                  >
                     +1 (800) 123-4567
                   </a>
                 </p>
