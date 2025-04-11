@@ -18,11 +18,9 @@ import {
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 
-// Optional: if the API response does not match your Property interface,
-// define a mapping function. If it does match, you can skip this step.
 const mapPropertyData = (data: any): Property => ({
   id: data.id,
-  title: data.property_title || data.title, // fallback if different key names
+  title: data.property_title || data.title,
   price: data.property_price || data.price,
   address: data.property_address || data.address,
   bedrooms: data.bedroom_count || data.bedrooms,
@@ -31,6 +29,10 @@ const mapPropertyData = (data: any): Property => ({
   imageUrl: data.property_image_url || data.imageUrl,
   type: data.property_type || data.type,
   forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
+  builtYear: data.built_year, // dynamically fetched
+  description: data.property_description || data.description,
+  additionalImages: data.additional_images, // dynamic array
+  features: data.features, // dynamic features
 });
 
 const PropertyDetails = () => {
@@ -43,7 +45,6 @@ const PropertyDetails = () => {
     async function fetchPropertyData() {
       try {
         const response = await apiClient.get(`/api/properties/${id}`);
-        // If mapping is needed, use the mapPropertyData function.
         const mappedProperty = mapPropertyData(response.data);
         setProperty(mappedProperty);
       } catch (error) {
@@ -55,7 +56,6 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
-  // Fallback: If property is not found, display error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -70,18 +70,17 @@ const PropertyDetails = () => {
     );
   }
 
-  // Fallback for property.type
+  // Define property type display text
   const propertyTypeDisplay = property.type?.toLowerCase() || 'property';
 
-  // Here, assume additionalImages are now part of the property data.
-  // For demonstration, we'll use property.imageUrl and some placeholders.
-  const additionalImages = [
-    property.imageUrl,
-    "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80",
-    "https://images.unsplash.com/photo-1600566753086-00f18fb6b3ea?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-    "https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
-  ];
+  // Use dynamic images if provided; fallback to a default array if needed.
+  const additionalImages = property.additionalImages && property.additionalImages.length > 0 
+    ? property.additionalImages 
+    : [
+        property.imageUrl,
+        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
+        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80"
+      ];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -89,7 +88,6 @@ const PropertyDetails = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img 
@@ -115,7 +113,7 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
@@ -165,8 +163,10 @@ const PropertyDetails = () => {
                   <p className="text-3xl font-bold text-emerald-600">
                     {property.forSale ? `$${property.price.toLocaleString()}` : `$${property.price.toLocaleString()}/mo`}
                   </p>
-                  {property.forSale && (
-                    <p className="text-gray-600 text-sm">Est. ${Math.round(property.price / 360).toLocaleString()}/mo</p>
+                  {property.forSale && property.price && (
+                    <p className="text-gray-600 text-sm">
+                      Est. ${Math.round(property.price / 360).toLocaleString()}/mo
+                    </p>
                   )}
                 </div>
               </div>
@@ -193,7 +193,10 @@ const PropertyDetails = () => {
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-gray-500" />
                   <div>
-                    <p className="font-medium">Built in 2018</p>
+                    {/* Dynamic built year */}
+                    <p className="font-medium">
+                      Built in {property.builtYear || 'N/A'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -201,59 +204,31 @@ const PropertyDetails = () => {
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  This stunning {propertyTypeDisplay} offers the perfect blend of luxury and comfort. Nestled in a prime location, this property boasts exceptional craftsmanship and attention to detail throughout. The spacious floor plan features {property.bedrooms} bedrooms and {property.bathrooms} bathrooms, providing ample space for both relaxation and entertainment.
-                </p>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  The gourmet kitchen is equipped with high-end stainless steel appliances, custom cabinetry, and a large center island, making it a chef's dream. The open-concept living area is bathed in natural light and offers seamless indoor-outdoor flow to the beautifully landscaped backyard.
-                </p>
-                <p className="text-gray-700 leading-relaxed">
-                  Additional features include hardwood floors, custom lighting fixtures, a two-car garage, and a state-of-the-art security system. Located in a highly sought-after neighborhood with excellent schools, shopping, and dining options nearby, this property represents the epitome of luxury living.
+                  {property.description || `This stunning ${propertyTypeDisplay} offers the perfect blend of luxury and comfort. With ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms, this property is designed to elevate your lifestyle.`}
                 </p>
               </div>
             </div>
             
-            <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Features & Amenities</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="flex items-center">
-                  <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Central Air Conditioning</span>
-                </div>
-                <div className="flex items-center">
-                  <Car className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>2-Car Garage</span>
-                </div>
-                <div className="flex items-center">
-                  <Wifi className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>High-Speed Internet Ready</span>
-                </div>
-                <div className="flex items-center">
-                  <Droplets className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Swimming Pool</span>
-                </div>
-                <div className="flex items-center">
-                  <Thermometer className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Energy Efficient</span>
-                </div>
-                <div className="flex items-center">
-                  <Shield className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Security System</span>
-                </div>
-                <div className="flex items-center">
-                  <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Hardwood Floors</span>
-                </div>
-                <div className="flex items-center">
-                  <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                  <span>Walk-in Closets</span>
+            {/* Dynamically Render Features if Available */}
+            {property.features && property.features.length > 0 && (
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Features &amp; Amenities</h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {property.features.map((feature, idx) => (
+                    <div key={idx} className="flex items-center">
+                      {/* You could decide which icon to show based on the feature */}
+                      <Home className="h-5 w-5 mr-3 text-emerald-600" />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
-            </div>
+            )}
             
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
               <div className="h-80 bg-gray-200 rounded-lg mb-4">
-                {/* In a real app, this would be a Google Maps or similar map component */}
+                {/* Replace this static placeholder with a dynamic map component */}
                 <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-500">
                   Interactive Map Would Be Here
                 </div>
@@ -265,7 +240,7 @@ const PropertyDetails = () => {
             </div>
           </div>
           
-          {/* Sidebar */}
+          {/* Sidebar: Schedule a Viewing - Remains Static for now */}
           <div className="lg:w-1/3 mt-8 lg:mt-0">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
