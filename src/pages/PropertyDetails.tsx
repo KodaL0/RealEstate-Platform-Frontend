@@ -1,23 +1,10 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import {
-  Heart,
-  Share2,
-  MapPin,
-  Bed,
-  Bath,
-  Square,
-  Calendar,
-  Home
-} from 'lucide-react';
+import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 
 const mapPropertyData = (data: any): Property => {
-  const primaryImage = data.images && data.images.length > 0
-    ? data.images.find((img: any) => img.is_primary) || data.images[0]
-    : null;
-
   return {
     id: data.id,
     title: data.title,
@@ -55,6 +42,7 @@ const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImage, setActiveImage] = useState(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     async function fetchPropertyData() {
@@ -65,6 +53,8 @@ const PropertyDetails = () => {
         setProperty(mappedProperty);
       } catch (error) {
         console.error("Error fetching property:", error);
+      } finally {
+        setLoading(false);
       }
     }
     if (id) {
@@ -72,6 +62,16 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
+  // While data is being fetched, show a loading indicator.
+  if (loading) {
+    return (
+      <div className="pt-20 min-h-screen flex items-center justify-center">
+        <p className="text-xl text-gray-600">Loading...</p>
+      </div>
+    );
+  }
+
+  // Once data is loaded, if there is no property, display the error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -82,7 +82,7 @@ const PropertyDetails = () => {
           </p>
           <Link
             to="/"
-            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
             Back to Home
           </Link>
@@ -91,26 +91,21 @@ const PropertyDetails = () => {
     );
   }
 
-  // Main image and thumbnails
+  // Once loading is complete and property exists, render details.
   const mainImageUrl =
-    property.images && property.images.length > 0
-      ? property.images[activeImage].image
-      : '';
+    property.images && property.images.length > 0 ? property.images[activeImage].image : '';
   const additionalImages =
-    property.images && property.images.length > 0
-      ? property.images.map((img) => img.image)
-      : [];
+    property.images && property.images.length > 0 ? property.images.map(img => img.image) : [];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* Property Images Section */}
-      <section className="bg-white">
-        <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8">
+        {/* Property Images Section */}
+        <section className="bg-white">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
             {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
-                {/* alt="" => no text behind badges */}
                 <img 
                   src={mainImageUrl} 
                   alt=""
@@ -151,13 +146,13 @@ const PropertyDetails = () => {
                   className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => setActiveImage(index + 1)}
                 >
-                  <img
-                    src={img}
+                  <img 
+                    src={img} 
                     alt=""
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                   {index === 3 && additionalImages.length > 5 && (
-                    <div
+                    <div 
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -170,212 +165,176 @@ const PropertyDetails = () => {
               ))}
             </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* Property Details Section */}
-      <section className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row lg:space-x-8">
-          {/* Main Content */}
-          <div className="lg:w-2/3">
-            <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-              {/* Flex container to keep title/price in one row: justify-between */}
-              <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
-                <div>
-                  {/* Property Title */}
-                  <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                    {property.title}
-                  </h1>
-                  {/* Location */}
-                  <div className="flex items-center text-gray-600 mb-4">
-                    <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.location}</span>
+        {/* Property Details Section */}
+        <section className="mt-8">
+          <div className="flex flex-col lg:flex-row lg:space-x-8">
+            {/* Main Content */}
+            <div className="lg:w-2/3">
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                      {property.title}
+                    </h1>
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                      <span>{property.location}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 md:mt-0 text-right">
+                    <p className="text-3xl font-bold text-blue-600">
+                      ${property.price.toLocaleString()}
+                    </p>
+                    {property.property_status === 'for_sale' && (
+                      <p className="text-gray-600 text-sm">
+                        Est. ${Math.round(property.price / 360).toLocaleString()}/mo
+                      </p>
+                    )}
                   </div>
                 </div>
-                {/* Price in top-right */}
-                <div className="mt-4 md:mt-0 text-right">
-                  {/* Make the price text blue */}
-                  <p className="text-3xl font-bold text-blue-600">
-                    ${property.price.toLocaleString()}
-                  </p>
-                  {property.property_status === 'for_sale' && (
-                    <p className="text-gray-600 text-sm">
-                      Est. ${Math.round(property.price / 360).toLocaleString()}/mo
-                    </p>
-                  )}
-                </div>
-              </div>
 
-              <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
-                <div className="flex items-center">
-                  <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">
-                    {property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}
-                  </p>
+                <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
+                  <div className="flex items-center text-gray-700">
+                    <Bed className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Bath className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Square className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.area.toLocaleString()} sq ft</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Calendar className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>Built in {property.year_built}</span>
+                  </div>
                 </div>
-                <div className="flex items-center">
-                  <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">
-                    {property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}
-                  </p>
-                </div>
-                <div className="flex items-center">
-                  <Square className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">{property.area.toLocaleString()} sq ft</p>
-                </div>
-                <div className="flex items-center">
-                  <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="font-medium">
-                    Built in {property.year_built}
+
+                <div className="mt-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                  <p className="text-gray-700 leading-relaxed mb-6">
+                    {property.description}
                   </p>
                 </div>
               </div>
 
-              <div className="mt-6">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">
-                  {property.description}
-                </p>
+              {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {property.amenities.map((amenity, idx) => (
+                      <div key={idx} className="flex items-center">
+                        <Home className="h-5 w-5 mr-3 text-emerald-600" />
+                        <span>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
+                <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
+                  Interactive Map Would Be Here
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                  <p className="text-gray-700">{property.location}</p>
+                </div>
               </div>
             </div>
 
-            {/* Amenities Section */}
-            {property.amenities && property.amenities.length > 0 && (
-              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {property.amenities.map((amenity, idx) => (
-                    <div key={idx} className="flex items-center">
-                      <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                      <span>{amenity}</span>
-                    </div>
-                  ))}
+            {/* Sidebar: Schedule a Viewing */}
+            <div className="lg:w-1/3 mt-8 lg:mt-0">
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
+                <div className="mb-4">
+                  <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
                 </div>
-              </div>
-            )}
-
-            {/* Location Section */}
-            <div className="bg-white p-6 rounded-xl shadow-sm">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-              <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
-                Interactive Map Would Be Here
-              </div>
-              <div className="flex items-start">
-                <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                <p className="text-gray-700">{property.location}</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Sidebar: Schedule a Viewing */}
-          <div className="lg:w-1/3 mt-8 lg:mt-0">
-            <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
-              <h3 className="text-xl font-bold text-gray-900 mb-6">
-                Schedule a Viewing
-              </h3>
-              <div className="mb-4">
-                <label
-                  htmlFor="date"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Preferred Date
-                </label>
-                <input
-                  type="date"
-                  id="date"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="time"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Preferred Time
-                </label>
-                <select
-                  id="time"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
-                >
-                  <option>Morning (9AM - 12PM)</option>
-                  <option>Afternoon (12PM - 4PM)</option>
-                  <option>Evening (4PM - 7PM)</option>
-                </select>
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="name"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Your Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="John Doe"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="email"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="john@example.com"
-                />
-              </div>
-              <div className="mb-4">
-                <label
-                  htmlFor="phone"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Phone Number
-                </label>
-                <input
-                  type="tel"
-                  id="phone"
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="(123) 456-7890"
-                />
-              </div>
-              <div className="mb-6">
-                <label
-                  htmlFor="message"
-                  className="block text-sm font-medium text-gray-700 mb-1"
-                >
-                  Message (Optional)
-                </label>
-                <textarea
-                  id="message"
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  placeholder="I'm interested in this property and would like to schedule a viewing."
-                ></textarea>
-              </div>
-              <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition-colors">
-                Schedule Viewing
-              </button>
-              <div className="mt-4 text-center">
-                <p className="text-gray-600 text-sm">
-                  or call us at{' '}
-                  <a
-                    href="tel:+18001234567"
-                    className="text-emerald-600 font-medium"
+                <div className="mb-4">
+                  <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Time
+                  </label>
+                  <select
+                    id="time"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
                   >
-                    +1 (800) 123-4567
-                  </a>
-                </p>
+                    <option>Morning (9AM - 12PM)</option>
+                    <option>Afternoon (12PM - 4PM)</option>
+                    <option>Evening (4PM - 7PM)</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="(123) 456-7890"
+                  />
+                </div>
+                <div className="mb-6">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message (Optional)
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="I'm interested in this property and would like to schedule a viewing."
+                  ></textarea>
+                </div>
+                <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition-colors">
+                  Schedule Viewing
+                </button>
+                <div className="mt-4 text-center">
+                  <p className="text-gray-600 text-sm">
+                    or call us at{' '}
+                    <a href="tel:+18001234567" className="text-emerald-600 font-medium">
+                      +1 (800) 123-4567
+                    </a>
+                  </p>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      </section>
+        )}
+      </div>
     </div>
   );
 };
