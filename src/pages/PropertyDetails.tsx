@@ -73,6 +73,7 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
+  // Fallback: If property is not found, display an error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -87,10 +88,12 @@ const PropertyDetails = () => {
     );
   }
 
+  // Determine the main image URL using the activeImage index from the images array.
   const mainImageUrl = property.images && property.images.length > 0 
     ? property.images[activeImage].image 
     : '';
 
+  // Prepare additional images array for the thumbnail grid.
   const additionalImages = property.images && property.images.length > 0 
     ? property.images.map(img => img.image)
     : [];
@@ -101,54 +104,31 @@ const PropertyDetails = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image Container with forced inline styles */}
+            {/* Main Image Container */}
             <div className="lg:w-2/3">
-              <div
-                className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden"
-                style={{ position: 'relative' }}
-              >
+              <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img 
                   src={mainImageUrl} 
                   alt={property.title} 
                   className="w-full h-full object-cover"
                 />
-                {/* Badges at Top-Left */}
-                <div
-                  style={{ zIndex: 9998, position: 'absolute', top: '16px', left: '16px' }}
-                  className="flex space-x-2"
-                >
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    property.property_status === 'for_sale'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-blue-500 text-white'
-                  }`}>
+                {/* Badges positioned at the Top-Left */}
+                <div className="absolute top-4 left-4 flex space-x-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
                     {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
-                {/* Title Overlay at Bottom-Left */}
-                <div
-                  style={{
-                    zIndex: 10000,
-                    position: 'absolute',
-                    bottom: '16px',
-                    left: '16px',
-                    background: 'rgba(0, 0, 0, 0.5)',
-                    padding: '8px 12px',
-                    borderRadius: '4px',
-                  }}
-                >
-                  <h1 style={{ fontSize: '2.5rem', fontWeight: 800 }} className="text-white drop-shadow-lg">
+                {/* Property Title Overlay at the Bottom-Left */}
+                <div className="absolute bottom-4 left-4">
+                  <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
                     {property.title}
                   </h1>
                 </div>
-                {/* Action Buttons at Top-Right */}
-                <div
-                  style={{ zIndex: 9998, position: 'absolute', top: '16px', right: '16px' }}
-                  className="flex space-x-2"
-                >
+                {/* Action Buttons at the Top-Right */}
+                <div className="absolute top-4 right-4 flex space-x-2">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
                   </button>
@@ -177,7 +157,7 @@ const PropertyDetails = () => {
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Optionally, open a modal to view all images.
+                        // Optionally: open a modal to show all images.
                       }}
                     >
                       +{additionalImages.length - 5} more
@@ -195,10 +175,10 @@ const PropertyDetails = () => {
         <div className="flex flex-col lg:flex-row lg:space-x-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            {/* Removed duplicate title here */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                 <div>
+                  <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
                   <div className="flex items-center text-gray-600 mb-4">
                     <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                     <span>{property.location}</span>
