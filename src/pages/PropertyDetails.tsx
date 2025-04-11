@@ -8,12 +8,7 @@ import {
   Bath,
   Square,
   Calendar,
-  Home,
-  Car,
-  Wifi,
-  Droplets,
-  Thermometer,
-  Shield
+  Home
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
@@ -78,7 +73,7 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
-  // Fallback: If property is not found, display error message.
+  // Fallback for property not found.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -98,18 +93,18 @@ const PropertyDetails = () => {
     ? property.images[activeImage].image 
     : '';
 
-  // Prepare additional images for the thumbnail grid.
+  // Prepare additional images array for the thumbnail grid.
   const additionalImages = property.images && property.images.length > 0 
     ? property.images.map(img => img.image)
     : [];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* Property Images */}
+      {/* Property Images Section */}
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image */}
+            {/* Main Image Container */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img 
@@ -117,21 +112,27 @@ const PropertyDetails = () => {
                   alt={property.title} 
                   className="w-full h-full object-cover"
                 />
-                {/* Badges */}
-                <div className="absolute top-4 left-4 flex space-x-2 z-20">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
+                {/* Badges positioned at the Top-Left */}
+                <div className="absolute top-4 left-4 z-30 flex space-x-2">
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    property.property_status === 'for_sale' 
+                      ? 'bg-emerald-500 text-white' 
+                      : 'bg-blue-500 text-white'
+                  }`}>
                     {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
-                {/* Property Title Overlay */}
+                {/* Property Title Overlay at the Bottom-Left */}
                 <div className="absolute bottom-4 left-4 z-30">
-                  <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">{property.title}</h1>
+                  <h1 className="text-4xl font-extrabold text-white drop-shadow-lg">
+                    {property.title}
+                  </h1>
                 </div>
-                {/* Action Buttons */}
-                <div className="absolute top-4 right-4 flex space-x-2 z-20">
+                {/* Action Buttons (Heart & Share) at the Top-Right */}
+                <div className="absolute top-4 right-4 flex space-x-2 z-30">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
                   </button>
@@ -173,12 +174,12 @@ const PropertyDetails = () => {
         </div>
       </section>
 
-      {/* Property Details */}
+      {/* Property Details Section */}
       <section className="container mx-auto px-4 py-8">
         <div className="flex flex-col lg:flex-row lg:space-x-8">
           {/* Main Content */}
           <div className="lg:w-2/3">
-            {/* If you wish, you can remove this duplicate title here */}
+            {/* You can remove the duplicate title from here if the overlay is sufficient */}
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
               <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                 <div>
@@ -227,7 +228,7 @@ const PropertyDetails = () => {
               </div>
             </div>
             
-            {/* Amenities */}
+            {/* Amenities Section */}
             {property.amenities && property.amenities.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
@@ -242,7 +243,7 @@ const PropertyDetails = () => {
               </div>
             )}
             
-            {/* Location */}
+            {/* Location Section */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
               <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
@@ -256,11 +257,10 @@ const PropertyDetails = () => {
             </div>
           </div>
           
-          {/* Sidebar: Schedule a Viewing (static for now) */}
+          {/* Sidebar: Schedule a Viewing */}
           <div className="lg:w-1/3 mt-8 lg:mt-0">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
-              
               <div className="mb-4">
                 <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">Preferred Date</label>
                 <input
@@ -269,7 +269,6 @@ const PropertyDetails = () => {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
                 />
               </div>
-              
               <div className="mb-4">
                 <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">Preferred Time</label>
                 <select
@@ -281,7 +280,6 @@ const PropertyDetails = () => {
                   <option>Evening (4PM - 7PM)</option>
                 </select>
               </div>
-              
               <div className="mb-4">
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">Your Name</label>
                 <input
@@ -291,7 +289,6 @@ const PropertyDetails = () => {
                   placeholder="John Doe"
                 />
               </div>
-              
               <div className="mb-4">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                 <input
@@ -301,7 +298,6 @@ const PropertyDetails = () => {
                   placeholder="john@example.com"
                 />
               </div>
-              
               <div className="mb-4">
                 <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                 <input
@@ -311,7 +307,6 @@ const PropertyDetails = () => {
                   placeholder="(123) 456-7890"
                 />
               </div>
-              
               <div className="mb-6">
                 <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Message (Optional)</label>
                 <textarea
@@ -321,11 +316,9 @@ const PropertyDetails = () => {
                   placeholder="I'm interested in this property and would like to schedule a viewing."
                 ></textarea>
               </div>
-              
               <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition-colors">
                 Schedule Viewing
               </button>
-              
               <div className="mt-4 text-center">
                 <p className="text-gray-600 text-sm">
                   or call us at <a href="tel:+18001234567" className="text-emerald-600 font-medium">+1 (800) 123-4567</a>
