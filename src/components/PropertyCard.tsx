@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Bed, Bath, Square } from 'lucide-react';
+import { Heart, MapPin, Bed, Bath, Square, Home } from 'lucide-react';
 import { Property } from '../types';
 
 interface PropertyCardProps {
@@ -8,19 +8,9 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
-  // Destructure the needed fields
-  const {
-    id,
-    title,
-    price,
-    address,
-    bedrooms,
-    bathrooms,
-    area,
-    property_images,
-    type,
-    forSale
-  } = property;
+  // Destructure the needed fields.
+  // Note: Adjust property_images if your Property type uses another field name
+  const { id, title, price, address, bedrooms, bathrooms, area, property_images, type, forSale } = property;
 
   return (
     <div
@@ -29,16 +19,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
       }`}
     >
       <div className="relative">
-        {/* Image with no title in top-left (only badges) */}
         <Link to={`/property/${id}`}>
-          <img
-            src={property_images}
-            alt=""  // alt is empty so no text appears behind the badges
+          <img 
+            src={property_images} 
+            alt=""  // Setting alt="" ensures no fallback text is shown if the image fails to load.
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
-
-        {/* Badges in top-left */}
+        {/* Badges at Top-Left */}
         <div className="absolute top-4 left-4 flex space-x-2">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -51,34 +39,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             {type}
           </span>
         </div>
-
-        {/* Favorite button in top-right */}
+        {/* Favorite Button at Top-Right */}
         <button className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
           <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
         </button>
       </div>
-
-      {/* Card Content */}
+      
       <div className="p-5">
         {/* Title & Price Row */}
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
-          <p className="text-lg font-bold text-emerald-600">
+          <p className="text-lg font-bold text-blue-600">
             {forSale ? `$${price.toLocaleString()}` : `$${price.toLocaleString()}/mo`}
           </p>
         </div>
-
+        
         {/* Address & Edit Listing Button */}
         <div className="flex justify-between items-center text-gray-500 mb-4">
           <div className="flex items-center">
             <MapPin className="h-4 w-4 mr-1" />
             <span className="text-sm">{address}</span>
           </div>
-          {/* EDIT LISTING BUTTON
-              Adjust the path below to match your actual edit route.
-              For example: /edit-listing/:id or /create-listing?edit=... */}
           <Link
             to={`/create-listing/${id}`}
             className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
@@ -86,20 +69,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             Edit Listing
           </Link>
         </div>
-
-        {/* Beds, Baths, Area */}
+        
+        {/* Stats: Beds, Baths, Area */}
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
-            <span>
-              {bedrooms} {bedrooms === 1 ? 'Bed' : 'Beds'}
-            </span>
+            <span>{bedrooms} {bedrooms === 1 ? 'Bed' : 'Beds'}</span>
           </div>
           <div className="flex items-center text-gray-700">
             <Bath className="h-5 w-5 mr-2 text-gray-500" />
-            <span>
-              {bathrooms} {bathrooms === 1 ? 'Bath' : 'Baths'}
-            </span>
+            <span>{bathrooms} {bathrooms === 1 ? 'Bath' : 'Baths'}</span>
           </div>
           <div className="flex items-center text-gray-700">
             <Square className="h-5 w-5 mr-2 text-gray-500" />
