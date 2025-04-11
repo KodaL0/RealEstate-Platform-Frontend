@@ -24,7 +24,6 @@ const MyListings = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Assume user is already authenticated. If not, use your user context.
   useEffect(() => {
     const fetchMyListings = async () => {
       try {
@@ -130,13 +129,12 @@ const MyListings = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
-              // Each property card uses the same styling as your public PropertyCard.
               <div
                 key={property.id}
-                className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer border border-gray-200"
-                // Whole card click navigates to the details page.
+                className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
                 onClick={() => navigate(`/property/${property.id}`)}
               >
+                {/* Image Section */}
                 <div className="relative">
                   <img
                     src={property.images[0] || '/placeholder-property.jpg'}
@@ -149,6 +147,7 @@ const MyListings = () => {
                     </span>
                   </div>
                 </div>
+                {/* Details Section */}
                 <div className="p-5" onClick={(e) => e.stopPropagation()}>
                   <div className="flex justify-between items-start mb-2">
                     <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
@@ -165,14 +164,18 @@ const MyListings = () => {
                     </svg>
                     <span className="text-sm">{property.location}</span>
                   </div>
-                  <p className="text-blue-600 font-semibold mb-4">${property.price.toLocaleString()}</p>
-                  <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
-                    <span>{property.bedrooms} beds</span>
-                    <span>{property.bathrooms} baths</span>
-                    <span>{property.area} sqft</span>
+                  <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 mb-4 text-sm text-gray-500">
+                    <div className="flex items-center">
+                      <span>{property.bedrooms} beds</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span>{property.bathrooms} baths</span>
+                    </div>
+                    <div className="flex items-center">
+                      <span>{property.area} sqft</span>
+                    </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    {/* Edit Listing button. Note the stopPropagation so that clicking it does not trigger the card's onClick. */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
