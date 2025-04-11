@@ -5,9 +5,10 @@ import { Property } from '../types';
 interface PropertyCardProps {
   property: Property;
   featured?: boolean;
+  editable?: boolean; // When true, shows the Edit Listing button.
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false, editable = false }) => {
   // Destructure the needed fields.
   // Adjust property_images if your Property type uses another field name.
   const { id, title, price, address, bedrooms, bathrooms, area, property_images, type, forSale } = property;
@@ -22,7 +23,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         <Link to={`/property/${id}`}>
           <img 
             src={property_images} 
-            alt=""  // alt is empty so no fallback text appears
+            alt=""  // No fallback text if the image fails to load.
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
@@ -56,10 +57,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </p>
         </div>
         
-        {/* Address Row */}
-        <div className="flex items-center text-gray-500 mb-4">
-          <MapPin className="h-4 w-4 mr-1" />
-          <span className="text-sm">{address}</span>
+        {/* Address & Conditional Edit Listing Button */}
+        <div className="flex justify-between items-center text-gray-500 mb-4">
+          <div className="flex items-center">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="text-sm">{address}</span>
+          </div>
+          {editable && (
+            <Link
+              to={`/create-listing/${id}`}
+              className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Edit Listing
+            </Link>
+          )}
         </div>
         
         {/* Stats: Beds, Baths, Area */}
