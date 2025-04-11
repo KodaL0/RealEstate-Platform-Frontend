@@ -1,227 +1,353 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import { useParams, Link } from 'react-router-dom';
+import {
+  Heart,
+  Share2,
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  Calendar,
+  Home
+} from 'lucide-react';
+import { apiClient } from '../middleware/auth';
+import { Property } from '../types';
 
-interface Property {
-  id: number;
-  title: string;
-  description: string;
-  price: number;
-  location: string;
-  property_type: string;
-  bedrooms: number;
-  bathrooms: number;
-  area: number;
-  amenities: string[];
-  images: string[];
-  created_at: string;
-  updated_at: string;
-}
+const mapPropertyData = (data: any): Property => {
+  const primaryImage = data.images && data.images.length > 0
+    ? data.images.find((img: any) => img.is_primary) || data.images[0]
+    : null;
 
-const MyListings = () => {
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    price: parseFloat(data.price),
+    location: data.location,
+    property_type: data.property_type,
+    bedrooms: data.bedrooms,
+    bathrooms: parseFloat(data.bathrooms),
+    area: data.area,
+    year_built: data.year_built,
+    parking_spaces: data.parking_spaces,
+    lot_size: data.lot_size,
+    property_status: data.property_status,
+    energy_rating: data.energy_rating,
+    construction_material: data.construction_material,
+    floor_level: data.floor_level,
+    total_floors: data.total_floors,
+    available_from: data.available_from,
+    contact_phone: data.contact_phone,
+    contact_email: data.contact_email,
+    virtual_tour_url: data.virtual_tour_url,
+    video_url: data.video_url,
+    amenities: data.amenities || [],
+    additional_features: data.additional_features || [],
+    owner: data.owner,
+    is_published: data.is_published,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    images: data.images || [],
+  };
+};
+
+const PropertyDetails = () => {
+  const { id } = useParams<{ id: string }>();
+  const [property, setProperty] = useState<Property | null>(null);
+  const [activeImage, setActiveImage] = useState(0);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    const fetchMyListings = async () => {
+    async function fetchPropertyData() {
       try {
-        setLoading(true);
-        const response = await axios.get<Property[]>(
-          'https://propertprodjango.onrender.com/api/properties/my-properties',
-          {
-            withCredentials: true,
-            headers: { 'Content-Type': 'application/json' }
-          }
-        );
-        if (Array.isArray(response.data)) {
-          setProperties(response.data);
-        } else {
-          setProperties([]);
-        }
-        setError(null);
-      } catch (err: any) {
-        console.error('Error fetching listings:', err.response || err);
-        const errorMessage =
-          err?.response?.data?.message ||
-          'Failed to fetch your listings. Please try again later.';
-        if (err?.response?.status === 401) {
-          navigate('/login');
-        } else {
-          setError(errorMessage);
-        }
+        const response = await apiClient.get(`/api/properties/${id}`);
+        console.log('API response:', response.data);
+        const mappedProperty = mapPropertyData(response.data);
+        setProperty(mappedProperty);
+      } catch (error) {
+        console.error("Error fetching property:", error);
       } finally {
         setLoading(false);
       }
-    };
+    }
+    if (id) {
+      fetchPropertyData();
+    }
+  }, [id]);
 
-    fetchMyListings();
-  }, [navigate]);
-
+  // Display a loading indicator while fetching property data.
   if (loading) {
     return (
-      <div className="min-h-screen pt-20 px-4">
-        <div className="container mx-auto flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      <div className="pt-20 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <p className="text-xl text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
-  if (error) {
+  // Once loading is complete, if property is still null, then render "Property Not Found".
+  if (!property) {
     return (
-      <div className="min-h-screen pt-20 px-4">
-        <div className="container mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-            <p className="text-red-600">{error}</p>
-          </div>
+      <div className="pt-20 min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-800 mb-4">Property Not Found</h2>
+          <p className="text-gray-600 mb-6">
+            The property you're looking for doesn't exist or has been removed.
+          </p>
+          <Link
+            to="/"
+            className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Back to Home
+          </Link>
         </div>
       </div>
     );
   }
+
+  // Determine the main image URL and additional images.
+  const mainImageUrl =
+    property.images && property.images.length > 0 ? property.images[activeImage].image : '';
+  const additionalImages =
+    property.images && property.images.length > 0 ? property.images.map(img => img.image) : [];
 
   return (
-    <div className="min-h-screen pt-20 px-4">
-      <div className="container mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
-          <button
-            onClick={() => navigate('/create-listing')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Create New Listing
-          </button>
-        </div>
-
-        {properties.length === 0 ? (
-          <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            <div className="max-w-md mx-auto">
-              <svg
-                className="mx-auto h-16 w-16 text-gray-400 mb-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+    <div className="pt-20 bg-gray-50 min-h-screen">
+      <div className="container mx-auto px-4 py-8">
+        {/* Property Images Section */}
+        <section className="bg-white">
+          <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+            {/* Main Image */}
+            <div className="lg:w-2/3">
+              <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
+                {/* Use alt="" so no fallback text appears */}
+                <img 
+                  src={mainImageUrl} 
+                  alt=""
+                  className="w-full h-full object-cover"
                 />
-              </svg>
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">No Properties Listed Yet</h2>
-              <p className="text-gray-600 mb-8 max-w-sm mx-auto">
-                Get started by creating your first property listing.
-              </p>
-              <button
-                onClick={() => navigate('/create-listing')}
-                className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
-              >
-                <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
-                </svg>
-                Create Your First Listing
-              </button>
-            </div>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <div
-                key={property.id}
-                className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 cursor-pointer"
-                onClick={() => navigate(`/property/${property.id}`)}
-              >
-                {/* Image Section */}
-                <div className="relative">
-                  <img
-                    src={property.images[0] || '/placeholder-property.jpg'}
-                    alt={property.title}
-                    className="w-full h-64 object-cover"
-                  />
-                  {/* Badges: For Sale and Property Type */}
-                  <div className="absolute top-4 left-4 flex space-x-2">
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.forSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
-                      }`}
-                    >
-                      {property.forSale ? 'For Sale' : 'For Rent'}
-                    </span>
-                    <span
-                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.property_type.toLowerCase() === 'apartment'
-                          ? 'bg-gray-900/70 text-white'
-                          : 'bg-blue-600 text-white'
-                      }`}
-                    >
-                      {property.property_type}
-                    </span>
-                  </div>
+                {/* Badges at Top-Left */}
+                <div className="absolute top-4 left-4 flex space-x-2 z-30">
+                  <span
+                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                      property.property_status === 'for_sale'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-blue-500 text-white'
+                    }`}
+                  >
+                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
+                    {property.property_type}
+                  </span>
                 </div>
-
-                {/* Details Section */}
-                <div className="p-5" onClick={(e) => e.stopPropagation()}>
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
-                      {property.title}
-                    </h3>
-                    <p className="text-lg font-bold text-blue-600">
-                      ${property.price.toLocaleString()}
-                    </p>
-                  </div>
-                  <div className="flex items-center text-gray-500 mb-4">
-                    <svg
-                      className="w-4 h-4 mr-1"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                      />
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                      />
-                    </svg>
-                    <span className="text-sm">{property.location}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 mb-4 text-sm text-gray-500">
-                    <div className="flex items-center">
-                      <span>{property.bedrooms} beds</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span>{property.bathrooms} baths</span>
-                    </div>
-                    <div className="flex items-center">
-                      <span>{property.area} sqft</span>
-                    </div>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/create-listing/${property.id}`);
-                      }}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Edit Listing
-                    </button>
-                    <span className="text-sm text-gray-500">
-                      Listed {new Date(property.created_at).toLocaleDateString()}
-                    </span>
-                  </div>
+                {/* Action Buttons at Top-Right */}
+                <div className="absolute top-4 right-4 flex space-x-2 z-30">
+                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
+                    <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
+                  </button>
+                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
+                    <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500 transition-colors" />
+                  </button>
                 </div>
               </div>
-            ))}
+            </div>
+            
+            {/* Thumbnail Grid */}
+            <div className="lg:w-1/3 grid grid-cols-2 gap-4">
+              {additionalImages.slice(1, 5).map((img, index) => (
+                <div 
+                  key={index}
+                  className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
+                  onClick={() => setActiveImage(index + 1)}
+                >
+                  <img 
+                    src={img} 
+                    alt=""
+                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+                  />
+                  {index === 3 && additionalImages.length > 5 && (
+                    <div 
+                      className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                      }}
+                    >
+                      +{additionalImages.length - 5} more
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Property Details Section */}
+        <section className="mt-8">
+          <div className="flex flex-col lg:flex-row lg:space-x-8">
+            {/* Main Content */}
+            <div className="lg:w-2/3">
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
+                  <div>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                      {property.title}
+                    </h1>
+                    <div className="flex items-center text-gray-600 mb-4">
+                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                      <span>{property.location}</span>
+                    </div>
+                  </div>
+                  <div className="mt-4 md:mt-0 text-right">
+                    <p className="text-3xl font-bold text-blue-600">
+                      ${property.price.toLocaleString()}
+                    </p>
+                    {property.property_status === 'for_sale' && (
+                      <p className="text-gray-600 text-sm">
+                        Est. ${Math.round(property.price / 360).toLocaleString()}/mo
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
+                  <div className="flex items-center text-gray-700">
+                    <Bed className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Bath className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Square className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>{property.area.toLocaleString()} sq ft</span>
+                  </div>
+                  <div className="flex items-center text-gray-700">
+                    <Calendar className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>Built in {property.year_built}</span>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
+                  <p className="text-gray-700 leading-relaxed mb-6">
+                    {property.description}
+                  </p>
+                </div>
+              </div>
+
+              {property.amenities && property.amenities.length > 0 && (
+                <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
+                  <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {property.amenities.map((amenity, idx) => (
+                      <div key={idx} className="flex items-center">
+                        <Home className="h-5 w-5 mr-3 text-emerald-600" />
+                        <span>{amenity}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              <div className="bg-white p-6 rounded-xl shadow-sm">
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
+                <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
+                  Interactive Map Would Be Here
+                </div>
+                <div className="flex items-start">
+                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                  <p className="text-gray-700">{property.location}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Sidebar: Schedule a Viewing */}
+            <div className="lg:w-1/3 mt-8 lg:mt-0">
+              <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
+                <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
+                <div className="mb-4">
+                  <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Date
+                  </label>
+                  <input
+                    type="date"
+                    id="date"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
+                    Preferred Time
+                  </label>
+                  <select
+                    id="time"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
+                  >
+                    <option>Morning (9AM - 12PM)</option>
+                    <option>Afternoon (12PM - 4PM)</option>
+                    <option>Evening (4PM - 7PM)</option>
+                  </select>
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                    Your Name
+                  </label>
+                  <input
+                    type="text"
+                    id="name"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="John Doe"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email Address
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="john@example.com"
+                  />
+                </div>
+                <div className="mb-4">
+                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone Number
+                  </label>
+                  <input
+                    type="tel"
+                    id="phone"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="(123) 456-7890"
+                  />
+                </div>
+                <div className="mb-6">
+                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
+                    Message (Optional)
+                  </label>
+                  <textarea
+                    id="message"
+                    rows={3}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                    placeholder="I'm interested in this property and would like to schedule a viewing."
+                  ></textarea>
+                </div>
+                <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition-colors">
+                  Schedule Viewing
+                </button>
+                <div className="mt-4 text-center">
+                  <p className="text-gray-600 text-sm">
+                    or call us at{' '}
+                    <a href="tel:+18001234567" className="text-emerald-600 font-medium">
+                      +1 (800) 123-4567
+                    </a>
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>
