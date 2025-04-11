@@ -53,7 +53,7 @@ const mapPropertyData = (data: any): Property => {
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
-    images: data.property_images || [],
+    images: data.images || [],
   };
 };
 
