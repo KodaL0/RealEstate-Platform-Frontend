@@ -8,10 +8,16 @@ export interface Property {
   bedrooms: number;
   bathrooms: number;
   area: number;
-  property_images: string;
+  imageUrl: string;
   type: string;
   forSale: boolean;
+  builtYear?: number;
+  description?: string;
+  additionalImages?: string[];
+  features?: string[];
+  // ... any additional fields
 }
+
 
 export interface ListingForm {
   title: string;
