@@ -71,7 +71,7 @@ const PropertyDetails = () => {
     );
   }
 
-  // Once data is loaded, if there is no property, display the error message.
+  // Once loading is complete, if no property is found, display an error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -91,11 +91,13 @@ const PropertyDetails = () => {
     );
   }
 
-  // Once loading is complete and property exists, render details.
-  const mainImageUrl =
-    property.images && property.images.length > 0 ? property.images[activeImage].image : '';
-  const additionalImages =
-    property.images && property.images.length > 0 ? property.images.map(img => img.image) : [];
+  // Once data is loaded and property exists, determine images.
+  const mainImageUrl = property.images && property.images.length > 0
+    ? property.images[activeImage].image
+    : '';
+  const additionalImages = property.images && property.images.length > 0
+    ? property.images.map(img => img.image)
+    : [];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -106,20 +108,18 @@ const PropertyDetails = () => {
             {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
-                <img 
-                  src={mainImageUrl} 
+                <img
+                  src={mainImageUrl}
                   alt=""
                   className="w-full h-full object-cover"
                 />
                 {/* Badges at Top-Left */}
                 <div className="absolute top-4 left-4 flex space-x-2 z-30">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === 'for_sale'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-blue-500 text-white'
-                    }`}
-                  >
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    property.property_status === 'for_sale'
+                      ? 'bg-emerald-500 text-white'
+                      : 'bg-blue-500 text-white'
+                  }`}>
                     {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
@@ -137,22 +137,22 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-            
+
             {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
-                <div 
+                <div
                   key={index}
                   className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
                   onClick={() => setActiveImage(index + 1)}
                 >
-                  <img 
-                    src={img} 
+                  <img
+                    src={img}
                     alt=""
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                   />
                   {index === 3 && additionalImages.length > 5 && (
-                    <div 
+                    <div
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -251,7 +251,9 @@ const PropertyDetails = () => {
             {/* Sidebar: Schedule a Viewing */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
+                <h3 className="text-xl font-bold text-gray-900 mb-6">
+                  Schedule a Viewing
+                </h3>
                 <div className="mb-4">
                   <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
                     Preferred Date
@@ -333,7 +335,7 @@ const PropertyDetails = () => {
               </div>
             </div>
           </div>
-        )}
+        </section>
       </div>
     </div>
   );
