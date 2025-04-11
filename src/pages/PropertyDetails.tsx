@@ -26,14 +26,17 @@ const mapPropertyData = (data: any): Property => ({
   bedrooms: data.bedroom_count || data.bedrooms,
   bathrooms: data.bathroom_count || data.bathrooms,
   area: data.property_area || data.area,
-  property_images: data.property_images || data.imageUrl,
+  imageUrl: data.property_image_url || data.imageUrl,
   type: data.property_type || data.type,
   forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
-  yearBuilt: data.year_built, // dynamically fetched
+  // Update this to match the backend field name
+  builtYear: data.year_built, 
   description: data.property_description || data.description,
-  additionalImages: data.additional_images, // dynamic array
-  features: data.features, // dynamic features
+  // Assuming the backend returns an "images" key for additional images
+  additionalImages: data.images || [],
+  features: data.features,
 });
+
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
