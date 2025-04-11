@@ -26,7 +26,7 @@ const mapPropertyData = (data: any): Property => ({
   bedrooms: data.bedroom_count || data.bedrooms,
   bathrooms: data.bathroom_count || data.bathrooms,
   area: data.property_area || data.area,
-  imageUrl: data.property_image_url || data.imageUrl,
+  property_images: data.property_images || data.imageUrl,
   type: data.property_type || data.type,
   forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
   yearBuilt: data.year_built, // dynamically fetched
