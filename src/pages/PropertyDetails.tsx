@@ -1,53 +1,72 @@
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { 
-  Heart, 
-  Share2, 
-  MapPin, 
-  Bed, 
-  Bath, 
-  Square, 
-  Calendar, 
-  Home, 
-  Car, 
-  Wifi, 
-  Droplets, 
-  Thermometer, 
-  Shield 
+import {
+  Heart,
+  Share2,
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  Calendar,
+  Home,
+  Car,
+  Wifi,
+  Droplets,
+  Thermometer,
+  Shield
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 
-const mapPropertyData = (data: any): Property => ({
-  id: data.id,
-  title: data.property_title || data.title,
-  price: data.property_price || data.price,
-  address: data.property_address || data.address,
-  bedrooms: data.bedroom_count || data.bedrooms,
-  bathrooms: data.bathroom_count || data.bathrooms,
-  area: data.property_area || data.area,
-  imageUrl: data.property_image_url || data.imageUrl,
-  type: data.property_type || data.type,
-  forSale: data.is_for_sale !== undefined ? data.is_for_sale : data.forSale,
-  // Update this to match the backend field name
-  builtYear: data.year_built, 
-  description: data.property_description || data.description,
-  // Assuming the backend returns an "images" key for additional images
-  additionalImages: data.images || [],
-  features: data.features,
-});
+const mapPropertyData = (data: any): Property => {
+  // Get the primary image (if any) using the is_primary flag.
+  const primaryImage = data.images && data.images.length > 0
+    ? data.images.find((img: any) => img.is_primary) || data.images[0]
+    : null;
 
+  return {
+    id: data.id,
+    title: data.title,
+    description: data.description,
+    price: parseFloat(data.price),
+    location: data.location,
+    property_type: data.property_type,
+    bedrooms: data.bedrooms,
+    bathrooms: parseFloat(data.bathrooms),
+    area: data.area,
+    year_built: data.year_built,
+    parking_spaces: data.parking_spaces,
+    lot_size: data.lot_size,
+    property_status: data.property_status,
+    energy_rating: data.energy_rating,
+    construction_material: data.construction_material,
+    floor_level: data.floor_level,
+    total_floors: data.total_floors,
+    available_from: data.available_from,
+    contact_phone: data.contact_phone,
+    contact_email: data.contact_email,
+    virtual_tour_url: data.virtual_tour_url,
+    video_url: data.video_url,
+    amenities: data.amenities || [],
+    additional_features: data.additional_features || [],
+    owner: data.owner,
+    is_published: data.is_published,
+    created_at: data.created_at,
+    updated_at: data.updated_at,
+    images: data.property_images || [],
+  };
+};
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [showAllImages, setShowAllImages] = useState(false);
 
   useEffect(() => {
     async function fetchPropertyData() {
       try {
         const response = await apiClient.get(`/api/properties/${id}`);
+        console.log('API response:', response.data);
         const mappedProperty = mapPropertyData(response.data);
         setProperty(mappedProperty);
       } catch (error) {
@@ -59,6 +78,7 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
+  // Fallback: If property is not found, display error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -73,17 +93,15 @@ const PropertyDetails = () => {
     );
   }
 
-  // Define property type display text
-  const propertyTypeDisplay = property.type?.toLowerCase() || 'property';
+  // Determine the main image URL using the activeImage index from the images array.
+  const mainImageUrl = property.images && property.images.length > 0 
+    ? property.images[activeImage].image 
+    : '';
 
-  // Use dynamic images if provided; fallback to a default array if needed.
-  const additionalImages = property.additionalImages && property.additionalImages.length > 0 
-    ? property.additionalImages 
-    : [
-        property.imageUrl,
-        "https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80",
-        "https://images.unsplash.com/photo-1600607687939-ce8a6c25118c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2053&q=80"
-      ];
+  // Prepare additional images array for thumbnail grid.
+  const additionalImages = property.images && property.images.length > 0 
+    ? property.images.map(img => img.image)
+    : [];
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -91,19 +109,20 @@ const PropertyDetails = () => {
       <section className="bg-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+            {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img 
-                  src={additionalImages[activeImage]} 
+                  src={mainImageUrl} 
                   alt={property.title} 
                   className="w-full h-full object-cover"
                 />
                 <div className="absolute top-4 left-4 flex space-x-2">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${property.forSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
-                    {property.forSale ? 'For Sale' : 'For Rent'}
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}`}>
+                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-                    {property.type}
+                    {property.property_type}
                   </span>
                 </div>
                 <div className="absolute top-4 right-4 flex space-x-2">
@@ -116,7 +135,7 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-
+            
             {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
@@ -135,7 +154,7 @@ const PropertyDetails = () => {
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
                       onClick={(e) => {
                         e.stopPropagation();
-                        setShowAllImages(true);
+                        // Optionally: open a modal to show all images.
                       }}
                     >
                       +{additionalImages.length - 5} more
@@ -159,14 +178,14 @@ const PropertyDetails = () => {
                   <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
                   <div className="flex items-center text-gray-600 mb-4">
                     <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.address}</span>
+                    <span>{property.location}</span>
                   </div>
                 </div>
                 <div className="mt-4 md:mt-0">
                   <p className="text-3xl font-bold text-emerald-600">
-                    {property.forSale ? `$${property.price.toLocaleString()}` : `$${property.price.toLocaleString()}/mo`}
+                    ${property.price.toLocaleString()}
                   </p>
-                  {property.forSale && property.price && (
+                  {property.property_status === 'for_sale' && property.price && (
                     <p className="text-gray-600 text-sm">
                       Est. ${Math.round(property.price / 360).toLocaleString()}/mo
                     </p>
@@ -177,73 +196,60 @@ const PropertyDetails = () => {
               <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
                 <div className="flex items-center">
                   <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                  <div>
-                    <p className="font-medium">{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</p>
-                  </div>
+                  <p className="font-medium">{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</p>
                 </div>
                 <div className="flex items-center">
                   <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                  <div>
-                    <p className="font-medium">{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</p>
-                  </div>
+                  <p className="font-medium">{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</p>
                 </div>
                 <div className="flex items-center">
                   <Square className="h-5 w-5 mr-2 text-gray-500" />
-                  <div>
-                    <p className="font-medium">{property.area.toLocaleString()} sq ft</p>
-                  </div>
+                  <p className="font-medium">{property.area.toLocaleString()} sq ft</p>
                 </div>
                 <div className="flex items-center">
                   <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                  <div>
-                    {/* Dynamic built year */}
-                    <p className="font-medium">
-                      Built in {property.builtYear || 'N/A'}
-                    </p>
-                  </div>
+                  <p className="font-medium">Built in {property.year_built}</p>
                 </div>
               </div>
               
               <div className="mt-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  {property.description || `This stunning ${propertyTypeDisplay} offers the perfect blend of luxury and comfort. With ${property.bedrooms} bedrooms and ${property.bathrooms} bathrooms, this property is designed to elevate your lifestyle.`}
+                  {property.description}
                 </p>
               </div>
             </div>
             
-            {/* Dynamically Render Features if Available */}
-            {property.features && property.features.length > 0 && (
+            {/* Features & Amenities */}
+            {property.amenities && property.amenities.length > 0 && (
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Features &amp; Amenities</h2>
+                <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {property.features.map((feature, idx) => (
+                  {property.amenities.map((amenity, idx) => (
                     <div key={idx} className="flex items-center">
-                      {/* You could decide which icon to show based on the feature */}
                       <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                      <span>{feature}</span>
+                      <span>{amenity}</span>
                     </div>
                   ))}
                 </div>
               </div>
             )}
             
+            {/* Location */}
             <div className="bg-white p-6 rounded-xl shadow-sm">
               <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-              <div className="h-80 bg-gray-200 rounded-lg mb-4">
-                {/* Replace this static placeholder with a dynamic map component */}
-                <div className="h-full w-full flex items-center justify-center bg-gray-200 text-gray-500">
-                  Interactive Map Would Be Here
-                </div>
+              <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
+                {/* Replace with a real map component if available */}
+                Interactive Map Would Be Here
               </div>
               <div className="flex items-start">
-                <MapPin className="h-5 w-5 mr-2 text-gray-500 mt-0.5" />
-                <p className="text-gray-700">{property.address}</p>
+                <MapPin className="h-5 w-5 mr-2 text-gray-500" />
+                <p className="text-gray-700">{property.location}</p>
               </div>
             </div>
           </div>
           
-          {/* Sidebar: Schedule a Viewing - Remains Static for now */}
+          {/* Sidebar: Schedule a Viewing (static for now) */}
           <div className="lg:w-1/3 mt-8 lg:mt-0">
             <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
               <h3 className="text-xl font-bold text-gray-900 mb-6">Schedule a Viewing</h3>
