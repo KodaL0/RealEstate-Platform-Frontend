@@ -24,19 +24,18 @@ const MyListings = () => {
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  // Assume useUser() returns the currently logged-in user. Omitted here for brevity.
-  // const { user, isLoading: userLoading } = useUser();
-
+  // Assume user is already authenticated. If not, use your user context.
   useEffect(() => {
-    // For demo purposes, we assume the user is already loaded.
     const fetchMyListings = async () => {
       try {
         setLoading(true);
-        // Let the browser automatically send cookies (which include your token)
-        const response = await axios.get<Property[]>('https://propertprodjango.onrender.com/api/properties/my-properties', {
-          withCredentials: true,
-          headers: { 'Content-Type': 'application/json' }
-        });
+        const response = await axios.get<Property[]>(
+          'https://propertprodjango.onrender.com/api/properties/my-properties',
+          {
+            withCredentials: true,
+            headers: { 'Content-Type': 'application/json' }
+          }
+        );
         if (Array.isArray(response.data)) {
           setProperties(response.data);
         } else {
@@ -45,7 +44,9 @@ const MyListings = () => {
         setError(null);
       } catch (err: any) {
         console.error('Error fetching listings:', err.response || err);
-        const errorMessage = err?.response?.data?.message || 'Failed to fetch your listings. Please try again later.';
+        const errorMessage =
+          err?.response?.data?.message ||
+          'Failed to fetch your listings. Please try again later.';
         if (err?.response?.status === 401) {
           navigate('/login');
         } else {
@@ -129,32 +130,41 @@ const MyListings = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {properties.map((property) => (
+              // Each property card uses the same styling as your public PropertyCard.
               <div
                 key={property.id}
-                className="bg-white rounded-lg shadow-md overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow cursor-pointer"
+                className="bg-white rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow duration-300 cursor-pointer border border-gray-200"
+                // Whole card click navigates to the details page.
                 onClick={() => navigate(`/property/${property.id}`)}
               >
-                <div className="relative h-48">
+                <div className="relative">
                   <img
                     src={property.images[0] || '/placeholder-property.jpg'}
                     alt={property.title}
-                    className="w-full h-full object-cover"
+                    className="w-full h-64 object-cover"
                   />
-                  <div className="absolute top-0 right-0 m-2">
-                    <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm">
+                  <div className="absolute top-4 left-4 flex space-x-2">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-500 text-white">
                       {property.property_type}
                     </span>
                   </div>
                 </div>
-                <div className="p-4" onClick={(e) => e.stopPropagation()}>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">{property.title}</h3>
-                  <p className="text-gray-600 mb-2 flex items-center">
+                <div className="p-5" onClick={(e) => e.stopPropagation()}>
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
+                      {property.title}
+                    </h3>
+                    <p className="text-lg font-bold text-blue-600">
+                      ${property.price.toLocaleString()}
+                    </p>
+                  </div>
+                  <div className="flex items-center text-gray-500 mb-4">
                     <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    {property.location}
-                  </p>
+                    <span className="text-sm">{property.location}</span>
+                  </div>
                   <p className="text-blue-600 font-semibold mb-4">${property.price.toLocaleString()}</p>
                   <div className="flex justify-between items-center text-sm text-gray-500 mb-4">
                     <span>{property.bedrooms} beds</span>
@@ -162,8 +172,7 @@ const MyListings = () => {
                     <span>{property.area} sqft</span>
                   </div>
                   <div className="flex justify-between items-center">
-                    {/* Removed "View Details" button since the entire card is clickable.
-                        Added "Edit Listing" button. StopPropagation ensures clicking it doesn't trigger card onClick. */}
+                    {/* Edit Listing button. Note the stopPropagation so that clicking it does not trigger the card's onClick. */}
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
