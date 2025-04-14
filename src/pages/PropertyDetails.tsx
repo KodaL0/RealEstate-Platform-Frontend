@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
-import { Property } from '../types';
+import { Property, PropertyImage } from '../types';
 
 const mapPropertyData = (data: any): Property => {
   return {
