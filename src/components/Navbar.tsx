@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, Search, User, ChevronDown, Building2, Plus } from "lucide-react";
+import { Menu, X, User, ChevronDown, Building2, Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
 // Import apiClient from your authentication module
 import { apiClient, logout as authLogout } from "../middleware/auth";
@@ -120,10 +120,7 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            <button className="p-2 rounded-full hover:bg-gray-100 transition-colors">
-              <Search className="h-5 w-5 text-white-700" />
-            </button>
-
+            {/* Removed the Search button */}
             {user ? (
               <div className="relative group">
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
