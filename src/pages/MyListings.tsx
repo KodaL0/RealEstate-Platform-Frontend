@@ -292,7 +292,7 @@ const MyListings = () => {
             </div>
   
             {/* Pagination Controls */}
-            <div className="flex justify-center items-center mt-8 space-x-4">
+            <div className="flex justify-center items-center mt-8 space-x-4 mb-12">
               <button
                 onClick={handlePrevious}
                 disabled={currentPage === 1}
