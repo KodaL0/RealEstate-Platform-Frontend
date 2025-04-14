@@ -3,7 +3,18 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property, PropertyImage } from '../types';
-import MapView from '../components/MapView'; // Make sure the path is correct relative to your file structure
+import MapView from '../components/MapView'; // Adjust the path based on your file structure
+
+// Geocoding function using Nominatim
+async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
+  const encodedAddress = encodeURIComponent(address);
+  const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json`);
+  const data = await response.json();
+  if (data && data.length > 0) {
+    return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
+  }
+  throw new Error('Geocoding failed');
+}
 
 const mapPropertyData = (data: any): Property => {
   return {
@@ -32,9 +43,9 @@ const mapPropertyData = (data: any): Property => {
     amenities: data.amenities || [],
     additional_features: data.additional_features || [],
     owner: data.owner, // ensure owner data includes fields like name, phone, and email
-    // Ensure the API returns these coordinates for the property
-    latitude: data.latitude,
-    longitude: data.longitude,
+    // Coordinates are not provided in the API response:
+    // latitude: data.latitude,
+    // longitude: data.longitude,
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -45,6 +56,7 @@ const mapPropertyData = (data: any): Property => {
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
 
@@ -55,6 +67,18 @@ const PropertyDetails = () => {
         console.log('API response:', response.data);
         const mappedProperty = mapPropertyData(response.data);
         setProperty(mappedProperty);
+        // If no latitude/longitude is provided, geocode the address
+        if (!response.data.latitude && mappedProperty.location) {
+          try {
+            const geocoded = await geocodeAddress(mappedProperty.location);
+            setCoords(geocoded);
+          } catch (error) {
+            console.error("Error geocoding address:", error);
+          }
+        } else {
+          // If API had provided coordinates, you could set them here
+          // setCoords({ lat: response.data.latitude, lng: response.data.longitude });
+        }
       } catch (error) {
         console.error("Error fetching property:", error);
       } finally {
@@ -242,8 +266,8 @@ const PropertyDetails = () => {
 
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-                {property.latitude && property.longitude ? (
-                  <MapView lat={property.latitude} lng={property.longitude} />
+                {coords ? (
+                  <MapView lat={coords.lat} lng={coords.lng} />
                 ) : (
                   <p className="text-gray-600">Location coordinates not available.</p>
                 )}
@@ -286,12 +310,6 @@ const PropertyDetails = () => {
                             {property.owner.email}
                           </a>
                         </p>
-                      </div>
-                    )}
-                    {property.owner.additionalInfo && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Additional Info</p>
-                        <p className="text-gray-900 font-medium">{property.owner.additionalInfo}</p>
                       </div>
                     )}
                   </div>
