@@ -15,7 +15,7 @@ interface Property {
   bathrooms: number;
   area: number;
   amenities: string[];
-  images: { image: string }[];  // Assumes images is an array of objects with an "image" property.
+  images: { image: string }[]; // Assumes each image is an object with an "image" field.
   created_at: string;
   updated_at: string;
   property_status: string;
@@ -23,7 +23,7 @@ interface Property {
 
 const MyListings = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -61,6 +61,24 @@ const MyListings = () => {
 
     fetchMyListings();
   }, [navigate]);
+
+  // Handler for removing a listing.
+  const handleRemove = async (id: number) => {
+    if (!window.confirm("Are you sure you want to remove this listing?")) return;
+    try {
+      await axios.delete(`https://propertprodjango.onrender.com/api/properties/delete/${id}`, {
+        withCredentials: true,
+      });
+      setProperties(prev => prev.filter(property => property.id !== id));
+      // Optionally show a success message.
+    } catch (err: any) {
+      console.error("Error removing listing:", err.response || err);
+      const errorMessage =
+        err?.response?.data?.message ||
+        'Failed to remove listing. Please try again later.';
+      setError(errorMessage);
+    }
+  };
 
   if (loading) {
     return (
@@ -216,15 +234,26 @@ const MyListings = () => {
                     </div>
                   </div>
                   <div className="flex justify-between items-center">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        navigate(`/edit-listing/${property.id}`);
-                      }}
-                      className="text-blue-600 hover:text-blue-700 font-medium"
-                    >
-                      Edit Listing
-                    </button>
+                    <div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          navigate(`/edit-listing/${property.id}`);
+                        }}
+                        className="text-blue-600 hover:text-blue-700 font-medium"
+                      >
+                        Edit Listing
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleRemove(property.id);
+                        }}
+                        className="ml-4 text-red-600 hover:text-red-700 font-medium"
+                      >
+                        Remove Listing
+                      </button>
+                    </div>
                     <span className="text-sm text-gray-500">
                       Listed {new Date(property.created_at).toLocaleDateString()}
                     </span>
