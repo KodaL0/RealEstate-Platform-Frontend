@@ -104,6 +104,9 @@ const CreateListing = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   
+  // New state to store the index of the primary image
+  const [primaryIndex, setPrimaryIndex] = useState<number>(0);
+  
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
     description: '',
@@ -137,7 +140,6 @@ const CreateListing = () => {
       ...prev,
       images: [...prev.images, ...acceptedFiles]
     }));
-
     const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
     setPreviewImages(prev => [...prev, ...newPreviews]);
   }, []);
@@ -160,6 +162,14 @@ const CreateListing = () => {
     
     URL.revokeObjectURL(previewImages[index]);
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
+
+    // If the removed image was the primary, reset primaryIndex
+    if (index === primaryIndex) {
+      setPrimaryIndex(0);
+    } else if (index < primaryIndex) {
+      // Adjust primary index if an earlier image is removed
+      setPrimaryIndex(prev => prev - 1);
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -219,6 +229,7 @@ const CreateListing = () => {
     
     try {
       const formDataToSend = new FormData();
+      // Append all form data entries
       Object.entries(formData).forEach(([key, value]) => {
         if (key === 'images') {
           (value as File[]).forEach((file) => {
@@ -233,13 +244,15 @@ const CreateListing = () => {
         }
       });
       
+      // Append the primary image index
+      formDataToSend.append('primaryIndex', primaryIndex.toString());
+      
       console.log("FormData entries:");
       for (let [key, val] of formDataToSend.entries()) {
         console.log(key, val);
       }
       
       console.log("Sending property creation request...");
-      // Use apiClient here instead of axios.post
       const response = await apiClient.post(
         '/api/properties/create_property/',
         formDataToSend,
@@ -251,7 +264,6 @@ const CreateListing = () => {
       );
       
       console.log("Response received:", response);
-      // Adjust status check if your backend returns 200, 201, or both
       if (response.status === 200 || response.status === 201) {
         toast.success('Listing created successfully!');
         navigate('/my-listings');
@@ -524,7 +536,7 @@ const CreateListing = () => {
                       <img
                         src={preview}
                         alt={`Preview ${index + 1}`}
-                        className="h-24 w-full object-cover rounded-lg"
+                        className={`h-24 w-full object-cover rounded-lg ${index === primaryIndex ? 'border-4 border-blue-500' : ''}`}
                       />
                       <button
                         type="button"
@@ -532,6 +544,13 @@ const CreateListing = () => {
                         className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setPrimaryIndex(index)}
+                        className="absolute bottom-1 left-1 bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                      >
+                        Set as Primary
                       </button>
                     </div>
                   ))}
