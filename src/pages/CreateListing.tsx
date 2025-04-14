@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 import { 
@@ -45,7 +45,7 @@ interface ListingForm {
   additionalFeatures: string[];
 }
 
-// Lists for select options and checkboxes
+// Options for selects and checkboxes
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
@@ -100,13 +100,15 @@ const ADDITIONAL_FEATURES = [
 
 const CreateListing = () => {
   const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditing = Boolean(id);
+
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  
-  // New state to store the index of the primary image
+  // New state to store the index of the primary image.
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
-  
+  // State for the form data.
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
     description: '',
@@ -134,6 +136,7 @@ const CreateListing = () => {
     additionalFeatures: []
   });
 
+  // Dropzone handler.
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
@@ -146,41 +149,35 @@ const CreateListing = () => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
-    },
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 10,
     maxSize: 5242880
   });
 
+  // Remove image handler.
   const removeImage = (index: number) => {
     console.log("Removing image at index:", index);
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
-    
     URL.revokeObjectURL(previewImages[index]);
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
-
-    // If the removed image was the primary, reset primaryIndex
     if (index === primaryIndex) {
       setPrimaryIndex(0);
     } else if (index < primaryIndex) {
-      // Adjust primary index if an earlier image is removed
       setPrimaryIndex(prev => prev - 1);
     }
   };
 
+  // Handle input changes.
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     console.log(`Input changed: ${name} = ${value}`);
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
   };
 
+  // Handle checkbox toggle.
   const handleCheckboxChange = (id: string, type: 'amenities' | 'additionalFeatures') => {
     console.log(`Checkbox toggled: ${id} in ${type}`);
     setFormData(prev => {
@@ -188,14 +185,11 @@ const CreateListing = () => {
       const updatedArray = currentArray.includes(id)
         ? currentArray.filter(item => item !== id)
         : [...currentArray, id];
-      
-      return {
-        ...prev,
-        [type]: updatedArray
-      };
+      return { ...prev, [type]: updatedArray };
     });
   };
 
+  // Validate form fields.
   const validateForm = (): boolean => {
     console.log("Validating form...", formData);
     if (!formData.images.length) {
@@ -217,6 +211,54 @@ const CreateListing = () => {
     return true;
   };
 
+  // If in edit mode, fetch the existing listing data and pre-populate the form.
+  useEffect(() => {
+    if (isEditing && id) {
+      setIsSubmitting(true);
+      apiClient.get(`/api/properties/${id}`)
+        .then(response => {
+          const data = response.data;
+          console.log("Fetched listing for edit:", data);
+          setFormData({
+            title: data.title || '',
+            description: data.description || '',
+            price: data.price || '',
+            location: data.location || '',
+            propertyType: data.property_type || '',
+            bedrooms: data.bedrooms?.toString() || '',
+            bathrooms: data.bathrooms?.toString() || '',
+            area: data.area?.toString() || '',
+            images: [], // Images might be handled separately
+            amenities: data.amenities || [],
+            yearBuilt: data.year_built?.toString() || '',
+            parkingSpaces: data.parking_spaces?.toString() || '',
+            lotSize: data.lot_size || '',
+            propertyStatus: data.property_status || '',
+            energyRating: data.energy_rating || '',
+            constructionMaterial: data.construction_material || '',
+            floorLevel: data.floor_level || '',
+            totalFloors: data.total_floors || '',
+            availableFrom: data.available_from || '',
+            contactPhone: data.contact_phone || '',
+            contactEmail: data.contact_email || '',
+            virtualTourUrl: data.virtual_tour_url || '',
+            videoUrl: data.video_url || '',
+            additionalFeatures: data.additional_features || []
+          });
+          // Optionally, set default primary image index if your backend provides image order.
+          setPrimaryIndex(0);
+        })
+        .catch(error => {
+          console.error("Error fetching listing for edit:", error);
+          toast.error("Could not load listing data for editing");
+        })
+        .finally(() => {
+          setIsSubmitting(false);
+        });
+    }
+  }, [isEditing, id]);
+
+  // Handle form submission.
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("handleSubmit fired");
@@ -229,22 +271,30 @@ const CreateListing = () => {
     
     try {
       const formDataToSend = new FormData();
-      // Append all form data entries
+      
+      // Option A: Reorder images so that the primary image is first.
+      const rearrangedImages = [
+        formData.images[primaryIndex],
+        ...formData.images.filter((_, idx) => idx !== primaryIndex)
+      ];
+      rearrangedImages.forEach(file => {
+        formDataToSend.append('images[]', file);
+      });
+      
+      // Append other form data entries.
       Object.entries(formData).forEach(([key, value]) => {
-        if (key === 'images') {
-          (value as File[]).forEach((file) => {
-            formDataToSend.append('images[]', file);
-          });
-        } else if (Array.isArray(value)) {
-          (value as string[]).forEach(item => {
-            formDataToSend.append(`${key}[]`, item);
-          });
-        } else if (value) {
-          formDataToSend.append(key, value);
+        if (key !== 'images') {
+          if (Array.isArray(value)) {
+            (value as string[]).forEach(item => {
+              formDataToSend.append(`${key}[]`, item);
+            });
+          } else if (value) {
+            formDataToSend.append(key, value);
+          }
         }
       });
       
-      // Append the primary image index
+      // Also send the primary index if your backend uses it.
       formDataToSend.append('primaryIndex', primaryIndex.toString());
       
       console.log("FormData entries:");
@@ -252,20 +302,16 @@ const CreateListing = () => {
         console.log(key, val);
       }
       
-      console.log("Sending property creation request...");
-      const response = await apiClient.post(
-        '/api/properties/create_property/',
-        formDataToSend,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
-      );
+      // Decide endpoint based on mode.
+      const endpoint = isEditing ? `/api/properties/edit/${id}` : '/api/properties/create_property/';
+      console.log("Sending property creation/edit request to:", endpoint);
+      const response = await apiClient.post(endpoint, formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
       
       console.log("Response received:", response);
       if (response.status === 200 || response.status === 201) {
-        toast.success('Listing created successfully!');
+        toast.success(isEditing ? 'Listing updated successfully!' : 'Listing created successfully!');
         navigate('/my-listings');
       } else {
         console.warn('Unexpected status code:', response.status);
@@ -273,13 +319,18 @@ const CreateListing = () => {
     } catch (error: any) {
       console.error("Error in handleSubmit:", error);
       const err = error as { response?: { data?: { error?: string } } };
-      const errorMessage = err.response?.data?.error || 'An error occurred while creating the listing';
+      const errorMessage = err.response?.data?.error || 'An error occurred while processing the listing';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  if (isEditing && isSubmitting) {
+    // Display a loading state while fetching edit data.
+    return <div className="min-h-screen flex items-center justify-center">Loading listing data...</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
@@ -288,9 +339,11 @@ const CreateListing = () => {
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <h1 className="text-3xl font-bold text-white flex items-center">
               <Home className="mr-3 h-8 w-8" />
-              Create New Property Listing
+              {isEditing ? 'Edit Property Listing' : 'Create New Property Listing'}
             </h1>
-            <p className="text-blue-100 mt-2">Fill in the details below to list your property</p>
+            <p className="text-blue-100 mt-2">
+              {isEditing ? 'Update the details below to modify your property listing' : 'Fill in the details below to list your property'}
+            </p>
           </div>
   
           {error && (
@@ -307,6 +360,7 @@ const CreateListing = () => {
           )}
   
           <form onSubmit={handleSubmit} className="p-8 space-y-10">
+            {/* Basic Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -325,7 +379,6 @@ const CreateListing = () => {
                     placeholder="e.g., Luxurious Waterfront Penthouse"
                   />
                 </div>
-                
                 <div>
                   <label htmlFor="propertyStatus" className="block text-sm font-medium text-gray-700 mb-1">
                     Listing Type
@@ -346,7 +399,6 @@ const CreateListing = () => {
                     ))}
                   </select>
                 </div>
-  
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                     Price
@@ -367,7 +419,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-  
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                     Location
@@ -389,6 +440,7 @@ const CreateListing = () => {
               </div>
             </section>
   
+            {/* Property Details Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -415,7 +467,6 @@ const CreateListing = () => {
                     </select>
                   </div>
                 </div>
-  
                 <div>
                   <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bedrooms
@@ -435,7 +486,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-  
                 <div>
                   <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bathrooms
@@ -456,7 +506,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-  
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
                     Living Area (sq ft)
@@ -476,7 +525,6 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
-  
                 <div>
                   <label htmlFor="yearBuilt" className="block text-sm font-medium text-gray-700 mb-1">
                     Year Built
@@ -493,7 +541,6 @@ const CreateListing = () => {
                     placeholder="Year of construction"
                   />
                 </div>
-  
                 <div>
                   <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
                     Lot Size (sq ft)
@@ -512,6 +559,7 @@ const CreateListing = () => {
               </div>
             </section>
   
+            {/* Property Images Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
               <div 
@@ -547,7 +595,10 @@ const CreateListing = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPrimaryIndex(index)}
+                        onClick={() => {
+                          setPrimaryIndex(index);
+                          console.log("Set primary index:", index);
+                        }}
                         className="absolute bottom-1 left-1 bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                       >
                         Set as Primary
@@ -558,6 +609,7 @@ const CreateListing = () => {
               )}
             </section>
   
+            {/* Amenities Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -578,6 +630,7 @@ const CreateListing = () => {
               </div>
             </section>
   
+            {/* Additional Features Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Features</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -598,6 +651,7 @@ const CreateListing = () => {
               </div>
             </section>
   
+            {/* Description Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
@@ -612,6 +666,7 @@ const CreateListing = () => {
               />
             </section>
   
+            {/* Contact Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -648,6 +703,7 @@ const CreateListing = () => {
               </div>
             </section>
   
+            {/* Virtual Tour & Video Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -688,19 +744,17 @@ const CreateListing = () => {
                 disabled={isSubmitting}
                 className={`
                   flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
-                  ${isSubmitting 
-                    ? 'bg-blue-400 cursor-not-allowed' 
-                    : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'}
+                  ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'}
                   transition-colors duration-200 shadow-lg
                 `}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin -ml-1 mr-3 h-6 w-6" />
-                    Creating Listing...
+                    {isEditing ? 'Updating Listing...' : 'Creating Listing...'}
                   </>
                 ) : (
-                  'Create Listing'
+                  isEditing ? 'Update Listing' : 'Create Listing'
                 )}
               </button>
             </div>
