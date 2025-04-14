@@ -30,7 +30,7 @@ const mapPropertyData = (data: any): Property => {
     video_url: data.video_url,
     amenities: data.amenities || [],
     additional_features: data.additional_features || [],
-    owner: data.owner,
+    owner: data.owner, // ensure owner data includes fields like name, phone, and email
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -91,7 +91,7 @@ const PropertyDetails = () => {
     );
   }
 
-  // Once data is loaded and property exists, determine images.
+  // Determine main and additional images.
   const mainImageUrl = property.images && property.images.length > 0
     ? property.images[activeImage].image
     : '';
@@ -248,90 +248,50 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* Sidebar: Schedule a Viewing */}
+            {/* Sidebar: Listing Owner Information */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">
-                  Schedule a Viewing
+                  Listing Owner
                 </h3>
-                <div className="mb-4">
-                  <label htmlFor="date" className="block text-sm font-medium text-gray-700 mb-1">
-                    Preferred Date
-                  </label>
-                  <input
-                    type="date"
-                    id="date"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="time" className="block text-sm font-medium text-gray-700 mb-1">
-                    Preferred Time
-                  </label>
-                  <select
-                    id="time"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
-                  >
-                    <option>Morning (9AM - 12PM)</option>
-                    <option>Afternoon (12PM - 4PM)</option>
-                    <option>Evening (4PM - 7PM)</option>
-                  </select>
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                    Your Name
-                  </label>
-                  <input
-                    type="text"
-                    id="name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="John Doe"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email Address
-                  </label>
-                  <input
-                    type="email"
-                    id="email"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="john@example.com"
-                  />
-                </div>
-                <div className="mb-4">
-                  <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone Number
-                  </label>
-                  <input
-                    type="tel"
-                    id="phone"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="(123) 456-7890"
-                  />
-                </div>
-                <div className="mb-6">
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                    Message (Optional)
-                  </label>
-                  <textarea
-                    id="message"
-                    rows={3}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-                    placeholder="I'm interested in this property and would like to schedule a viewing."
-                  ></textarea>
-                </div>
-                <button className="w-full bg-emerald-600 hover:bg-emerald-700 text-white py-3 rounded-lg font-medium transition-colors">
-                  Schedule Viewing
-                </button>
-                <div className="mt-4 text-center">
-                  <p className="text-gray-600 text-sm">
-                    or call us at{' '}
-                    <a href="tel:+18001234567" className="text-emerald-600 font-medium">
-                      +1 (800) 123-4567
-                    </a>
-                  </p>
-                </div>
+                {property.owner ? (
+                  <div className="space-y-4">
+                    {property.owner.name && (
+                      <div>
+                        <p className="text-gray-500 text-sm uppercase">Name</p>
+                        <p className="text-gray-900 font-medium">{property.owner.name}</p>
+                      </div>
+                    )}
+                    {property.owner.phone && (
+                      <div>
+                        <p className="text-gray-500 text-sm uppercase">Phone</p>
+                        <p className="text-gray-900 font-medium">
+                          <a href={`tel:${property.owner.phone}`} className="text-emerald-600">
+                            {property.owner.phone}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    {property.owner.email && (
+                      <div>
+                        <p className="text-gray-500 text-sm uppercase">Email</p>
+                        <p className="text-gray-900 font-medium">
+                          <a href={`mailto:${property.owner.email}`} className="text-emerald-600">
+                            {property.owner.email}
+                          </a>
+                        </p>
+                      </div>
+                    )}
+                    {property.owner.additionalInfo && (
+                      <div>
+                        <p className="text-gray-500 text-sm uppercase">Additional Info</p>
+                        <p className="text-gray-900 font-medium">{property.owner.additionalInfo}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-gray-600">Owner details not available.</p>
+                )}
               </div>
             </div>
           </div>
