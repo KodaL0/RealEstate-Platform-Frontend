@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property, PropertyImage } from '../types';
+import MapView from './MapView'; // Make sure the path is correct relative to your file structure
 
 const mapPropertyData = (data: any): Property => {
   return {
@@ -31,6 +32,9 @@ const mapPropertyData = (data: any): Property => {
     amenities: data.amenities || [],
     additional_features: data.additional_features || [],
     owner: data.owner, // ensure owner data includes fields like name, phone, and email
+    // Ensure the API returns these coordinates for the property
+    latitude: data.latitude,
+    longitude: data.longitude,
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -238,10 +242,12 @@ const PropertyDetails = () => {
 
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-                <div className="h-80 bg-gray-200 rounded-lg mb-4 flex items-center justify-center text-gray-500">
-                  Interactive Map Would Be Here
-                </div>
-                <div className="flex items-start">
+                {property.latitude && property.longitude ? (
+                  <MapView lat={property.latitude} lng={property.longitude} />
+                ) : (
+                  <p className="text-gray-600">Location coordinates not available.</p>
+                )}
+                <div className="flex items-start mt-4">
                   <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                   <p className="text-gray-700">{property.location}</p>
                 </div>
