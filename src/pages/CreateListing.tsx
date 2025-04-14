@@ -45,7 +45,6 @@ interface ListingForm {
   additionalFeatures: string[];
 }
 
-// Options for selects and checkboxes
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
@@ -103,12 +102,14 @@ const CreateListing = () => {
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
 
+  // Separate state for loading listing data
+  const [loadingListing, setLoadingListing] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  // New state to store the index of the primary image.
+  // State for primary image selection
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
-  // State for the form data.
+  // Form data state
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
     description: '',
@@ -136,7 +137,6 @@ const CreateListing = () => {
     additionalFeatures: []
   });
 
-  // Dropzone handler.
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
@@ -154,7 +154,6 @@ const CreateListing = () => {
     maxSize: 5242880
   });
 
-  // Remove image handler.
   const removeImage = (index: number) => {
     console.log("Removing image at index:", index);
     setFormData(prev => ({
@@ -170,14 +169,12 @@ const CreateListing = () => {
     }
   };
 
-  // Handle input changes.
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
     console.log(`Input changed: ${name} = ${value}`);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  // Handle checkbox toggle.
   const handleCheckboxChange = (id: string, type: 'amenities' | 'additionalFeatures') => {
     console.log(`Checkbox toggled: ${id} in ${type}`);
     setFormData(prev => {
@@ -189,7 +186,6 @@ const CreateListing = () => {
     });
   };
 
-  // Validate form fields.
   const validateForm = (): boolean => {
     console.log("Validating form...", formData);
     if (!formData.images.length) {
@@ -211,10 +207,11 @@ const CreateListing = () => {
     return true;
   };
 
-  // If in edit mode, fetch the existing listing data and pre-populate the form.
+  // Fetch listing data if in edit mode.
   useEffect(() => {
     if (isEditing && id) {
-      setIsSubmitting(true);
+      setLoadingListing(true);
+      console.log("Edit mode enabled. Fetching listing with id:", id);
       apiClient.get(`/api/properties/${id}`)
         .then(response => {
           const data = response.data;
@@ -228,7 +225,7 @@ const CreateListing = () => {
             bedrooms: data.bedrooms?.toString() || '',
             bathrooms: data.bathrooms?.toString() || '',
             area: data.area?.toString() || '',
-            images: [], // Images might be handled separately
+            images: [], // Handle images separately if needed.
             amenities: data.amenities || [],
             yearBuilt: data.year_built?.toString() || '',
             parkingSpaces: data.parking_spaces?.toString() || '',
@@ -245,20 +242,25 @@ const CreateListing = () => {
             videoUrl: data.video_url || '',
             additionalFeatures: data.additional_features || []
           });
-          // Optionally, set default primary image index if your backend provides image order.
           setPrimaryIndex(0);
         })
         .catch(error => {
           console.error("Error fetching listing for edit:", error);
           toast.error("Could not load listing data for editing");
         })
-        .finally(() => {
-          setIsSubmitting(false);
-        });
+        .finally(() => setLoadingListing(false));
     }
   }, [isEditing, id]);
 
-  // Handle form submission.
+  // Show loading message if edit data is being fetched.
+  if (isEditing && loadingListing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading listing data...</p>
+      </div>
+    );
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     console.log("handleSubmit fired");
@@ -272,16 +274,18 @@ const CreateListing = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Option A: Reorder images so that the primary image is first.
-      const rearrangedImages = [
-        formData.images[primaryIndex],
-        ...formData.images.filter((_, idx) => idx !== primaryIndex)
-      ];
-      rearrangedImages.forEach(file => {
-        formDataToSend.append('images[]', file);
-      });
+      // Option A: Reorder images so the primary image is first.
+      if (formData.images.length) {
+        const rearrangedImages = [
+          formData.images[primaryIndex],
+          ...formData.images.filter((_, idx) => idx !== primaryIndex)
+        ];
+        rearrangedImages.forEach(file => {
+          formDataToSend.append('images[]', file);
+        });
+      }
       
-      // Append other form data entries.
+      // Append other form fields.
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== 'images') {
           if (Array.isArray(value)) {
@@ -294,7 +298,7 @@ const CreateListing = () => {
         }
       });
       
-      // Also send the primary index if your backend uses it.
+      // Append primaryIndex if needed.
       formDataToSend.append('primaryIndex', primaryIndex.toString());
       
       console.log("FormData entries:");
@@ -302,9 +306,13 @@ const CreateListing = () => {
         console.log(key, val);
       }
       
-      // Decide endpoint based on mode.
-      const endpoint = isEditing ? `/api/properties/edit/${id}` : '/api/properties/create_property/';
-      console.log("Sending property creation/edit request to:", endpoint);
+      // Use the backend endpoint for edit listings.
+      // Given your backend understands the path 'options/', append the listing id as a query parameter.
+      const endpoint = isEditing 
+        ? `/api/properties/options/?id=${id}` 
+        : '/api/properties/create_property/';
+      
+      console.log("Sending property request to:", endpoint);
       const response = await apiClient.post(endpoint, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
@@ -327,11 +335,6 @@ const CreateListing = () => {
     }
   };
 
-  if (isEditing && isSubmitting) {
-    // Display a loading state while fetching edit data.
-    return <div className="min-h-screen flex items-center justify-center">Loading listing data...</div>;
-  }
-
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="container mx-auto px-6 max-w-6xl">
@@ -342,7 +345,9 @@ const CreateListing = () => {
               {isEditing ? 'Edit Property Listing' : 'Create New Property Listing'}
             </h1>
             <p className="text-blue-100 mt-2">
-              {isEditing ? 'Update the details below to modify your property listing' : 'Fill in the details below to list your property'}
+              {isEditing 
+                ? 'Update the details below to modify your property listing'
+                : 'Fill in the details below to list your property'}
             </p>
           </div>
   
