@@ -1,8 +1,8 @@
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { PropertyImages } from '../types'
-
+import { Home } from 'lucide-react';
 
 interface Property {
   id: number;
@@ -15,14 +15,15 @@ interface Property {
   bathrooms: number;
   area: number;
   amenities: string[];
-  images: string[];
+  images: { image: string }[];  // Assumes images is an array of objects with an "image" property.
   created_at: string;
   updated_at: string;
+  property_status: string;
 }
 
 const MyListings = () => {
   const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
@@ -139,22 +140,29 @@ const MyListings = () => {
                 {/* Image Section */}
                 <div className="relative">
                   <img
-                    src={property.images[0] || '/placeholder-property.jpg'}
-                    alt={property.title}
+                    src={
+                      (property.images &&
+                        property.images.length > 0 &&
+                        property.images[0]?.image) ||
+                      '/placeholder-property.jpg'
+                    }
+                    alt={property.title || 'Property Image'}
                     className="w-full h-64 object-cover"
                   />
-                  {/* Badges: For Sale and Property Type */}
-                  <div className="absolute top-4 left-4 flex space-x-2">
+                  {/* Badges: Sale Status and Property Type */}
+                  <div className="absolute top-4 left-4 flex space-x-2 z-10">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.forSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                        property.property_status === 'for_sale'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-blue-500 text-white'
                       }`}
                     >
-                      {property.forSale ? 'For Sale' : 'For Rent'}
+                      {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                     </span>
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.property_type.toLowerCase() === 'apartment'
+                        property.property_type?.toLowerCase() === 'apartment'
                           ? 'bg-gray-900/70 text-white'
                           : 'bg-blue-600 text-white'
                       }`}
@@ -211,7 +219,7 @@ const MyListings = () => {
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        navigate(`/create-listing/${property.id}`);
+                        navigate(`/edit-listing/${property.id}`);
                       }}
                       className="text-blue-600 hover:text-blue-700 font-medium"
                     >
