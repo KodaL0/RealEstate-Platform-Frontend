@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
-import { Home } from 'lucide-react';
+import { Home, Plus } from 'lucide-react';
 
 interface Property {
   id: number;
@@ -93,7 +93,7 @@ const MyListings = () => {
         withCredentials: true,
       });
       setProperties(prev => prev.filter(property => property.id !== id));
-      // If after deletion current page becomes empty, adjust it.
+      // Adjust current page if necessary.
       const newTotalPages = Math.ceil((properties.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages) {
         setCurrentPage(newTotalPages);
@@ -136,9 +136,9 @@ const MyListings = () => {
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
           <button
             onClick={() => navigate('/create-listing')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
+            className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full transition-colors"
           >
-            +
+            <Plus className="h-8 w-8" />
           </button>
         </div>
 
