@@ -26,13 +26,20 @@ apiClient.interceptors.response.use(
   response => response,
   async (error: AxiosError) => {
     const originalRequest = error.config as CustomAxiosRequestConfig;
-    // Only attempt a refresh if we get a 401 and haven't already retried this request
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
-      console.warn("Access token expired, attempting refresh...");
+    
+    // Prevent infinite loop for refresh endpoint errors:
+    if (originalRequest.url?.includes('/api/users/refresh')) {
+      return Promise.reject(error);
+    }
+    
+    // Initialize or increment the retry count
+    originalRequest._retryCount = originalRequest._retryCount || 0;
+
+    // Limit refresh attempts to, say, 2 additional tries (3 in total)
+    if (error.response?.status === 401 && originalRequest._retryCount < 3) {
+      originalRequest._retryCount += 1;
+      console.warn(`Attempt ${originalRequest._retryCount}: Access token expired, attempting refresh...`);
       try {
-        // Attempt to refresh the token. We send an empty body, 
-        // and let the backend read the refresh token from cookies.
         const refreshResponse = await apiClient.post(
           '/api/users/refresh',
           {},
@@ -40,28 +47,25 @@ apiClient.interceptors.response.use(
         );
         if (refreshResponse.status === 200) {
           console.log("Token refreshed successfully.");
-          // Retry the original request with the new token.
+          // Retry the original request now that the token is refreshed.
           return apiClient(originalRequest);
         } else {
-          // If the refresh response is not successful, reject immediately.
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        // Clear the cookies for access and refresh tokens using the API domain.
-        // Adjust the domain here to match how cookies are actually set on your API.
+        console.error("Token refresh failed on attempt", originalRequest._retryCount, ":", refreshError);
+        // Clear the cookies when refresh fails.
         document.cookie =
           'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie =
           'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        // Optionally: Redirect to the login page to force re-authentication.
-        // window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
   }
 );
+
 
 
 /**
