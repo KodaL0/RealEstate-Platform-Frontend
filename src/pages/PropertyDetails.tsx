@@ -1,9 +1,12 @@
+// Import the marker fix at the top so it applies globally
+import '../components/leafletMarkerFix'; // Adjust the path if your file structure is different
+
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property, PropertyImage } from '../types';
-import MapView from '../components/MapView'; // Adjust the path based on your file structure
+import MapView from '../components/MapView'; // Ensure that MapView exists and uses React Leaflet
 
 // Geocoding function using Nominatim
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
@@ -76,7 +79,7 @@ const PropertyDetails = () => {
             console.error("Error geocoding address:", error);
           }
         } else {
-          // If API had provided coordinates, you could set them here
+          // If API had provided coordinates, you could set them here:
           // setCoords({ lat: response.data.latitude, lng: response.data.longitude });
         }
       } catch (error) {
@@ -99,7 +102,7 @@ const PropertyDetails = () => {
     );
   }
 
-  // Once loading is complete, if no property is found, display an error message.
+  // If no property is found, display an error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
