@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property, PropertyImage } from '../types';
-import MapView from './MapView'; // Make sure the path is correct relative to your file structure
+import MapView from '../components/MapView'; // Make sure the path is correct relative to your file structure
 
 const mapPropertyData = (data: any): Property => {
   return {
