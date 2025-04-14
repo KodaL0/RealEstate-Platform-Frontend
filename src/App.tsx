@@ -7,7 +7,7 @@ import Rent from "./pages/Rent";
 import PropertyDetails from "./pages/PropertyDetails";
 import AccountSelection from "./pages/AccountSelection"; // Import the new page
 import { AuthPage } from "./pages/AuthPage";
-import  ProfilePage  from "./pages/ProfilePage"; 
+import ProfilePage from "./pages/ProfilePage"; 
 import { UserProvider } from './context/UserContext'; // Import UserProvider
 import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings"; // Import MyListings component
@@ -28,6 +28,8 @@ function App() {
               <Route path="/login" element={<AuthPage />} />
               <Route path="/profile" element={<ProfilePage />} /> 
               <Route path="/create-listing" element={<CreateListing />} />
+              {/* New edit route reusing CreateListing so existing data can be preloaded */}
+              <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/my-listings" element={<MyListings />} /> {/* Add MyListings route */}
             </Routes>
           </main>
