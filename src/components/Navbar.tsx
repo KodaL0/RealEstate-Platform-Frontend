@@ -1,16 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, ChevronDown, Building2, Plus } from "lucide-react";
+import { Menu, X, User, ChevronDown, Building2 } from "lucide-react";
 import { useUser } from "../context/UserContext";
-// Import apiClient from your authentication module
 import { apiClient, logout as authLogout } from "../middleware/auth";
-// or, if you prefer to call the logout function directly:
-// import { logout } from "../middleware/auth";
-
-interface ErrorResponse {
-  data?: any;
-  message?: string;
-}
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -36,21 +28,21 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      // Using the imported apiClient from our auth.ts module:
-      await apiClient.post('/api/users/logout');
-      // Alternatively, if using the authLogout function:
-      // await authLogout();
-
-      // Update client state and redirect on successful logout
+      await apiClient.post("/api/users/logout");
       setUser(null);
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
-      // Even if the backend request fails, clear user state and redirect.
       setUser(null);
       navigate("/login");
     }
   };
+
+  // Determine text color based on scroll. When scrolled, use dark text on white background.
+  // When transparent (before login or at top), use white text.
+  const navTextClass = scrolled
+    ? "text-gray-700 hover:text-blue-600"
+    : "text-white hover:text-blue-200";
 
   return (
     <nav
@@ -60,40 +52,48 @@ const Navbar = () => {
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center">
+          {/* Brand */}
           <Link to="/" className="flex items-center space-x-2">
-            <Building2 className="h-8 w-8 text-blue-600" />
+            <Building2
+              className={`h-8 w-8 ${
+                scrolled ? "text-blue-600" : "text-white"
+              }`}
+            />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
               PROPERTPRO
             </span>
           </Link>
 
+          {/* Desktop Nav */}
           <div className="hidden md:flex items-center space-x-8">
             <Link
               to="/"
-              className={`font-medium ${
-                isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
-              } transition-colors`}
+              className={`font-medium transition-colors ${
+                isActive("/") ? "text-blue-600" : navTextClass
+              }`}
             >
               Home
             </Link>
             <Link
               to="/buy"
-              className={`font-medium ${
-                isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
-              } transition-colors`}
+              className={`font-medium transition-colors ${
+                isActive("/buy") ? "text-blue-600" : navTextClass
+              }`}
             >
               Buy
             </Link>
             <Link
               to="/rent"
-              className={`font-medium ${
-                isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
-              } transition-colors`}
+              className={`font-medium transition-colors ${
+                isActive("/rent") ? "text-blue-600" : navTextClass
+              }`}
             >
               Rent
             </Link>
             <div className="relative group">
-              <button className="flex items-center font-medium text-white-700 hover:text-blue-600 transition-colors">
+              <button
+                className={`flex items-center font-medium transition-colors ${navTextClass}`}
+              >
                 Services <ChevronDown className="ml-1 h-4 w-4" />
               </button>
               <div className="absolute left-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-left z-50">
@@ -119,8 +119,8 @@ const Navbar = () => {
             </div>
           </div>
 
+          {/* Desktop User/Account */}
           <div className="hidden md:flex items-center space-x-4">
-            {/* Removed the Search button */}
             {user ? (
               <div className="relative group">
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
@@ -129,10 +129,16 @@ const Navbar = () => {
                   <ChevronDown className="h-4 w-4" />
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-right z-50">
-                  <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
+                  <Link
+                    to="/profile"
+                    className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
+                  >
                     Profile
                   </Link>
-                  <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
+                  <Link
+                    to="/my-listings"
+                    className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
+                  >
                     My Listings
                   </Link>
                   <button
@@ -154,6 +160,7 @@ const Navbar = () => {
             )}
           </div>
 
+          {/* Mobile Menu Toggle */}
           <button className="md:hidden p-2" onClick={toggleMenu}>
             {isOpen ? (
               <X className="h-6 w-6 text-gray-700" />
@@ -163,25 +170,31 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Mobile menu */}
+        {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden mt-4 bg-white rounded-lg shadow-lg p-4">
             <div className="flex flex-col space-y-4">
               <Link
                 to="/"
-                className={`font-medium ${isActive("/") ? "text-blue-600" : "text-gray-700"}`}
+                className={`font-medium ${
+                  isActive("/") ? "text-blue-600" : "text-gray-700"
+                }`}
               >
                 Home
               </Link>
               <Link
                 to="/buy"
-                className={`font-medium ${isActive("/buy") ? "text-blue-600" : "text-gray-700"}`}
+                className={`font-medium ${
+                  isActive("/buy") ? "text-blue-600" : "text-gray-700"
+                }`}
               >
                 Buy
               </Link>
               <Link
                 to="/rent"
-                className={`font-medium ${isActive("/rent") ? "text-blue-600" : "text-gray-700"}`}
+                className={`font-medium ${
+                  isActive("/rent") ? "text-blue-600" : "text-gray-700"
+                }`}
               >
                 Rent
               </Link>
@@ -193,7 +206,10 @@ const Navbar = () => {
                   <Link to="/my-listings" className="font-medium text-gray-700">
                     My Listings
                   </Link>
-                  <button onClick={handleLogout} className="font-medium text-gray-700 text-left">
+                  <button
+                    onClick={handleLogout}
+                    className="font-medium text-gray-700 text-left"
+                  >
                     Logout
                   </button>
                 </>
