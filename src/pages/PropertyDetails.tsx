@@ -20,7 +20,7 @@ import {
   Wind,
   Flame, // replacing 'Fire' with Flame
   Smile,
-  DoorOpen, // Using DoorOpen instead of Door
+  DoorOpen, // using DoorOpen instead of Door
   Archive,
   Wifi,
   Package,
@@ -28,7 +28,7 @@ import {
   Flower,
   Sun,
   UserCheck,
-  Water
+  Anchor // using Anchor for waterfront
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
@@ -91,7 +91,7 @@ const amenityIcons: Record<string, JSX.Element> = {
   laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
   pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
   furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
-  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />, // using DoorOpen here
+  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />,
   storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
   wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
   dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -101,7 +101,7 @@ const amenityIcons: Record<string, JSX.Element> = {
   roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
   doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
   garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  waterfront: <Water className="h-5 w-5 mr-3 text-emerald-600" />,
+  waterfront: <Anchor className="h-5 w-5 mr-3 text-emerald-600" />,
   default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
