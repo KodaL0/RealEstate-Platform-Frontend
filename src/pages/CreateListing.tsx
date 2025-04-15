@@ -309,8 +309,8 @@ const CreateListing = () => {
       // Use the backend endpoint for edit listings.
       // Given your backend understands the path 'options/', append the listing id as a query parameter.
       const endpoint = isEditing 
-        ? `/api/<str:username>/property/<int:property_id>/edit/` 
-        : '/api/properties/create_property/';
+  ? `/api/users/${username}/property/${id}/edit/` 
+  : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
       const response = await apiClient.post(endpoint, formDataToSend, {
