@@ -274,7 +274,7 @@ const CreateListing = () => {
     try {
       const formDataToSend = new FormData();
       
-      // Option A: Reorder images so the primary image is first.
+      // Reorder images so the primary image is first.
       if (formData.images.length) {
         const rearrangedImages = [
           formData.images[primaryIndex],
@@ -286,13 +286,17 @@ const CreateListing = () => {
       }
       
       // Append other form fields.
-      // Changed the key for arrays to be appended without [] notation.
+      // For amenities and additionalFeatures, send as JSON strings.
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== 'images') {
           if (Array.isArray(value)) {
-            (value as string[]).forEach(item => {
-              formDataToSend.append(key, item);
-            });
+            if (key === 'amenities' || key === 'additionalFeatures') {
+              formDataToSend.append(key, JSON.stringify(value));
+            } else {
+              (value as string[]).forEach(item => {
+                formDataToSend.append(key, item);
+              });
+            }
           } else if (value) {
             formDataToSend.append(key, value);
           }
@@ -309,8 +313,8 @@ const CreateListing = () => {
       
       // Use the backend endpoint for edit listings.
       const endpoint = isEditing
-  ? `/api/${request.user.username}/property/${id}/edit/`
-  : '/api/properties/create_property/';
+        ? `/api/${request.user.username}/property/${id}/edit/`
+        : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
       const response = await apiClient.post(endpoint, formDataToSend, {
