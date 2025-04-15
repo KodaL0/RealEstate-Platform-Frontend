@@ -225,7 +225,7 @@ const CreateListing = () => {
             bedrooms: data.bedrooms?.toString() || '',
             bathrooms: data.bathrooms?.toString() || '',
             area: data.area?.toString() || '',
-            images: [], // Images handled separately.
+            images: [], // Handle images separately if needed.
             amenities: data.amenities || [],
             yearBuilt: data.year_built?.toString() || '',
             parkingSpaces: data.parking_spaces?.toString() || '',
@@ -270,11 +270,11 @@ const CreateListing = () => {
     }
     setError('');
     setIsSubmitting(true);
-
+    
     try {
       const formDataToSend = new FormData();
-
-      // Reorder images so the primary image is first.
+      
+      // Option A: Reorder images so the primary image is first.
       if (formData.images.length) {
         const rearrangedImages = [
           formData.images[primaryIndex],
@@ -284,66 +284,39 @@ const CreateListing = () => {
           formDataToSend.append('images[]', file);
         });
       }
-
-      // Mapping of our camelCase state keys to the backend's snake_case keys.
-      const fieldMapping: { [key: string]: string } = {
-        propertyType: 'property_type',
-        yearBuilt: 'year_built',
-        parkingSpaces: 'parking_spaces',
-        lotSize: 'lot_size',
-        propertyStatus: 'property_status',
-        energyRating: 'energy_rating',
-        constructionMaterial: 'construction_material',
-        floorLevel: 'floor_level',
-        totalFloors: 'total_floors',
-        availableFrom: 'available_from',
-        contactPhone: 'contact_phone',
-        contactEmail: 'contact_email',
-        virtualTourUrl: 'virtual_tour_url',
-        videoUrl: 'video_url',
-        additionalFeatures: 'additional_features',
-        amenities: 'amenities'
-      };
-
+      
       // Append other form fields.
       Object.entries(formData).forEach(([key, value]) => {
         if (key !== 'images') {
-          // Determine the key as expected by the backend:
-          const backendKey = fieldMapping[key] || key;
           if (Array.isArray(value)) {
-            // Serialize arrays for amenities and additionalFeatures.
-            if (backendKey === 'amenities' || backendKey === 'additional_features') {
-              formDataToSend.append(backendKey, JSON.stringify(value));
-            } else {
-              // Otherwise, send each item.
-              (value as string[]).forEach(item => {
-                formDataToSend.append(backendKey, item);
-              });
-            }
+            (value as string[]).forEach(item => {
+              formDataToSend.append(`${key}[]`, item);
+            });
           } else if (value) {
-            formDataToSend.append(backendKey, value);
+            formDataToSend.append(key, value);
           }
         }
       });
-
+      
       // Append primaryIndex if needed.
       formDataToSend.append('primaryIndex', primaryIndex.toString());
-
+      
       console.log("FormData entries:");
       for (let [key, val] of formDataToSend.entries()) {
         console.log(key, val);
       }
-
-      // Choose endpoint based on whether we're editing or creating.
-      const endpoint = isEditing
-        ? `/api/${request.user.username}/property/${id}/edit/`
+      
+      // Use the backend endpoint for edit listings.
+      // Given your backend understands the path 'options/', append the listing id as a query parameter.
+      const endpoint = isEditing 
+        ? `/api/<str:username>/property/<int:property_id>/edit/` 
         : '/api/properties/create_property/';
-
+      
       console.log("Sending property request to:", endpoint);
       const response = await apiClient.post(endpoint, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
-
+      
       console.log("Response received:", response);
       if (response.status === 200 || response.status === 201) {
         toast.success(isEditing ? 'Listing updated successfully!' : 'Listing created successfully!');
@@ -372,12 +345,12 @@ const CreateListing = () => {
               {isEditing ? 'Edit Property Listing' : 'Create New Property Listing'}
             </h1>
             <p className="text-blue-100 mt-2">
-              {isEditing
+              {isEditing 
                 ? 'Update the details below to modify your property listing'
                 : 'Fill in the details below to list your property'}
             </p>
           </div>
-
+  
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-8 my-6">
               <div className="flex">
@@ -390,7 +363,7 @@ const CreateListing = () => {
               </div>
             </div>
           )}
-
+  
           <form onSubmit={handleSubmit} className="p-8 space-y-10">
             {/* Basic Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
@@ -471,7 +444,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             {/* Property Details Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
@@ -590,15 +563,14 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             {/* Property Images Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
-              <div
-                {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors ${
-                  isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'
-                }`}
+              <div 
+                {...getRootProps()} 
+                className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
+                  ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
@@ -609,7 +581,7 @@ const CreateListing = () => {
                   Maximum 10 images, up to 5MB each. Supported formats: JPG, PNG, WebP
                 </p>
               </div>
-
+  
               {previewImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                   {previewImages.map((preview, index) => (
@@ -641,7 +613,7 @@ const CreateListing = () => {
                 </div>
               )}
             </section>
-
+  
             {/* Amenities Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
@@ -662,7 +634,7 @@ const CreateListing = () => {
                 ))}
               </div>
             </section>
-
+  
             {/* Additional Features Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Features</h2>
@@ -683,7 +655,7 @@ const CreateListing = () => {
                 ))}
               </div>
             </section>
-
+  
             {/* Description Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
@@ -698,7 +670,7 @@ const CreateListing = () => {
                 placeholder="Provide a detailed description of the property..."
               />
             </section>
-
+  
             {/* Contact Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
@@ -735,7 +707,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             {/* Virtual Tour & Video Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
@@ -770,7 +742,7 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-
+  
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
