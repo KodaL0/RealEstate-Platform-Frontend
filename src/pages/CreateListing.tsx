@@ -141,6 +141,45 @@ const CreateListing = () => {
     additionalFeatures: []
   });
 
+  // Add a new useEffect to fetch the current user profile
+  useEffect(() => {
+    setLoadingUsername(true);
+    apiClient.get('/api/users/get_user/')
+      .then(response => {
+        console.log("Fetched current user data:", response.data);
+        if (response.data && response.data.username) {
+          console.log("Setting username to:", response.data.username);
+          setUsername(response.data.username);
+        } else {
+          console.warn("Username not found in user data:", response.data);
+          toast.error("Username not found in profile data");
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching user profile:", error);
+        // Show error toast for username fetch failure
+        toast.error("Failed to fetch user profile. Please try again.");
+      })
+      .finally(() => {
+        setLoadingUsername(false);
+      });
+  }, []);
+
+  // Function to fetch username on demand
+  const fetchUsernameOnDemand = async (): Promise<string> => {
+    try {
+      const response = await apiClient.get('/api/users/get_user/');
+      if (response.data && response.data.username) {
+        setUsername(response.data.username);
+        return response.data.username;
+      }
+      throw new Error('Username not found in response');
+    } catch (error) {
+      console.error('Failed to fetch username on demand:', error);
+      throw error;
+    }
+  };
+
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
@@ -216,6 +255,11 @@ const CreateListing = () => {
     }
     
     return true;
+  };
+
+  // Use direct edit endpoint instead of username-based path
+  const getEditEndpoint = (propId: string) => {
+    return `/api/properties/property/${propId}/edit/`;
   };
 
   // Fetch listing data if in edit mode.
@@ -331,30 +375,6 @@ const CreateListing = () => {
     }
   }, [isEditing, id]);
 
-  // Add a new useEffect to fetch the current user profile
-  useEffect(() => {
-    setLoadingUsername(true);
-    apiClient.get('/api/users/me/')
-      .then(response => {
-        console.log("Fetched current user data:", response.data);
-        if (response.data && response.data.username) {
-          console.log("Setting username to:", response.data.username);
-          setUsername(response.data.username);
-        } else {
-          console.warn("Username not found in user data:", response.data);
-          toast.error("Username not found in profile data");
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching user profile:", error);
-        // Show error toast for username fetch failure
-        toast.error("Failed to fetch user profile. Please try again.");
-      })
-      .finally(() => {
-        setLoadingUsername(false);
-      });
-  }, []);
-
   // Show loading message if edit data is being fetched.
   if (isEditing && loadingListing) {
     return (
@@ -372,21 +392,6 @@ const CreateListing = () => {
       </div>
     );
   }
-
-  // Function to fetch username on demand
-  const fetchUsernameOnDemand = async (): Promise<string> => {
-    try {
-      const response = await apiClient.get('/api/users/me/');
-      if (response.data && response.data.username) {
-        setUsername(response.data.username);
-        return response.data.username;
-      }
-      throw new Error('Username not found in response');
-    } catch (error) {
-      console.error('Failed to fetch username on demand:', error);
-      throw error;
-    }
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -492,7 +497,7 @@ const CreateListing = () => {
       const endpoint = isEditing 
         ? username 
           ? `/api/properties/${username}/property/${id}/edit/`
-          : `/api/properties/create_property/` // If username is missing, fall back to create endpoint
+          : `/api/properties/property/${id}/edit/` // Fallback if username is empty
         : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
