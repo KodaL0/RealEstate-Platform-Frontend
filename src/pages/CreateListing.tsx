@@ -286,17 +286,17 @@ const CreateListing = () => {
       }
       
       // Append other form fields.
-      Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'images') {
-          if (Array.isArray(value)) {
-            (value as string[]).forEach(item => {
-              formDataToSend.append(`${key}[]`, item);
-            });
-          } else if (value) {
-            formDataToSend.append(key, value);
-          }
-        }
-      });
+    Object.entries(formData).forEach(([key, value]) => {
+  if (key !== 'images') {
+    if (Array.isArray(value)) {
+      // Convert arrays to JSON strings for proper backend parsing
+      formDataToSend.append(key, JSON.stringify(value));
+      console.log(`Sending ${key} as JSON: ${JSON.stringify(value)}`);
+    } else if (value) {
+      formDataToSend.append(key, value);
+    }
+  }
+});
       
       // Append primaryIndex if needed.
       formDataToSend.append('primaryIndex', primaryIndex.toString());
