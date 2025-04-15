@@ -18,9 +18,9 @@ import {
   Dumbbell,
   Shield,
   Wind,
-  Flame, // Replacing 'Fire' with 'Flame'
+  Flame, // replacing 'Fire' with Flame
   Smile,
-  Door,
+  DoorOpen, // Using DoorOpen instead of Door
   Archive,
   Wifi,
   Package,
@@ -32,7 +32,7 @@ import {
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
-import MapView from '../components/MapView'; // Ensure MapView exists and uses React Leaflet
+import MapView from '../components/MapView'; // Ensure that MapView exists and uses React Leaflet
 
 // Geocoding function using Nominatim
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
@@ -87,16 +87,16 @@ const amenityIcons: Record<string, JSX.Element> = {
   gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
   security: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
   ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />, // Using Flame instead of Fire.
+  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
   laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
   pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
   furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
-  balcony: <Door className="h-5 w-5 mr-3 text-emerald-600" />,
+  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />, // using DoorOpen here
   storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
   wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
   dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
   elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />, // Using Flame here too.
+  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
   garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
   roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
   doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -297,7 +297,6 @@ const PropertyDetails = () => {
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {property.amenities.map((amenity, idx) => {
-                      // Lookup icon from mapping; fallback to default.
                       const icon = amenityIcons[amenity] || amenityIcons.default;
                       return (
                         <div key={idx} className="flex items-center">
