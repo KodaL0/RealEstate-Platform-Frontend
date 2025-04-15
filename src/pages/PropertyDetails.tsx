@@ -1,12 +1,38 @@
 // Import the marker fix at the top so it applies globally
-import '../components/leafletMarkerFix'; // Adjust the path if your file structure is different
+import '../components/leafletMarkerFix'; // Adjust the path if needed
 
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square, Calendar, Heart, Share2, Home } from 'lucide-react';
+import {
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  Calendar,
+  Heart,
+  Share2,
+  // Amenity icons
+  CheckCircle,
+  Car,
+  Droplet,
+  Dumbbell,
+  Shield,
+  Wind,
+  Fire,
+  Smile,
+  Door,
+  Archive,
+  Wifi,
+  Package,
+  ArrowUpCircle,
+  Flower,
+  Sun,
+  UserCheck,
+  Water
+} from 'lucide-react';
 import { apiClient } from '../middleware/auth';
-import { Property, PropertyImage } from '../types';
-import MapView from '../components/MapView'; // Ensure that MapView exists and uses React Leaflet
+import { Property } from '../types';
+import MapView from '../components/MapView'; // Ensure MapView exists and uses React Leaflet
 
 // Geocoding function using Nominatim
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
@@ -19,6 +45,7 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
   throw new Error('Geocoding failed');
 }
 
+// Mapping function to convert API data to our Property type.
 const mapPropertyData = (data: any): Property => {
   return {
     id: data.id,
@@ -45,15 +72,37 @@ const mapPropertyData = (data: any): Property => {
     video_url: data.video_url,
     amenities: data.amenities || [],
     additional_features: data.additional_features || [],
-    owner: data.owner, // ensure owner data includes fields like name, phone, and email
-    // Coordinates are not provided in the API response:
-    // latitude: data.latitude,
-    // longitude: data.longitude,
+    owner: data.owner, // Ensure owner data includes fields like name, phone, and email
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
     images: data.images || [],
   };
+};
+
+// Define the amenity-to-icon mapping
+const amenityIcons: Record<string, JSX.Element> = {
+  parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
+  gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
+  security: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
+  ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
+  heating: <Fire className="h-5 w-5 mr-3 text-emerald-600" />,
+  laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
+  furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
+  balcony: <Door className="h-5 w-5 mr-3 text-emerald-600" />,
+  storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
+  wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
+  dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
+  elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  fireplace: <Fire className="h-5 w-5 mr-3 text-emerald-600" />,
+  garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
+  roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
+  doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
+  garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  waterfront: <Water className="h-5 w-5 mr-3 text-emerald-600" />,
+  default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
 const PropertyDetails = () => {
@@ -78,9 +127,6 @@ const PropertyDetails = () => {
           } catch (error) {
             console.error("Error geocoding address:", error);
           }
-        } else {
-          // If API had provided coordinates, you could set them here:
-          // setCoords({ lat: response.data.latitude, lng: response.data.longitude });
         }
       } catch (error) {
         console.error("Error fetching property:", error);
@@ -93,7 +139,6 @@ const PropertyDetails = () => {
     }
   }, [id]);
 
-  // While data is being fetched, show a loading indicator.
   if (loading) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -102,7 +147,6 @@ const PropertyDetails = () => {
     );
   }
 
-  // If no property is found, display an error message.
   if (!property) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
@@ -136,7 +180,6 @@ const PropertyDetails = () => {
         {/* Property Images Section */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img
@@ -144,7 +187,6 @@ const PropertyDetails = () => {
                   alt=""
                   className="w-full h-full object-cover"
                 />
-                {/* Badges at Top-Left */}
                 <div className="absolute top-4 left-4 flex space-x-2 z-30">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
                     property.property_status === 'for_sale'
@@ -157,7 +199,6 @@ const PropertyDetails = () => {
                     {property.property_type}
                   </span>
                 </div>
-                {/* Action Buttons at Top-Right */}
                 <div className="absolute top-4 right-4 flex space-x-2 z-30">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
@@ -168,8 +209,6 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
-
-            {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
                 <div
@@ -185,9 +224,7 @@ const PropertyDetails = () => {
                   {index === 3 && additionalImages.length > 5 && (
                     <div
                       className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                      }}
+                      onClick={(e) => e.stopPropagation()}
                     >
                       +{additionalImages.length - 5} more
                     </div>
@@ -201,7 +238,6 @@ const PropertyDetails = () => {
         {/* Property Details Section */}
         <section className="mt-8">
           <div className="flex flex-col lg:flex-row lg:space-x-8">
-            {/* Main Content */}
             <div className="lg:w-2/3">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
@@ -257,12 +293,16 @@ const PropertyDetails = () => {
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {property.amenities.map((amenity, idx) => (
-                      <div key={idx} className="flex items-center">
-                        <Home className="h-5 w-5 mr-3 text-emerald-600" />
-                        <span>{amenity}</span>
-                      </div>
-                    ))}
+                    {property.amenities.map((amenity, idx) => {
+                      // Use the mapped icon or fall back to default if not found
+                      const icon = amenityIcons[amenity] || amenityIcons.default;
+                      return (
+                        <div key={idx} className="flex items-center">
+                          {icon}
+                          <span>{amenity}</span>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
               )}
@@ -281,7 +321,6 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* Sidebar: Listing Owner Information */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">
