@@ -11,14 +11,14 @@ import {
   Calendar,
   Heart,
   Share2,
-  // Amenity icons
+  // Amenity icons:
   CheckCircle,
   Car,
   Droplet,
   Dumbbell,
   Shield,
   Wind,
-  Fire,
+  Flame, // Replacing 'Fire' with 'Flame'
   Smile,
   Door,
   Archive,
@@ -72,7 +72,7 @@ const mapPropertyData = (data: any): Property => {
     video_url: data.video_url,
     amenities: data.amenities || [],
     additional_features: data.additional_features || [],
-    owner: data.owner, // Ensure owner data includes fields like name, phone, and email
+    owner: data.owner, // ensure owner data includes fields like name, phone, and email
     is_published: data.is_published,
     created_at: data.created_at,
     updated_at: data.updated_at,
@@ -80,14 +80,14 @@ const mapPropertyData = (data: any): Property => {
   };
 };
 
-// Define the amenity-to-icon mapping
+// Define the amenity-to-icon mapping.
 const amenityIcons: Record<string, JSX.Element> = {
   parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
   pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
   gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
   security: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
   ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  heating: <Fire className="h-5 w-5 mr-3 text-emerald-600" />,
+  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />, // Using Flame instead of Fire.
   laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
   pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
   furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -96,7 +96,7 @@ const amenityIcons: Record<string, JSX.Element> = {
   wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
   dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
   elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  fireplace: <Fire className="h-5 w-5 mr-3 text-emerald-600" />,
+  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />, // Using Flame here too.
   garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
   roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
   doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -119,7 +119,7 @@ const PropertyDetails = () => {
         console.log('API response:', response.data);
         const mappedProperty = mapPropertyData(response.data);
         setProperty(mappedProperty);
-        // If no latitude/longitude is provided, geocode the address
+        // If no latitude/longitude is provided, geocode the address.
         if (!response.data.latitude && mappedProperty.location) {
           try {
             const geocoded = await geocodeAddress(mappedProperty.location);
@@ -180,6 +180,7 @@ const PropertyDetails = () => {
         {/* Property Images Section */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
+            {/* Main Image */}
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img
@@ -209,6 +210,7 @@ const PropertyDetails = () => {
                 </div>
               </div>
             </div>
+            {/* Thumbnail Grid */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {additionalImages.slice(1, 5).map((img, index) => (
                 <div
@@ -238,6 +240,7 @@ const PropertyDetails = () => {
         {/* Property Details Section */}
         <section className="mt-8">
           <div className="flex flex-col lg:flex-row lg:space-x-8">
+            {/* Main Content */}
             <div className="lg:w-2/3">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
@@ -294,7 +297,7 @@ const PropertyDetails = () => {
                   <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {property.amenities.map((amenity, idx) => {
-                      // Use the mapped icon or fall back to default if not found
+                      // Lookup icon from mapping; fallback to default.
                       const icon = amenityIcons[amenity] || amenityIcons.default;
                       return (
                         <div key={idx} className="flex items-center">
@@ -321,6 +324,7 @@ const PropertyDetails = () => {
               </div>
             </div>
 
+            {/* Sidebar: Listing Owner Information */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
                 <h3 className="text-xl font-bold text-gray-900 mb-6">
