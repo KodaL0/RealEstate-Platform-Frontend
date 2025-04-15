@@ -270,7 +270,7 @@ const CreateListing = () => {
     }
     setError('');
     setIsSubmitting(true);
-    
+
     try {
       const formDataToSend = new FormData();
       
@@ -286,28 +286,28 @@ const CreateListing = () => {
       }
       
       // Append other form fields.
-    Object.entries(formData).forEach(([key, value]) => {
-  if (key !== 'images') {
-    if (Array.isArray(value)) {
-      // Convert arrays to JSON strings for proper backend parsing
-      formDataToSend.append(key, JSON.stringify(value));
-      console.log(`Sending ${key} as JSON: ${JSON.stringify(value)}`);
-    } else if (value) {
-      formDataToSend.append(key, value);
-    }
-  }
-});
+      // Changed the key for arrays to be appended without [] notation.
+      Object.entries(formData).forEach(([key, value]) => {
+        if (key !== 'images') {
+          if (Array.isArray(value)) {
+            (value as string[]).forEach(item => {
+              formDataToSend.append(key, item);
+            });
+          } else if (value) {
+            formDataToSend.append(key, value);
+          }
+        }
+      });
       
       // Append primaryIndex if needed.
       formDataToSend.append('primaryIndex', primaryIndex.toString());
-      
+
       console.log("FormData entries:");
       for (let [key, val] of formDataToSend.entries()) {
         console.log(key, val);
       }
       
       // Use the backend endpoint for edit listings.
-      // Given your backend understands the path 'options/', append the listing id as a query parameter.
       const endpoint = isEditing 
         ? `/api/<str:username>/property/<int:property_id>/edit/` 
         : '/api/properties/create_property/';
