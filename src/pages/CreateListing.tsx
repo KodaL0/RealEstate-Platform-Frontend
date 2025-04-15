@@ -111,6 +111,8 @@ const CreateListing = () => {
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
   // State to store current user's username
   const [username, setUsername] = useState<string>('');
+  // Add a loading state for username
+  const [loadingUsername, setLoadingUsername] = useState<boolean>(true);
   // Form data state
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
@@ -331,13 +333,25 @@ const CreateListing = () => {
 
   // Add a new useEffect to fetch the current user profile
   useEffect(() => {
+    setLoadingUsername(true);
     apiClient.get('/api/users/me/')
       .then(response => {
         console.log("Fetched current user data:", response.data);
-        setUsername(response.data.username);
+        if (response.data && response.data.username) {
+          console.log("Setting username to:", response.data.username);
+          setUsername(response.data.username);
+        } else {
+          console.warn("Username not found in user data:", response.data);
+          toast.error("Username not found in profile data");
+        }
       })
       .catch(error => {
         console.error("Error fetching user profile:", error);
+        // Show error toast for username fetch failure
+        toast.error("Failed to fetch user profile. Please try again.");
+      })
+      .finally(() => {
+        setLoadingUsername(false);
       });
   }, []);
 
@@ -350,13 +364,51 @@ const CreateListing = () => {
     );
   }
 
+  // Also show loading if username is being fetched
+  if (isEditing && loadingUsername) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading user data...</p>
+      </div>
+    );
+  }
+
+  // Function to fetch username on demand
+  const fetchUsernameOnDemand = async (): Promise<string> => {
+    try {
+      const response = await apiClient.get('/api/users/me/');
+      if (response.data && response.data.username) {
+        setUsername(response.data.username);
+        return response.data.username;
+      }
+      throw new Error('Username not found in response');
+    } catch (error) {
+      console.error('Failed to fetch username on demand:', error);
+      throw error;
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit fired");
+    console.log("handleSubmit fired, current username:", username);
+    
+    // Check if username is available when editing
+    if (isEditing && !username) {
+      console.error("Username is missing during form submission for editing");
+      toast.error('User profile data is not available. Please refresh and try again.');
+      try {
+        // Try to fetch username one more time
+        await fetchUsernameOnDemand();
+      } catch (error) {
+        return; // Exit if we still can't get username
+      }
+    }
+    
     if (!validateForm()) {
       console.log("Validation failed.");
       return;
     }
+    
     setError('');
     setIsSubmitting(true);
     
@@ -440,7 +492,7 @@ const CreateListing = () => {
       const endpoint = isEditing 
         ? username 
           ? `/api/properties/${username}/property/${id}/edit/`
-          : `/api/properties/property/${id}/edit/` // Fallback if username is empty
+          : `/api/properties/create_property/` // If username is missing, fall back to create endpoint
         : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
