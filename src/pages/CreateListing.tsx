@@ -147,9 +147,9 @@ const CreateListing = () => {
     apiClient.get('/api/users/get_user/')
       .then(response => {
         console.log("Fetched current user data:", response.data);
-        if (response.data && response.data.username) {
-          console.log("Setting username to:", response.data.username);
-          setUsername(response.data.username);
+        if (response.data && response.data.user && response.data.user.username) {
+          console.log("Setting username to:", response.data.user.username);
+          setUsername(response.data.user.username);
         } else {
           console.warn("Username not found in user data:", response.data);
           toast.error("Username not found in profile data");
@@ -169,9 +169,9 @@ const CreateListing = () => {
   const fetchUsernameOnDemand = async (): Promise<string> => {
     try {
       const response = await apiClient.get('/api/users/get_user/');
-      if (response.data && response.data.username) {
-        setUsername(response.data.username);
-        return response.data.username;
+      if (response.data && response.data.user && response.data.user.username) {
+        setUsername(response.data.user.username);
+        return response.data.user.username;
       }
       throw new Error('Username not found in response');
     } catch (error) {
