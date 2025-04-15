@@ -207,50 +207,61 @@ const CreateListing = () => {
     return true;
   };
 
-  // Fetch listing data if in edit mode.
-  useEffect(() => {
-    if (isEditing && id) {
-      setLoadingListing(true);
-      console.log("Edit mode enabled. Fetching listing with id:", id);
-      apiClient.get(`/api/properties/${id}`)
-        .then(response => {
-          const data = response.data;
-          console.log("Fetched listing for edit:", data);
-          setFormData({
-            title: data.title || '',
-            description: data.description || '',
-            price: data.price || '',
-            location: data.location || '',
-            propertyType: data.property_type || '',
-            bedrooms: data.bedrooms?.toString() || '',
-            bathrooms: data.bathrooms?.toString() || '',
-            area: data.area?.toString() || '',
-            images: [], // Handle images separately if needed.
-            amenities: data.amenities || [],
-            yearBuilt: data.year_built?.toString() || '',
-            parkingSpaces: data.parking_spaces?.toString() || '',
-            lotSize: data.lot_size || '',
-            propertyStatus: data.property_status || '',
-            energyRating: data.energy_rating || '',
-            constructionMaterial: data.construction_material || '',
-            floorLevel: data.floor_level || '',
-            totalFloors: data.total_floors || '',
-            availableFrom: data.available_from || '',
-            contactPhone: data.contact_phone || '',
-            contactEmail: data.contact_email || '',
-            virtualTourUrl: data.virtual_tour_url || '',
-            videoUrl: data.video_url || '',
-            additionalFeatures: data.additional_features || []
-          });
-          setPrimaryIndex(0);
-        })
-        .catch(error => {
-          console.error("Error fetching listing for edit:", error);
-          toast.error("Could not load listing data for editing");
-        })
-        .finally(() => setLoadingListing(false));
-    }
-  }, [isEditing, id]);
+ // Fetch listing data if in edit mode.
+useEffect(() => {
+  if (isEditing && id) {
+    setLoadingListing(true);
+    console.log("Edit mode enabled. Fetching listing with id:", id);
+    apiClient.get(`/api/properties/${id}`)
+      .then(response => {
+        const data = response.data;
+        console.log("Fetched listing for edit:", data);
+        // Process amenities to ensure they're in the correct format (string IDs)
+        const processArrayField = (field) => {
+          if (!field) return [];
+          if (!Array.isArray(field)) return [];
+          return field.map(item => typeof item === 'object' && item.id ? item.id : item);
+        };
+        setFormData({
+          title: data.title || '',
+          description: data.description || '',
+          price: data.price || '',
+          location: data.location || '',
+          propertyType: data.property_type || '',
+          bedrooms: data.bedrooms?.toString() || '',
+          bathrooms: data.bathrooms?.toString() || '',
+          area: data.area?.toString() || '',
+          images: [], // Keep empty, we'll handle images separately
+          amenities: processArrayField(data.amenities),
+          yearBuilt: data.year_built?.toString() || '',
+          parkingSpaces: data.parking_spaces?.toString() || '',
+          lotSize: data.lot_size || '',
+          propertyStatus: data.property_status || '',
+          energyRating: data.energy_rating || '',
+          constructionMaterial: data.construction_material || '',
+          floorLevel: data.floor_level || '',
+          totalFloors: data.total_floors || '',
+          availableFrom: data.available_from || '',
+          contactPhone: data.contact_phone || '',
+          contactEmail: data.contact_email || '',
+          virtualTourUrl: data.virtual_tour_url || '',
+          videoUrl: data.video_url || '',
+          additionalFeatures: processArrayField(data.additional_features)
+        });
+        // Handle existing images
+        if (data.images && Array.isArray(data.images)) {
+          // Set preview images from existing image URLs
+          setPreviewImages(data.images);
+        }
+        setPrimaryIndex(0);
+      })
+      .catch(error => {
+        console.error("Error fetching listing for edit:", error);
+        toast.error("Could not load listing data for editing");
+      })
+      .finally(() => setLoadingListing(false));
+  }
+}, [isEditing, id]);
 
   // Show loading message if edit data is being fetched.
   if (isEditing && loadingListing) {
@@ -309,7 +320,7 @@ const CreateListing = () => {
       // Use the backend endpoint for edit listings.
       // Given your backend understands the path 'options/', append the listing id as a query parameter.
       const endpoint = isEditing 
-  ? `/api/users/${username}/property/${id}/edit/` 
+  ? `/api/properties/${id}/edit/` 
   : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
