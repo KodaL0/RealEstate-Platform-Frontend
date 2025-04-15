@@ -206,8 +206,7 @@ const CreateListing = () => {
     }
     return true;
   };
-
- // Fetch listing data if in edit mode.
+// Fetch listing data if in edit mode.
 useEffect(() => {
   if (isEditing && id) {
     setLoadingListing(true);
@@ -216,7 +215,7 @@ useEffect(() => {
       .then(response => {
         const data = response.data;
         console.log("Fetched listing for edit:", data);
-        // Process amenities to ensure they're in the correct format (string IDs)
+        // Process array fields to handle both object format and string format
         const processArrayField = (field) => {
           if (!field) return [];
           if (!Array.isArray(field)) return [];
@@ -231,7 +230,7 @@ useEffect(() => {
           bedrooms: data.bedrooms?.toString() || '',
           bathrooms: data.bathrooms?.toString() || '',
           area: data.area?.toString() || '',
-          images: [], // Keep empty, we'll handle images separately
+          images: [], // Keep empty for new uploads
           amenities: processArrayField(data.amenities),
           yearBuilt: data.year_built?.toString() || '',
           parkingSpaces: data.parking_spaces?.toString() || '',
@@ -250,7 +249,7 @@ useEffect(() => {
         });
         // Handle existing images
         if (data.images && Array.isArray(data.images)) {
-          // Set preview images from existing image URLs
+          console.log("Setting existing images for preview:", data.images);
           setPreviewImages(data.images);
         }
         setPrimaryIndex(0);
