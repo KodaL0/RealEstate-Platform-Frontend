@@ -219,10 +219,25 @@ const CreateListing = () => {
           const data = response.data;
           console.log("Fetched listing for edit:", data);
           // Process array fields to handle both object format and string format
-          const processArrayField = (field) => {
+          const processArrayField = (field, lookupTable = []) => {
             if (!field) return [];
             if (!Array.isArray(field)) return [];
-            return field.map(item => typeof item === 'object' && item.id ? item.id : item);
+            
+            return field.map(item => {
+              // If it's an object with an id property, return the id
+              if (typeof item === 'object' && item.id) {
+                return item.id;
+              }
+              
+              // If it's a string that matches a label in the lookup table, return the id
+              if (typeof item === 'string' && lookupTable.length > 0) {
+                const found = lookupTable.find(lookup => lookup.label === item);
+                if (found) return found.id;
+              }
+              
+              // Otherwise return the item as is
+              return item;
+            });
           };
           setFormData({
             title: data.title || '',
@@ -234,7 +249,7 @@ const CreateListing = () => {
             bathrooms: data.bathrooms?.toString() || '',
             area: data.area?.toString() || '',
             images: [], // Keep empty for new uploads
-            amenities: processArrayField(data.amenities),
+            amenities: processArrayField(data.amenities, AMENITIES),
             yearBuilt: data.year_built?.toString() || '',
             parkingSpaces: data.parking_spaces?.toString() || '',
             lotSize: data.lot_size || '',
@@ -248,14 +263,44 @@ const CreateListing = () => {
             contactEmail: data.contact_email || '',
             virtualTourUrl: data.virtual_tour_url || '',
             videoUrl: data.video_url || '',
-            additionalFeatures: processArrayField(data.additional_features)
+            additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES)
           });
           // Handle existing images
           if (data.images && Array.isArray(data.images)) {
             console.log("Setting existing images for preview:", data.images);
-            setPreviewImages(data.images);
+            // Extract image URLs from image objects if necessary
+            const imageUrls = data.images.map(img => {
+              // If image is an object with an image property that is a URL string
+              if (typeof img === 'object' && img !== null) {
+                // Check for common image URL properties
+                if (img.url) return img.url;
+                if (img.image) return typeof img.image === 'string' ? img.image : img.image.url;
+                if (img.src) return img.src;
+                
+                // If no recognized property, try to find a string property that looks like a URL
+                const possibleUrlProps = Object.entries(img)
+                  .find(([_, val]) => typeof val === 'string' && (val.startsWith('http') || val.startsWith('/')));
+                
+                if (possibleUrlProps) return possibleUrlProps[1];
+              }
+              
+              // If it's already a string or we couldn't find a URL property, return as is
+              return img;
+            });
+            
+            setPreviewImages(imageUrls);
+
+            // Find the primary image if one is marked
+            const primaryImageIndex = data.images.findIndex(img => 
+              img && typeof img === 'object' && img.is_primary === true
+            );
+            
+            if (primaryImageIndex >= 0) {
+              setPrimaryIndex(primaryImageIndex);
+            } else {
+              setPrimaryIndex(0);
+            }
           }
-          setPrimaryIndex(0);
         })
         .catch(error => {
           console.error("Error fetching listing for edit:", error);
@@ -321,12 +366,29 @@ const CreateListing = () => {
           formDataToSend.append('reorder_images', 'true');
           formDataToSend.append('primary_image_index', primaryIndex.toString());
           
-          // We might need to send existing image identifiers to indicate new order
-          // This depends on how your backend identifies images
+          // Extract image identifiers from the preview URLs to send to the backend
           previewImages.forEach((url, index) => {
-            // Extract image ID from URL or use the whole URL as identifier
-            const imageId = url.split('/').pop() || url;
+            // Try to extract an ID from the URL - look for patterns like '/12345/' or '_12345.'
+            let imageId = '';
+            
+            // First try extracting using typical URL path patterns
+            const idMatch = url.match(/\/(\d+)\/|\/image\/(\d+)|[_-](\d+)\./);
+            if (idMatch) {
+              // Find the first non-undefined capturing group
+              imageId = idMatch.slice(1).find(group => group !== undefined) || '';
+            }
+            
+            if (!imageId) {
+              // If no ID extracted, use the last path segment or full URL as fallback
+              imageId = url.split('/').pop() || url;
+            }
+            
             formDataToSend.append('image_order[]', imageId);
+            
+            // Mark primary image explicitly
+            if (index === primaryIndex) {
+              formDataToSend.append('primary_image_id', imageId);
+            }
           });
         }
       } else {
