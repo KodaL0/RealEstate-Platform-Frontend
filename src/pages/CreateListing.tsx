@@ -501,7 +501,7 @@ const CreateListing = () => {
         : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
-      const response = await apiClient.post(endpoint, formDataToSend, {
+      const response = await apiClient[isEditing ? 'put' : 'post'](endpoint, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
