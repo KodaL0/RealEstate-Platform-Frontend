@@ -190,22 +190,29 @@ const CreateListing = () => {
 
   const validateForm = (): boolean => {
     console.log("Validating form...", formData);
-    if (!formData.images.length) {
+    
+    // For new listings, require at least one image
+    // For edits, allow if there are already preview images
+    if (!formData.images.length && !previewImages.length) {
       toast.error('Please upload at least one image');
       return false;
     }
+    
     if (!formData.title.trim() || !formData.description.trim()) {
       toast.error('Title and description are required');
       return false;
     }
+    
     if (!formData.contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
       toast.error('Please enter a valid email address');
       return false;
     }
+    
     if (!formData.contactPhone.match(/^\+?[\d\s-]{10,}$/)) {
       toast.error('Please enter a valid phone number');
       return false;
     }
+    
     return true;
   };
 
@@ -219,25 +226,37 @@ const CreateListing = () => {
           const data = response.data;
           console.log("Fetched listing for edit:", data);
           // Process array fields to handle both object format and string format
-          const processArrayField = (field, lookupTable = []) => {
+          const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
             if (!field) return [];
             if (!Array.isArray(field)) return [];
             
-            return field.map(item => {
+            const results: string[] = [];
+            
+            field.forEach(item => {
               // If it's an object with an id property, return the id
-              if (typeof item === 'object' && item.id) {
-                return item.id;
+              if (typeof item === 'object' && item !== null && item.id) {
+                if (!results.includes(item.id)) {
+                  results.push(item.id);
+                }
               }
-              
-              // If it's a string that matches a label in the lookup table, return the id
-              if (typeof item === 'string' && lookupTable.length > 0) {
+              // If it's a string that matches a label in the lookup table, convert to id
+              else if (typeof item === 'string') {
                 const found = lookupTable.find(lookup => lookup.label === item);
-                if (found) return found.id;
+                if (found && !results.includes(found.id)) {
+                  results.push(found.id);
+                } 
+                // If it's already in id format but not found yet
+                else if (!found && !results.includes(item)) {
+                  // Check if it matches an ID in the lookup table
+                  const matchesId = lookupTable.some(lookup => lookup.id === item);
+                  if (matchesId) {
+                    results.push(item);
+                  }
+                }
               }
-              
-              // Otherwise return the item as is
-              return item;
             });
+            
+            return results;
           };
           setFormData({
             title: data.title || '',
