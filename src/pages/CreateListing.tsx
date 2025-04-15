@@ -109,6 +109,8 @@ const CreateListing = () => {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   // State for primary image selection
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
+  // State to store current user's username
+  const [username, setUsername] = useState<string>('');
   // Form data state
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
@@ -206,61 +208,74 @@ const CreateListing = () => {
     }
     return true;
   };
-// Fetch listing data if in edit mode.
-useEffect(() => {
-  if (isEditing && id) {
-    setLoadingListing(true);
-    console.log("Edit mode enabled. Fetching listing with id:", id);
-    apiClient.get(`/api/properties/${id}`)
+
+  // Fetch listing data if in edit mode.
+  useEffect(() => {
+    if (isEditing && id) {
+      setLoadingListing(true);
+      console.log("Edit mode enabled. Fetching listing with id:", id);
+      apiClient.get(`/api/properties/${id}`)
+        .then(response => {
+          const data = response.data;
+          console.log("Fetched listing for edit:", data);
+          // Process array fields to handle both object format and string format
+          const processArrayField = (field) => {
+            if (!field) return [];
+            if (!Array.isArray(field)) return [];
+            return field.map(item => typeof item === 'object' && item.id ? item.id : item);
+          };
+          setFormData({
+            title: data.title || '',
+            description: data.description || '',
+            price: data.price || '',
+            location: data.location || '',
+            propertyType: data.property_type || '',
+            bedrooms: data.bedrooms?.toString() || '',
+            bathrooms: data.bathrooms?.toString() || '',
+            area: data.area?.toString() || '',
+            images: [], // Keep empty for new uploads
+            amenities: processArrayField(data.amenities),
+            yearBuilt: data.year_built?.toString() || '',
+            parkingSpaces: data.parking_spaces?.toString() || '',
+            lotSize: data.lot_size || '',
+            propertyStatus: data.property_status || '',
+            energyRating: data.energy_rating || '',
+            constructionMaterial: data.construction_material || '',
+            floorLevel: data.floor_level || '',
+            totalFloors: data.total_floors || '',
+            availableFrom: data.available_from || '',
+            contactPhone: data.contact_phone || '',
+            contactEmail: data.contact_email || '',
+            virtualTourUrl: data.virtual_tour_url || '',
+            videoUrl: data.video_url || '',
+            additionalFeatures: processArrayField(data.additional_features)
+          });
+          // Handle existing images
+          if (data.images && Array.isArray(data.images)) {
+            console.log("Setting existing images for preview:", data.images);
+            setPreviewImages(data.images);
+          }
+          setPrimaryIndex(0);
+        })
+        .catch(error => {
+          console.error("Error fetching listing for edit:", error);
+          toast.error("Could not load listing data for editing");
+        })
+        .finally(() => setLoadingListing(false));
+    }
+  }, [isEditing, id]);
+
+  // Add a new useEffect to fetch the current user profile
+  useEffect(() => {
+    apiClient.get('/api/users/me/')
       .then(response => {
-        const data = response.data;
-        console.log("Fetched listing for edit:", data);
-        // Process array fields to handle both object format and string format
-        const processArrayField = (field) => {
-          if (!field) return [];
-          if (!Array.isArray(field)) return [];
-          return field.map(item => typeof item === 'object' && item.id ? item.id : item);
-        };
-        setFormData({
-          title: data.title || '',
-          description: data.description || '',
-          price: data.price || '',
-          location: data.location || '',
-          propertyType: data.property_type || '',
-          bedrooms: data.bedrooms?.toString() || '',
-          bathrooms: data.bathrooms?.toString() || '',
-          area: data.area?.toString() || '',
-          images: [], // Keep empty for new uploads
-          amenities: processArrayField(data.amenities),
-          yearBuilt: data.year_built?.toString() || '',
-          parkingSpaces: data.parking_spaces?.toString() || '',
-          lotSize: data.lot_size || '',
-          propertyStatus: data.property_status || '',
-          energyRating: data.energy_rating || '',
-          constructionMaterial: data.construction_material || '',
-          floorLevel: data.floor_level || '',
-          totalFloors: data.total_floors || '',
-          availableFrom: data.available_from || '',
-          contactPhone: data.contact_phone || '',
-          contactEmail: data.contact_email || '',
-          virtualTourUrl: data.virtual_tour_url || '',
-          videoUrl: data.video_url || '',
-          additionalFeatures: processArrayField(data.additional_features)
-        });
-        // Handle existing images
-        if (data.images && Array.isArray(data.images)) {
-          console.log("Setting existing images for preview:", data.images);
-          setPreviewImages(data.images);
-        }
-        setPrimaryIndex(0);
+        console.log("Fetched current user data:", response.data);
+        setUsername(response.data.username);
       })
       .catch(error => {
-        console.error("Error fetching listing for edit:", error);
-        toast.error("Could not load listing data for editing");
-      })
-      .finally(() => setLoadingListing(false));
-  }
-}, [isEditing, id]);
+        console.error("Error fetching user profile:", error);
+      });
+  }, []);
 
   // Show loading message if edit data is being fetched.
   if (isEditing && loadingListing) {
@@ -284,15 +299,47 @@ useEffect(() => {
     try {
       const formDataToSend = new FormData();
       
-      // Option A: Reorder images so the primary image is first.
-      if (formData.images.length) {
-        const rearrangedImages = [
-          formData.images[primaryIndex],
-          ...formData.images.filter((_, idx) => idx !== primaryIndex)
-        ];
-        rearrangedImages.forEach(file => {
-          formDataToSend.append('images[]', file);
-        });
+      // Add image handling flags for edit mode
+      if (isEditing) {
+        // If editing and we have new images, tell the backend to replace the existing ones
+        if (formData.images.length > 0) {
+          formDataToSend.append('replace_images', 'true');
+          
+          // Option A: Reorder images so the primary image is first.
+          const rearrangedImages = [
+            formData.images[primaryIndex],
+            ...formData.images.filter((_, idx) => idx !== primaryIndex)
+          ];
+          rearrangedImages.forEach(file => {
+            formDataToSend.append('images[]', file);
+          });
+          
+          // Also send primary index explicitly
+          formDataToSend.append('primary_image_index', '0'); // Always 0 since we rearranged
+        } else if (previewImages.length > 0) {
+          // No new uploads but we've reordered existing images
+          formDataToSend.append('reorder_images', 'true');
+          formDataToSend.append('primary_image_index', primaryIndex.toString());
+          
+          // We might need to send existing image identifiers to indicate new order
+          // This depends on how your backend identifies images
+          previewImages.forEach((url, index) => {
+            // Extract image ID from URL or use the whole URL as identifier
+            const imageId = url.split('/').pop() || url;
+            formDataToSend.append('image_order[]', imageId);
+          });
+        }
+      } else {
+        // For new listings
+        if (formData.images.length) {
+          const rearrangedImages = [
+            formData.images[primaryIndex],
+            ...formData.images.filter((_, idx) => idx !== primaryIndex)
+          ];
+          rearrangedImages.forEach(file => {
+            formDataToSend.append('images[]', file);
+          });
+        }
       }
       
       // Append other form fields.
@@ -308,18 +355,9 @@ useEffect(() => {
         }
       });
       
-      // Append primaryIndex if needed.
-      formDataToSend.append('primaryIndex', primaryIndex.toString());
-      
-      console.log("FormData entries:");
-      for (let [key, val] of formDataToSend.entries()) {
-        console.log(key, val);
-      }
-      
       // Use the backend endpoint for edit listings.
-      // Given your backend understands the path 'options/', append the listing id as a query parameter.
       const endpoint = isEditing 
-  ? `/api/properties/${id}/edit/` 
+  ? `/api/properties/${username}/property/${id}/edit/` 
   : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
