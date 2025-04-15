@@ -308,9 +308,9 @@ const CreateListing = () => {
       }
       
       // Use the backend endpoint for edit listings.
-      const endpoint = isEditing 
-        ? `/api/<str:username>/property/<int:property_id>/edit/` 
-        : '/api/properties/create_property/';
+      const endpoint = isEditing
+  ? `/api/${request.user.username}/property/${id}/edit/`
+  : '/api/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
       const response = await apiClient.post(endpoint, formDataToSend, {
