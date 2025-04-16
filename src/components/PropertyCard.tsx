@@ -78,8 +78,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </h3>
           <p className="text-lg font-bold text-blue-600">
             {isForSale
-              ? `€${price.toLocaleString()}`
-              : `€${price.toLocaleString()}/mo`}
+              ? `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+              : `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}/mo`}
           </p>
         </div>
 
