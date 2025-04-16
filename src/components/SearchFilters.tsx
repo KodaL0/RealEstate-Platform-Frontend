@@ -38,6 +38,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
     <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
       <form onSubmit={handleSearch}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+          {/* Location */}
           <div className="lg:col-span-2">
             <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
               Location
@@ -52,6 +53,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             />
           </div>
 
+          {/* Price Range */}
           <div>
             <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
               Price Range
@@ -85,6 +87,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             </select>
           </div>
 
+          {/* Property Type */}
           <div>
             <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
               Property Type
@@ -105,10 +108,15 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             </select>
           </div>
 
+          {/* Search Button */}
           <div>
+            {/* Invisible label to align the button with other fields */}
+            <label className="block text-sm font-medium text-transparent mb-1 select-none">
+              &nbsp;
+            </label>
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors mt-4 py-1 px-3 text-sm"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors py-1 px-3 text-sm"
             >
               <Search className="h-4 w-4 mr-1" />
               Search
@@ -116,6 +124,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
           </div>
         </div>
 
+        {/* Advanced Filters Toggle */}
         <div className="flex justify-between items-center">
           <button
             type="button"
