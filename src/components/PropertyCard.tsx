@@ -8,29 +8,34 @@ interface PropertyCardProps {
 }
 
 const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
-  // Destructure the needed fields.
-  const {
-    id,
-    title,
-    price,
-    address,
-    bedrooms,
-    bathrooms,
-    area,
-    property_images,
-    forSale,
-    listing_type, // e.g., 'sale' or 'rent'
-    type, // e.g., apartment, house, etc.
-  } = property;
+  // Destructure common fields; note that the public listing data may have different keys.
+  const { id, title, price, address, bedrooms, bathrooms, area, forSale, listing_type } = property;
 
-  // If property_images is an array, use the first image; otherwise, use the property_images directly.
-  const imageUrl = Array.isArray(property_images) ? property_images[0] : property_images;
+  // Use property.images if available; fallback to property.property_images.
+  const imageUrl =
+    (property.images &&
+      Array.isArray(property.images) &&
+      property.images.length > 0 &&
+      property.images[0].image) ||
+    (property.property_images &&
+      Array.isArray(property.property_images) &&
+      property.property_images.length > 0 &&
+      property.property_images[0]) ||
+    '/placeholder-property.jpg';
 
-  // Determine if the property is for sale based on a boolean flag or a fallback listing_type value.
-  const isForSale =
-    typeof forSale === 'boolean'
-      ? forSale
-      : listing_type && listing_type.toLowerCase() === 'sale';
+  // Determine if the property is for sale.
+  // Preference is given to property.property_status if available.
+  const isForSale = property.property_status
+    ? property.property_status === 'for_sale'
+    : typeof forSale === 'boolean'
+    ? forSale
+    : listing_type && listing_type.toLowerCase() === 'sale';
+
+  // Use property.property_type if available, otherwise fallback to the "type" field.
+  const propertyType = property.property_type || property.type;
+
+  // Use property.location if it exists; otherwise, fall back to address.
+  const propertyAddress = property.location || address;
 
   return (
     <div
@@ -56,7 +61,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             {isForSale ? 'For Sale' : 'For Rent'}
           </span>
           <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-            {type}
+            {propertyType}
           </span>
         </div>
         {/* Favorite Button at Top-Right */}
@@ -81,7 +86,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         {/* Address */}
         <div className="flex items-center text-gray-500 mb-4">
           <MapPin className="h-4 w-4 mr-1" />
-          <span className="text-sm">{address}</span>
+          <span className="text-sm">{propertyAddress}</span>
         </div>
 
         {/* Stats: Beds, Baths, Area */}
