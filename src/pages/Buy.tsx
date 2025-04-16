@@ -10,22 +10,55 @@ const Buy = () => {
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
   const [sortOption, setSortOption] = useState('recommended');
   const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [searchFilters, setSearchFilters] = useState<any>({});
 
   // Fetch properties data dynamically
   useEffect(() => {
     const fetchProperties = async () => {
+      setIsLoading(true);
+      setError(null);
+      
       try {
-        const response = await fetch('/api/properties/buy'); // adjust the endpoint as needed
+        // Build query parameters based on filters and sort option
+        const queryParams = new URLSearchParams();
+        
+        // Add sort option if not default
+        if (sortOption !== 'recommended') {
+          queryParams.append('sort', sortOption);
+        }
+        
+        // Add search filters
+        if (searchFilters.minPrice) queryParams.append('minPrice', searchFilters.minPrice);
+        if (searchFilters.maxPrice) queryParams.append('maxPrice', searchFilters.maxPrice);
+        if (searchFilters.bedrooms) queryParams.append('bedrooms', searchFilters.bedrooms);
+        if (searchFilters.bathrooms) queryParams.append('bathrooms', searchFilters.bathrooms);
+        if (searchFilters.propertyType) queryParams.append('propertyType', searchFilters.propertyType);
+        if (searchFilters.location) queryParams.append('location', searchFilters.location);
+        
+        // Construct URL with query parameters
+        const url = `/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        
+        const response = await fetch(url);
+        
+        if (!response.ok) {
+          throw new Error(`Error fetching properties: ${response.status}`);
+        }
+        
         const data = await response.json();
         setAllProperties(data);
         setFilteredProperties(data);
       } catch (error) {
         console.error('Error fetching properties:', error);
+        setError('Failed to load properties. Please try again.');
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchProperties();
-  }, []);
+  }, [sortOption, searchFilters]);
 
   // Calculate the properties to display on the current page
   const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -34,43 +67,12 @@ const Buy = () => {
 
   const handleSearch = (filters: any) => {
     console.log('Search filters:', filters);
-    // Implement filtering logic based on provided filters
-    // For now, we assume the filtered list is the same as the full list.
-    const filtered = allProperties; // Replace with your own filtering logic.
-    setFilteredProperties(filtered);
+    setSearchFilters(filters);
     setCurrentPage(1);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
-
-    // Create a copy for sorting without directly mutating the state
-    const sortedProperties = [...filteredProperties];
-
-    switch (e.target.value) {
-      case 'price-asc':
-        sortedProperties.sort((a, b) => a.price - b.price);
-        break;
-      case 'price-desc':
-        sortedProperties.sort((a, b) => b.price - a.price);
-        break;
-      case 'newest':
-        // Assuming properties include a date property (e.g. 'dateListed')
-        sortedProperties.sort(
-          (a, b) => new Date(b.dateListed).getTime() - new Date(a.dateListed).getTime()
-        );
-        break;
-      case 'oldest':
-        sortedProperties.sort(
-          (a, b) => new Date(a.dateListed).getTime() - new Date(b.dateListed).getTime()
-        );
-        break;
-      default:
-        // 'recommended' - implement custom sorting if needed
-        break;
-    }
-
-    setFilteredProperties(sortedProperties);
     setCurrentPage(1);
   };
 
@@ -118,7 +120,9 @@ const Buy = () => {
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Available Properties</h2>
-            <p className="text-gray-600">{filteredProperties.length} properties found</p>
+            <p className="text-gray-600">
+              {isLoading ? 'Loading properties...' : `${filteredProperties.length} properties found`}
+            </p>
           </div>
 
           <div className="flex items-center">
@@ -130,6 +134,7 @@ const Buy = () => {
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
               value={sortOption}
               onChange={handleSortChange}
+              disabled={isLoading}
             >
               <option value="recommended">Recommended</option>
               <option value="price-asc">Price (Low to High)</option>
@@ -140,14 +145,48 @@ const Buy = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayedProperties.map(property => (
-            <PropertyCard key={property.id} property={property} />
-          ))}
-        </div>
+        {/* Error Message */}
+        {error && (
+          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
+            <p>{error}</p>
+            <button 
+              onClick={() => window.location.reload()}
+              className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
+            >
+              Try Again
+            </button>
+          </div>
+        )}
+
+        {/* Loading Indicator */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+          </div>
+        ) : filteredProperties.length === 0 ? (
+          <div className="text-center py-12">
+            <h3 className="text-xl font-semibold text-gray-700 mb-4">No properties match your search criteria</h3>
+            <p className="text-gray-600 mb-6">Try adjusting your filters or explore our other listings</p>
+            <button 
+              onClick={() => {
+                setSearchFilters({});
+                setSortOption('recommended');
+              }}
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+            >
+              Clear All Filters
+            </button>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {displayedProperties.map(property => (
+              <PropertyCard key={property.id} property={property} />
+            ))}
+          </div>
+        )}
 
         {/* Pagination */}
-        {totalPages > 1 && (
+        {!isLoading && filteredProperties.length > 0 && totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <nav className="flex items-center space-x-2">
               <button
