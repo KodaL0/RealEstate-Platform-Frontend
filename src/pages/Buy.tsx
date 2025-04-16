@@ -1,26 +1,39 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
-import { buyProperties } from '../data/properties';
 
 const Buy = () => {
-  const [filteredProperties, setFilteredProperties] = useState(buyProperties);
+  const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
   const [sortOption, setSortOption] = useState('recommended');
+
+  // Fetch properties data dynamically
+  useEffect(() => {
+    const fetchProperties = async () => {
+      try {
+        const response = await fetch('/api/properties/buy'); // adjust the endpoint as needed
+        const data = await response.json();
+        setFilteredProperties(data);
+      } catch (error) {
+        console.error('Error fetching properties:', error);
+      }
+    };
+
+    fetchProperties();
+  }, []);
 
   const handleSearch = (filters: any) => {
     console.log('Search filters:', filters);
-    // In a real application, this would filter the properties based on the criteria
-    // For now, we'll just use the mock data
-    setFilteredProperties(buyProperties);
+    // Implement filtering logic here based on the filters.
+    // For example, you could filter the current properties or trigger a re-fetch with filter parameters.
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
-    
-    // Sort the properties based on the selected option
+
+    // Create a copy for sorting without mutating the state directly
     const sortedProperties = [...filteredProperties];
-    
+
     switch (e.target.value) {
       case 'price-asc':
         sortedProperties.sort((a, b) => a.price - b.price);
@@ -29,16 +42,17 @@ const Buy = () => {
         sortedProperties.sort((a, b) => b.price - a.price);
         break;
       case 'newest':
-        // In a real app, you would sort by date listed
+        // Assuming properties include a date property such as 'dateListed'
+        sortedProperties.sort((a, b) => new Date(b.dateListed).getTime() - new Date(a.dateListed).getTime());
         break;
       case 'oldest':
-        // In a real app, you would sort by date listed
+        sortedProperties.sort((a, b) => new Date(a.dateListed).getTime() - new Date(b.dateListed).getTime());
         break;
       default:
-        // 'recommended' - no specific sort
+        // 'recommended' - no sort or implement your own custom sorting logic
         break;
     }
-    
+
     setFilteredProperties(sortedProperties);
   };
 
@@ -59,7 +73,7 @@ const Buy = () => {
           </div>
         </div>
       </section>
-  
+
       {/* Search Filters */}
       <section className="container mx-auto px-4 mt-4">
         <SearchFilters forSale={true} onSearch={handleSearch} />
@@ -72,7 +86,7 @@ const Buy = () => {
             <h2 className="text-2xl font-bold text-gray-900">Available Properties</h2>
             <p className="text-gray-600">{filteredProperties.length} properties found</p>
           </div>
-          
+
           <div className="flex items-center">
             <label htmlFor="sort" className="mr-2 text-gray-700">Sort by:</label>
             <select
@@ -89,13 +103,13 @@ const Buy = () => {
             </select>
           </div>
         </div>
-        
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredProperties.map(property => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
-        
+
         {/* Pagination */}
         <div className="mt-12 flex justify-center">
           <nav className="flex items-center space-x-2">
@@ -121,7 +135,7 @@ const Buy = () => {
           </nav>
         </div>
       </section>
-      
+
       {/* CTA Section */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4 text-center">
