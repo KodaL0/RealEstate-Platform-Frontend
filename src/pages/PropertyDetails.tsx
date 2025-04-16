@@ -115,10 +115,43 @@ const PropertyDetails = () => {
   useEffect(() => {
     async function fetchPropertyData() {
       try {
-        const response = await apiClient.get(`/api/properties/${id}`);
+        setLoading(true);
+        let response;
+        
+        try {
+          // First try the direct property endpoint
+          response = await apiClient.get(`/api/properties/${id}`);
+        } catch (error: any) {
+          // If we get a 404, the property might be publicly available but not owned by current user
+          if (error.response && error.response.status === 404) {
+            console.log('Property not found with direct endpoint, trying published endpoint...');
+            
+            // Try to find the property in published properties
+            const publishedResponse = await apiClient.get('/api/properties/buy');
+            const publishedProperties = Array.isArray(publishedResponse.data) 
+              ? publishedResponse.data 
+              : (publishedResponse.data.results || []);
+            
+            // Find the property with matching ID
+            const foundProperty = publishedProperties.find(p => p.id.toString() === id);
+            
+            if (foundProperty) {
+              // If we found the property in the published list, we can use it directly
+              response = { data: foundProperty };
+              console.log('Found property in published listings, using that data');
+            } else {
+              throw new Error('Property not found in published listings');
+            }
+          } else {
+            // Re-throw if it's not a 404 error
+            throw error;
+          }
+        }
+        
         console.log('API response:', response.data);
         const mappedProperty = mapPropertyData(response.data);
         setProperty(mappedProperty);
+        
         // If no latitude/longitude is provided, geocode the address.
         if (!response.data.latitude && mappedProperty.location) {
           try {
@@ -134,6 +167,7 @@ const PropertyDetails = () => {
         setLoading(false);
       }
     }
+    
     if (id) {
       fetchPropertyData();
     }
