@@ -23,7 +23,9 @@
     "react-dropzone": "^14.2.3",
     "react-hot-toast": "^2.4.1",
     "leaflet": "^1.9.3",
-    "react-leaflet": "^4.1.0"
+    "react-leaflet": "^4.1.0",
+    "react-leaflet-geosearch": "^3.0.0"
+    
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
