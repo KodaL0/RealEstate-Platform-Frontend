@@ -108,7 +108,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
           <div>
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors mt-2 py-1 px-3 text-sm"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors mt-4 py-1 px-3 text-sm"
             >
               <Search className="h-4 w-4 mr-1" />
               Search
