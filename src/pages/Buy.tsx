@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { MapPin } from 'lucide-react';
 import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
+import { buyProperties } from '../data/properties';
 
 const Buy = () => {
   const [filteredProperties, setFilteredProperties] = useState(buyProperties);
