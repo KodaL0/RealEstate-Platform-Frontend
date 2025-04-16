@@ -38,7 +38,8 @@ const MyListings = () => {
   // Fetch current user's username
   useEffect(() => {
     setLoadingUsername(true);
-    apiClient.get('/api/users/get_user/')
+    apiClient
+      .get('/api/users/get_user/')
       .then(response => {
         console.log("Fetched current user data:", response.data);
         if (response.data && response.data.user && response.data.user.username) {
@@ -92,6 +93,33 @@ const MyListings = () => {
 
     fetchMyListings();
   }, [navigate]);
+
+  // New handler for publishing a listing
+  const handlePublish = async (id: number) => {
+    if (!window.confirm("Are you sure you want to publish this listing?")) return;
+    if (!username) {
+      setError("Unable to publish listing: username not available");
+      return;
+    }
+    try {
+      // Adjust the endpoint as needed
+      await apiClient.patch(`/api/properties/${username}/property/${id}/publish/`, null, {
+        withCredentials: true,
+      });
+      // Optionally update the UI to reflect the published status.
+      setProperties(prev =>
+        prev.map(property =>
+          property.id === id ? { ...property, property_status: 'for_sale' } : property
+        )
+      );
+    } catch (err: any) {
+      console.error("Error publishing listing:", err.response || err);
+      const errorMessage =
+        err?.response?.data?.error ||
+        'Failed to publish listing. Please try again later.';
+      setError(errorMessage);
+    }
+  };
 
   // Calculate the properties to display on the current page.
   const startIndex = (currentPage - 1) * itemsPerPage;
@@ -324,6 +352,15 @@ const MyListings = () => {
                           className="ml-4 text-red-600 hover:text-red-700 font-medium"
                         >
                           Remove Listing
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePublish(property.id);
+                          }}
+                          className="ml-4 text-green-600 hover:text-green-700 font-medium"
+                        >
+                          Publish
                         </button>
                       </div>
                       <span className="text-sm text-gray-500">
