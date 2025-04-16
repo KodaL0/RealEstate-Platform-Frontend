@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
 import { Home, Plus } from 'lucide-react';
+import { apiClient } from '../middleware/auth';
 
 interface Property {
   id: number;
@@ -25,18 +26,44 @@ const MyListings = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  // Add state for current username
+  const [username, setUsername] = useState<string>('');
+  const [loadingUsername, setLoadingUsername] = useState<boolean>(true);
 
   // Pagination states
   const itemsPerPage = 6;
   const [currentPage, setCurrentPage] = useState<number>(1);
   const totalPages = Math.ceil(properties.length / itemsPerPage);
 
+  // Fetch current user's username
+  useEffect(() => {
+    setLoadingUsername(true);
+    apiClient.get('/api/users/get_user/')
+      .then(response => {
+        console.log("Fetched current user data:", response.data);
+        if (response.data && response.data.user && response.data.user.username) {
+          console.log("Setting username to:", response.data.user.username);
+          setUsername(response.data.user.username);
+        } else {
+          console.warn("Username not found in user data:", response.data);
+          setError("Username not found in profile data");
+        }
+      })
+      .catch(error => {
+        console.error("Error fetching user profile:", error);
+        setError("Failed to fetch user profile. Please try again.");
+      })
+      .finally(() => {
+        setLoadingUsername(false);
+      });
+  }, []);
+
   useEffect(() => {
     const fetchMyListings = async () => {
       try {
         setLoading(true);
-        const response = await axios.get<Property[]>(
-          'https://propertprodjango.onrender.com/api/properties/my-properties',
+        const response = await apiClient.get<Property[]>(
+          '/api/properties/my-properties',
           {
             withCredentials: true,
             headers: { 'Content-Type': 'application/json' }
@@ -85,14 +112,24 @@ const MyListings = () => {
     goToPage(currentPage + 1);
   };
 
-  // Handler for removing a listing.
+  // Updated handler for removing a listing using the new username-based endpoint
   const handleRemove = async (id: number) => {
     if (!window.confirm("Are you sure you want to remove this listing?")) return;
+    
+    // Check if we have the username
+    if (!username) {
+      setError("Unable to delete listing: username not available");
+      return;
+    }
+    
     try {
-      await axios.delete(`https://propertprodjango.onrender.com/api/properties/delete/${id}`, {
+      // Use the new username-based endpoint
+      await apiClient.delete(`/api/properties/${username}/property/${id}/delete/`, {
         withCredentials: true,
       });
+      
       setProperties(prev => prev.filter(property => property.id !== id));
+      
       // Adjust current page if necessary.
       const newTotalPages = Math.ceil((properties.length - 1) / itemsPerPage);
       if (currentPage > newTotalPages) {
@@ -101,13 +138,14 @@ const MyListings = () => {
     } catch (err: any) {
       console.error("Error removing listing:", err.response || err);
       const errorMessage =
-        err?.response?.data?.message ||
+        err?.response?.data?.error ||
         'Failed to remove listing. Please try again later.';
       setError(errorMessage);
     }
   };
 
-  if (loading) {
+  // Show loading if we're loading the username or properties
+  if (loading || loadingUsername) {
     return (
       <div className="min-h-screen pt-20 px-4">
         <div className="container mx-auto flex justify-center items-center h-64">
@@ -124,6 +162,12 @@ const MyListings = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
             <p className="text-red-600">{error}</p>
           </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
