@@ -13,13 +13,29 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
 
   // Fetch address details using Nominatim's reverse geocoding API.
   const fetchAddress = async () => {
+    // Optionally add a zoom parameter (e.g., zoom=18) for more detailed results:
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
     try {
-      const response = await fetch(url);
+      // Add a User-Agent header for better compliance with Nominatim's usage policy.
+      const response = await fetch(url, {
+        headers: {
+          'User-Agent': 'YourAppName/1.0'
+        }
+      });
       const data = await response.json();
-      const addr = data.address || {};
-      // Construct a complete address string from the available details.
-      const fullAddress = `${addr.house_number ? addr.house_number + ' ' : ''}${addr.road || ''}, ${addr.city || addr.town || ''}, ${addr.state || ''}, ${addr.country || ''}`.trim();
+      console.log('Reverse geocoding response:', data);
+      if (data.error) {
+        setAddress('Address not found');
+        return;
+      }
+      // Prefer the display_name property if it exists.
+      const fullAddress =
+        data.display_name ||
+        `${data.address.house_number ? data.address.house_number + ' ' : ''}${
+          data.address.road || ''
+        }, ${data.address.city || data.address.town || data.address.village || ''}, ${
+          data.address.state || ''
+        }, ${data.address.country || ''}`.trim();
       setAddress(fullAddress || 'Address not found');
     } catch (error) {
       console.error('Error fetching address:', error);
@@ -33,13 +49,14 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker position={position}
-        // When the marker is clicked, fetch the address.
+      <Marker
+        position={position}
         eventHandlers={{
           click: () => {
             fetchAddress();
           },
-        }}>
+        }}
+      >
         <Popup>
           {address}
         </Popup>
