@@ -14,7 +14,7 @@ const apiClient: AxiosInstance = axios.create({
 });
 
 // REQUEST INTERCEPTOR: Since cookies are automatically attached by the browser,
-// we don’t need to modify the headers here.
+// we don't need to modify the headers here.
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => config,
   (error) => Promise.reject(error)
@@ -29,6 +29,25 @@ apiClient.interceptors.response.use(
     
     // Prevent infinite loop for refresh endpoint errors:
     if (originalRequest.url?.includes('/api/users/refresh')) {
+      return Promise.reject(error);
+    }
+    
+    // Don't try to refresh token for public routes
+    const publicRoutes = [
+      '/api/properties/buy',
+      'buy/',
+      '/api/properties/rent',
+      'rent/'
+    ];
+    
+    // Check if it's a public property details route (matches /api/properties/{number})
+    const isPublicPropertyDetail = originalRequest.url && /\/api\/properties\/\d+\/?$/.test(originalRequest.url);
+    
+    // Skip token refresh for public routes
+    const isPublicRoute = publicRoutes.some(route => originalRequest.url?.includes(route)) || isPublicPropertyDetail;
+    
+    if (error.response?.status === 401 && isPublicRoute) {
+      console.log('Unauthenticated access to public route, continuing without refresh');
       return Promise.reject(error);
     }
     

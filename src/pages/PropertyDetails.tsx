@@ -122,9 +122,9 @@ const PropertyDetails = () => {
           // First try the direct property endpoint
           response = await apiClient.get(`/api/properties/${id}`);
         } catch (error: any) {
-          // If we get a 404, the property might be publicly available but not owned by current user
-          if (error.response && error.response.status === 404) {
-            console.log('Property not found with direct endpoint, trying published endpoint...');
+          // If we get a 404 or 401 (unauthorized), try the published endpoint
+          if (error.response && (error.response.status === 404 || error.response.status === 401)) {
+            console.log('Property not found with direct endpoint or user not authenticated, trying published endpoint...');
             
             // Try to find the property in published properties
             const publishedResponse = await apiClient.get('/api/properties/buy');
@@ -143,7 +143,7 @@ const PropertyDetails = () => {
               throw new Error('Property not found in published listings');
             }
           } else {
-            // Re-throw if it's not a 404 error
+            // Re-throw if it's not a 404 or 401 error
             throw error;
           }
         }
