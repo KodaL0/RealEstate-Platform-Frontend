@@ -150,7 +150,9 @@ const Buy = () => {
       </section>
 
       {/* Search Filters */}
-      <section className="container mx-auto px-4 mt-4">
+      <section className="container mx-auto px-4 mt-4 flex flex-wrap items-center gap-4">
+        {/* By wrapping in a flex container with flex-wrap and gap, 
+            we ensure that buttons from SearchFilters won’t overlap other elements */}
         <SearchFilters forSale={true} onSearch={handleSearch} />
       </section>
 
@@ -211,7 +213,7 @@ const Buy = () => {
                 setSearchFilters({});
                 setSortOption('recommended');
               }}
-              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Clear All Filters
             </button>
