@@ -1,17 +1,36 @@
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Bed, Bath, Square, Home } from 'lucide-react';
-import { Property, PropertyImage } from '../types';
+import { Heart, MapPin, Bed, Bath, Square } from 'lucide-react';
+import { Property } from '../types';
 
 interface PropertyCardProps {
   property: Property;
   featured?: boolean;
-  editable?: boolean; // When true, shows the Edit Listing button.
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false, editable = false }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
   // Destructure the needed fields.
-  // Adjust property_images if your Property type uses another field name.
-  const { id, title, price, address, bedrooms, bathrooms, area, property_images, type, forSale } = property;
+  const {
+    id,
+    title,
+    price,
+    address,
+    bedrooms,
+    bathrooms,
+    area,
+    property_images,
+    forSale,
+    listing_type, // e.g., 'sale' or 'rent'
+    type, // e.g., apartment, house, etc.
+  } = property;
+
+  // If property_images is an array, use the first image; otherwise, use the property_images directly.
+  const imageUrl = Array.isArray(property_images) ? property_images[0] : property_images;
+
+  // Determine if the property is for sale based on a boolean flag or a fallback listing_type value.
+  const isForSale =
+    typeof forSale === 'boolean'
+      ? forSale
+      : listing_type && listing_type.toLowerCase() === 'sale';
 
   return (
     <div
@@ -21,9 +40,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
     >
       <div className="relative">
         <Link to={`/property/${id}`}>
-          <img 
-            src={property_images} 
-            alt=""  // No fallback text if the image fails to load.
+          <img
+            src={imageUrl}
+            alt={title}
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
@@ -31,10 +50,10 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
         <div className="absolute top-4 left-4 flex space-x-2">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
-              forSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+              isForSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
             }`}
           >
-            {forSale ? 'For Sale' : 'For Rent'}
+            {isForSale ? 'For Sale' : 'For Rent'}
           </span>
           <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
             {type}
@@ -45,7 +64,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
           <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
         </button>
       </div>
-      
+
       <div className="p-5">
         {/* Title & Price Row */}
         <div className="flex justify-between items-start mb-2">
@@ -53,26 +72,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
           <p className="text-lg font-bold text-blue-600">
-            {forSale ? `$${price.toLocaleString()}` : `$${price.toLocaleString()}/mo`}
+            {isForSale
+              ? `$${price.toLocaleString()}`
+              : `$${price.toLocaleString()}/mo`}
           </p>
         </div>
-        
-        {/* Address & Conditional Edit Listing Button */}
-        <div className="flex justify-between items-center text-gray-500 mb-4">
-          <div className="flex items-center">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span className="text-sm">{address}</span>
-          </div>
-          {editable && (
-            <Link
-              to={`/create-listing/${id}`}
-              className="text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
-            >
-              Edit Listing
-            </Link>
-          )}
+
+        {/* Address */}
+        <div className="flex items-center text-gray-500 mb-4">
+          <MapPin className="h-4 w-4 mr-1" />
+          <span className="text-sm">{address}</span>
         </div>
-        
+
         {/* Stats: Beds, Baths, Area */}
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
