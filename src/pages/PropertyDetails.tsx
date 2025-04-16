@@ -291,11 +291,6 @@ const PropertyDetails = () => {
                     <p className="text-3xl font-bold text-blue-600">
                       €{property.price.toLocaleString()}
                     </p>
-                    {property.property_status === 'for_sale' && (
-                      <p className="text-gray-600 text-sm">
-                        Est. €{Math.round(property.price / 360).toLocaleString()}/mo
-                      </p>
-                    )}
                   </div>
                 </div>
 
