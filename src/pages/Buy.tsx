@@ -3,9 +3,13 @@ import { MapPin } from 'lucide-react';
 import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
 
+const PAGE_SIZE = 9; // Show 9 property cards per page
+
 const Buy = () => {
+  const [allProperties, setAllProperties] = useState<any[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
   const [sortOption, setSortOption] = useState('recommended');
+  const [currentPage, setCurrentPage] = useState(1);
 
   // Fetch properties data dynamically
   useEffect(() => {
@@ -13,6 +17,7 @@ const Buy = () => {
       try {
         const response = await fetch('/api/properties/buy'); // adjust the endpoint as needed
         const data = await response.json();
+        setAllProperties(data);
         setFilteredProperties(data);
       } catch (error) {
         console.error('Error fetching properties:', error);
@@ -22,16 +27,24 @@ const Buy = () => {
     fetchProperties();
   }, []);
 
+  // Calculate the properties to display on the current page
+  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  const displayedProperties = filteredProperties.slice(startIndex, startIndex + PAGE_SIZE);
+  const totalPages = Math.ceil(filteredProperties.length / PAGE_SIZE);
+
   const handleSearch = (filters: any) => {
     console.log('Search filters:', filters);
-    // Implement filtering logic here based on the filters.
-    // For example, you could filter the current properties or trigger a re-fetch with filter parameters.
+    // Implement filtering logic based on provided filters
+    // For now, we assume the filtered list is the same as the full list.
+    const filtered = allProperties; // Replace with your own filtering logic.
+    setFilteredProperties(filtered);
+    setCurrentPage(1);
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
 
-    // Create a copy for sorting without mutating the state directly
+    // Create a copy for sorting without directly mutating the state
     const sortedProperties = [...filteredProperties];
 
     switch (e.target.value) {
@@ -42,18 +55,39 @@ const Buy = () => {
         sortedProperties.sort((a, b) => b.price - a.price);
         break;
       case 'newest':
-        // Assuming properties include a date property such as 'dateListed'
-        sortedProperties.sort((a, b) => new Date(b.dateListed).getTime() - new Date(a.dateListed).getTime());
+        // Assuming properties include a date property (e.g. 'dateListed')
+        sortedProperties.sort(
+          (a, b) => new Date(b.dateListed).getTime() - new Date(a.dateListed).getTime()
+        );
         break;
       case 'oldest':
-        sortedProperties.sort((a, b) => new Date(a.dateListed).getTime() - new Date(b.dateListed).getTime());
+        sortedProperties.sort(
+          (a, b) => new Date(a.dateListed).getTime() - new Date(b.dateListed).getTime()
+        );
         break;
       default:
-        // 'recommended' - no sort or implement your own custom sorting logic
+        // 'recommended' - implement custom sorting if needed
         break;
     }
 
     setFilteredProperties(sortedProperties);
+    setCurrentPage(1);
+  };
+
+  const goToPage = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(prev => prev - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(prev => prev + 1);
+    }
   };
 
   return (
@@ -88,7 +122,9 @@ const Buy = () => {
           </div>
 
           <div className="flex items-center">
-            <label htmlFor="sort" className="mr-2 text-gray-700">Sort by:</label>
+            <label htmlFor="sort" className="mr-2 text-gray-700">
+              Sort by:
+            </label>
             <select
               id="sort"
               className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
@@ -105,35 +141,52 @@ const Buy = () => {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {filteredProperties.map(property => (
+          {displayedProperties.map(property => (
             <PropertyCard key={property.id} property={property} />
           ))}
         </div>
 
         {/* Pagination */}
-        <div className="mt-12 flex justify-center">
-          <nav className="flex items-center space-x-2">
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-              Previous
-            </button>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-              1
-            </button>
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-              2
-            </button>
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-              3
-            </button>
-            <span className="px-2 text-gray-500">...</span>
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-              10
-            </button>
-            <button className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50">
-              Next
-            </button>
-          </nav>
-        </div>
+        {totalPages > 1 && (
+          <div className="mt-12 flex justify-center">
+            <nav className="flex items-center space-x-2">
+              <button
+                onClick={handlePreviousPage}
+                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
+                  currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                disabled={currentPage === 1}
+              >
+                Previous
+              </button>
+
+              {/* Display page numbers */}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+                <button
+                  key={page}
+                  onClick={() => goToPage(page)}
+                  className={`px-4 py-2 rounded-md ${
+                    currentPage === page
+                      ? 'bg-blue-600 text-white'
+                      : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              <button
+                onClick={handleNextPage}
+                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
+                  currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+                disabled={currentPage === totalPages}
+              >
+                Next
+              </button>
+            </nav>
+          </div>
+        )}
       </section>
 
       {/* CTA Section */}
