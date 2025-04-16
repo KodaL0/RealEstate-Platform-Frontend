@@ -39,7 +39,7 @@ const Buy = () => {
         if (searchFilters.location) queryParams.append('location', searchFilters.location);
         
         // Construct URL with query parameters
-        const url = `${API_BASE_URL}/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = ${API_BASE_URL}/api/properties/buy${queryParams.toString() ? ?${queryParams.toString()} : ''};
         
         console.log("Fetching properties from:", url);
         
@@ -55,7 +55,7 @@ const Buy = () => {
         if (!response.ok) {
           const errorText = await response.text();
           console.error("Error response:", errorText);
-          throw new Error(`Error fetching properties: ${response.status} ${response.statusText}`);
+          throw new Error(Error fetching properties: ${response.status} ${response.statusText});
         }
         
         const contentType = response.headers.get('content-type');
@@ -150,9 +150,7 @@ const Buy = () => {
       </section>
 
       {/* Search Filters */}
-      <section className="container mx-auto px-4 mt-4 flex flex-wrap items-center gap-4">
-        {/* By wrapping in a flex container with flex-wrap and gap, 
-            we ensure that buttons from SearchFilters won’t overlap other elements */}
+      <section className="container mx-auto px-4 mt-4">
         <SearchFilters forSale={true} onSearch={handleSearch} />
       </section>
 
@@ -162,7 +160,7 @@ const Buy = () => {
           <div>
             <h2 className="text-2xl font-bold text-gray-900">Available Properties</h2>
             <p className="text-gray-600">
-              {isLoading ? 'Loading properties...' : `${filteredProperties.length} properties found`}
+              {isLoading ? 'Loading properties...' : ${filteredProperties.length} properties found}
             </p>
           </div>
 
@@ -213,7 +211,7 @@ const Buy = () => {
                 setSearchFilters({});
                 setSortOption('recommended');
               }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
+              className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors"
             >
               Clear All Filters
             </button>
@@ -232,9 +230,9 @@ const Buy = () => {
             <nav className="flex items-center space-x-2">
               <button
                 onClick={handlePreviousPage}
-                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
+                className={px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
                   currentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                }}
                 disabled={currentPage === 1}
               >
                 Previous
@@ -245,11 +243,11 @@ const Buy = () => {
                 <button
                   key={page}
                   onClick={() => goToPage(page)}
-                  className={`px-4 py-2 rounded-md ${
+                  className={px-4 py-2 rounded-md ${
                     currentPage === page
                       ? 'bg-blue-600 text-white'
                       : 'border border-gray-300 text-gray-700 hover:bg-gray-50'
-                  }`}
+                  }}
                 >
                   {page}
                 </button>
@@ -257,9 +255,9 @@ const Buy = () => {
 
               <button
                 onClick={handleNextPage}
-                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
+                className={px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
                   currentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
+                }}
                 disabled={currentPage === totalPages}
               >
                 Next
