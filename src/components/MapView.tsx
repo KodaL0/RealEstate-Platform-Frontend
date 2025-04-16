@@ -1,11 +1,39 @@
-import React, { useState } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import React, { useState, useEffect } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import { GeoSearchControl, OpenStreetMapProvider } from 'react-leaflet-geosearch';
+import 'react-leaflet-geosearch/dist/geosearch.css';
 
 interface MapViewProps {
   lat: number;
   lng: number;
 }
+
+// A separate component to add the search control to the map.
+const SearchControl: React.FC = () => {
+  const map = useMap();
+
+  useEffect(() => {
+    const provider = new OpenStreetMapProvider();
+    const searchControl = new GeoSearchControl({
+      provider,
+      style: 'bar',
+      showMarker: true,   // Add a marker on the searched location
+      showPopup: true,    // Show a popup for the marker
+      autoClose: true,
+      retainZoomLevel: false,
+      searchLabel: 'Search for an address...',
+    });
+    map.addControl(searchControl);
+
+    // Clean up the control when the component unmounts.
+    return () => {
+      map.removeControl(searchControl);
+    };
+  }, [map]);
+
+  return null;
+};
 
 const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
   const position: [number, number] = [lat, lng];
@@ -13,10 +41,8 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
 
   // Fetch address details using Nominatim's reverse geocoding API.
   const fetchAddress = async () => {
-    // Optionally add a zoom parameter (e.g., zoom=18) for more detailed results:
     const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
     try {
-      // Add a User-Agent header for better compliance with Nominatim's usage policy.
       const response = await fetch(url, {
         headers: {
           'User-Agent': 'YourAppName/1.0'
@@ -28,7 +54,7 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
         setAddress('Address not found');
         return;
       }
-      // Prefer the display_name property if it exists.
+      // Prefer using display_name if available.
       const fullAddress =
         data.display_name ||
         `${data.address.house_number ? data.address.house_number + ' ' : ''}${
@@ -49,6 +75,8 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
+      {/* Add the search control component */}
+      <SearchControl />
       <Marker
         position={position}
         eventHandlers={{
@@ -57,9 +85,7 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
           },
         }}
       >
-        <Popup>
-          {address}
-        </Popup>
+        <Popup>{address}</Popup>
       </Marker>
     </MapContainer>
   );
