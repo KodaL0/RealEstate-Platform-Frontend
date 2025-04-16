@@ -155,7 +155,7 @@ const Buy = () => {
         <SearchFilters
           forSale={true}
           onSearch={handleSearch}
-          buttonClassName="bg-green-600 text-white font-semibold py-2 px-4 rounded-md"
+          buttonClassName="bg-green-600 text-white font-semibold py-1 px-3 rounded-md"
         />
       </section>
 
