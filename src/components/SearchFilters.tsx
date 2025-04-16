@@ -39,7 +39,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
       <form onSubmit={handleSearch}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
           <div className="lg:col-span-2">
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+              Location
+            </label>
             <input
               type="text"
               id="location"
@@ -49,9 +51,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
               onChange={(e) => setLocation(e.target.value)}
             />
           </div>
-          
+
           <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+              Price Range
+            </label>
             <select
               id="price"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
@@ -80,9 +84,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
               )}
             </select>
           </div>
-          
+
           <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">Property Type</label>
+            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
+              Property Type
+            </label>
             <select
               id="type"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
@@ -98,18 +104,18 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
               <option>Land</option>
             </select>
           </div>
-          
+
           <div>
             <button
               type="submit"
-              className="w-full h-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors mt-6"
+              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors mt-2 py-1 px-3 text-sm"
             >
-              <Search className="h-5 w-5 mr-2" />
+              <Search className="h-4 w-4 mr-1" />
               Search
             </button>
           </div>
         </div>
-        
+
         <div className="flex justify-between items-center">
           <button
             type="button"
@@ -119,7 +125,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             Advanced Filters
             <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
           </button>
-          
+
           <button
             type="button"
             className="text-gray-500 hover:text-gray-700 text-sm font-medium flex items-center"
@@ -129,11 +135,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             Clear All
           </button>
         </div>
-        
+
         {advancedOpen && (
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
             <div>
-              <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">Bedrooms</label>
+              <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
+                Bedrooms
+              </label>
               <select
                 id="bedrooms"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
@@ -148,9 +156,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
                 <option>5+</option>
               </select>
             </div>
-            
+
             <div>
-              <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">Bathrooms</label>
+              <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
+                Bathrooms
+              </label>
               <select
                 id="bathrooms"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
@@ -164,9 +174,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
                 <option>4+</option>
               </select>
             </div>
-            
+
             <div>
-              <label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-1">Features</label>
+              <label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-1">
+                Features
+              </label>
               <select
                 id="features"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
