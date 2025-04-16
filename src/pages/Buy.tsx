@@ -4,6 +4,7 @@ import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
+const API_BASE_URL = 'https://propertprodjango.onrender.com';
 
 const Buy = () => {
   const [allProperties, setAllProperties] = useState<any[]>([]);
@@ -38,9 +39,14 @@ const Buy = () => {
         if (searchFilters.location) queryParams.append('location', searchFilters.location);
         
         // Construct URL with query parameters
-        const url = `/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `${API_BASE_URL}/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         
-        const response = await fetch(url);
+        const response = await fetch(url, {
+          credentials: 'include', // Include cookies for cross-origin requests if needed
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
         
         if (!response.ok) {
           throw new Error(`Error fetching properties: ${response.status}`);
