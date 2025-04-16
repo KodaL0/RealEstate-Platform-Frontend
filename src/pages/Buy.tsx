@@ -41,23 +41,56 @@ const Buy = () => {
         // Construct URL with query parameters
         const url = `${API_BASE_URL}/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         
+        console.log("Fetching properties from:", url);
+        
+        // Use mode: 'cors' to explicitly handle CORS
         const response = await fetch(url, {
-          credentials: 'include', // Include cookies for cross-origin requests if needed
+          method: 'GET',
+          mode: 'cors',
           headers: {
-            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
         
         if (!response.ok) {
-          throw new Error(`Error fetching properties: ${response.status}`);
+          const errorText = await response.text();
+          console.error("Error response:", errorText);
+          throw new Error(`Error fetching properties: ${response.status} ${response.statusText}`);
+        }
+        
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.error('Received non-JSON response:', contentType);
+          const text = await response.text();
+          console.error('Response body:', text);
+          throw new Error('Server returned non-JSON response');
         }
         
         const data = await response.json();
-        setAllProperties(data);
-        setFilteredProperties(data);
+        console.log("Properties data received:", data);
+        
+        // Check if data is an array
+        if (Array.isArray(data)) {
+          setAllProperties(data);
+          setFilteredProperties(data);
+        } else {
+          console.warn('Response is not an array:', data);
+          // If data has results property (from pagination), use that
+          if (data.results && Array.isArray(data.results)) {
+            setAllProperties(data.results);
+            setFilteredProperties(data.results);
+          } else {
+            // Default to empty array if we can't find property data
+            setAllProperties([]);
+            setFilteredProperties([]);
+          }
+        }
       } catch (error) {
         console.error('Error fetching properties:', error);
         setError('Failed to load properties. Please try again.');
+        // Default to empty arrays on error
+        setAllProperties([]);
+        setFilteredProperties([]);
       } finally {
         setIsLoading(false);
       }
