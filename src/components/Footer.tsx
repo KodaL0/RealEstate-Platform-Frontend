@@ -12,7 +12,7 @@ const Footer = () => {
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">PROPERTPRO</span>
             </div>
             <p className="text-gray-400 mb-6">
-              Providing exceptional real estate services with a focus on luxury properties and personalized client experiences.
+              Providing exceptional real estate services with a focus on properties and personalized client experiences.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
