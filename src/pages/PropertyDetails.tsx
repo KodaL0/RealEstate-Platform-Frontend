@@ -47,37 +47,109 @@ async function geocodeAddress(address: string): Promise<{ lat: number; lng: numb
 
 // Mapping function to convert API data to our Property type.
 const mapPropertyData = (data: any): Property => {
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    price: parseFloat(data.price),
-    location: data.location,
-    property_type: data.property_type,
-    bedrooms: data.bedrooms,
-    bathrooms: parseFloat(data.bathrooms),
-    area: data.area,
-    year_built: data.year_built,
-    parking_spaces: data.parking_spaces,
-    lot_size: data.lot_size,
-    property_status: data.property_status,
-    energy_rating: data.energy_rating,
-    construction_material: data.construction_material,
-    floor_level: data.floor_level,
-    total_floors: data.total_floors,
-    available_from: data.available_from,
-    contact_phone: data.contact_phone,
-    contact_email: data.contact_email,
-    virtual_tour_url: data.virtual_tour_url,
-    video_url: data.video_url,
-    amenities: data.amenities || [],
-    additional_features: data.additional_features || [],
-    owner: data.owner, // ensure owner data includes fields like name, phone, and email
-    is_published: data.is_published,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    images: data.images || [],
-  };
+  if (!data) {
+    console.error("Attempted to map null or undefined property data");
+    // Return a minimal property object to prevent rendering errors
+    return {
+      id: 0,
+      title: "Property data unavailable",
+      description: "",
+      price: 0,
+      location: "",
+      property_type: "",
+      bedrooms: 0,
+      bathrooms: 0,
+      area: 0,
+      year_built: "",
+      parking_spaces: 0,
+      lot_size: "",
+      property_status: "unavailable",
+      energy_rating: "",
+      construction_material: "",
+      floor_level: "",
+      total_floors: "",
+      available_from: "",
+      contact_phone: "",
+      contact_email: "",
+      virtual_tour_url: "",
+      video_url: "",
+      amenities: [],
+      additional_features: [],
+      owner: null,
+      is_published: false,
+      created_at: "",
+      updated_at: "",
+      images: [],
+    };
+  }
+
+  try {
+    return {
+      id: data.id || 0,
+      title: data.title || "Untitled Property",
+      description: data.description || "",
+      price: data.price ? parseFloat(data.price) : 0,
+      location: data.location || "",
+      property_type: data.property_type || "",
+      bedrooms: data.bedrooms || 0,
+      bathrooms: data.bathrooms ? parseFloat(data.bathrooms) : 0,
+      area: data.area ? parseFloat(data.area) : 0,
+      year_built: data.year_built || "",
+      parking_spaces: data.parking_spaces || 0,
+      lot_size: data.lot_size || "",
+      property_status: data.property_status || "unavailable",
+      energy_rating: data.energy_rating || "",
+      construction_material: data.construction_material || "",
+      floor_level: data.floor_level || "",
+      total_floors: data.total_floors || "",
+      available_from: data.available_from || "",
+      contact_phone: data.contact_phone || "",
+      contact_email: data.contact_email || "",
+      virtual_tour_url: data.virtual_tour_url || "",
+      video_url: data.video_url || "",
+      amenities: data.amenities || [],
+      additional_features: data.additional_features || [],
+      owner: data.owner || null,
+      is_published: data.is_published || false,
+      created_at: data.created_at || "",
+      updated_at: data.updated_at || "",
+      images: data.images || [],
+    };
+  } catch (error) {
+    console.error("Error mapping property data:", error);
+    // Return a minimal property object to prevent rendering errors
+    return {
+      id: 0,
+      title: "Error loading property",
+      description: "",
+      price: 0,
+      location: "",
+      property_type: "",
+      bedrooms: 0,
+      bathrooms: 0,
+      area: 0,
+      year_built: "",
+      parking_spaces: 0,
+      lot_size: "",
+      property_status: "unavailable",
+      energy_rating: "",
+      construction_material: "",
+      floor_level: "",
+      total_floors: "",
+      available_from: "",
+      contact_phone: "",
+      contact_email: "",
+      virtual_tour_url: "",
+      video_url: "",
+      amenities: [],
+      additional_features: [],
+      owner: null,
+      is_published: false,
+      created_at: "",
+      updated_at: "",
+      images: [],
+    };
+  }
 };
 
 // Define the amenity-to-icon mapping.
@@ -413,7 +485,7 @@ const PropertyDetails = () => {
                   </div>
                   <div className="mt-4 md:mt-0 text-right">
                     <p className="text-3xl font-bold text-blue-600">
-                      €{property.price.toLocaleString()}
+                      €{property.price ? property.price.toLocaleString() : '0'}
                     </p>
                   </div>
                 </div>
@@ -429,11 +501,11 @@ const PropertyDetails = () => {
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.area.toLocaleString()} sq ft</span>
+                    <span>{property.area ? property.area.toLocaleString() : '0'} sq ft</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>Built in {property.year_built}</span>
+                    <span>{property.year_built ? `Built in ${property.year_built}` : 'Year built not specified'}</span>
                   </div>
                 </div>
 

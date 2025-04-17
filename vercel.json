@@ -13,7 +13,7 @@
       "destination": "https://propertprodjango.onrender.com/api/properties/rent"
     },
     {
-      "source": "/api/properties/:id",
+      "source": "/api/properties/:id(\\d+)",
       "destination": "https://propertprodjango.onrender.com/api/properties/:id"
     },
     {
