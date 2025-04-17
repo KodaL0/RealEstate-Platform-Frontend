@@ -139,11 +139,18 @@ export async function logout() {
  * Fetch the current user's data.
  */
 export async function fetchUser() {
+  console.log("Attempting to fetch user data");
+  console.log("Cookies available:", document.cookie); // Check if cookies exist
+  
   try {
     const response = await apiClient.get('/users/get_user/');
+    console.log("User fetch response:", response);
+    console.log("User data:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Fetch User Error:", error);
+    console.error("Error details:", error.response?.data);
+    console.error("Error status:", error.response?.status);
     throw error;
   }
 }

@@ -26,9 +26,21 @@ export const AuthPage = () => {
         console.log("Login response:", res);
 
         if (res && res.status === 200) { 
-          await refreshUser();
-          setFeedback('Login successful');
-          navigate('/');
+          console.log("Login successful, waiting to refresh user data...");
+          
+          // Add a delay to ensure cookies are available
+          setTimeout(async () => {
+            try {
+              console.log("Attempting to refresh user after login");
+              await refreshUser();
+              console.log("User refresh completed");
+              setFeedback('Login successful');
+              navigate('/');
+            } catch (error) {
+              console.error("Error refreshing user:", error);
+              setFeedback('Login successful, but failed to load profile');
+            }
+          }, 500); // Half-second delay
         } else {
           setFeedback(res?.error || 'Login failed');
         }

@@ -34,9 +34,26 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     setIsLoading(true);
     try {
       const data = await apiFetchUser();
-      // Check if the backend returns an object that contains a "user" property
-      if (data && data.user) {
-        setUser(data.user);
+      console.log("UserContext: Response from fetchUser:", data);
+      
+      // Handle different response structures
+      if (data) {
+        if (data.user) {
+          // Backend returns {status: 200, user: {...}}
+          console.log("Setting user from data.user", data.user);
+          setUser(data.user);
+        } else if (data.status && data.status === 200 && data.data && data.data.user) {
+          // Response has nested structure: {status:200, data:{user:{...}}}
+          console.log("Setting user from data.data.user", data.data.user);
+          setUser(data.data.user);
+        } else if (data.id && data.username && data.email) {
+          // Direct user object
+          console.log("Setting user from direct data", data);
+          setUser(data);
+        } else {
+          console.log("No valid user data found in response:", data);
+          setUser(null);
+        }
       } else {
         setUser(null);
       }
