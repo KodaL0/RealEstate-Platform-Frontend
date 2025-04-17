@@ -12,7 +12,7 @@ const Footer = () => {
               <span className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-400 bg-clip-text text-transparent">PROPERTPRO</span>
             </div>
             <p className="text-gray-400 mb-6">
-              Providing exceptional real estate services with a focus on luxury properties and personalized client experiences.
+              Providing exceptional real estate services with a focus on properties and personalized client experiences.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -57,7 +57,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <Phone className="h-5 w-5 text-blue-500 mr-3 mt-1" />
-                <span className="text-gray-400">+1 (800) 123-4567</span>
+                <span className="text-gray-400">+357 94046844</span>
               </li>
               <li className="flex items-start">
                 <Mail className="h-5 w-5 text-blue-500 mr-3 mt-1" />
@@ -66,8 +66,7 @@ const Footer = () => {
               <li className="flex items-start">
                 <Home className="h-5 w-5 text-blue-500 mr-3 mt-1" />
                 <span className="text-gray-400">
-                  123 Luxury Avenue<br />
-                  Beverly Hills, CA 90210
+                  Cyprus<br />
                 </span>
               </li>
             </ul>
