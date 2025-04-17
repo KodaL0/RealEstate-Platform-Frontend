@@ -14,12 +14,12 @@ export interface Property {
   id: string;
   title: string;
   description: string;
-  price: number;
+  price: string | number;
   location: string;
   property_type: string;
   bedrooms: number;
   bathrooms: number;
-  area: number;
+  area: string | number;
   year_built: number;
   parking_spaces: number;
   lot_size?: number;
