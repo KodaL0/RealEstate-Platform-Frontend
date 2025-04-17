@@ -49,7 +49,7 @@ const mapPropertyData = (data: any): Property => {
   if (!data) {
     console.error("Attempted to map null or undefined property data");
     return {
-      id: 0,
+      id: "0", // Convert to string to match interface
       title: "Property data unavailable",
       description: "",
       price: 0,
@@ -58,14 +58,14 @@ const mapPropertyData = (data: any): Property => {
       bedrooms: 0,
       bathrooms: 0,
       area: 0,
-      year_built: "",
+      year_built: 0, // Use number to match interface
       parking_spaces: 0,
-      lot_size: "",
+      lot_size: 0, // Use number to match interface
       property_status: "unavailable",
       energy_rating: "",
       construction_material: "",
-      floor_level: "",
-      total_floors: "",
+      floor_level: 0, // Use number to match interface
+      total_floors: 0, // Use number to match interface
       available_from: "",
       contact_phone: "",
       contact_email: "",
@@ -73,7 +73,7 @@ const mapPropertyData = (data: any): Property => {
       video_url: "",
       amenities: [],
       additional_features: [],
-      owner: null,
+      owner: { id: "0", email: "" }, // Provide a default Owner object
       is_published: false,
       created_at: "",
       updated_at: "",
@@ -83,23 +83,23 @@ const mapPropertyData = (data: any): Property => {
 
   try {
     return {
-      id: data.id || 0,
+      id: data.id ? data.id.toString() : "0", // Convert to string
       title: data.title || "Untitled Property",
       description: data.description || "",
       price: data.price ? parseFloat(data.price) : 0,
       location: data.location || "",
       property_type: data.property_type || "",
-      bedrooms: data.bedrooms || 0,
+      bedrooms: data.bedrooms ? parseInt(data.bedrooms) : 0,
       bathrooms: data.bathrooms ? parseFloat(data.bathrooms) : 0,
       area: data.area ? parseFloat(data.area) : 0,
-      year_built: data.year_built || "",
-      parking_spaces: data.parking_spaces || 0,
-      lot_size: data.lot_size || "",
+      year_built: data.year_built ? parseInt(data.year_built) : 0, // Convert to number
+      parking_spaces: data.parking_spaces ? parseInt(data.parking_spaces) : 0,
+      lot_size: data.lot_size ? parseFloat(data.lot_size) : 0, // Convert to number
       property_status: data.property_status || "unavailable",
       energy_rating: data.energy_rating || "",
       construction_material: data.construction_material || "",
-      floor_level: data.floor_level || "",
-      total_floors: data.total_floors || "",
+      floor_level: data.floor_level ? parseInt(data.floor_level) : 0, // Convert to number
+      total_floors: data.total_floors ? parseInt(data.total_floors) : 0, // Convert to number
       available_from: data.available_from || "",
       contact_phone: data.contact_phone || "",
       contact_email: data.contact_email || "",
@@ -107,7 +107,7 @@ const mapPropertyData = (data: any): Property => {
       video_url: data.video_url || "",
       amenities: data.amenities || [],
       additional_features: data.additional_features || [],
-      owner: data.owner || null,
+      owner: data.owner || { id: "0", email: "" }, // Provide a default Owner object
       is_published: data.is_published || false,
       created_at: data.created_at || "",
       updated_at: data.updated_at || "",
@@ -116,7 +116,7 @@ const mapPropertyData = (data: any): Property => {
   } catch (error) {
     console.error("Error mapping property data:", error);
     return {
-      id: 0,
+      id: "0", // Convert to string
       title: "Error loading property",
       description: "",
       price: 0,
@@ -125,14 +125,14 @@ const mapPropertyData = (data: any): Property => {
       bedrooms: 0,
       bathrooms: 0,
       area: 0,
-      year_built: "",
+      year_built: 0, // Use number to match interface
       parking_spaces: 0,
-      lot_size: "",
+      lot_size: 0, // Use number to match interface
       property_status: "unavailable",
       energy_rating: "",
       construction_material: "",
-      floor_level: "",
-      total_floors: "",
+      floor_level: 0, // Use number to match interface
+      total_floors: 0, // Use number to match interface
       available_from: "",
       contact_phone: "",
       contact_email: "",
@@ -140,7 +140,7 @@ const mapPropertyData = (data: any): Property => {
       video_url: "",
       amenities: [],
       additional_features: [],
-      owner: null,
+      owner: { id: "0", email: "" }, // Provide a default Owner object
       is_published: false,
       created_at: "",
       updated_at: "",
@@ -168,7 +168,9 @@ const PropertyDetails = () => {
 
     apiClient.get(`/properties/${id}`)
       .then(response => {
+        console.log("API Response data:", response.data); // Add debugging
         const data = mapPropertyData(response.data);
+        console.log("Mapped property data:", data); // Add debugging
         setProperty(data);
         return geocodeAddress(data.location);
       })
@@ -193,8 +195,8 @@ const PropertyDetails = () => {
       <div>
         <p>Bedrooms: {property.bedrooms ?? 0}</p>
         <p>Bathrooms: {property.bathrooms ?? 0}</p>
-        <p>Area: {formatValue(property.area, ' sq ft')}</p>
-        <p>Year Built: {property.year_built || 'Not specified'}</p>
+        <p>Area: {formatValue(property.area as number, ' sq ft')}</p>
+        <p>Year Built: {property.year_built ? property.year_built : 'Not specified'}</p>
       </div>
     </div>
   );
