@@ -75,9 +75,9 @@ apiClient.interceptors.response.use(
         console.error("Token refresh failed on attempt", originalRequest._retryCount, ":", refreshError);
         // Clear the cookies when refresh fails.
         document.cookie =
-          'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         document.cookie =
-          'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+          'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
         return Promise.reject(refreshError);
       }
     }
@@ -125,9 +125,9 @@ export async function logout() {
     const response = await apiClient.post('/api/users/logout');
     // Clear cookies.
     document.cookie =
-      'access_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     document.cookie =
-      'refresh_token=; path=/; domain=.propertpro.com; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+      'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Logout Error:", error);
