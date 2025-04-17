@@ -140,17 +140,36 @@ export async function logout() {
  */
 export async function fetchUser() {
   console.log("Attempting to fetch user data");
+  console.log("API URL:", API_URL);
   console.log("Cookies available:", document.cookie); // Check if cookies exist
   
   try {
-    const response = await apiClient.get('/users/get_user/');
-    console.log("User fetch response:", response);
+    // Try with explicit URL to bypass any potential routing issues
+    const response = await apiClient.get('/users/get_user', {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    // Log response details for debugging
+    console.log("User fetch response status:", response.status);
+    console.log("Response headers:", response.headers);
+    
+    // Check if response is actually JSON
+    const contentType = response.headers['content-type'];
+    console.log("Content-Type of response:", contentType);
+    
+    if (contentType && contentType.includes('text/html')) {
+      console.error("Received HTML instead of JSON. This likely indicates a routing issue.");
+      throw new Error("Invalid response format: expected JSON, received HTML");
+    }
+    
     console.log("User data:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Fetch User Error:", error);
-    console.error("Error details:", error.response?.data);
-    console.error("Error status:", error.response?.status);
+    console.error("Error response:", error.response?.data);
     throw error;
   }
 }
