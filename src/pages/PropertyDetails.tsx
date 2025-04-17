@@ -160,7 +160,22 @@ const PropertyDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // Fetch logic omitted here for brevity — assume it sets `property`
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+
+    apiClient.get(`/properties/${id}`)
+      .then(response => {
+        const data = mapPropertyData(response.data);
+        setProperty(data);
+        return geocodeAddress(data.location);
+      })
+      .then(coords => setCoords(coords))
+      .catch(error => console.error('Error fetching property details:', error))
+      .finally(() => setLoading(false));
+  }, [id]);
 
   if (loading) return <div>Loading...</div>;
   if (!property) return <div>Property not found</div>;
