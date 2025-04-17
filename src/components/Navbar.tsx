@@ -198,8 +198,8 @@ const Navbar = () => {
                   </button>
                 </>
               ) : (
-                <Link to="/account-selection" className="font-medium text-blue-600">
-                  Account
+                <Link to="/login" className="font-medium text-blue-600">
+                  Sign In / Register
                 </Link>
               )}
             </div>

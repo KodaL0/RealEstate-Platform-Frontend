@@ -5,7 +5,6 @@ import Home from "./pages/Home";
 import Buy from "./pages/Buy";
 import Rent from "./pages/Rent";
 import PropertyDetails from "./pages/PropertyDetails";
-import AccountSelection from "./pages/AccountSelection"; // Import the new page
 import { AuthPage } from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage"; 
 import { UserProvider } from './context/UserContext'; // Import UserProvider
@@ -24,7 +23,6 @@ function App() {
               <Route path="/buy" element={<Buy />} />
               <Route path="/rent" element={<Rent />} />
               <Route path="/property/:id" element={<PropertyDetails />} />
-              <Route path="/account-selection" element={<AccountSelection />} /> {/* New Route */}
               <Route path="/login" element={<AuthPage />} />
               <Route path="/profile" element={<ProfilePage />} /> 
               <Route path="/create-listing" element={<CreateListing />} />
