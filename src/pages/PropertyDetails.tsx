@@ -166,7 +166,7 @@ const PropertyDetails = () => {
               {property.location || "No location"}
             </div>
             <div className="text-blue-600 text-2xl font-semibold mt-2">
-              €{typeof property.price === 'number' ? property.price.toLocaleString() : '0'}
+              €{typeof property.price === 'number' && !isNaN(property.price) ? property.price.toLocaleString() : '0'}
             </div>
 
             <div className="flex flex-wrap gap-6 mt-4">
@@ -180,7 +180,7 @@ const PropertyDetails = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Square className="h-5 w-5" />
-                {typeof property.area === 'number' ? property.area.toLocaleString() : '0'} sq ft
+                {typeof property.area === 'number' && !isNaN(property.area) ? property.area.toLocaleString() : '0'} sq ft
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
