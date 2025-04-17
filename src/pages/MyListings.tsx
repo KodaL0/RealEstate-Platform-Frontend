@@ -297,7 +297,9 @@ const MyListings = () => {
                         {property.title}
                       </h3>
                       <p className="text-lg font-bold text-blue-600">
-                        {`€${property.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`}
+                        {typeof property.price === 'number' && isFinite(property.price) 
+                          ? `€${property.price.toLocaleString(undefined, { maximumFractionDigits: 0 })}`
+                          : '€0'}
                       </p>
                     </div>
                     <div className="flex items-center text-gray-500 mb-4">

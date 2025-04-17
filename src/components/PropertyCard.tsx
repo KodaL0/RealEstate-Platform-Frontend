@@ -77,9 +77,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
           <p className="text-lg font-bold text-blue-600">
-            {isForSale
-              ? `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-              : `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}/mo`}
+            {typeof price === 'number' && isFinite(price) 
+              ? isForSale
+                ? `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
+                : `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}/mo`
+              : isForSale ? '€0' : '€0/mo'}
           </p>
         </div>
 
@@ -101,7 +103,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </div>
           <div className="flex items-center text-gray-700">
             <Square className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{area.toLocaleString()} sq ft</span>
+            <span>{typeof area === 'number' && isFinite(area) ? area.toLocaleString() : '0'} sq ft</span>
           </div>
         </div>
       </div>
