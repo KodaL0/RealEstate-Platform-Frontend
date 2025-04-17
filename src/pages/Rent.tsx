@@ -4,7 +4,7 @@ import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
-const API_BASE_URL = 'https://propertprodjango.onrender.com';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const Rent = () => {
   const [allProperties, setAllProperties] = useState<any[]>([]);

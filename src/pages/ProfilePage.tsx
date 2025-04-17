@@ -14,8 +14,11 @@ const ProfilePage: React.FC = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [isEditing, setIsEditing] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [feedback, setFeedback] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || 'https://propertprodjango.onrender.com';
+  const API_URL = import.meta.env.VITE_API_URL || '/api';
 
   useEffect(() => {
     if (!user) {
