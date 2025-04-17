@@ -64,7 +64,7 @@ const MyListings = () => {
       try {
         setLoading(true);
         const response = await apiClient.get<Property[]>(
-          '/api/properties/my-properties',
+          '/properties/my-properties',
           {
             withCredentials: true,
             headers: { 'Content-Type': 'application/json' }

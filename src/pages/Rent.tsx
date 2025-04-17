@@ -36,50 +36,124 @@ const Rent = () => {
         if (searchFilters.propertyType) queryParams.append('propertyType', searchFilters.propertyType);
         if (searchFilters.location) queryParams.append('location', searchFilters.location);
         
-        // Construct URL with the query parameters
-        const url = `${API_BASE_URL}/properties/rent${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
-        console.log("Fetching properties from:", url);
+        // Query string for both attempts
+        const queryString = queryParams.toString() ? `?${queryParams.toString()}` : '';
         
-        const response = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
-          // Don't include credentials for public endpoints to avoid CORS issues
-          credentials: 'omit'
-        });
+        // Try the direct API call first (no proxy)
+        const DIRECT_API_URL = 'https://propertprodjango.onrender.com/api';
+        const proxyUrl = `${API_BASE_URL}/properties/rent${queryString}`;
+        const directUrl = `${DIRECT_API_URL}/properties/rent${queryString}`;
+        
+        console.log("Attempting direct API call to:", directUrl);
+        
+        let response;
+        let succeeded = false;
+        
+        // First try direct API call
+        try {
+          response = await fetch(directUrl, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            // Don't include credentials for public endpoints
+            credentials: 'omit',
+            // Set a shorter timeout
+            signal: AbortSignal.timeout(5000)
+          });
+          
+          console.log("Direct API call status:", response.status);
+          
+          if (response.ok) {
+            console.log("Direct API call succeeded");
+            succeeded = true;
+          } else {
+            console.warn("Direct API call failed, will try proxy");
+          }
+        } catch (directError) {
+          console.warn("Direct API call error:", directError);
+          console.warn("Will try proxy instead");
+        }
+        
+        // If direct call failed, try the proxy
+        if (!succeeded) {
+          console.log("Trying proxy API call to:", proxyUrl);
+          try {
+            response = await fetch(proxyUrl, {
+              method: 'GET',
+              headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+              },
+              credentials: 'omit'
+            });
+            console.log("Proxy API call status:", response.status);
+          } catch (proxyError: unknown) {
+            console.error("Proxy API call error:", proxyError);
+            throw new Error(`Error fetching properties via proxy: ${proxyError instanceof Error ? proxyError.message : String(proxyError)}`);
+          }
+        }
+        
+        // Ensure we have a valid response
+        if (!response) {
+          throw new Error('No valid response from either direct or proxy API calls');
+        }
+        
+        // Process the response from whichever call succeeded
+        console.log("Response headers:", Object.fromEntries([...response.headers.entries()]));
         
         if (!response.ok) {
           const errorText = await response.text();
-          console.error("Error response:", errorText);
+          console.error("Error response status:", response.status);
+          console.error("Error response text:", errorText.substring(0, 500));
           throw new Error(`Error fetching properties: ${response.status} ${response.statusText}`);
         }
         
         const contentType = response.headers.get('content-type');
+        console.log("Response content-type:", contentType);
+        
         if (!contentType || !contentType.includes('application/json')) {
-          console.error('Received non-JSON response:', contentType);
+          console.error('Received non-JSON response, content-type:', contentType);
           const text = await response.text();
-          console.error('Response body (first 100 chars):', text.substring(0, 100));
+          console.error('Response body (first 500 chars):', text.substring(0, 500));
           throw new Error('Server returned non-JSON response');
         }
         
-        const data = await response.json();
-        console.log("Properties data received:", data);
+        const rawText = await response.text();
+        console.log("Raw response text (first 100 chars):", rawText.substring(0, 100));
         
-        // Data might be an array directly, or come within a "results" property
+        let data;
+        try {
+          data = JSON.parse(rawText);
+          console.log("Properties data received type:", typeof data);
+          console.log("Properties data received length:", Array.isArray(data) ? data.length : 'not an array');
+        } catch (parseError: unknown) {
+          console.error("JSON parse error:", parseError);
+          console.error("Failed to parse:", rawText.substring(0, 500));
+          throw new Error(`JSON parse error: ${parseError instanceof Error ? parseError.message : String(parseError)}`);
+        }
+        
+        // Check if data is an array
         if (Array.isArray(data)) {
           setAllProperties(data);
           setFilteredProperties(data);
-        } else if (data.results && Array.isArray(data.results)) {
-          setAllProperties(data.results);
-          setFilteredProperties(data.results);
         } else {
-          setAllProperties([]);
-          setFilteredProperties([]);
+          console.warn('Response is not an array:', data);
+          // If data has results property (from pagination), use that
+          if (data.results && Array.isArray(data.results)) {
+            setAllProperties(data.results);
+            setFilteredProperties(data.results);
+          } else {
+            // Default to empty array if we can't find property data
+            setAllProperties([]);
+            setFilteredProperties([]);
+          }
         }
       } catch (error) {
         console.error('Error fetching properties:', error);
         setError('Failed to load properties. Please try again.');
+        // Default to empty arrays on error
         setAllProperties([]);
         setFilteredProperties([]);
       } finally {
