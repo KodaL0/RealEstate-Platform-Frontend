@@ -222,7 +222,7 @@ const PropertyDetails = () => {
   }
 
   /* ─────────────────────────────────
-     MAIN RENDER (unchanged)
+     MAIN RENDER
   ─────────────────────────────────*/
 
   // Determine main and additional images.
@@ -289,51 +289,6 @@ const PropertyDetails = () => {
                 </div>
               ))}
             </div>
-<<<<<<< HEAD
-            <h1 className="text-3xl font-bold mt-6">{property.title}</h1>
-            <div className="text-gray-600 flex items-center mt-2">
-              <MapPin className="h-4 w-4 mr-1" />
-              {property.location || "No location"}
-            </div>
-            <div className="text-blue-600 text-2xl font-semibold mt-2">
-              €{typeof property.price === 'number' && !isNaN(property.price) ? property.price.toLocaleString() : '0'}
-            </div>
-
-            <div className="flex flex-wrap gap-6 mt-4">
-              <div className="flex items-center gap-2">
-                <Bed className="h-5 w-5" />
-                {property.bedrooms} Beds
-              </div>
-              <div className="flex items-center gap-2">
-                <Bath className="h-5 w-5" />
-                {property.bathrooms} Baths
-              </div>
-              <div className="flex items-center gap-2">
-                <Square className="h-5 w-5" />
-                {typeof property.area === 'number' && !isNaN(property.area) ? property.area.toLocaleString() : '0'} sq ft
-              </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="h-5 w-5" />
-                {property.year_built ? `Built in ${property.year_built}` : "Year unknown"}
-              </div>
-            </div>
-
-            {property.description && (
-              <div className="mt-6">
-                <h2 className="text-xl font-semibold">Description</h2>
-                <p className="text-gray-700 mt-2">{property.description}</p>
-              </div>
-            )}
-
-            {property.amenities?.length > 0 && (
-              <div className="mt-6">
-                <h2 className="text-xl font-semibold mb-2">Amenities</h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {property.amenities.map((a, i) => (
-                    <div key={i} className="flex items-center">
-                      {amenityIcons[a] || amenityIcons.default}
-                      <span>{a}</span>
-=======
           </div>
         </section>
 
@@ -349,12 +304,11 @@ const PropertyDetails = () => {
                     <div className="flex items-center text-gray-600 mb-4">
                       <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                       <span>{property.location}</span>
->>>>>>> ded517d29c5a05fa6ccde0a4b900882538b2ad5c
                     </div>
                   </div>
                   <div className="mt-4 md:mt-0 text-right">
                     <p className="text-3xl font-bold text-blue-600">
-                      €{property.price.toLocaleString()}
+                      €{typeof property.price === 'number' && !isNaN(property.price) ? property.price.toLocaleString() : '0'}
                     </p>
                   </div>
                 </div>
@@ -374,7 +328,7 @@ const PropertyDetails = () => {
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.area.toLocaleString()} sq ft</span>
+                    <span>{typeof property.area === 'number' && !isNaN(property.area) ? property.area.toLocaleString() : '0'} sq ft</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />
