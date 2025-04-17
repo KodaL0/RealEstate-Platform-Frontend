@@ -1,18 +1,6 @@
 {
   "rewrites": [
     {
-      "source": "/api/properties/buy",
-      "destination": "https://propertprodjango.onrender.com/api/properties/buy"
-    },
-    {
-      "source": "/api/properties/rent",
-      "destination": "https://propertprodjango.onrender.com/api/properties/rent"
-    },
-    {
-      "source": "/api/properties/:id(\\d+)",
-      "destination": "https://propertprodjango.onrender.com/api/properties/:id"
-    },
-    {
       "source": "/api/:path*",
       "destination": "https://propertprodjango.onrender.com/api/:path*"
     },
@@ -23,42 +11,13 @@
   ],
   "headers": [
     {
-      "source": "/api/properties/(buy|rent)(.*)",
+      "source": "/api/:path*",
       "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
-      ]
-    },
-    {
-      "source": "/api/properties/[0-9]+",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" },
-        { "key": "Content-Type", "value": "application/json" }
-      ]
-    },
-    {
-      "source": "/properties/(buy|rent)(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "*" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" },
-        { "key": "Content-Type", "value": "application/json" }
-      ]
-    },
-    {
-      "source": "/api/(.*)",
-      "headers": [
-        { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Origin", "value": "https://propertpro.com" },
+        { "key": "Access-Control-Allow-Origin",  "value": "*" },
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
-        { "key": "Content-Type", "value": "application/json" }
+        { "key": "Cache-Control",               "value": "public, max-age=60, s-maxage=120" },
+        { "key": "Content-Type",                "value": "application/json" }
       ]
     }
   ]
