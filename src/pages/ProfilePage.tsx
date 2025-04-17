@@ -35,7 +35,7 @@ const ProfilePage: React.FC = () => {
     setError('');
     setMessage('');
     try {
-      const response = await authFetch(`${API_URL}/api/users/profile`, {
+      const response = await authFetch(`${API_URL}/users/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: newUsername }),
@@ -61,7 +61,7 @@ const ProfilePage: React.FC = () => {
       return;
     }
     try {
-      const response = await authFetch(`${API_URL}/api/users/profile`, {
+      const response = await authFetch(`${API_URL}/users/profile`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ password: newPassword }),

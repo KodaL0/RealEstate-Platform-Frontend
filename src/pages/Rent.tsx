@@ -37,7 +37,7 @@ const Rent = () => {
         if (searchFilters.location) queryParams.append('location', searchFilters.location);
         
         // Construct URL with the query parameters
-        const url = `${API_BASE_URL}/api/properties/rent${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `${API_BASE_URL}/properties/rent${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         console.log("Fetching properties from:", url);
         
         const response = await fetch(url, {

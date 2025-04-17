@@ -39,7 +39,7 @@ const Buy = () => {
         if (searchFilters.location) queryParams.append('location', searchFilters.location);
         
         // Construct URL with query parameters
-        const url = `${API_BASE_URL}/api/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+        const url = `${API_BASE_URL}/properties/buy${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
         
         console.log("Fetching properties from:", url);
         
