@@ -136,7 +136,7 @@ const PropertyDetails = () => {
           // First try the direct property endpoint
           response = await apiClient.get(`/properties/${id}`);
           
-          // Check if response is HTML instead of JSON (server error/redirect)
+          // Check if response is HTML instead of JSON
           if (typeof response.data === 'string' && response.data.includes('<!doctype html>')) {
             console.error('Server returned HTML instead of JSON. API configuration issue detected.');
             throw new Error('API returned HTML instead of property data');
@@ -152,7 +152,7 @@ const PropertyDetails = () => {
             // Try to find the property in published properties
             const publishedResponse = await apiClient.get('/properties/buy');
             
-            // Check if response is HTML instead of JSON (server error/redirect)
+            // Check if response is HTML instead of JSON
             if (typeof publishedResponse.data === 'string' && publishedResponse.data.includes('<!doctype html>')) {
               console.error('Server returned HTML instead of JSON. API configuration issue detected.');
               throw new Error('API returned HTML instead of property data');
@@ -195,7 +195,7 @@ const PropertyDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching property:', error);
-        setProperty(null); // Ensure we set property to null on error to show the "not found" screen
+        setProperty(null); // Ensure we set property to null on error
       } finally {
         setLoading(false);
       }
