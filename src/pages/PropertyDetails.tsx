@@ -127,7 +127,7 @@ const PropertyDetails = () => {
             console.log('Property not found with direct endpoint or user not authenticated, trying published endpoint...');
             
             // Try to find the property in published properties
-            const publishedResponse = await apiClient.get('/api/properties/buy');
+            const publishedResponse = await apiClient.get('/properties/buy');
             const publishedProperties = Array.isArray(publishedResponse.data) 
               ? publishedResponse.data 
               : (publishedResponse.data.results || []);
