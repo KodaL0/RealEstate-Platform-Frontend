@@ -189,200 +189,129 @@ const PropertyDetails = () => {
       try {
         setLoading(true);
         
-        // Try the direct API call first (no proxy)
         const DIRECT_API_URL = 'https://propertprodjango.onrender.com/api';
-        const proxyUrl = `/api/properties/${id}`;
-        const directUrl = `${DIRECT_API_URL}/properties/${id}`;
         
-        console.log("Attempting direct API call to:", directUrl);
+        // Instead of trying to fetch a single property, get all properties and filter
+        console.log("Fetching all properties to find property ID:", id);
         
-        let response;
-        let succeeded = false;
-        let responseData;
-        
-        // First try direct API call
+        // Try to fetch from buy listings first
         try {
-          response = await fetch(directUrl, {
+          console.log("Fetching buy properties from:", `${DIRECT_API_URL}/properties/buy`);
+          const buyResponse = await fetch(`${DIRECT_API_URL}/properties/buy`, {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json'
             },
-            // Don't include credentials for public endpoints
             credentials: 'omit',
-            // Set a shorter timeout
-            signal: AbortSignal.timeout(5000)
           });
           
-          console.log("Direct API call status:", response.status);
-          
-          if (response.ok) {
-            console.log("Direct API call succeeded");
-            const contentType = response.headers.get('content-type');
-            
+          if (buyResponse.ok) {
+            const contentType = buyResponse.headers.get('content-type');
             if (contentType && contentType.includes('application/json')) {
-              const rawText = await response.text();
-              try {
-                // Check if the response body contains HTML tags
-                if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
-                  console.error("Received HTML instead of JSON from API:", rawText.substring(0, 200));
-                  throw new Error("Received HTML instead of JSON");
-                }
-                
-                responseData = JSON.parse(rawText);
-                succeeded = true;
-                console.log("Successfully parsed property data from direct API");
-              } catch (parseError) {
-                console.error("JSON parse error:", parseError);
-                console.warn("Will try proxy instead");
-              }
-            } else {
-              console.warn("Direct API returned non-JSON response with content type:", contentType);
+              const rawText = await buyResponse.text();
               
-              // Try to check response body anyway to debug
-              const text = await response.text();
-              if (text.includes('<!doctype html>') || text.includes('<html')) {
-                console.error("Received HTML instead of JSON:", text.substring(0, 200));
+              // Check if the response is HTML
+              if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
+                console.error("Received HTML instead of JSON from buy API:", rawText.substring(0, 200));
               } else {
-                console.error("Non-JSON response body:", text.substring(0, 200));
-              }
-            }
-          } else {
-            console.warn("Direct API call failed, will try proxy");
-          }
-        } catch (directError) {
-          console.warn("Direct API call error:", directError);
-          console.warn("Will try proxy instead");
-        }
-        
-        // If direct call failed, try the proxy
-        if (!succeeded) {
-          console.log("Trying proxy API call to:", proxyUrl);
-          try {
-            response = await fetch(proxyUrl, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              },
-              credentials: 'include'
-            });
-            
-            console.log("Proxy API call status:", response.status);
-            
-            if (response.ok) {
-              const contentType = response.headers.get('content-type');
-              
-              if (contentType && contentType.includes('application/json')) {
-                const rawText = await response.text();
                 try {
-                  // Check if the response body contains HTML tags
-                  if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
-                    console.error("Received HTML instead of JSON from proxy API:", rawText.substring(0, 200));
-                    throw new Error("Received HTML instead of JSON");
-                  }
+                  const buyData = JSON.parse(rawText);
+                  const properties = Array.isArray(buyData) ? buyData : (buyData.results || []);
+                  const foundProperty = properties.find(p => p.id.toString() === id);
                   
-                  responseData = JSON.parse(rawText);
-                  succeeded = true;
-                  console.log("Successfully parsed property data from proxy API");
-                } catch (parseError) {
-                  console.error("JSON parse error:", parseError);
-                }
-              } else {
-                console.error("Proxy API returned non-JSON response with content type:", contentType);
-                const text = await response.text();
-                if (text.includes('<!doctype html>') || text.includes('<html')) {
-                  console.error("Received HTML instead of JSON from proxy:", text.substring(0, 200));
-                } else {
-                  console.error("Non-JSON response body from proxy:", text.substring(0, 200));
-                }
-              }
-            }
-          } catch (proxyError) {
-            console.error("Proxy API call error:", proxyError);
-          }
-        }
-        
-        // If both attempts failed, try to find the property in published properties
-        if (!succeeded) {
-          console.log('Both direct and proxy calls failed, trying to find in published listings...');
-          
-          // Try direct API for published properties
-          try {
-            const buyResponse = await fetch(`${DIRECT_API_URL}/properties/buy`, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json',
-                'Content-Type': 'application/json'
-              },
-              credentials: 'omit'
-            });
-            
-            if (buyResponse.ok) {
-              const contentType = buyResponse.headers.get('content-type');
-              if (contentType && contentType.includes('application/json')) {
-                const rawText = await buyResponse.text();
-                const buyData = JSON.parse(rawText);
-                const properties = Array.isArray(buyData) ? buyData : (buyData.results || []);
-                const foundProperty = properties.find(p => p.id.toString() === id);
-                
-                if (foundProperty) {
-                  responseData = foundProperty;
-                  succeeded = true;
-                  console.log('Found property in published buy listings');
-                } else {
-                  // Try rent listings if not found in buy listings
-                  const rentResponse = await fetch(`${DIRECT_API_URL}/properties/rent`, {
-                    method: 'GET',
-                    headers: {
-                      'Accept': 'application/json',
-                      'Content-Type': 'application/json'
-                    },
-                    credentials: 'omit'
-                  });
-                  
-                  if (rentResponse.ok) {
-                    const contentType = rentResponse.headers.get('content-type');
-                    if (contentType && contentType.includes('application/json')) {
-                      const rawText = await rentResponse.text();
-                      const rentData = JSON.parse(rawText);
-                      const properties = Array.isArray(rentData) ? rentData : (rentData.results || []);
-                      const foundProperty = properties.find(p => p.id.toString() === id);
-                      
-                      if (foundProperty) {
-                        responseData = foundProperty;
-                        succeeded = true;
-                        console.log('Found property in published rent listings');
+                  if (foundProperty) {
+                    console.log('Found property in buy listings:', foundProperty);
+                    
+                    // Map the property data
+                    const mappedProperty = mapPropertyData(foundProperty);
+                    setProperty(mappedProperty);
+                    
+                    // Try to geocode if needed
+                    if (!foundProperty.latitude && mappedProperty.location) {
+                      try {
+                        const geocoded = await geocodeAddress(mappedProperty.location);
+                        setCoords(geocoded);
+                      } catch (error) {
+                        console.error("Error geocoding address:", error);
                       }
                     }
+                    
+                    setLoading(false);
+                    return; // Exit early if found
                   }
+                } catch (parseError) {
+                  console.error("JSON parse error for buy listings:", parseError);
                 }
               }
             }
-          } catch (error) {
-            console.error("Error searching in published listings:", error);
           }
+        } catch (buyError) {
+          console.error("Error fetching buy properties:", buyError);
         }
         
-        if (succeeded && responseData) {
-          console.log('API response data:', responseData);
-          const mappedProperty = mapPropertyData(responseData);
-          setProperty(mappedProperty);
+        // If not found in buy listings, try rent listings
+        try {
+          console.log("Fetching rent properties from:", `${DIRECT_API_URL}/properties/rent`);
+          const rentResponse = await fetch(`${DIRECT_API_URL}/properties/rent`, {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json'
+            },
+            credentials: 'omit',
+          });
           
-          // If no latitude/longitude is provided, geocode the address
-          if (!responseData.latitude && mappedProperty.location) {
-            try {
-              const geocoded = await geocodeAddress(mappedProperty.location);
-              setCoords(geocoded);
-            } catch (error) {
-              console.error("Error geocoding address:", error);
+          if (rentResponse.ok) {
+            const contentType = rentResponse.headers.get('content-type');
+            if (contentType && contentType.includes('application/json')) {
+              const rawText = await rentResponse.text();
+              
+              // Check if the response is HTML
+              if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
+                console.error("Received HTML instead of JSON from rent API:", rawText.substring(0, 200));
+              } else {
+                try {
+                  const rentData = JSON.parse(rawText);
+                  const properties = Array.isArray(rentData) ? rentData : (rentData.results || []);
+                  const foundProperty = properties.find(p => p.id.toString() === id);
+                  
+                  if (foundProperty) {
+                    console.log('Found property in rent listings:', foundProperty);
+                    
+                    // Map the property data
+                    const mappedProperty = mapPropertyData(foundProperty);
+                    setProperty(mappedProperty);
+                    
+                    // Try to geocode if needed
+                    if (!foundProperty.latitude && mappedProperty.location) {
+                      try {
+                        const geocoded = await geocodeAddress(mappedProperty.location);
+                        setCoords(geocoded);
+                      } catch (error) {
+                        console.error("Error geocoding address:", error);
+                      }
+                    }
+                    
+                    setLoading(false);
+                    return; // Exit early if found
+                  }
+                } catch (parseError) {
+                  console.error("JSON parse error for rent listings:", parseError);
+                }
+              }
             }
           }
-        } else {
-          console.error("Failed to fetch property data through all available methods");
+        } catch (rentError) {
+          console.error("Error fetching rent properties:", rentError);
         }
+        
+        // If we get here, we couldn't find the property in either listing
+        console.error("Property not found in any listings:", id);
+        setProperty(null);
       } catch (error) {
         console.error("Error in property details flow:", error);
+        setProperty(null);
       } finally {
         setLoading(false);
       }
