@@ -120,7 +120,7 @@ const PropertyDetails = () => {
         
         try {
           // First try the direct property endpoint
-          response = await apiClient.get(`/api/properties/${id}`);
+          response = await apiClient.get(`/properties/${id}`);
         } catch (error: any) {
           // If we get a 404 or 401 (unauthorized), try the published endpoint
           if (error.response && (error.response.status === 404 || error.response.status === 401)) {
