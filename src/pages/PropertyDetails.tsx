@@ -1,86 +1,61 @@
-// Import the marker fix at the top so it applies globally
-import '../components/leafletMarkerFix'; // Adjust the path if needed
-
+import '../components/leafletMarkerFix';
 import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
-  MapPin,
-  Bed,
-  Bath,
-  Square,
-  Calendar,
-  Heart,
-  Share2,
-  // Amenity icons:
-  CheckCircle,
-  Car,
-  Droplet,
-  Dumbbell,
-  Shield,
-  Wind,
-  Flame, // replacing 'Fire' with Flame
-  Smile,
-  DoorOpen, // using DoorOpen instead of Door
-  Archive,
-  Wifi,
-  Package,
-  ArrowUpCircle,
-  Flower,
-  Sun,
-  UserCheck,
-  Anchor // using Anchor for waterfront
+  MapPin, Bed, Bath, Square, Calendar, Heart, Share2,
+  CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
+  Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
+  Flower, Sun, UserCheck, Anchor
 } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
-import MapView from '../components/MapView'; // Ensure that MapView exists and uses React Leaflet
+import MapView from '../components/MapView';
 
-// Geocoding function using Nominatim
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
-  const encodedAddress = encodeURIComponent(address);
-  const response = await fetch(`https://nominatim.openstreetmap.org/search?q=${encodedAddress}&format=json`);
-  const data = await response.json();
-  if (data && data.length > 0) {
+  if (!address || address.trim() === "") {
+    throw new Error("Empty address for geocoding");
+  }
+  const encoded = encodeURIComponent(address);
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${encoded}&format=json`);
+  const data = await res.json();
+  if (data?.length > 0) {
     return { lat: parseFloat(data[0].lat), lng: parseFloat(data[0].lon) };
   }
-  throw new Error('Geocoding failed');
+  throw new Error("Geocoding failed");
 }
 
-// Mapping function to convert API data to our Property type.
-const mapPropertyData = (data: any): Property => {
-  return {
-    id: data.id,
-    title: data.title,
-    description: data.description,
-    price: parseFloat(data.price),
-    location: data.location,
-    property_type: data.property_type,
-    bedrooms: data.bedrooms,
-    bathrooms: parseFloat(data.bathrooms),
-    area: data.area,
-    year_built: data.year_built,
-    parking_spaces: data.parking_spaces,
-    lot_size: data.lot_size,
-    property_status: data.property_status,
-    energy_rating: data.energy_rating,
-    construction_material: data.construction_material,
-    floor_level: data.floor_level,
-    total_floors: data.total_floors,
-    available_from: data.available_from,
-    contact_phone: data.contact_phone,
-    contact_email: data.contact_email,
-    virtual_tour_url: data.virtual_tour_url,
-    video_url: data.video_url,
-    amenities: data.amenities || [],
-    additional_features: data.additional_features || [],
-    owner: data.owner, // ensure owner data includes fields like name, phone, and email
-    is_published: data.is_published,
-    created_at: data.created_at,
-    updated_at: data.updated_at,
-    images: data.images || [],
-  };
-};
+const mapPropertyData = (data: any): Property => ({
+  id: data.id,
+  title: data.title || "Untitled Property",
+  description: data.description || "",
+  price: parseFloat(data.price) || 0,
+  location: data.location || "",
+  property_type: data.property_type || "",
+  bedrooms: data.bedrooms || 0,
+  bathrooms: parseFloat(data.bathrooms) || 0,
+  area: data.area || 0,
+  year_built: data.year_built || "",
+  parking_spaces: data.parking_spaces || 0,
+  lot_size: data.lot_size || "",
+  property_status: data.property_status || "unknown",
+  energy_rating: data.energy_rating || "",
+  construction_material: data.construction_material || "",
+  floor_level: data.floor_level || "",
+  total_floors: data.total_floors || "",
+  available_from: data.available_from || "",
+  contact_phone: data.contact_phone || "",
+  contact_email: data.contact_email || "",
+  virtual_tour_url: data.virtual_tour_url || "",
+  video_url: data.video_url || "",
+  amenities: data.amenities || [],
+  additional_features: data.additional_features || [],
+  owner: data.owner || null,
+  is_published: data.is_published || false,
+  created_at: data.created_at || "",
+  updated_at: data.updated_at || "",
+  images: data.images || [],
+});
 
-// Define the amenity-to-icon mapping.
 const amenityIcons: Record<string, JSX.Element> = {
   parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
   pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -109,291 +84,166 @@ const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const [property, setProperty] = useState<Property | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchPropertyData() {
+    async function fetchProperty() {
       try {
-        setLoading(true);
-        let response;
-        
+        if (!id || isNaN(Number(id))) {
+          console.error("Invalid property ID in URL:", id);
+          return;
+        }
+
+        let res;
         try {
-          // First try the direct property endpoint
-          response = await apiClient.get(`/properties/${id}`);
-        } catch (error: any) {
-          // If we get a 404 or 401 (unauthorized), try the published endpoint
-          if (error.response && (error.response.status === 404 || error.response.status === 401)) {
-            console.log('Property not found with direct endpoint or user not authenticated, trying published endpoint...');
-            
-            // Try to find the property in published properties
-            const publishedResponse = await apiClient.get('/properties/buy');
-            const publishedProperties = Array.isArray(publishedResponse.data) 
-              ? publishedResponse.data 
-              : (publishedResponse.data.results || []);
-            
-            // Find the property with matching ID
-            const foundProperty = publishedProperties.find(p => p.id.toString() === id);
-            
-            if (foundProperty) {
-              // If we found the property in the published list, we can use it directly
-              response = { data: foundProperty };
-              console.log('Found property in published listings, using that data');
-            } else {
-              throw new Error('Property not found in published listings');
-            }
+          res = await apiClient.get(`/properties/${id}`);
+        } catch (err: any) {
+          if (err.response && (err.response.status === 404 || err.response.status === 401)) {
+            const fallback = await apiClient.get('/properties/buy');
+            const list = Array.isArray(fallback.data) ? fallback.data : fallback.data.results;
+            const found = list.find((p: any) => p.id.toString() === id);
+            if (!found) throw new Error("Property not found in fallback list");
+            res = { data: found };
           } else {
-            // Re-throw if it's not a 404 or 401 error
-            throw error;
+            throw err;
           }
         }
-        
-        console.log('API response:', response.data);
-        const mappedProperty = mapPropertyData(response.data);
-        setProperty(mappedProperty);
-        
-        // If no latitude/longitude is provided, geocode the address.
-        if (!response.data.latitude && mappedProperty.location) {
+
+        const mapped = mapPropertyData(res.data);
+        setProperty(mapped);
+
+        if (!res.data.latitude && mapped.location && mapped.location.trim() !== "") {
           try {
-            const geocoded = await geocodeAddress(mappedProperty.location);
-            setCoords(geocoded);
-          } catch (error) {
-            console.error("Error geocoding address:", error);
+            const coords = await geocodeAddress(mapped.location);
+            setCoords(coords);
+          } catch (geoErr) {
+            console.error("Geocode failed:", geoErr);
           }
         }
-      } catch (error) {
-        console.error("Error fetching property:", error);
+      } catch (err) {
+        console.error("Final property fetch error:", err);
       } finally {
         setLoading(false);
       }
     }
-    
-    if (id) {
-      fetchPropertyData();
-    }
+
+    fetchProperty();
   }, [id]);
 
   if (loading) {
-    return (
-      <div className="pt-20 min-h-screen flex items-center justify-center">
-        <p className="text-xl text-gray-600">Loading...</p>
-      </div>
-    );
+    return <div className="pt-20 text-center">Loading...</div>;
   }
 
   if (!property) {
     return (
-      <div className="pt-20 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Property Not Found</h2>
-          <p className="text-gray-600 mb-6">
-            The property you're looking for doesn't exist or has been removed.
-          </p>
-          <Link
-            to="/"
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
-          >
-            Back to Home
-          </Link>
-        </div>
+      <div className="pt-20 text-center">
+        <h2 className="text-2xl font-bold text-red-600">Property Not Found</h2>
+        <p className="text-gray-600">Check the link or return to listings.</p>
+        <Link to="/" className="text-blue-500 underline">← Back to Home</Link>
       </div>
     );
   }
 
-  // Determine main and additional images.
-  const mainImageUrl = property.images && property.images.length > 0
-    ? property.images[activeImage].image
-    : '';
-  const additionalImages = property.images && property.images.length > 0
-    ? property.images.map(img => img.image)
-    : [];
+  const mainImage = property.images?.[0]?.image || "https://via.placeholder.com/800x600";
+  const thumbnails = property.images?.slice(1, 5).map(img => img.image) || [];
 
   return (
-    <div className="pt-20 bg-gray-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
-        {/* Property Images Section */}
-        <section className="bg-white">
-          <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
-            {/* Main Image */}
-            <div className="lg:w-2/3">
-              <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
-                <img
-                  src={mainImageUrl}
-                  alt=""
-                  className="w-full h-full object-cover"
-                />
-                <div className="absolute top-4 left-4 flex space-x-2 z-30">
-                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    property.property_status === 'for_sale'
-                      ? 'bg-emerald-500 text-white'
-                      : 'bg-blue-500 text-white'
-                  }`}>
-                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-                    {property.property_type}
-                  </span>
-                </div>
-                <div className="absolute top-4 right-4 flex space-x-2 z-30">
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
-                    <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
-                  </button>
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
-                    <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500 transition-colors" />
-                  </button>
-                </div>
-              </div>
+    <div className="pt-20 bg-gray-50 min-h-screen px-4">
+      <div className="max-w-6xl mx-auto py-8">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="lg:w-2/3">
+            <div className="rounded-xl overflow-hidden">
+              <img src={mainImage} alt={property.title} className="w-full h-96 object-cover" />
             </div>
-            {/* Thumbnail Grid */}
-            <div className="lg:w-1/3 grid grid-cols-2 gap-4">
-              {additionalImages.slice(1, 5).map((img, index) => (
-                <div
-                  key={index}
-                  className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
-                  onClick={() => setActiveImage(index + 1)}
-                >
-                  <img
-                    src={img}
-                    alt=""
-                    className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
-                  />
-                  {index === 3 && additionalImages.length > 5 && (
-                    <div
-                      className="absolute inset-0 bg-black/50 flex items-center justify-center text-white font-medium"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      +{additionalImages.length - 5} more
-                    </div>
-                  )}
-                </div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
+              {thumbnails.map((img, idx) => (
+                <img key={idx} src={img} className="h-28 object-cover rounded-md" />
               ))}
             </div>
-          </div>
-        </section>
+            <h1 className="text-3xl font-bold mt-6">{property.title}</h1>
+            <div className="text-gray-600 flex items-center mt-2">
+              <MapPin className="h-4 w-4 mr-1" />
+              {property.location || "No location"}
+            </div>
+            <div className="text-blue-600 text-2xl font-semibold mt-2">
+              €{property.price.toLocaleString()}
+            </div>
 
-        {/* Property Details Section */}
-        <section className="mt-8">
-          <div className="flex flex-col lg:flex-row lg:space-x-8">
-            {/* Main Content */}
-            <div className="lg:w-2/3">
-              <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
-                  <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {property.title}
-                    </h1>
-                    <div className="flex items-center text-gray-600 mb-4">
-                      <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{property.location}</span>
+            <div className="flex flex-wrap gap-6 mt-4">
+              <div className="flex items-center gap-2">
+                <Bed className="h-5 w-5" />
+                {property.bedrooms} Beds
+              </div>
+              <div className="flex items-center gap-2">
+                <Bath className="h-5 w-5" />
+                {property.bathrooms} Baths
+              </div>
+              <div className="flex items-center gap-2">
+                <Square className="h-5 w-5" />
+                {property.area.toLocaleString()} sq ft
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {property.year_built ? `Built in ${property.year_built}` : "Year unknown"}
+              </div>
+            </div>
+
+            {property.description && (
+              <div className="mt-6">
+                <h2 className="text-xl font-semibold">Description</h2>
+                <p className="text-gray-700 mt-2">{property.description}</p>
+              </div>
+            )}
+
+            {property.amenities?.length > 0 && (
+              <div className="mt-6">
+                <h2 className="text-xl font-semibold mb-2">Amenities</h2>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {property.amenities.map((a, i) => (
+                    <div key={i} className="flex items-center">
+                      {amenityIcons[a] || amenityIcons.default}
+                      <span>{a}</span>
                     </div>
-                  </div>
-                  <div className="mt-4 md:mt-0 text-right">
-                    <p className="text-3xl font-bold text-blue-600">
-                      €{property.price.toLocaleString()}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
-                  <div className="flex items-center text-gray-700">
-                    <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.area.toLocaleString()} sq ft</span>
-                  </div>
-                  <div className="flex items-center text-gray-700">
-                    <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>Built in {property.year_built}</span>
-                  </div>
-                </div>
-
-                <div className="mt-6">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Description</h2>
-                  <p className="text-gray-700 leading-relaxed mb-6">
-                    {property.description}
-                  </p>
+                  ))}
                 </div>
               </div>
+            )}
 
-              {property.amenities && property.amenities.length > 0 && (
-                <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                  <h2 className="text-xl font-bold text-gray-900 mb-4">Amenities</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {property.amenities.map((amenity, idx) => {
-                      const icon = amenityIcons[amenity] || amenityIcons.default;
-                      return (
-                        <div key={idx} className="flex items-center">
-                          {icon}
-                          <span>{amenity}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-
-              <div className="bg-white p-6 rounded-xl shadow-sm">
-                <h2 className="text-xl font-bold text-gray-900 mb-4">Location</h2>
-                {coords ? (
-                  <MapView lat={coords.lat} lng={coords.lng} />
-                ) : (
-                  <p className="text-gray-600">Location coordinates not available.</p>
-                )}
-                <div className="flex items-start mt-4">
-                  <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                  <p className="text-gray-700">{property.location}</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Sidebar: Listing Owner Information */}
-            <div className="lg:w-1/3 mt-8 lg:mt-0">
-              <div className="bg-white p-6 rounded-xl shadow-sm mb-8 sticky top-24">
-                <h3 className="text-xl font-bold text-gray-900 mb-6">
-                  Listing Owner
-                </h3>
-                {property.owner ? (
-                  <div className="space-y-4">
-                    {property.owner.name && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Name</p>
-                        <p className="text-gray-900 font-medium">{property.owner.name}</p>
-                      </div>
-                    )}
-                    {property.owner.phone && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Phone</p>
-                        <p className="text-gray-900 font-medium">
-                          <a href={`tel:${property.owner.phone}`} className="text-emerald-600">
-                            {property.owner.phone}
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                    {property.owner.email && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Email</p>
-                        <p className="text-gray-900 font-medium">
-                          <a href={`mailto:${property.owner.email}`} className="text-emerald-600">
-                            {property.owner.email}
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <p className="text-gray-600">Owner details not available.</p>
-                )}
-              </div>
+            <div className="mt-6">
+              <h2 className="text-xl font-semibold mb-2">Location</h2>
+              {coords ? <MapView lat={coords.lat} lng={coords.lng} /> : <p>No map data.</p>}
             </div>
           </div>
-        </section>
+
+          <div className="lg:w-1/3">
+            <div className="bg-white p-4 rounded-xl shadow sticky top-24">
+              <h3 className="text-lg font-bold mb-2">Listing Owner</h3>
+              {property.owner ? (
+                <div>
+                  {property.owner.name && <p><strong>Name:</strong> {property.owner.name}</p>}
+                  {property.owner.email && (
+                    <p>
+                      <strong>Email:</strong>{' '}
+                      <a href={`mailto:${property.owner.email}`} className="text-blue-600 underline">
+                        {property.owner.email}
+                      </a>
+                    </p>
+                  )}
+                  {property.owner.phone && (
+                    <p>
+                      <strong>Phone:</strong>{' '}
+                      <a href={`tel:${property.owner.phone}`} className="text-blue-600 underline">
+                        {property.owner.phone}
+                      </a>
+                    </p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500">No owner info available.</p>
+              )}
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
