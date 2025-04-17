@@ -135,6 +135,13 @@ const PropertyDetails = () => {
         try {
           // First try the direct property endpoint
           response = await apiClient.get(`/properties/${id}`);
+          
+          // Check if response is HTML instead of JSON (server error/redirect)
+          if (typeof response.data === 'string' && response.data.includes('<!doctype html>')) {
+            console.error('Server returned HTML instead of JSON. API configuration issue detected.');
+            throw new Error('API returned HTML instead of property data');
+          }
+          
         } catch (error: any) {
           // If we get a 404 or 401 (unauthorized), try the published endpoint
           if (error.response && (error.response.status === 404 || error.response.status === 401)) {
@@ -144,6 +151,13 @@ const PropertyDetails = () => {
 
             // Try to find the property in published properties
             const publishedResponse = await apiClient.get('/properties/buy');
+            
+            // Check if response is HTML instead of JSON (server error/redirect)
+            if (typeof publishedResponse.data === 'string' && publishedResponse.data.includes('<!doctype html>')) {
+              console.error('Server returned HTML instead of JSON. API configuration issue detected.');
+              throw new Error('API returned HTML instead of property data');
+            }
+            
             const publishedProperties = Array.isArray(publishedResponse.data)
               ? publishedResponse.data
               : publishedResponse.data.results || [];
@@ -181,6 +195,7 @@ const PropertyDetails = () => {
         }
       } catch (error) {
         console.error('Error fetching property:', error);
+        setProperty(null); // Ensure we set property to null on error to show the "not found" screen
       } finally {
         setLoading(false);
       }
