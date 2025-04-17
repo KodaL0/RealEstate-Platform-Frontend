@@ -13,6 +13,10 @@
       "destination": "https://propertprodjango.onrender.com/api/properties/rent"
     },
     {
+      "source": "/api/properties/:id",
+      "destination": "https://propertprodjango.onrender.com/api/properties/:id"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
@@ -25,6 +29,16 @@
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
         { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
+      ]
+    },
+    {
+      "source": "/api/properties/[0-9]+",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version" },
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" },
+        { "key": "Content-Type", "value": "application/json" }
       ]
     },
     {
