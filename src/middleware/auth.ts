@@ -28,20 +28,20 @@ apiClient.interceptors.response.use(
     const originalRequest = error.config as CustomAxiosRequestConfig;
     
     // Prevent infinite loop for refresh endpoint errors:
-    if (originalRequest.url?.includes('/api/users/refresh')) {
+    if (originalRequest.url?.includes('/users/refresh')) {
       return Promise.reject(error);
     }
     
     // Don't try to refresh token for public routes
     const publicRoutes = [
-      '/api/properties/buy',
+      '/properties/buy',
       'buy/',
-      '/api/properties/rent',
+      '/properties/rent',
       'rent/'
     ];
     
-    // Check if it's a public property details route (matches /api/properties/{number})
-    const isPublicPropertyDetail = originalRequest.url && /\/api\/properties\/\d+\/?$/.test(originalRequest.url);
+    // Check if it's a public property details route (matches /properties/{number})
+    const isPublicPropertyDetail = originalRequest.url && /\/properties\/\d+\/?$/.test(originalRequest.url);
     
     // Skip token refresh for public routes
     const isPublicRoute = publicRoutes.some(route => originalRequest.url?.includes(route)) || isPublicPropertyDetail;
@@ -60,7 +60,7 @@ apiClient.interceptors.response.use(
       console.warn(`Attempt ${originalRequest._retryCount}: Access token expired, attempting refresh...`);
       try {
         const refreshResponse = await apiClient.post(
-          '/api/users/refresh',
+          '/users/refresh',
           {},
           { withCredentials: true }
         );
@@ -93,7 +93,7 @@ apiClient.interceptors.response.use(
  */
 export async function login(email: string, password: string) {
   try {
-    const response = await apiClient.post('/api/users/login', { email, password });
+    const response = await apiClient.post('/users/login', { email, password });
     // No client-side cookie setting is done; rely on the backend.
     return { status: response.status, ...response.data };
   } catch (error: any) {
@@ -107,7 +107,7 @@ export async function login(email: string, password: string) {
  */
 export async function register(username: string, email: string, password: string) {
   try {
-    const response = await apiClient.post('/api/users/register', { username, email, password });
+    const response = await apiClient.post('/users/register', { username, email, password });
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Registration Error:", error);
@@ -122,7 +122,7 @@ export async function register(username: string, email: string, password: string
  */
 export async function logout() {
   try {
-    const response = await apiClient.post('/api/users/logout');
+    const response = await apiClient.post('/users/logout');
     // Clear cookies.
     document.cookie =
       'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
@@ -140,7 +140,7 @@ export async function logout() {
  */
 export async function fetchUser() {
   try {
-    const response = await apiClient.get('/api/users/get_user/');
+    const response = await apiClient.get('/users/get_user/');
     return response.data;
   } catch (error: any) {
     console.error("Fetch User Error:", error);
@@ -153,7 +153,7 @@ export async function fetchUser() {
  */
 export async function getProtectedData() {
   try {
-    const response = await apiClient.get('/api/protected/');
+    const response = await apiClient.get('/protected/');
     return response.data;
   } catch (error: any) {
     console.error("Protected Data Error:", error);
@@ -166,7 +166,7 @@ export async function getProtectedData() {
  */
 export async function createProperty(propertyData: FormData) {
   try {
-    const response = await apiClient.post('/api/properties/create_property/', propertyData, {
+    const response = await apiClient.post('/properties/create_property/', propertyData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -183,7 +183,7 @@ export async function createProperty(propertyData: FormData) {
  */
 export async function getProperties() {
   try {
-    const response = await apiClient.get('/api/properties/');
+    const response = await apiClient.get('/properties/');
     return response.data;
   } catch (error: any) {
     console.error("Get Properties Error:", error);
