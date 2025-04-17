@@ -1,20 +1,20 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://propertprodjango.onrender.com/api/:path*"
-    },
-    {
-      "source": "/properties/buy",
+      "source": "/api/properties/buy",
       "destination": "https://propertprodjango.onrender.com/api/properties/buy"
     },
     {
-      "source": "/properties/rent",
+      "source": "/api/properties/rent",
       "destination": "https://propertprodjango.onrender.com/api/properties/rent"
     },
     {
       "source": "/api/properties/:id(\\d+)",
       "destination": "https://propertprodjango.onrender.com/api/properties/:id"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://propertprodjango.onrender.com/api/:path*"
     },
     {
       "source": "/(.*)",

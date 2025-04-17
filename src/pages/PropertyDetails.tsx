@@ -223,6 +223,12 @@ const PropertyDetails = () => {
             if (contentType && contentType.includes('application/json')) {
               const rawText = await response.text();
               try {
+                // Check if the response body contains HTML tags
+                if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
+                  console.error("Received HTML instead of JSON from API:", rawText.substring(0, 200));
+                  throw new Error("Received HTML instead of JSON");
+                }
+                
                 responseData = JSON.parse(rawText);
                 succeeded = true;
                 console.log("Successfully parsed property data from direct API");
@@ -231,7 +237,15 @@ const PropertyDetails = () => {
                 console.warn("Will try proxy instead");
               }
             } else {
-              console.warn("Direct API returned non-JSON response");
+              console.warn("Direct API returned non-JSON response with content type:", contentType);
+              
+              // Try to check response body anyway to debug
+              const text = await response.text();
+              if (text.includes('<!doctype html>') || text.includes('<html')) {
+                console.error("Received HTML instead of JSON:", text.substring(0, 200));
+              } else {
+                console.error("Non-JSON response body:", text.substring(0, 200));
+              }
             }
           } else {
             console.warn("Direct API call failed, will try proxy");
@@ -262,6 +276,12 @@ const PropertyDetails = () => {
               if (contentType && contentType.includes('application/json')) {
                 const rawText = await response.text();
                 try {
+                  // Check if the response body contains HTML tags
+                  if (rawText.includes('<!doctype html>') || rawText.includes('<html')) {
+                    console.error("Received HTML instead of JSON from proxy API:", rawText.substring(0, 200));
+                    throw new Error("Received HTML instead of JSON");
+                  }
+                  
                   responseData = JSON.parse(rawText);
                   succeeded = true;
                   console.log("Successfully parsed property data from proxy API");
@@ -269,9 +289,13 @@ const PropertyDetails = () => {
                   console.error("JSON parse error:", parseError);
                 }
               } else {
-                console.error("Proxy API returned non-JSON response");
+                console.error("Proxy API returned non-JSON response with content type:", contentType);
                 const text = await response.text();
-                console.error("Response body (first 100 chars):", text.substring(0, 100));
+                if (text.includes('<!doctype html>') || text.includes('<html')) {
+                  console.error("Received HTML instead of JSON from proxy:", text.substring(0, 200));
+                } else {
+                  console.error("Non-JSON response body from proxy:", text.substring(0, 200));
+                }
               }
             }
           } catch (proxyError) {
@@ -414,7 +438,7 @@ const PropertyDetails = () => {
             <div className="lg:w-2/3">
               <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
                 <img
-                  src={mainImageUrl}
+                  src={mainImageUrl || 'https://via.placeholder.com/800x600?text=No+Image+Available'}
                   alt=""
                   className="w-full h-full object-cover"
                 />
@@ -427,7 +451,7 @@ const PropertyDetails = () => {
                     {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-                    {property.property_type}
+                    {property.property_type || 'Property'}
                   </span>
                 </div>
                 <div className="absolute top-4 right-4 flex space-x-2 z-30">
@@ -476,16 +500,16 @@ const PropertyDetails = () => {
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {property.title}
+                      {property.title || 'Unnamed Property'}
                     </h1>
                     <div className="flex items-center text-gray-600 mb-4">
                       <MapPin className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{property.location}</span>
+                      <span>{property.location || 'Location not specified'}</span>
                     </div>
                   </div>
                   <div className="mt-4 md:mt-0 text-right">
                     <p className="text-3xl font-bold text-blue-600">
-                      €{property.price ? property.price.toLocaleString() : '0'}
+                      €{typeof property.price === 'number' && isFinite(property.price) ? property.price.toLocaleString() : '0'}
                     </p>
                   </div>
                 </div>
@@ -493,15 +517,15 @@ const PropertyDetails = () => {
                 <div className="flex flex-wrap gap-6 py-4 border-t border-b border-gray-100">
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bedrooms} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
+                    <span>{property.bedrooms || 0} {property.bedrooms === 1 ? 'Bedroom' : 'Bedrooms'}</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
+                    <span>{property.bathrooms || 0} {property.bathrooms === 1 ? 'Bathroom' : 'Bathrooms'}</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.area ? property.area.toLocaleString() : '0'} sq ft</span>
+                    <span>{typeof property.area === 'number' && isFinite(property.area) ? property.area.toLocaleString() : '0'} sq ft</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />
