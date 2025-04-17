@@ -166,17 +166,54 @@ const PropertyDetails = () => {
       return;
     }
 
-    apiClient.get(`/properties/${id}`)
+    // Check if the browser is serving the app directly instead of through the API
+    const checkIfHtmlResponse = (data: any) => {
+      if (typeof data === 'string' && data.includes('<!doctype html>')) {
+        console.error('Received HTML instead of JSON');
+        throw new Error('API returned HTML instead of JSON. This likely indicates a routing issue.');
+      }
+      return data;
+    };
+
+    // Add explicit JSON content type to request
+    apiClient.get(`/api/properties/${id}/`, {
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      }
+    })
       .then(response => {
-        console.log("API Response data:", response.data); // Add debugging
+        console.log("API Response data:", response.data);
+        // Check if response is HTML
+        checkIfHtmlResponse(response.data);
         const data = mapPropertyData(response.data);
-        console.log("Mapped property data:", data); // Add debugging
+        console.log("Mapped property data:", data);
         setProperty(data);
         return geocodeAddress(data.location);
       })
       .then(coords => setCoords(coords))
-      .catch(error => console.error('Error fetching property details:', error))
-      .finally(() => setLoading(false));
+      .catch(error => {
+        console.error('Error fetching property details:', error);
+        // Attempt to load using a direct API call as a fallback
+        if (error.message.includes('API returned HTML')) {
+          console.log('Trying alternative API endpoint...');
+          // Get the API URL dynamically based on the current environment
+          const apiBaseUrl = window.location.origin; // Use the same origin as the current page
+          fetch(`${apiBaseUrl}/api/properties/${id}/`)
+            .then(response => response.json())
+            .then(data => {
+              console.log("Fallback API response:", data);
+              const mappedData = mapPropertyData(data);
+              setProperty(mappedData);
+              return geocodeAddress(mappedData.location);
+            })
+            .then(coords => setCoords(coords))
+            .catch(fallbackError => console.error('Fallback API request failed:', fallbackError))
+            .finally(() => setLoading(false));
+        } else {
+          setLoading(false);
+        }
+      });
   }, [id]);
 
   if (loading) return <div>Loading...</div>;
