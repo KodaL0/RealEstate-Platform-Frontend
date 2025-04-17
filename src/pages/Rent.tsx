@@ -42,10 +42,11 @@ const Rent = () => {
         
         const response = await fetch(url, {
           method: 'GET',
-          mode: 'cors',
           headers: {
             'Accept': 'application/json'
-          }
+          },
+          // Don't include credentials for public endpoints to avoid CORS issues
+          credentials: 'omit'
         });
         
         if (!response.ok) {
@@ -58,7 +59,7 @@ const Rent = () => {
         if (!contentType || !contentType.includes('application/json')) {
           console.error('Received non-JSON response:', contentType);
           const text = await response.text();
-          console.error('Response body:', text);
+          console.error('Response body (first 100 chars):', text.substring(0, 100));
           throw new Error('Server returned non-JSON response');
         }
         

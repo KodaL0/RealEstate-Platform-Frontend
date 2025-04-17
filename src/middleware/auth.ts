@@ -35,9 +35,17 @@ apiClient.interceptors.response.use(
     // Don't try to refresh token for public routes
     const publicRoutes = [
       '/properties/buy',
+      '/properties/buy/',
+      'properties/buy',
       'buy/',
+      '/buy',
+      '/buy/',
       '/properties/rent',
-      'rent/'
+      '/properties/rent/',
+      'properties/rent',
+      'rent/',
+      '/rent',
+      '/rent/'
     ];
     
     // Check if it's a public property details route (matches /properties/{number})
