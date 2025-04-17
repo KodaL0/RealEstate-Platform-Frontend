@@ -93,12 +93,34 @@ apiClient.interceptors.response.use(
  */
 export async function login(email: string, password: string) {
   try {
+    console.log("Attempting login with email:", email);
+    console.log("API URL base:", apiClient.defaults.baseURL);
+    
     const response = await apiClient.post('/users/login', { email, password });
+    console.log("Login successful, received response:", response.status);
     // No client-side cookie setting is done; rely on the backend.
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
-    return { error: error.response?.data?.error || "Login failed" };
+    
+    if (error.response) {
+      // The request was made and the server responded with a status code
+      console.error("Server responded with status:", error.response.status);
+      console.error("Response data:", error.response.data);
+      
+      if (error.response.status === 502) {
+        return { error: "Backend server is unreachable. Please try again later or contact support." };
+      }
+      return { error: error.response?.data?.error || "Login failed" };
+    } else if (error.request) {
+      // The request was made but no response was received
+      console.error("No response received from server");
+      return { error: "No response from server. Please check your internet connection." };
+    } else {
+      // Something happened in setting up the request
+      console.error("Error setting up request:", error.message);
+      return { error: "Login request failed. Please try again later." };
+    }
   }
 }
 

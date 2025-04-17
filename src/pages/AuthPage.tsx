@@ -22,6 +22,7 @@ export const AuthPage = () => {
     try {
       let res;
       if (isLogin) {
+        console.log("Submitting login form with email:", email);
         res = await login(email, password);
         console.log("Login response:", res);
 
@@ -42,7 +43,12 @@ export const AuthPage = () => {
             }
           }, 500); // Half-second delay
         } else {
-          setFeedback(res?.error || 'Login failed');
+          // Handle error response
+          const errorMessage = typeof res?.error === 'string' 
+            ? res.error 
+            : (res?.error?.message || 'Login failed. Please try again.');
+          console.error("Login failed:", errorMessage);
+          setFeedback(errorMessage);
         }
       } else {
         const username = formData.get('name') as string;
@@ -57,8 +63,8 @@ export const AuthPage = () => {
         }
       }
     } catch (error) {
-      console.error("Error:", error);
-      setFeedback('Error processing your request.');
+      console.error("Error during auth process:", error);
+      setFeedback('Error processing your request. Please try again later.');
     } finally {
       setLoading(false);
     }
