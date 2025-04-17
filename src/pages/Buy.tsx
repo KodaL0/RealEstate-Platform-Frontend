@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { MapPin } from 'lucide-react';
 import SearchFilters from '../components/SearchFilters';
 import PropertyCard from '../components/PropertyCard';
+import { normalizePropertyData } from '../types';
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
@@ -138,14 +139,16 @@ const Buy = () => {
         
         // Check if data is an array
         if (Array.isArray(data)) {
-          setAllProperties(data);
-          setFilteredProperties(data);
+          const normalizedData = normalizePropertyData(data);
+          setAllProperties(normalizedData);
+          setFilteredProperties(normalizedData);
         } else {
           console.warn('Response is not an array:', data);
           // If data has results property (from pagination), use that
           if (data.results && Array.isArray(data.results)) {
-            setAllProperties(data.results);
-            setFilteredProperties(data.results);
+            const normalizedData = normalizePropertyData(data.results);
+            setAllProperties(normalizedData);
+            setFilteredProperties(normalizedData);
           } else {
             // Default to empty array if we can't find property data
             setAllProperties([]);
