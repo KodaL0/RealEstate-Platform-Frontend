@@ -496,8 +496,8 @@ const CreateListing = () => {
       // Use the backend endpoint for edit listings.
       const endpoint = isEditing 
         ? username 
-          ? `/${username}/property/${id}/edit/`
-          : `/property/${id}/edit/` // Fallback if username is empty
+          ? `/properties/${username}/property/${id}/edit/`
+          : `/properties/property/${id}/edit/` // Fallback if username is empty
         : '/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
