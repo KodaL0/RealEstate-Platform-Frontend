@@ -79,7 +79,7 @@ const MyListings = () => {
     if (!username) return alert('Still loading user info...');
     if (!window.confirm('Are you sure you want to publish this listing?')) return;
     try {
-      await apiClient.patch(`/api/properties/${username}/property/${id}/publish/`, null, {
+      await apiClient.patch(`/properties/${username}/property/${id}/publish/`, null, {
         withCredentials: true,
       });
       setProperties(prev =>
@@ -97,7 +97,7 @@ const MyListings = () => {
     if (!username) return alert('Still loading user info...');
     if (!window.confirm('Are you sure you want to remove this listing?')) return;
     try {
-      await apiClient.delete(`/api/properties/${username}/property/${id}/delete/`, {
+      await apiClient.delete(`/properties/${username}/property/${id}/delete/`, {
         withCredentials: true,
       });
       const updated = properties.filter(p => p.id !== id);
