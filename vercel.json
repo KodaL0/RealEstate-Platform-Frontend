@@ -5,13 +5,7 @@
       "destination": "https://propertprodjango.onrender.com/api/:path*"
     },
     {
-      "source": "/(.*)",
-      "has": [
-        {
-          "type": "host",
-          "value": "www.propertpro.com"
-        }
-      ],
+      "source": "/((?!api).*)",
       "destination": "/index.html"
     }
   ],
