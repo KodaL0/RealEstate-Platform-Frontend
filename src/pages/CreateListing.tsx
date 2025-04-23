@@ -259,7 +259,7 @@ const CreateListing = () => {
 
   // Use direct edit endpoint instead of username-based path
   const getEditEndpoint = (propId: string) => {
-    return `/api/properties/property/${propId}/edit/`;
+    return `/properties/property/${propId}/edit/`;
   };
 
   // Fetch listing data if in edit mode.
@@ -267,7 +267,7 @@ const CreateListing = () => {
     if (isEditing && id) {
       setLoadingListing(true);
       console.log("Edit mode enabled. Fetching listing with id:", id);
-      apiClient.get(`/api/properties/${id}`)
+      apiClient.get(`/properties/${id}`)
         .then(response => {
           const data = response.data;
           console.log("Fetched listing for edit:", data);
