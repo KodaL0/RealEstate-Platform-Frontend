@@ -498,7 +498,7 @@ const CreateListing = () => {
         ? username 
           ? `/${username}/property/${id}/edit/`
           : `/property/${id}/edit/` // Fallback if username is empty
-        : '/create_property/';
+        : '/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
       const response = await apiClient[isEditing ? 'put' : 'post'](endpoint, formDataToSend, {
