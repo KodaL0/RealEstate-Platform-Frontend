@@ -175,7 +175,7 @@ export async function fetchUser() {
   
   try {
     // Try with explicit URL to bypass any potential routing issues
-    const response = await apiClient.get('/users/get_user', {
+    const response = await apiClient.get('/users/get_user/', {
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json'
