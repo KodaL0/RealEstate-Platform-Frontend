@@ -16,12 +16,5 @@
         { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
       ]
     }
-  ],
-  "redirects": [
-    {
-      "source": "/api/:path*",
-      "destination": "https://propertprodjango.onrender.com/api/:path*",
-      "statusCode": 307
-    }
   ]
 }
