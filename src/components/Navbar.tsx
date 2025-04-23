@@ -2,10 +2,7 @@ import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, ChevronDown, Building2, Plus } from "lucide-react";
 import { useUser } from "../context/UserContext";
-// Import apiClient from your authentication module
 import { apiClient, logout as authLogout } from "../middleware/auth";
-// or, if you prefer to call the logout function directly:
-// import { logout } from "../middleware/auth";
 
 interface ErrorResponse {
   data?: any;
@@ -28,6 +25,11 @@ const Navbar = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  useEffect(() => {
+    // Close mobile menu when route changes
+    setIsOpen(false);
+  }, [location.pathname]);
+
   const toggleMenu = () => {
     setIsOpen(!isOpen);
   };
@@ -36,17 +38,11 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      // Using the imported apiClient from our auth.ts module:
       await apiClient.post('/api/users/logout');
-      // Alternatively, if using the authLogout function:
-      // await authLogout();
-
-      // Update client state and redirect on successful logout
       setUser(null);
       navigate("/login");
     } catch (error) {
       console.error("Logout failed:", error);
-      // Even if the backend request fails, clear user state and redirect.
       setUser(null);
       navigate("/login");
     }
@@ -120,7 +116,6 @@ const Navbar = () => {
           </div>
 
           <div className="hidden md:flex items-center space-x-4">
-            {/* Removed the Search button */}
             {user ? (
               <div className="relative group">
                 <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
@@ -169,28 +164,31 @@ const Navbar = () => {
             <div className="flex flex-col space-y-4">
               <Link
                 to="/"
+                onClick={() => setIsOpen(false)}
                 className={`font-medium ${isActive("/") ? "text-blue-600" : "text-gray-700"}`}
               >
                 Home
               </Link>
               <Link
                 to="/buy"
+                onClick={() => setIsOpen(false)}
                 className={`font-medium ${isActive("/buy") ? "text-blue-600" : "text-gray-700"}`}
               >
                 Buy
               </Link>
               <Link
                 to="/rent"
+                onClick={() => setIsOpen(false)}
                 className={`font-medium ${isActive("/rent") ? "text-blue-600" : "text-gray-700"}`}
               >
                 Rent
               </Link>
               {user ? (
                 <>
-                  <Link to="/profile" className="font-medium text-gray-700">
+                  <Link to="/profile" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">
                     Profile
                   </Link>
-                  <Link to="/my-listings" className="font-medium text-gray-700">
+                  <Link to="/my-listings" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">
                     My Listings
                   </Link>
                   <button onClick={handleLogout} className="font-medium text-gray-700 text-left">
@@ -198,7 +196,7 @@ const Navbar = () => {
                   </button>
                 </>
               ) : (
-                <Link to="/login" className="font-medium text-blue-600">
+                <Link to="/login" onClick={() => setIsOpen(false)} className="font-medium text-blue-600">
                   Sign In / Register
                 </Link>
               )}
