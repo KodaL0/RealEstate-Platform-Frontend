@@ -6,6 +6,12 @@
     },
     {
       "source": "/(.*)",
+      "has": [
+        {
+          "type": "host",
+          "value": "www.propertpro.com"
+        }
+      ],
       "destination": "/index.html"
     }
   ],
