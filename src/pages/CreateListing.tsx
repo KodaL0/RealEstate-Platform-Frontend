@@ -144,7 +144,7 @@ const CreateListing = () => {
   // Add a new useEffect to fetch the current user profile
   useEffect(() => {
     setLoadingUsername(true);
-    apiClient.get('/api/users/get_user/')
+    apiClient.get('/users/get_user/')
       .then(response => {
         console.log("Fetched current user data:", response.data);
         if (response.data && response.data.user && response.data.user.username) {
