@@ -38,7 +38,7 @@ const MyListings = () => {
   useEffect(() => {
     setLoadingUsername(true);
     apiClient
-      .get('/api/users/get_user/', { withCredentials: true })
+      .get('/users/get_user/', { withCredentials: true })
       .then(response => {
         const user = response.data?.user;
         if (user?.username) {
