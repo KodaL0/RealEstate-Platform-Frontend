@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Home, Plus } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
 
@@ -24,58 +24,41 @@ const MyListings = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [username, setUsername] = useState<string>('');
+  const [currentPage, setCurrentPage] = useState<number>(1);
+  const itemsPerPage = 6;
   const navigate = useNavigate();
 
-  const [username, setUsername] = useState<string>('');
-  const [loadingUsername, setLoadingUsername] = useState<boolean>(true);
-
-  // Pagination
-  const itemsPerPage = 6;
-  const [currentPage, setCurrentPage] = useState<number>(1);
   const totalPages = Math.ceil(properties.length / itemsPerPage);
+  const currentProperties = properties.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage
+  );
 
-  // Fetch current user's username
   useEffect(() => {
-    setLoadingUsername(true);
-    apiClient
-      .get('/users/get_user/', { withCredentials: true })
-      .then(response => {
-        const user = response.data?.user;
-        if (user?.username) {
-          setUsername(user.username);
-        } else {
-          setError('Username not found in profile data');
-        }
-      })
-      .catch(() => {
-        setError('Failed to fetch user profile. Please try again.');
-      })
-      .finally(() => {
-        setLoadingUsername(false);
-      });
-  }, []);
-
-  // Fetch listings and normalize price to number
-  useEffect(() => {
-    const fetchMyListings = async () => {
+    const fetchUserAndListings = async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const response = await apiClient.get<Property[]>(
-          '/properties/my-properties',
-          { withCredentials: true }
-        );
-        if (Array.isArray(response.data)) {
-          const normalized = response.data.map(p => ({
-            ...p,
-            price: Number(p.price) || 0,
-          }));
-          setProperties(normalized);
-        } else {
-          setProperties([]);
+        const userRes = await apiClient.get('/users/get_user/', { withCredentials: true });
+        const user = userRes.data?.user;
+        if (!user?.username) {
+          setError('Username not found in profile data');
+          return;
         }
+        setUsername(user.username);
+
+        const listingsRes = await apiClient.get<Property[]>('/properties/my-properties', {
+          withCredentials: true
+        });
+
+        const normalized = listingsRes.data.map(p => ({
+          ...p,
+          price: Number(p.price) || 0,
+        }));
+        setProperties(normalized);
         setError(null);
       } catch (err: any) {
-        console.error('Error fetching listings:', err.response || err);
+        console.error('Error fetching user or listings:', err);
         const msg =
           err?.response?.data?.message ||
           'Failed to fetch your listings. Please try again later.';
@@ -88,75 +71,48 @@ const MyListings = () => {
         setLoading(false);
       }
     };
-    fetchMyListings();
+
+    fetchUserAndListings();
   }, [navigate]);
 
-  // Publish handler
   const handlePublish = async (id: number) => {
+    if (!username) return alert('Still loading user info...');
     if (!window.confirm('Are you sure you want to publish this listing?')) return;
-    if (!username) {
-      setError('Unable to publish listing: username not available');
-      return;
-    }
     try {
-      await apiClient.patch(
-        `/api/properties/${username}/property/${id}/publish/`,
-        null,
-        { withCredentials: true }
-      );
+      await apiClient.patch(`/api/properties/${username}/property/${id}/publish/`, null, {
+        withCredentials: true,
+      });
       setProperties(prev =>
-        prev.map(p =>
-          p.id === id ? { ...p, property_status: 'for_sale' } : p
-        )
+        prev.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p))
       );
     } catch (err: any) {
       console.error('Error publishing listing:', err.response || err);
       setError(
-        err?.response?.data?.error ||
-          'Failed to publish listing. Please try again later.'
+        err?.response?.data?.error || 'Failed to publish listing. Please try again later.'
       );
     }
   };
 
-  // Remove handler
   const handleRemove = async (id: number) => {
+    if (!username) return alert('Still loading user info...');
     if (!window.confirm('Are you sure you want to remove this listing?')) return;
-    if (!username) {
-      setError('Unable to delete listing: username not available');
-      return;
-    }
     try {
-      await apiClient.delete(
-        `/api/properties/${username}/property/${id}/delete/`,
-        { withCredentials: true }
-      );
-      setProperties(prev => prev.filter(p => p.id !== id));
-      const newTotalPages = Math.ceil((properties.length - 1) / itemsPerPage);
-      if (currentPage > newTotalPages) {
-        setCurrentPage(newTotalPages);
-      }
+      await apiClient.delete(`/api/properties/${username}/property/${id}/delete/`, {
+        withCredentials: true,
+      });
+      const updated = properties.filter(p => p.id !== id);
+      setProperties(updated);
+      const newTotalPages = Math.ceil(updated.length / itemsPerPage);
+      if (currentPage > newTotalPages) setCurrentPage(newTotalPages);
     } catch (err: any) {
       console.error('Error removing listing:', err.response || err);
       setError(
-        err?.response?.data?.error ||
-          'Failed to remove listing. Please try again later.'
+        err?.response?.data?.error || 'Failed to remove listing. Please try again later.'
       );
     }
   };
 
-  // Pagination helpers
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const currentProperties = properties.slice(
-    startIndex,
-    startIndex + itemsPerPage
-  );
-  const goToPage = (page: number) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page);
-  };
-  const handlePrevious = () => goToPage(currentPage - 1);
-  const handleNext = () => goToPage(currentPage + 1);
-
-  if (loading || loadingUsername) {
+  if (loading) {
     return (
       <div className="min-h-screen pt-20 px-4">
         <div className="container mx-auto flex justify-center items-center h-64">
@@ -187,7 +143,6 @@ const MyListings = () => {
   return (
     <div className="min-h-screen pt-20 px-4">
       <div className="container mx-auto">
-        {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
           <button
@@ -226,71 +181,42 @@ const MyListings = () => {
                   onClick={() => navigate(`/property/${property.id}`)}
                   className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                 >
-                  {/* Image + Badges */}
                   <div className="relative">
                     <img
-                      src={
-                        property.images[0]?.image || '/placeholder-property.jpg'
-                      }
+                      src={property.images[0]?.image || '/placeholder-property.jpg'}
                       alt={property.title}
                       className="w-full h-64 object-cover"
                     />
                     <div className="absolute top-4 left-4 flex space-x-2 z-10">
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          property.property_status === 'for_sale'
-                            ? 'bg-emerald-500 text-white'
-                            : 'bg-blue-500 text-white'
-                        }`}
-                      >
-                        {property.property_status === 'for_sale'
-                          ? 'For Sale'
-                          : 'For Rent'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                      }`}>
+                        {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                       </span>
-                      <span
-                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          property.property_type.toLowerCase() === 'apartment'
-                            ? 'bg-gray-900/70 text-white'
-                            : 'bg-blue-600 text-white'
-                        }`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        property.property_type.toLowerCase() === 'apartment' ? 'bg-gray-900/70 text-white' : 'bg-blue-600 text-white'
+                      }`}>
                         {property.property_type}
                       </span>
                     </div>
                   </div>
 
-                  {/* Details */}
                   <div className="p-5" onClick={e => e.stopPropagation()}>
                     <div className="flex justify-between items-start mb-2">
                       <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
                         {property.title}
                       </h3>
                       <p className="text-lg font-bold text-blue-600">
-                        €{(property.price as number).toLocaleString(undefined, {
-                          maximumFractionDigits: 0,
-                        })}
+                        €{(property.price as number).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                       </p>
                     </div>
 
                     <div className="flex items-center text-gray-500 mb-4">
-                      <svg
-                        className="w-4 h-4 mr-1"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
+                      <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
+                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                       </svg>
                       <span className="text-sm">{property.location}</span>
                     </div>
@@ -313,20 +239,22 @@ const MyListings = () => {
                           Edit Listing
                         </button>
                         <button
+                          disabled={!username}
                           onClick={e => {
                             e.stopPropagation();
                             handleRemove(property.id);
                           }}
-                          className="ml-4 text-red-600 hover:text-red-700 font-medium"
+                          className="ml-4 text-red-600 hover:text-red-700 font-medium disabled:opacity-50"
                         >
                           Remove Listing
                         </button>
                         <button
+                          disabled={!username}
                           onClick={e => {
                             e.stopPropagation();
                             handlePublish(property.id);
                           }}
-                          className="ml-4 text-green-600 hover:text-green-700 font-medium"
+                          className="ml-4 text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
                         >
                           Publish
                         </button>
@@ -343,7 +271,7 @@ const MyListings = () => {
             {/* Pagination */}
             <div className="flex justify-center items-center mt-8 space-x-4 mb-12">
               <button
-                onClick={handlePrevious}
+                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
                 className={`px-4 py-2 rounded-md ${
                   currentPage === 1
@@ -356,7 +284,7 @@ const MyListings = () => {
               {Array.from({ length: totalPages }, (_, i) => (
                 <button
                   key={i}
-                  onClick={() => goToPage(i + 1)}
+                  onClick={() => setCurrentPage(i + 1)}
                   className={`px-4 py-2 rounded-md ${
                     currentPage === i + 1
                       ? 'bg-blue-600 text-white'
@@ -367,7 +295,7 @@ const MyListings = () => {
                 </button>
               ))}
               <button
-                onClick={handleNext}
+                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
                 className={`px-4 py-2 rounded-md ${
                   currentPage === totalPages
