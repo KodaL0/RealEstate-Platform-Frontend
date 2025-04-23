@@ -39,7 +39,7 @@ const MyListings = () => {
     const fetchUserAndListings = async () => {
       setLoading(true);
       try {
-        const userRes = await apiClient.get('/users/get_user/', { withCredentials: true });
+        const userRes = await apiClient.get('/users/get_user', { withCredentials: true });
         const user = userRes.data?.user;
         if (!user?.username) {
           setError('Username not found in profile data');
