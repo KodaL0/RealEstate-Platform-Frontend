@@ -1,7 +1,6 @@
 import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
 
-// Use the API rewrite path from vercel.json
-const API_URL = "/api";
+const API_URL = import.meta.env.VITE_API_URL || "/api";
 
 // Extend AxiosRequestConfig to include a custom _retry flag for token refresh
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
