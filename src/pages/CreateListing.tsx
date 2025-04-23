@@ -168,7 +168,7 @@ const CreateListing = () => {
   // Function to fetch username on demand
   const fetchUsernameOnDemand = async (): Promise<string> => {
     try {
-      const response = await apiClient.get('/api/users/get_user/');
+      const response = await apiClient.get('/users/get_user/');
       if (response.data && response.data.user && response.data.user.username) {
         setUsername(response.data.user.username);
         return response.data.user.username;
