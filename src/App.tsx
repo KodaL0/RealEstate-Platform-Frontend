@@ -10,11 +10,13 @@ import ProfilePage from "./pages/ProfilePage";
 import { UserProvider } from './context/UserContext'; // Import UserProvider
 import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings"; // Import MyListings component
+import ScrollToTop from "./components/ScrollToTop"; // ✅ Import ScrollToTop
 
 function App() {
   return (
     <UserProvider> {/* Wrap your app with UserProvider */}
       <Router>
+        <ScrollToTop /> {/* ✅ Use ScrollToTop */}
         <div className="min-h-screen flex flex-col">
           <Navbar />
           <main className="flex-grow">
