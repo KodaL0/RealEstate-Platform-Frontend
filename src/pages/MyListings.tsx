@@ -131,23 +131,6 @@ const MyListings = () => {
     );
   }
 
-  // if not authenticated, prompt login (no redirect)
-  if (!user) {
-    return (
-      <div className="min-h-screen pt-20 px-4">
-        <div className="container mx-auto text-center">
-          <p className="text-red-600 mb-4">You must log in to view your listings.</p>
-          <button
-            onClick={() => navigate('/login')}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
-          >
-            Go to Login
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   // error state
   if (error) {
     return (
