@@ -64,7 +64,6 @@ const MyListings = () => {
           err?.response?.data?.message ||
           'Failed to fetch your listings. Please try again later.';
         if (err?.response?.status === 401) {
-          navigate('/login');
         } else {
           setError(msg);
         }
