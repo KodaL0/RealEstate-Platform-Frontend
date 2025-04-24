@@ -243,6 +243,15 @@ const CreateListing = () => {
   const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
     // If it's already a string array, return it
     if (Array.isArray(field) && (field.length === 0 || typeof field[0] === 'string')) {
+      // Check if these are labels that need to be converted to IDs
+      if (lookupTable.length > 0 && typeof field[0] === 'string') {
+        return field.map(label => {
+          // Try to find the ID by matching the label
+          const match = lookupTable.find(item => 
+            item.label.toLowerCase() === label.toLowerCase());
+          return match ? match.id : label;
+        });
+      }
       return field;
     }
     
