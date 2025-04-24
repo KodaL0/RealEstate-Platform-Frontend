@@ -1,8 +1,7 @@
-// vercel.json
 {
   "rewrites": [
     {
-      "source": "/api/:path*",               // matches both with and without trailing slash
+      "source": "/api/:path*",              
       "destination": "https://…/api/:path*"
     },
     {
@@ -12,6 +11,18 @@
     {
       "source": "/((?!api|_next|static|.*\\..*).*)",
       "destination": "/index.html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(api|users|properties|auth)/:path*",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "https://www.propertpro.com" },
+        { "key": "Access-Control-Allow-Credentials", "value": "true" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
+        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
+      ]
     }
   ]
 }
