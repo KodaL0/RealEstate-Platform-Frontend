@@ -22,14 +22,14 @@ interface Property {
 }
 
 const MyListings = () => {
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
   const navigate = useNavigate();
-  
+
   const username = user?.username || '';
 
   const totalPages = Math.ceil(properties.length / itemsPerPage);
@@ -39,16 +39,19 @@ const MyListings = () => {
   );
 
   useEffect(() => {
+    // Wait until auth state is resolved
+    if (userLoading) return;
+
+    // If no user after loading, redirect to login
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchListings = async () => {
-      if (!user) {
-        navigate('/login');
-        return;
-      }
-      
       setLoading(true);
       try {
         const listingsRes = await apiClient.get<Property[]>('/properties/my-properties');
-
         const normalized = listingsRes.data.map(p => ({
           ...p,
           price: Number(p.price) || 0,
@@ -71,7 +74,7 @@ const MyListings = () => {
     };
 
     fetchListings();
-  }, [navigate, user]);
+  }, [navigate, user, userLoading]);
 
   const handlePublish = async (id: number) => {
     if (!username) return alert('User information not available');
@@ -79,7 +82,9 @@ const MyListings = () => {
     try {
       await apiClient.patch(`/properties/${username}/property/${id}/publish/`);
       setProperties(prev =>
-        prev.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p))
+        prev.map(p =>
+          p.id === id ? { ...p, property_status: 'for_sale' } : p
+        )
       );
     } catch (err: any) {
       console.error('Error publishing listing:', err.response || err);
@@ -106,7 +111,7 @@ const MyListings = () => {
     }
   };
 
-  if (loading) {
+  if (loading || userLoading) {
     return (
       <div className="min-h-screen pt-20 px-4">
         <div className="container mx-auto flex justify-center items-center h-64">
@@ -167,7 +172,7 @@ const MyListings = () => {
             </div>
           </div>
         ) : (
-          <>
+          <>           
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {currentProperties.map(property => (
                 <div
@@ -183,12 +188,22 @@ const MyListings = () => {
                     />
                     <div className="absolute top-4 left-4 flex space-x-2 z-10">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.property_status === 'for_sale' ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'
+                        property.property_status === 'for_sale'
+                          ? 'bg-emerald-500 text-white'
+                        : property.property_status === 'for_rent'
+                          ? 'bg-blue-500 text-white'
+                        : 'bg-gray-300 text-gray-700'
                       }`}>
-                        {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
+                        {property.property_status === 'for_sale'
+                          ? 'For Sale'
+                        : property.property_status === 'for_rent'
+                          ? 'For Rent'
+                        : 'Draft'}
                       </span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        property.property_type.toLowerCase() === 'apartment' ? 'bg-gray-900/70 text-white' : 'bg-blue-600 text-white'
+                        property.property_type.toLowerCase() === 'apartment'
+                          ? 'bg-gray-900/70 text-white'
+                          : 'bg-blue-600 text-white'
                       }`}>
                         {property.property_type}
                       </span>
@@ -251,7 +266,7 @@ const MyListings = () => {
                           className="ml-4 text-green-600 hover:text-green-700 font-medium disabled:opacity-50"
                         >
                           Publish
-                        </button>
+                        }</button>
                       </div>
                       <span className="text-sm text-gray-500">
                         Listed {new Date(property.created_at).toLocaleDateString()}
