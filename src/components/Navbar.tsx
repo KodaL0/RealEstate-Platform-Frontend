@@ -38,7 +38,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await apiClient.post('/api/users/logout');
+      await apiClient.post('/users/logout');
       setUser(null);
       navigate("/login");
     } catch (error) {
