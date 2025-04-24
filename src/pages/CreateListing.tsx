@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 import { apiClient } from '../middleware/auth';
-import { useUser } from '../context/UserContext'; // Import useUser hook
+import { useUser } from '../context/UserContext';
 
 // Define the ListingForm interface
 interface ListingForm {
@@ -46,6 +46,7 @@ interface ListingForm {
   additionalFeatures: string[];
 }
 
+// Reference data constants 
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
@@ -98,52 +99,54 @@ const ADDITIONAL_FEATURES = [
   { id: 'motherInLaw', label: 'Mother-in-law Suite' }
 ];
 
+// Default empty form state
+const DEFAULT_FORM_STATE: ListingForm = {
+  title: '',
+  description: '',
+  price: '',
+  location: '',
+  propertyType: '',
+  bedrooms: '',
+  bathrooms: '',
+  area: '',
+  images: [],
+  amenities: [],
+  yearBuilt: '',
+  parkingSpaces: '',
+  lotSize: '',
+  propertyStatus: '',
+  energyRating: '',
+  constructionMaterial: '',
+  floorLevel: '',
+  totalFloors: '',
+  availableFrom: '',
+  contactPhone: '',
+  contactEmail: '',
+  virtualTourUrl: '',
+  videoUrl: '',
+  additionalFeatures: []
+};
+
 const CreateListing = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
-  const { user } = useUser(); // Get user from context
+  const { user } = useUser();
   const username = user?.username || '';
 
-  // Separate state for loading listing data
-  const [loadingListing, setLoadingListing] = useState<boolean>(false);
+  // Core state
+  const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
+  
+  // Image handling state
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  // State for primary image selection
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
-  // Add a loading state for username
-  const [loadingUsername, setLoadingUsername] = useState<boolean>(false);
-  // Form data state
-  const [formData, setFormData] = useState<ListingForm>({
-    title: '',
-    description: '',
-    price: '',
-    location: '',
-    propertyType: '',
-    bedrooms: '',
-    bathrooms: '',
-    area: '',
-    images: [],
-    amenities: [],
-    yearBuilt: '',
-    parkingSpaces: '',
-    lotSize: '',
-    propertyStatus: '',
-    energyRating: '',
-    constructionMaterial: '',
-    floorLevel: '',
-    totalFloors: '',
-    availableFrom: '',
-    contactPhone: '',
-    contactEmail: '',
-    virtualTourUrl: '',
-    videoUrl: '',
-    additionalFeatures: []
-  });
+  const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
 
+  // Handle image uploads
   const onDrop = useCallback((acceptedFiles: File[]) => {
-    console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
       ...prev,
       images: [...prev.images, ...acceptedFiles]
@@ -154,21 +157,32 @@ const CreateListing = () => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: {
-      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
-    },
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 10,
     maxSize: 5 * 1024 * 1024, // 5MB
   });
 
   const removeImage = (index: number) => {
-    console.log("Removing image at index:", index);
+    // Remove from the File array
     setFormData(prev => ({
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
-    URL.revokeObjectURL(previewImages[index]);
+    
+    // If it's a preview URL from the server, revoke it
+    if (index < previewImages.length) {
+      URL.revokeObjectURL(previewImages[index]);
+    }
+    
+    // Remove from preview images
     setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Update existing image IDs if removing an existing image
+    if (index < existingImageIds.length) {
+      setExistingImageIds(prev => prev.filter((_, i) => i !== index));
+    }
+    
+    // Adjust primary index if needed
     if (index === primaryIndex) {
       setPrimaryIndex(0);
     } else if (index < primaryIndex) {
@@ -176,14 +190,13 @@ const CreateListing = () => {
     }
   };
 
+  // Form field handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    console.log(`Input changed: ${name} = ${value}`);
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
   const handleCheckboxChange = (id: string, type: 'amenities' | 'additionalFeatures') => {
-    console.log(`Checkbox toggled: ${id} in ${type}`);
     setFormData(prev => {
       const currentArray = prev[type];
       const updatedArray = currentArray.includes(id)
@@ -193,6 +206,7 @@ const CreateListing = () => {
     });
   };
 
+  // Simple form validation
   const validateForm = (): boolean => {
     if (!formData.title.trim()) {
       setError('Please enter a title');
@@ -225,188 +239,167 @@ const CreateListing = () => {
     return true;
   };
 
-  const getEditEndpoint = (propId: string) => {
-    if (!username) {
-      console.error("Cannot construct edit endpoint: username is missing");
-      return null;
+  // Process the array fields from the API response
+  const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
+    // If it's already a string array, return it
+    if (Array.isArray(field) && (field.length === 0 || typeof field[0] === 'string')) {
+      return field;
     }
-    return `/properties/${username}/property/${propId}/edit/`;
+    
+    // If it's an array of objects, extract the id/value
+    if (Array.isArray(field)) {
+      return field.map(item => {
+        if (typeof item === 'object' && item !== null) {
+          // Try matching against lookup table
+          if (lookupTable.length > 0 && item.name) {
+            const match = lookupTable.find(lookup => 
+              lookup.label.toLowerCase() === item.name.toLowerCase());
+            if (match) return match.id;
+          }
+          
+          // Return first available id property
+          return item.id || item.value || item.name || item;
+        }
+        return item;
+      });
+    }
+    
+    // Handle comma-separated string
+    if (typeof field === 'string') {
+      return field.split(',').map(item => item.trim());
+    }
+    
+    return [];
   };
 
-  // Fetch the property data in edit mode
+  // Extract image information from API response
+  const processImages = (images: any[]) => {
+    if (!images || !images.length) return { urls: [], ids: [] };
+    
+    const imageUrls = images.map(img => {
+      // Handle object or string
+      if (typeof img === 'object' && img !== null) {
+        // Find the image URL property
+        if (img.image && typeof img.image === 'string') return img.image;
+        if (img.url && typeof img.url === 'string') return img.url;
+        if (img.src && typeof img.src === 'string') return img.src;
+        
+        // Fall back to any string that looks like an image
+        for (const key in img) {
+          if (typeof img[key] === 'string' && (
+            img[key].endsWith('.jpg') || 
+            img[key].endsWith('.jpeg') || 
+            img[key].endsWith('.png') || 
+            img[key].endsWith('.webp')
+          )) {
+            return img[key];
+          }
+        }
+      }
+      return typeof img === 'string' ? img : '';
+    }).filter(Boolean); // Remove empty strings
+    
+    // Extract image IDs
+    const imageIds = images.map(img => {
+      if (typeof img === 'object' && img !== null) {
+        return img.id || '';
+      }
+      
+      // Try to extract ID from URL string
+      if (typeof img === 'string') {
+        const match = img.match(/\/(\d+)\/|_(\d+)\.|\/images\/(\d+)|id=(\d+)/);
+        if (match) {
+          return match.slice(1).find(group => group !== undefined) || '';
+        }
+      }
+      return '';
+    });
+    
+    // Find primary image index
+    const primaryIndex = images.findIndex(img => 
+      img && typeof img === 'object' && img.is_primary === true
+    );
+    
+    return { 
+      urls: imageUrls, 
+      ids: imageIds,
+      primaryIndex: primaryIndex !== -1 ? primaryIndex : 0
+    };
+  };
+
+  // Load existing property data when editing
   useEffect(() => {
     if (isEditing && id) {
-      // Fetch the property data for editing
-      setLoadingListing(true);
+      setLoading(true);
       
-      // Using arrow function in useEffect to handle async operations
-      const fetchPropertyData = async () => {
-        try {
-          // Process array fields from the backend to frontend format
-          const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
-            // If it's already an array of strings, return it
-            if (Array.isArray(field) && (field.length === 0 || typeof field[0] === 'string')) {
-              return field;
-            }
-            
-            // If it's an array of objects, extract the id or value
-            if (Array.isArray(field)) {
-              return field.map(item => {
-                if (typeof item === 'object' && item !== null) {
-                  // Try to find the item in the lookup table if ids don't match directly
-                  if (lookupTable.length > 0 && item.name) {
-                    const matchingItem = lookupTable.find(lookup => 
-                      lookup.label.toLowerCase() === item.name.toLowerCase());
-                    if (matchingItem) return matchingItem.id;
-                  }
-                  
-                  // Return the first available property that could be an id
-                  return item.id || item.value || item.name || item;
-                }
-                return item;
-              });
-            }
-            
-            // If it's a comma-separated string, split it
-            if (typeof field === 'string') {
-              return field.split(',').map(item => item.trim());
-            }
-            
-            return [];
-          };
-          
-          console.log("Edit mode enabled. Fetching listing with id:", id);
-          const response = await apiClient.get(`/properties/${id}`);
+      apiClient.get(`/properties/${id}`)
+        .then(response => {
           const data = response.data;
-          console.log("Fetched listing for edit:", data);
-          // Process array fields to handle both object format and string format
-          
-          // Map API data to form state
-          if (data) {
-            let formattedData = {
-              title: data.title || '',
-              description: data.description || '',
-              price: data.price?.toString() || '',
-              location: data.location || '',
-              propertyType: data.property_type || '',
-              bedrooms: data.bedrooms?.toString() || '',
-              bathrooms: data.bathrooms?.toString() || '',
-              area: data.area?.toString() || '',
-              images: [], // Will be handled separately
-              amenities: processArrayField(data.amenities, AMENITIES),
-              yearBuilt: data.year_built?.toString() || '',
-              parkingSpaces: data.parking_spaces?.toString() || '',
-              lotSize: data.lot_size?.toString() || '',
-              propertyStatus: data.property_status || '',
-              energyRating: data.energy_rating || '',
-              constructionMaterial: data.construction_material || '',
-              floorLevel: data.floor_level?.toString() || '',
-              totalFloors: data.total_floors?.toString() || '',
-              availableFrom: data.available_from || '',
-              contactPhone: data.contact_phone || '',
-              contactEmail: data.contact_email || '',
-              virtualTourUrl: data.virtual_tour_url || '',
-              videoUrl: data.video_url || '',
-              additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES),
-            };
-            
-            // Convert property_status from snake_case to camelCase if needed
-            if (formattedData.propertyStatus === 'for_sale') {
-              formattedData.propertyStatus = 'forSale';
-            } else if (formattedData.propertyStatus === 'for_rent') {
-              formattedData.propertyStatus = 'forRent';
-            }
-            
-            setFormData(formattedData);
-            
-            // Set image previews if available
-            if (data.images && data.images.length > 0) {
-              console.log("Setting existing images for preview:", data.images);
-              // Extract image URLs from image objects if necessary
-              const imageUrls = data.images.map(img => {
-                // If image is an object with an image property that is a URL string
-                if (typeof img === 'object' && img !== null) {
-                  // Check for common image URL properties
-                  if (img.image && typeof img.image === 'string') {
-                    return img.image;
-                  }
-                  if (img.url && typeof img.url === 'string') {
-                    return img.url;
-                  }
-                  if (img.src && typeof img.src === 'string') {
-                    return img.src;
-                  }
-                  // Fall back to the first string property we find
-                  for (const key in img) {
-                    if (typeof img[key] === 'string' && (
-                      img[key].endsWith('.jpg') || 
-                      img[key].endsWith('.jpeg') || 
-                      img[key].endsWith('.png') || 
-                      img[key].endsWith('.webp')
-                    )) {
-                      return img[key];
-                    }
-                  }
-                }
-                // If image is directly a string URL
-                return typeof img === 'string' ? img : '';
-              }).filter(url => url); // Remove any empty strings
-              
-              setPreviewImages(imageUrls);
-              
-              // Find the primary image if one is marked
-              const primaryImageIndex = data.images.findIndex(img => 
-                img && typeof img === 'object' && img.is_primary === true
-              );
-              
-              if (primaryImageIndex !== -1) {
-                setPrimaryIndex(primaryImageIndex);
-              }
-            }
+          if (!data) {
+            setError("Couldn't load property data");
+            return;
           }
-          setLoadingListing(false);
-        } catch (error) {
-          console.error("Error fetching listing for edit:", error);
-          toast.error("Could not load listing data for editing");
-          setLoadingListing(false);
-        }
-      };
-      
-      fetchPropertyData();
+          
+          // Process images
+          const { urls, ids, primaryIndex: primIdx } = processImages(data.images || []);
+          setPreviewImages(urls);
+          setExistingImageIds(ids);
+          setPrimaryIndex(primIdx);
+          
+          // Convert status from snake_case if needed
+          let propertyStatus = data.property_status || '';
+          if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+          else if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+          
+          // Map API data to form fields
+          setFormData({
+            title: data.title || '',
+            description: data.description || '',
+            price: data.price?.toString() || '',
+            location: data.location || '',
+            propertyType: data.property_type || '',
+            bedrooms: data.bedrooms?.toString() || '',
+            bathrooms: data.bathrooms?.toString() || '',
+            area: data.area?.toString() || '',
+            images: [], // Existing images handled separately
+            amenities: processArrayField(data.amenities, AMENITIES),
+            yearBuilt: data.year_built?.toString() || '',
+            parkingSpaces: data.parking_spaces?.toString() || '',
+            lotSize: data.lot_size?.toString() || '',
+            propertyStatus,
+            energyRating: data.energy_rating || '',
+            constructionMaterial: data.construction_material || '',
+            floorLevel: data.floor_level?.toString() || '',
+            totalFloors: data.total_floors?.toString() || '',
+            availableFrom: data.available_from || '',
+            contactPhone: data.contact_phone || '',
+            contactEmail: data.contact_email || '',
+            virtualTourUrl: data.virtual_tour_url || '',
+            videoUrl: data.video_url || '',
+            additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES),
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching listing:", error);
+          toast.error("Could not load property data");
+          setError("Failed to load property data. Please try again.");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
     }
   }, [isEditing, id]);
 
-  // Show loading message if edit data is being fetched.
-  if (isEditing && loadingListing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading listing data...</p>
-      </div>
-    );
-  }
-
-  // Also show loading if user context is still loading
-  if (!user && isEditing) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading user data...</p>
-      </div>
-    );
-  }
-
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("handleSubmit fired, current username:", username);
     
-    // Check if username is available when editing
+    // Validate form
+    if (!validateForm()) return;
+    
+    // Require username for editing
     if (isEditing && !username) {
-      console.error("Username is missing during form submission for editing");
       toast.error('User profile data is not available. Please refresh and try again.');
-      return; // Exit if we can't get username
-    }
-    
-    if (!validateForm()) {
-      console.log("Validation failed.");
       return;
     }
     
@@ -414,105 +407,117 @@ const CreateListing = () => {
     setIsSubmitting(true);
     
     try {
-      // Create a FormData object to send
+      // Create a single FormData instance for both create and edit
       const formDataToSend = new FormData();
       
-      // Add images to the FormData with the primary image first
+      // ---------------- IMAGE HANDLING ----------------
+      
+      // Prepare images with primary first
       if (formData.images.length > 0) {
-        if (isEditing) {
-          console.log("Rearranging images for edit with primary at index:", primaryIndex);
-          const rearrangedImages = [
-            formData.images[primaryIndex],
-            ...formData.images.filter((_, idx) => idx !== primaryIndex)
-          ];
-          rearrangedImages.forEach(file => {
-            formDataToSend.append('images[]', file);
-          });
-          
-          // Adding existing images metadata for the backend to know which images to keep
-          if (previewImages.length > formData.images.length) {
-            console.log("Adding existing image metadata");
-            
-            // Extract image identifiers from the preview URLs to send to the backend
-            previewImages.forEach((url, index) => {
-              // Try to extract an ID from the URL - look for patterns like '/12345/' or '_12345.'
-              let imageId = '';
-              const idMatch = url.match(/\/(\d+)\/|_(\d+)\.|\/images\/(\d+)|id=(\d+)/);
-              
-              if (idMatch) {
-                // Find the first non-undefined capturing group
-                imageId = idMatch.slice(1).find(group => group !== undefined) || '';
-              }
-              
-              if (!imageId) {
-                // If no ID found, just use the URL as is for reference
-                console.log("Could not extract image ID from URL, using full URL:", url);
-              }
-              
-              // Only add existing images that aren't being replaced
-              if (!formData.images.some((_, i) => i === index)) {
-                formDataToSend.append('existing_images[]', imageId || url);
-                if (index === primaryIndex) {
-                  formDataToSend.append('primary_image_id', imageId || url);
-                }
-              }
-            });
-          }
-        } else {
-          // For new listing, just rearrange images with primary first
-          console.log("Arranging images for new listing with primary at index:", primaryIndex);
-          const rearrangedImages = [
-            formData.images[primaryIndex],
-            ...formData.images.filter((_, idx) => idx !== primaryIndex)
-          ];
-          rearrangedImages.forEach(file => {
-            formDataToSend.append('images[]', file);
+        // Calculate primary index within newly uploaded images
+        const effectivePrimaryIndex = Math.min(primaryIndex, formData.images.length - 1);
+        
+        // Rearrange images so primary is first
+        const orderedImages = [
+          formData.images[effectivePrimaryIndex],
+          ...formData.images.filter((_, i) => i !== effectivePrimaryIndex)
+        ];
+        
+        // Add images to FormData
+        orderedImages.forEach(file => {
+          formDataToSend.append('images[]', file);
+        });
+      }
+      
+      // Add information about existing images (edit mode)
+      if (isEditing && previewImages.length > 0) {
+        const existingImages = previewImages
+          .filter((_, i) => !formData.images.some((__, j) => i === j))
+          .map((url, i) => ({ 
+            url, 
+            id: existingImageIds[i] || url,
+            isPrimary: i === primaryIndex && primaryIndex >= formData.images.length
+          }));
+        
+        // Add existing image IDs
+        if (existingImages.length > 0) {
+          existingImages.forEach(img => {
+            formDataToSend.append('existing_images[]', img.id);
+            if (img.isPrimary) {
+              formDataToSend.append('primary_image_id', img.id);
+            }
           });
         }
       }
       
-      // Append other form fields.
+      // Flag primary as first image (simplifies backend logic)
+      formDataToSend.append('primary_is_first', 'true');
+      
+      // ---------------- FORM FIELDS ----------------
+      
+      // Add all other form fields 
       Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'images') {
+        if (key !== 'images') { // Skip images as we handled them above
           if (Array.isArray(value)) {
-            (value as string[]).forEach(item => {
+            value.forEach(item => {
               formDataToSend.append(`${key}[]`, item);
             });
           } else if (value) {
-            formDataToSend.append(key, value);
+            formDataToSend.append(key, value.toString());
           }
         }
       });
       
-      // Use the backend endpoint for edit listings.
-      const endpoint = isEditing 
-        ? username 
-          ? `/properties/${username}/property/${id}/edit`
-          : `/properties/property/${id}/edit` // Fallback if username is empty
-        : '/properties/create_property';
+      // Determine API endpoint - simplify by using a consistent pattern
+      let endpoint;
+      let method;
       
-      console.log("Sending property request to:", endpoint);
-      const response = await apiClient[isEditing ? 'put' : 'post'](endpoint, formDataToSend, {
+      if (isEditing) {
+        endpoint = `/properties/${username}/property/${id}/edit/`;
+        method = 'put';
+      } else {
+        endpoint = '/properties/create_property/'; 
+        method = 'post';
+      }
+      
+      // Send the request
+      const response = await apiClient[method](endpoint, formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' }
       });
       
-      console.log("Response received:", response);
-      if (response.status === 200 || response.status === 201) {
+      if (response.status >= 200 && response.status < 300) {
         toast.success(isEditing ? 'Listing updated successfully!' : 'Listing created successfully!');
         navigate('/my-listings');
       } else {
-        console.warn('Unexpected status code:', response.status);
+        setError(`Unexpected response: ${response.status}`);
       }
     } catch (error: any) {
-      console.error("Error in handleSubmit:", error);
-      const err = error as { response?: { data?: { error?: string } } };
-      const errorMessage = err.response?.data?.error || 'An error occurred while processing the listing';
+      console.error("Error in form submission:", error);
+      const errorMessage = error.response?.data?.error || 'Failed to process listing. Please try again.';
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Show loading states
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading property data...</p>
+      </div>
+    );
+  }
+
+  // Check if user is loaded when in edit mode
+  if (isEditing && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading user data...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
@@ -779,10 +784,7 @@ const CreateListing = () => {
                       </button>
                       <button
                         type="button"
-                        onClick={() => {
-                          setPrimaryIndex(index);
-                          console.log("Set primary index:", index);
-                        }}
+                        onClick={() => setPrimaryIndex(index)}
                         className="absolute bottom-1 left-1 bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                       >
                         Set as Primary
