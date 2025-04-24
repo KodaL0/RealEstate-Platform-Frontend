@@ -33,6 +33,7 @@ import {
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
 import MapView from '../components/MapView'; // Ensure that MapView exists and uses React Leaflet
+import { useUser } from '../context/UserContext'; // Import useUser hook
 
 // Geocoding function using Nominatim
 async function geocodeAddress(address: string): Promise<{ lat: number; lng: number }> {
@@ -183,6 +184,7 @@ const PropertyDetails = () => {
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState<boolean>(true);
+  const { user, isLoading: userLoading } = useUser(); // Add user context
 
   useEffect(() => {
     async function fetchPropertyData() {
@@ -306,7 +308,47 @@ const PropertyDetails = () => {
           console.error("Error fetching rent properties:", rentError);
         }
         
-        // If we get here, we couldn't find the property in either listing
+        // If property wasn't found in public listings, try to fetch from user's own listings
+        // This will allow viewing unpublished properties that belong to the current user
+        if (user) {
+          try {
+            console.log("Property not found in public listings, checking user's own listings");
+            const myPropertiesResponse = await apiClient.get('/properties/my-properties');
+            
+            if (myPropertiesResponse.data) {
+              const userProperties = Array.isArray(myPropertiesResponse.data) 
+                ? myPropertiesResponse.data 
+                : (myPropertiesResponse.data.results || []);
+              
+              const foundProperty = userProperties.find(p => p.id.toString() === id);
+              
+              if (foundProperty) {
+                console.log('Found property in user\'s own listings:', foundProperty);
+                
+                // Map the property data
+                const mappedProperty = mapPropertyData(foundProperty);
+                setProperty(mappedProperty);
+                
+                // Try to geocode if needed
+                if (!foundProperty.latitude && mappedProperty.location) {
+                  try {
+                    const geocoded = await geocodeAddress(mappedProperty.location);
+                    setCoords(geocoded);
+                  } catch (error) {
+                    console.error("Error geocoding address:", error);
+                  }
+                }
+                
+                setLoading(false);
+                return; // Exit early if found
+              }
+            }
+          } catch (error) {
+            console.error("Error fetching user's own properties:", error);
+          }
+        }
+        
+        // If we get here, we couldn't find the property in any listing
         console.error("Property not found in any listings:", id);
         setProperty(null);
       } catch (error) {
@@ -317,12 +359,31 @@ const PropertyDetails = () => {
       }
     }
     
-    if (id) {
+    // Wait for user data to load before fetching property data
+    if (id && !userLoading) {
       fetchPropertyData();
     }
-  }, [id]);
+  }, [id, user, userLoading]); // Add user and userLoading as dependencies
 
-  if (loading) {
+  // Add notification if viewing an unpublished property
+  const renderUnpublishedNotice = () => {
+    if (property && !property.is_published) {
+      return (
+        <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
+          <div className="flex">
+            <div className="ml-3">
+              <p className="text-sm text-amber-700">
+                This property is not published. Only you can see it.
+              </p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  if (loading || userLoading) {
     return (
       <div className="pt-20 min-h-screen flex items-center justify-center">
         <p className="text-xl text-gray-600">Loading...</p>
@@ -360,6 +421,8 @@ const PropertyDetails = () => {
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
       <div className="container mx-auto px-4 py-8">
+        {renderUnpublishedNotice()}
+        
         {/* Property Images Section */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row space-y-4 lg:space-y-0 lg:space-x-4">
