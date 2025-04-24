@@ -1,8 +1,16 @@
 {
   "rewrites": [
     {
+      "source": "/api/:path*/",
+      "destination": "https://propertprodjango.onrender.com/api/:path*/"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://propertprodjango.onrender.com/api/:path*"
+    },
+    {
+      "source": "/:first(users|properties)/:path*/",
+      "destination": "https://propertprodjango.onrender.com/api/:first/:path*/"
     },
     {
       "source": "/:first(users|properties)/:path*",
@@ -24,5 +32,6 @@
         { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
       ]
     }
-  ]
+  ],
+  "trailingSlash": false
 }
