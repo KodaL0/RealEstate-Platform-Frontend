@@ -38,11 +38,17 @@ const MyListings = () => {
     currentPage * itemsPerPage
   );
 
+  const firstRender = useRef(true);
   useEffect(() => {
-    if (!loading && typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (firstRender.current) {
+      firstRender.current = false;   // skip initial mount
+      return;
     }
-   }, [currentPage, loading]);
+    // wait one frame so the new grid height is applied, then scroll
+    requestAnimationFrame(() =>
+      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
+    );
+  }, [currentPage]);
 
   useEffect(() => {
     // wait for auth state
