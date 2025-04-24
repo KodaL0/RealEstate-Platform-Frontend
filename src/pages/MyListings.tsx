@@ -39,6 +39,12 @@ const MyListings = () => {
   );
 
   useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+   }, [currentPage, loading]);
+
+  useEffect(() => {
     // wait for auth state
     if (userLoading) {
       return;
@@ -149,12 +155,6 @@ const MyListings = () => {
       </div>
     );
   }
-
-  useEffect(() => {
-    if (!loading && typeof window !== 'undefined') {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [currentPage, loading]);
 
   // main UI
   return (
