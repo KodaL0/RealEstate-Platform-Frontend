@@ -5,20 +5,19 @@
       "destination": "https://propertprodjango.onrender.com/api/:path*"
     },
     {
-      "source": "/((?!api).*)",
-      "destination": "/index.html"
-    }
-  ],
-  "headers": [
+      "source": "/:path*([a-zA-Z]+)/([a-zA-Z0-9_/-]+)",
+      "has": [
+        {
+          "type": "header",
+          "key": "content-type",
+          "value": "application/json"
+        }
+      ],
+      "destination": "https://propertprodjango.onrender.com/api/:path*"
+    },
     {
-      "source": "/api/:path*",
-      "headers": [
-        { "key": "Access-Control-Allow-Origin", "value": "https://www.propertpro.com" },
-        { "key": "Access-Control-Allow-Credentials", "value": "true" },
-        { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
-        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
-        { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
-      ]
+      "source": "/((?!api|_next|static|favicon.ico|.*\\..*).*)",
+      "destination": "/index.html"
     }
   ]
 }
