@@ -1,29 +1,17 @@
 {
   "rewrites": [
     {
-      "source": "/api/:path*/",
-      "destination": "https://propertprodjango.onrender.com/api/:path*/"
-    },
-    {
       "source": "/api/:path*",
       "destination": "https://propertprodjango.onrender.com/api/:path*"
     },
     {
-      "source": "/:first(users|properties)/:path*/",
-      "destination": "https://propertprodjango.onrender.com/api/:first/:path*/"
-    },
-    {
-      "source": "/:first(users|properties)/:path*",
-      "destination": "https://propertprodjango.onrender.com/api/:first/:path*"
-    },
-    {
-      "source": "/((?!api|users|properties|_next|static|favicon.ico|.*\\..*).*)",
+      "source": "/((?!api|_next|static|favicon.ico|.*\\..*).*)",
       "destination": "/index.html"
     }
   ],
   "headers": [
     {
-      "source": "/(api|users|properties)/:path*",
+      "source": "/api/:path*",
       "headers": [
         { "key": "Access-Control-Allow-Origin", "value": "https://www.propertpro.com" },
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
