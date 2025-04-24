@@ -1,22 +1,16 @@
+// vercel.json
 {
   "rewrites": [
     {
-      "source": "/api/:path*",
-      "destination": "https://propertprodjango.onrender.com/api/:path*"
+      "source": "/api/:path*",               // matches both with and without trailing slash
+      "destination": "https://…/api/:path*"
     },
     {
-      "source": "/:path*([a-zA-Z]+)/([a-zA-Z0-9_/-]+)",
-      "has": [
-        {
-          "type": "header",
-          "key": "content-type",
-          "value": "application/json"
-        }
-      ],
-      "destination": "https://propertprodjango.onrender.com/api/:path*"
+      "source": "/:first(users|properties)/:path*",
+      "destination": "https://…/api/:first/:path*"
     },
     {
-      "source": "/((?!api|_next|static|favicon.ico|.*\\..*).*)",
+      "source": "/((?!api|_next|static|.*\\..*).*)",
       "destination": "/index.html"
     }
   ]
