@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/api/:path*",
-      "destination": "https://propertprodjango.onrender.com/api/:path*"
+      "destination": "https://propertprodjango.onrender.com/:path*"
     },
     {
       "source": "/((?!api).*)",
