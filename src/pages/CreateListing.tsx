@@ -548,7 +548,7 @@ const CreateListing = () => {
             </div>
           )}
   
-          <form onSubmit={handleSubmit} className="p-8 space-y-10">
+          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="p-8 space-y-10">
             {/* Basic Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
