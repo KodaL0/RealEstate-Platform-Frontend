@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 
 import { apiClient } from '../middleware/auth';
+import { useUser } from '../context/UserContext'; // Import useUser hook
 
 // Define the ListingForm interface
 interface ListingForm {
@@ -101,6 +102,8 @@ const CreateListing = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
+  const { user } = useUser(); // Get user from context
+  const username = user?.username || '';
 
   // Separate state for loading listing data
   const [loadingListing, setLoadingListing] = useState<boolean>(false);
@@ -109,10 +112,8 @@ const CreateListing = () => {
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   // State for primary image selection
   const [primaryIndex, setPrimaryIndex] = useState<number>(0);
-  // State to store current user's username
-  const [username, setUsername] = useState<string>('');
   // Add a loading state for username
-  const [loadingUsername, setLoadingUsername] = useState<boolean>(true);
+  const [loadingUsername, setLoadingUsername] = useState<boolean>(false);
   // Form data state
   const [formData, setFormData] = useState<ListingForm>({
     title: '',
@@ -141,45 +142,6 @@ const CreateListing = () => {
     additionalFeatures: []
   });
 
-  // Add a new useEffect to fetch the current user profile
-  useEffect(() => {
-    setLoadingUsername(true);
-    apiClient.get('/users/get_user')
-      .then(response => {
-        console.log("Fetched current user data:", response.data);
-        if (response.data && response.data.user && response.data.user.username) {
-          console.log("Setting username to:", response.data.user.username);
-          setUsername(response.data.user.username);
-        } else {
-          console.warn("Username not found in user data:", response.data);
-          toast.error("Username not found in profile data");
-        }
-      })
-      .catch(error => {
-        console.error("Error fetching user profile:", error);
-        // Show error toast for username fetch failure
-        toast.error("Failed to fetch user profile. Please try again.");
-      })
-      .finally(() => {
-        setLoadingUsername(false);
-      });
-  }, []);
-
-  // Function to fetch username on demand
-  const fetchUsernameOnDemand = async (): Promise<string> => {
-    try {
-      const response = await apiClient.get('/users/get_user');
-      if (response.data && response.data.user && response.data.user.username) {
-        setUsername(response.data.user.username);
-        return response.data.user.username;
-      }
-      throw new Error('Username not found in response');
-    } catch (error) {
-      console.error('Failed to fetch username on demand:', error);
-      throw error;
-    }
-  };
-
   const onDrop = useCallback((acceptedFiles: File[]) => {
     console.log("Files dropped:", acceptedFiles);
     setFormData(prev => ({
@@ -192,9 +154,11 @@ const CreateListing = () => {
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
+    accept: {
+      'image/*': ['.jpeg', '.jpg', '.png', '.webp']
+    },
     maxFiles: 10,
-    maxSize: 5242880
+    maxSize: 5 * 1024 * 1024, // 5MB
   });
 
   const removeImage = (index: number) => {
@@ -230,148 +194,185 @@ const CreateListing = () => {
   };
 
   const validateForm = (): boolean => {
-    console.log("Validating form...", formData);
-    
-    // For new listings, require at least one image
-    // For edits, allow if there are already preview images
-    if (!formData.images.length && !previewImages.length) {
-      toast.error('Please upload at least one image');
+    if (!formData.title.trim()) {
+      setError('Please enter a title');
       return false;
     }
-    
-    if (!formData.title.trim() || !formData.description.trim()) {
-      toast.error('Title and description are required');
+    if (!formData.description.trim()) {
+      setError('Please enter a description');
       return false;
     }
-    
-    if (!formData.contactEmail.match(/^[^\s@]+@[^\s@]+\.[^\s@]+$/)) {
-      toast.error('Please enter a valid email address');
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setError('Please enter a valid price');
       return false;
     }
-    
-    if (!formData.contactPhone.match(/^\+?[\d\s-]{10,}$/)) {
-      toast.error('Please enter a valid phone number');
+    if (!formData.location.trim()) {
+      setError('Please enter a location');
       return false;
     }
-    
+    if (!formData.propertyType) {
+      setError('Please select a property type');
+      return false;
+    }
+    if (!formData.propertyStatus) {
+      setError('Please select a property status');
+      return false;
+    }
+    if (formData.images.length === 0 && previewImages.length === 0) {
+      setError('Please upload at least one image');
+      return false;
+    }
     return true;
   };
 
-  // Use direct edit endpoint instead of username-based path
   const getEditEndpoint = (propId: string) => {
-    return `/properties/property/${propId}/edit/`;
+    if (!username) {
+      console.error("Cannot construct edit endpoint: username is missing");
+      return null;
+    }
+    return `/properties/${username}/property/${propId}/edit/`;
   };
 
-  // Fetch listing data if in edit mode.
+  // Fetch the property data in edit mode
   useEffect(() => {
     if (isEditing && id) {
+      // Fetch the property data for editing
       setLoadingListing(true);
-      console.log("Edit mode enabled. Fetching listing with id:", id);
-      apiClient.get(`/properties/${id}`)
-        .then(response => {
+      
+      // Using arrow function in useEffect to handle async operations
+      const fetchPropertyData = async () => {
+        try {
+          // Process array fields from the backend to frontend format
+          const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
+            // If it's already an array of strings, return it
+            if (Array.isArray(field) && (field.length === 0 || typeof field[0] === 'string')) {
+              return field;
+            }
+            
+            // If it's an array of objects, extract the id or value
+            if (Array.isArray(field)) {
+              return field.map(item => {
+                if (typeof item === 'object' && item !== null) {
+                  // Try to find the item in the lookup table if ids don't match directly
+                  if (lookupTable.length > 0 && item.name) {
+                    const matchingItem = lookupTable.find(lookup => 
+                      lookup.label.toLowerCase() === item.name.toLowerCase());
+                    if (matchingItem) return matchingItem.id;
+                  }
+                  
+                  // Return the first available property that could be an id
+                  return item.id || item.value || item.name || item;
+                }
+                return item;
+              });
+            }
+            
+            // If it's a comma-separated string, split it
+            if (typeof field === 'string') {
+              return field.split(',').map(item => item.trim());
+            }
+            
+            return [];
+          };
+          
+          console.log("Edit mode enabled. Fetching listing with id:", id);
+          const response = await apiClient.get(`/properties/${id}`);
           const data = response.data;
           console.log("Fetched listing for edit:", data);
           // Process array fields to handle both object format and string format
-          const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
-            if (!field) return [];
-            if (!Array.isArray(field)) return [];
+          
+          // Map API data to form state
+          if (data) {
+            let formattedData = {
+              title: data.title || '',
+              description: data.description || '',
+              price: data.price?.toString() || '',
+              location: data.location || '',
+              propertyType: data.property_type || '',
+              bedrooms: data.bedrooms?.toString() || '',
+              bathrooms: data.bathrooms?.toString() || '',
+              area: data.area?.toString() || '',
+              images: [], // Will be handled separately
+              amenities: processArrayField(data.amenities, AMENITIES),
+              yearBuilt: data.year_built?.toString() || '',
+              parkingSpaces: data.parking_spaces?.toString() || '',
+              lotSize: data.lot_size?.toString() || '',
+              propertyStatus: data.property_status || '',
+              energyRating: data.energy_rating || '',
+              constructionMaterial: data.construction_material || '',
+              floorLevel: data.floor_level?.toString() || '',
+              totalFloors: data.total_floors?.toString() || '',
+              availableFrom: data.available_from || '',
+              contactPhone: data.contact_phone || '',
+              contactEmail: data.contact_email || '',
+              virtualTourUrl: data.virtual_tour_url || '',
+              videoUrl: data.video_url || '',
+              additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES),
+            };
             
-            const results: string[] = [];
+            // Convert property_status from snake_case to camelCase if needed
+            if (formattedData.propertyStatus === 'for_sale') {
+              formattedData.propertyStatus = 'forSale';
+            } else if (formattedData.propertyStatus === 'for_rent') {
+              formattedData.propertyStatus = 'forRent';
+            }
             
-            field.forEach(item => {
-              // If it's an object with an id property, return the id
-              if (typeof item === 'object' && item !== null && item.id) {
-                if (!results.includes(item.id)) {
-                  results.push(item.id);
-                }
-              }
-              // If it's a string that matches a label in the lookup table, convert to id
-              else if (typeof item === 'string') {
-                const found = lookupTable.find(lookup => lookup.label === item);
-                if (found && !results.includes(found.id)) {
-                  results.push(found.id);
-                } 
-                // If it's already in id format but not found yet
-                else if (!found && !results.includes(item)) {
-                  // Check if it matches an ID in the lookup table
-                  const matchesId = lookupTable.some(lookup => lookup.id === item);
-                  if (matchesId) {
-                    results.push(item);
+            setFormData(formattedData);
+            
+            // Set image previews if available
+            if (data.images && data.images.length > 0) {
+              console.log("Setting existing images for preview:", data.images);
+              // Extract image URLs from image objects if necessary
+              const imageUrls = data.images.map(img => {
+                // If image is an object with an image property that is a URL string
+                if (typeof img === 'object' && img !== null) {
+                  // Check for common image URL properties
+                  if (img.image && typeof img.image === 'string') {
+                    return img.image;
+                  }
+                  if (img.url && typeof img.url === 'string') {
+                    return img.url;
+                  }
+                  if (img.src && typeof img.src === 'string') {
+                    return img.src;
+                  }
+                  // Fall back to the first string property we find
+                  for (const key in img) {
+                    if (typeof img[key] === 'string' && (
+                      img[key].endsWith('.jpg') || 
+                      img[key].endsWith('.jpeg') || 
+                      img[key].endsWith('.png') || 
+                      img[key].endsWith('.webp')
+                    )) {
+                      return img[key];
+                    }
                   }
                 }
-              }
-            });
-            
-            return results;
-          };
-          setFormData({
-            title: data.title || '',
-            description: data.description || '',
-            price: data.price || '',
-            location: data.location || '',
-            propertyType: data.property_type || '',
-            bedrooms: data.bedrooms?.toString() || '',
-            bathrooms: data.bathrooms?.toString() || '',
-            area: data.area?.toString() || '',
-            images: [], // Keep empty for new uploads
-            amenities: processArrayField(data.amenities, AMENITIES),
-            yearBuilt: data.year_built?.toString() || '',
-            parkingSpaces: data.parking_spaces?.toString() || '',
-            lotSize: data.lot_size || '',
-            propertyStatus: data.property_status || '',
-            energyRating: data.energy_rating || '',
-            constructionMaterial: data.construction_material || '',
-            floorLevel: data.floor_level || '',
-            totalFloors: data.total_floors || '',
-            availableFrom: data.available_from || '',
-            contactPhone: data.contact_phone || '',
-            contactEmail: data.contact_email || '',
-            virtualTourUrl: data.virtual_tour_url || '',
-            videoUrl: data.video_url || '',
-            additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES)
-          });
-          // Handle existing images
-          if (data.images && Array.isArray(data.images)) {
-            console.log("Setting existing images for preview:", data.images);
-            // Extract image URLs from image objects if necessary
-            const imageUrls = data.images.map(img => {
-              // If image is an object with an image property that is a URL string
-              if (typeof img === 'object' && img !== null) {
-                // Check for common image URL properties
-                if (img.url) return img.url;
-                if (img.image) return typeof img.image === 'string' ? img.image : img.image.url;
-                if (img.src) return img.src;
-                
-                // If no recognized property, try to find a string property that looks like a URL
-                const possibleUrlProps = Object.entries(img)
-                  .find(([_, val]) => typeof val === 'string' && (val.startsWith('http') || val.startsWith('/')));
-                
-                if (possibleUrlProps) return possibleUrlProps[1];
-              }
+                // If image is directly a string URL
+                return typeof img === 'string' ? img : '';
+              }).filter(url => url); // Remove any empty strings
               
-              // If it's already a string or we couldn't find a URL property, return as is
-              return img;
-            });
-            
-            setPreviewImages(imageUrls);
-
-            // Find the primary image if one is marked
-            const primaryImageIndex = data.images.findIndex(img => 
-              img && typeof img === 'object' && img.is_primary === true
-            );
-            
-            if (primaryImageIndex >= 0) {
-              setPrimaryIndex(primaryImageIndex);
-            } else {
-              setPrimaryIndex(0);
+              setPreviewImages(imageUrls);
+              
+              // Find the primary image if one is marked
+              const primaryImageIndex = data.images.findIndex(img => 
+                img && typeof img === 'object' && img.is_primary === true
+              );
+              
+              if (primaryImageIndex !== -1) {
+                setPrimaryIndex(primaryImageIndex);
+              }
             }
           }
-        })
-        .catch(error => {
+          setLoadingListing(false);
+        } catch (error) {
           console.error("Error fetching listing for edit:", error);
           toast.error("Could not load listing data for editing");
-        })
-        .finally(() => setLoadingListing(false));
+          setLoadingListing(false);
+        }
+      };
+      
+      fetchPropertyData();
     }
   }, [isEditing, id]);
 
@@ -384,8 +385,8 @@ const CreateListing = () => {
     );
   }
 
-  // Also show loading if username is being fetched
-  if (isEditing && loadingUsername) {
+  // Also show loading if user context is still loading
+  if (!user && isEditing) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p className="text-xl">Loading user data...</p>
@@ -401,12 +402,7 @@ const CreateListing = () => {
     if (isEditing && !username) {
       console.error("Username is missing during form submission for editing");
       toast.error('User profile data is not available. Please refresh and try again.');
-      try {
-        // Try to fetch username one more time
-        await fetchUsernameOnDemand();
-      } catch (error) {
-        return; // Exit if we still can't get username
-      }
+      return; // Exit if we can't get username
     }
     
     if (!validateForm()) {
@@ -418,15 +414,13 @@ const CreateListing = () => {
     setIsSubmitting(true);
     
     try {
+      // Create a FormData object to send
       const formDataToSend = new FormData();
       
-      // Add image handling flags for edit mode
-      if (isEditing) {
-        // If editing and we have new images, tell the backend to replace the existing ones
-        if (formData.images.length > 0) {
-          formDataToSend.append('replace_images', 'true');
-          
-          // Option A: Reorder images so the primary image is first.
+      // Add images to the FormData with the primary image first
+      if (formData.images.length > 0) {
+        if (isEditing) {
+          console.log("Rearranging images for edit with primary at index:", primaryIndex);
           const rearrangedImages = [
             formData.images[primaryIndex],
             ...formData.images.filter((_, idx) => idx !== primaryIndex)
@@ -435,41 +429,38 @@ const CreateListing = () => {
             formDataToSend.append('images[]', file);
           });
           
-          // Also send primary index explicitly
-          formDataToSend.append('primary_image_index', '0'); // Always 0 since we rearranged
-        } else if (previewImages.length > 0) {
-          // No new uploads but we've reordered existing images
-          formDataToSend.append('reorder_images', 'true');
-          formDataToSend.append('primary_image_index', primaryIndex.toString());
-          
-          // Extract image identifiers from the preview URLs to send to the backend
-          previewImages.forEach((url, index) => {
-            // Try to extract an ID from the URL - look for patterns like '/12345/' or '_12345.'
-            let imageId = '';
+          // Adding existing images metadata for the backend to know which images to keep
+          if (previewImages.length > formData.images.length) {
+            console.log("Adding existing image metadata");
             
-            // First try extracting using typical URL path patterns
-            const idMatch = url.match(/\/(\d+)\/|\/image\/(\d+)|[_-](\d+)\./);
-            if (idMatch) {
-              // Find the first non-undefined capturing group
-              imageId = idMatch.slice(1).find(group => group !== undefined) || '';
-            }
-            
-            if (!imageId) {
-              // If no ID extracted, use the last path segment or full URL as fallback
-              imageId = url.split('/').pop() || url;
-            }
-            
-            formDataToSend.append('image_order[]', imageId);
-            
-            // Mark primary image explicitly
-            if (index === primaryIndex) {
-              formDataToSend.append('primary_image_id', imageId);
-            }
-          });
-        }
-      } else {
-        // For new listings
-        if (formData.images.length) {
+            // Extract image identifiers from the preview URLs to send to the backend
+            previewImages.forEach((url, index) => {
+              // Try to extract an ID from the URL - look for patterns like '/12345/' or '_12345.'
+              let imageId = '';
+              const idMatch = url.match(/\/(\d+)\/|_(\d+)\.|\/images\/(\d+)|id=(\d+)/);
+              
+              if (idMatch) {
+                // Find the first non-undefined capturing group
+                imageId = idMatch.slice(1).find(group => group !== undefined) || '';
+              }
+              
+              if (!imageId) {
+                // If no ID found, just use the URL as is for reference
+                console.log("Could not extract image ID from URL, using full URL:", url);
+              }
+              
+              // Only add existing images that aren't being replaced
+              if (!formData.images.some((_, i) => i === index)) {
+                formDataToSend.append('existing_images[]', imageId || url);
+                if (index === primaryIndex) {
+                  formDataToSend.append('primary_image_id', imageId || url);
+                }
+              }
+            });
+          }
+        } else {
+          // For new listing, just rearrange images with primary first
+          console.log("Arranging images for new listing with primary at index:", primaryIndex);
           const rearrangedImages = [
             formData.images[primaryIndex],
             ...formData.images.filter((_, idx) => idx !== primaryIndex)
@@ -496,9 +487,9 @@ const CreateListing = () => {
       // Use the backend endpoint for edit listings.
       const endpoint = isEditing 
         ? username 
-          ? `/properties/${username}/property/${id}/edit`
-          : `/properties/property/${id}/edit` // Fallback if username is empty
-        : '/properties/create_property';
+          ? `/properties/${username}/property/${id}/edit/`
+          : `/properties/property/${id}/edit/` // Fallback if username is empty
+        : '/properties/create_property/';
       
       console.log("Sending property request to:", endpoint);
       const response = await apiClient[isEditing ? 'put' : 'post'](endpoint, formDataToSend, {
