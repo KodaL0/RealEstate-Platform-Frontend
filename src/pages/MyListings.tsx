@@ -150,6 +150,12 @@ const MyListings = () => {
     );
   }
 
+ useEffect(() => {
+    if (!loading && typeof window !== 'undefined') {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }, [currentPage, loading]);
+
   // main UI
   return (
     <div className="min-h-screen pt-20 px-4">
