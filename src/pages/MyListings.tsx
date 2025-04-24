@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Plus } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
+import { useUser } from '../context/UserContext';
 
 interface Property {
   id: number;
@@ -21,13 +22,15 @@ interface Property {
 }
 
 const MyListings = () => {
+  const { user } = useUser();
   const [properties, setProperties] = useState<Property[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [username, setUsername] = useState<string>('');
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
   const navigate = useNavigate();
+  
+  const username = user?.username || '';
 
   const totalPages = Math.ceil(properties.length / itemsPerPage);
   const currentProperties = properties.slice(
@@ -36,20 +39,15 @@ const MyListings = () => {
   );
 
   useEffect(() => {
-    const fetchUserAndListings = async () => {
+    const fetchListings = async () => {
+      if (!user) {
+        navigate('/login');
+        return;
+      }
+      
       setLoading(true);
       try {
-        const userRes = await apiClient.get('/users/get_user', { withCredentials: true });
-        const user = userRes.data?.user;
-        if (!user?.username) {
-          setError('Username not found in profile data');
-          return;
-        }
-        setUsername(user.username);
-
-        const listingsRes = await apiClient.get<Property[]>('/properties/my-properties', {
-          withCredentials: true
-        });
+        const listingsRes = await apiClient.get<Property[]>('/properties/my-properties');
 
         const normalized = listingsRes.data.map(p => ({
           ...p,
@@ -58,7 +56,7 @@ const MyListings = () => {
         setProperties(normalized);
         setError(null);
       } catch (err: any) {
-        console.error('Error fetching user or listings:', err);
+        console.error('Error fetching listings:', err);
         const msg =
           err?.response?.data?.message ||
           'Failed to fetch your listings. Please try again later.';
@@ -72,16 +70,14 @@ const MyListings = () => {
       }
     };
 
-    fetchUserAndListings();
-  }, [navigate]);
+    fetchListings();
+  }, [navigate, user]);
 
   const handlePublish = async (id: number) => {
-    if (!username) return alert('Still loading user info...');
+    if (!username) return alert('User information not available');
     if (!window.confirm('Are you sure you want to publish this listing?')) return;
     try {
-      await apiClient.patch(`/properties/${username}/property/${id}/publish/`, null, {
-        withCredentials: true,
-      });
+      await apiClient.patch(`/properties/${username}/property/${id}/publish/`);
       setProperties(prev =>
         prev.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p))
       );
@@ -94,12 +90,10 @@ const MyListings = () => {
   };
 
   const handleRemove = async (id: number) => {
-    if (!username) return alert('Still loading user info...');
+    if (!username) return alert('User information not available');
     if (!window.confirm('Are you sure you want to remove this listing?')) return;
     try {
-      await apiClient.delete(`/properties/${username}/property/${id}/delete/`, {
-        withCredentials: true,
-      });
+      await apiClient.delete(`/properties/${username}/property/${id}/delete/`);
       const updated = properties.filter(p => p.id !== id);
       setProperties(updated);
       const newTotalPages = Math.ceil(updated.length / itemsPerPage);
