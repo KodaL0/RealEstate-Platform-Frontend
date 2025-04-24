@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Plus } from 'lucide-react';
 import { apiClient } from '../middleware/auth';
@@ -38,16 +38,13 @@ const MyListings = () => {
     currentPage * itemsPerPage
   );
 
-  const firstRender = useRef(true);
-  useEffect(() => {
-    if (firstRender.current) {
-      firstRender.current = false;   // skip initial mount
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
       return;
     }
-    // wait one frame so the new grid height is applied, then scroll
-    requestAnimationFrame(() =>
-      window.scrollTo({ top: 0, left: 0, behavior: 'smooth' })
-    );
+    window.scrollTo({ top: 0, left: 0, behavior: 'smooth' });
   }, [currentPage]);
 
   useEffect(() => {
