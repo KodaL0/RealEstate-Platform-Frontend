@@ -45,7 +45,7 @@ const Footer = () => {
             <h3 className="text-lg font-semibold mb-6">Services</h3>
             <ul className="space-y-3">
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Property Valuation</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Mortgage Calculator</Link></li>
+              <li><Link to="/mortgage-calculator" className="text-gray-400 hover:text-blue-500 transition-colors">Mortgage Calculator</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Property Management </Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Investment Advisory</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Market Analysis</Link></li>

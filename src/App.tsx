@@ -11,6 +11,7 @@ import { UserProvider } from './context/UserContext'; // Import UserProvider
 import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings"; // Import MyListings component
 import ScrollToTop from "./components/ScrollToTop"; // ✅ Import ScrollToTop
+import MortgageCalculator from "./pages/MortgageCalculator"; // Import MortgageCalculator
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
               {/* New edit route reusing CreateListing so existing data can be preloaded */}
               <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/my-listings" element={<MyListings />} /> {/* Add MyListings route */}
+              <Route path="/mortgage-calculator" element={<MortgageCalculator />} /> {/* Add Mortgage Calculator route */}
             </Routes>
           </main>
           <Footer />
