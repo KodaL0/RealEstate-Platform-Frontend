@@ -21,7 +21,6 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 const PAGE_SIZE = 12;        // how many cards per page
 const NAV_HEIGHT = 80;       // height of your fixed navbar (px) – adjust if needed
 
-export default function Home() {
   /* ───── state ───── */
   const [email, setEmail] = useState("");
   const [featured, setFeatured] = useState<Property[]>([]);
