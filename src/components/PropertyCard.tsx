@@ -103,7 +103,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </div>
           <div className="flex items-center text-gray-700">
             <Square className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{typeof area === 'number' && isFinite(area) ? area.toLocaleString() : '0'} sq ft</span>
+            <span>{typeof area === 'number' && isFinite(area) ? area.toLocaleString() : '0'} sq m</span>
           </div>
         </div>
       </div>
