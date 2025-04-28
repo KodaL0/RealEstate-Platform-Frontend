@@ -1,8 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, ChevronDown, Building2, Plus } from "lucide-react";
+import { Menu, X, User, ChevronDown, Building2 } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { apiClient, logout as authLogout } from "../middleware/auth";
+import { apiClient } from "../middleware/auth";
 
 interface ErrorResponse {
   data?: any;
@@ -38,7 +38,7 @@ const Navbar = () => {
 
   const handleLogout = async () => {
     try {
-      await apiClient.post('/users/logout');
+      await apiClient.post("/users/logout");
       setUser(null);
       navigate("/login");
     } catch (error) {
@@ -88,6 +88,7 @@ const Navbar = () => {
             >
               Rent
             </Link>
+            {/* Services Dropdown */}
             <div className="relative group">
               <button className="flex items-center font-medium text-white-700 hover:text-blue-600 transition-colors">
                 Services <ChevronDown className="ml-1 h-4 w-4" />
@@ -98,18 +99,6 @@ const Navbar = () => {
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
                 >
                   Mortgage Calculator
-                </Link>
-                <Link
-                  to="#"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  Property Management
-                </Link>
-                <Link
-                  to="#"
-                  className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                >
-                  Investment Advisory
                 </Link>
               </div>
             </div>
