@@ -83,31 +83,38 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         </button>
       </div>
 
-      <div className="p-5">
-        {/* title + price */}
-        <div className="flex justify-between items-start mb-2">
-          <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
-            <Link to={`/property/${id}`}>{title}</Link>
-          </h3>
-          <p className="text-lg font-bold text-blue-600">
-            {Number.isFinite(Number(price))
-              ? isForSale
-                ? `€${Number(price).toLocaleString()}`
-                : `€${Number(price).toLocaleString()}/mo`
-              : isForSale
-              ? '€0'
-              : '€0/mo'}
-          </p>
+      {/* content area: vertical flex, full height */}
+      <div className="p-5 flex flex-col h-full">
+        {/* title + address grouped */}
+        <div className="space-y-2">
+          {/* title + price */}
+          <div className="flex justify-between items-start">
+            <h3
+              className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors
+                         overflow-hidden line-clamp-2"
+            >
+              <Link to={`/property/${id}`}>{title}</Link>
+            </h3>
+            <p className="text-lg font-bold text-blue-600">
+              {Number.isFinite(Number(price))
+                ? isForSale
+                  ? `€${Number(price).toLocaleString()}`
+                  : `€${Number(price).toLocaleString()}/mo`
+                : isForSale
+                ? '€0'
+                : '€0/mo'}
+            </p>
+          </div>
+
+          {/* address */}
+          <div className="flex items-center text-gray-500">
+            <MapPin className="h-4 w-4 mr-1" />
+            <span className="text-sm">{propertyAddress}</span>
+          </div>
         </div>
 
-        {/* address */}
-        <div className="flex items-center text-gray-500 mb-4">
-          <MapPin className="h-4 w-4 mr-1" />
-          <span className="text-sm">{propertyAddress}</span>
-        </div>
-
-        {/* stats */}
-        <div className="flex justify-between pt-4 border-t border-gray-100">
+        {/* stats: pushed to bottom */}
+        <div className="mt-auto flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
             <span>
