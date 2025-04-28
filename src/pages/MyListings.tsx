@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Home, Plus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";      // ← added
+import { motion, AnimatePresence } from "framer-motion";
 import { apiClient } from "../middleware/auth";
 import { useUser } from "../context/UserContext";
 
@@ -40,7 +40,7 @@ const MyListings = () => {
   const navigate = useNavigate();
   const username = user?.username ?? "";
 
-  /* smooth-scroll on page change */
+  /* scroll to top on page change */
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -50,7 +50,7 @@ const MyListings = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  /* fetch listings (unchanged) */
+  /* fetch listings */
   useEffect(() => {
     if (userLoading) return;
     if (!user) {
@@ -77,15 +77,56 @@ const MyListings = () => {
     })();
   }, [user, userLoading]);
 
-  /* publish / remove handlers (unchanged) */
+  /* ---- handlers with original endpoints ---- */
   const handlePublish = async (id: number) => {
-    /* same body as before */
-  };
-  const handleRemove = async (id: number) => {
-    /* same body as before */
+    if (!username) {
+      alert("User information not available");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to publish this listing?")) {
+      return;
+    }
+
+    try {
+      await apiClient.patch(`/properties/${username}/property/${id}/publish/`);
+      setProperties(prev =>
+        prev.map(p =>
+          p.id === id ? { ...p, property_status: "for_sale" } : p
+        )
+      );
+    } catch (err: any) {
+      console.error("Error publishing listing:", err);
+      setError(
+        err?.response?.data?.error ||
+          "Failed to publish listing. Please try again later."
+      );
+    }
   };
 
-  /* Loading & Error UI (unchanged) */
+  const handleRemove = async (id: number) => {
+    if (!username) {
+      alert("User information not available");
+      return;
+    }
+    if (!window.confirm("Are you sure you want to remove this listing?")) {
+      return;
+    }
+
+    try {
+      await apiClient.delete(`/properties/${username}/property/${id}/delete/`);
+      setProperties(prev => prev.filter(p => p.id !== id));
+      const newTotal = Math.ceil((properties.length - 1) / itemsPerPage) || 1;
+      setCurrentPage(curr => Math.min(curr, newTotal));
+    } catch (err: any) {
+      console.error("Error removing listing:", err);
+      setError(
+        err?.response?.data?.error ||
+          "Failed to remove listing. Please try again later."
+      );
+    }
+  };
+
+  /* loading & error states */
   if (loading || userLoading) {
     return (
       <div className="min-h-screen pt-20 px-4">
@@ -113,7 +154,7 @@ const MyListings = () => {
     );
   }
 
-  /* Main UI */
+  /* main UI */
   return (
     <div className="min-h-screen pt-20 px-4">
       <div className="container mx-auto">
@@ -128,7 +169,7 @@ const MyListings = () => {
           </button>
         </div>
 
-        {/* empty-state */}
+        {/* empty state */}
         {properties.length === 0 ? (
           <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Home className="mx-auto h-16 w-16 text-gray-400 mb-6" />
@@ -147,7 +188,7 @@ const MyListings = () => {
           </div>
         ) : (
           <>
-            {/* ─── animated grid (cards unchanged) ─── */}
+            {/* animated grid (cards unchanged) */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentPage}
@@ -273,7 +314,7 @@ const MyListings = () => {
               </motion.div>
             </AnimatePresence>
 
-            {/* pagination buttons (unchanged) */}
+            {/* pagination buttons */}
             <div className="flex justify-center items-center mt-8 space-x-4 mb-12">
               <button
                 onClick={() => setCurrentPage(curr => Math.max(curr - 1, 1))}
