@@ -1,10 +1,61 @@
 import { useState } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
 
+// Define a more specific type for the filters passed to onSearch
+interface ParsedFilters {
+  location?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  propertyType?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  forSale: boolean;
+}
+
 interface SearchFiltersProps {
   forSale?: boolean;
-  onSearch: (filters: any) => void;
+  onSearch: (filters: ParsedFilters) => void;
 }
+
+// Helper function to parse price string (e.g., "$100k - $300k", "$2M+", "Any")
+const parsePriceRange = (rangeString: string): { minPrice?: number; maxPrice?: number } => {
+  if (rangeString === 'Any') {
+    return { minPrice: undefined, maxPrice: undefined };
+  }
+
+  const cleaned = rangeString.replace(/[$|,]/g, '');
+  let minPrice: number | undefined;
+  let maxPrice: number | undefined;
+
+  const parseValue = (value: string): number => {
+    if (value.endsWith('k')) {
+      return parseFloat(value.replace('k', '')) * 1000;
+    }
+    if (value.endsWith('M')) {
+      return parseFloat(value.replace('M', '')) * 1000000;
+    }
+    return parseFloat(value);
+  };
+
+  if (cleaned.includes(' - ')) {
+    const [minStr, maxStr] = cleaned.split(' - ');
+    minPrice = parseValue(minStr);
+    maxPrice = parseValue(maxStr);
+  } else if (cleaned.endsWith('+')) {
+    minPrice = parseValue(cleaned.replace('+', ''));
+    maxPrice = undefined; // No upper limit
+  }
+
+  return { minPrice, maxPrice };
+};
+
+// Helper function to parse min number string (e.g., "3+", "Any")
+const parseMinNumber = (numberString: string): number | undefined => {
+  if (numberString === 'Any') {
+    return undefined;
+  }
+  return parseInt(numberString.replace('+', ''), 10);
+};
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch }) => {
   const [location, setLocation] = useState('');
@@ -16,13 +67,19 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
+
+    const { minPrice, maxPrice } = parsePriceRange(priceRange);
+    const parsedBedrooms = parseMinNumber(bedrooms);
+    const parsedBathrooms = parseMinNumber(bathrooms);
+
     onSearch({
-      location,
-      priceRange,
-      propertyType,
-      bedrooms,
-      bathrooms,
-      forSale
+      location: location || undefined, // Ensure empty string becomes undefined
+      minPrice,
+      maxPrice,
+      propertyType: propertyType === 'Any' ? undefined : propertyType,
+      bedrooms: parsedBedrooms,
+      bathrooms: parsedBathrooms,
+      forSale,
     });
   };
 
