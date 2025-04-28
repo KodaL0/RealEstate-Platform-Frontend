@@ -812,27 +812,6 @@ const CreateListing = () => {
               </div>
             </section>
   
-            {/* Additional Features Section */}
-            <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Additional Features</h2>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {ADDITIONAL_FEATURES.map((feature) => (
-                  <div key={feature.id} className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id={feature.id}
-                      checked={formData.additionalFeatures.includes(feature.id)}
-                      onChange={() => handleCheckboxChange(feature.id, 'additionalFeatures')}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor={feature.id} className="text-sm text-gray-700">
-                      {feature.label}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            </section>
-  
             {/* Description Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
