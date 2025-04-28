@@ -301,7 +301,7 @@ const PropertyDetails = () => {
 
             {/* thumbnail carousel */}
             <div className="lg:w-1/3 flex flex-col">
-              <div className="relative flex-1">
+              <div className="relative flex-1 pt-6">
                 {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
