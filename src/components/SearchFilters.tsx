@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Search, ChevronDown, X } from 'lucide-react';
 
 // Define a more specific type for the filters passed to onSearch
@@ -15,6 +15,8 @@ interface ParsedFilters {
 interface SearchFiltersProps {
   forSale?: boolean;
   onSearch: (filters: ParsedFilters) => void;
+  initialLocation?: string;
+  buttonClassName?: string;
 }
 
 // Helper function to parse price string (e.g., "$100k - $300k", "$2M+", "Any")
@@ -57,13 +59,22 @@ const parseMinNumber = (numberString: string): number | undefined => {
   return parseInt(numberString.replace('+', ''), 10);
 };
 
-const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch }) => {
-  const [location, setLocation] = useState('');
+const SearchFilters: React.FC<SearchFiltersProps> = ({ 
+  forSale = true, 
+  onSearch, 
+  initialLocation = '',
+  buttonClassName = "bg-emerald-600 hover:bg-emerald-700 text-white",
+}) => {
+  const [location, setLocation] = useState(initialLocation);
   const [priceRange, setPriceRange] = useState('Any');
   const [propertyType, setPropertyType] = useState('Any');
   const [bedrooms, setBedrooms] = useState('Any');
   const [bathrooms, setBathrooms] = useState('Any');
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  useEffect(() => {
+    setLocation(initialLocation);
+  }, [initialLocation]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +84,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
     const parsedBathrooms = parseMinNumber(bathrooms);
 
     onSearch({
-      location: location || undefined, // Ensure empty string becomes undefined
+      location: location || undefined,
       minPrice,
       maxPrice,
       propertyType: propertyType === 'Any' ? undefined : propertyType,
@@ -89,6 +100,15 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
     setPropertyType('Any');
     setBedrooms('Any');
     setBathrooms('Any');
+    onSearch({
+      location: undefined,
+      minPrice: undefined,
+      maxPrice: undefined,
+      propertyType: undefined,
+      bedrooms: undefined,
+      bathrooms: undefined,
+      forSale,
+    });
   };
 
   return (
@@ -173,7 +193,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ forSale = true, onSearch 
             </label>
             <button
               type="submit"
-              className="w-full bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg flex items-center justify-center transition-colors py-1 px-3 text-sm"
+              className={`w-full rounded-lg flex items-center justify-center transition-colors py-2 px-3 ${buttonClassName}`}
             >
               <Search className="h-4 w-4 mr-1" />
               Search

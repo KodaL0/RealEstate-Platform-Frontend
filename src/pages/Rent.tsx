@@ -4,6 +4,7 @@ import {
   useRef,
   useLayoutEffect,             // ← NEW
 } from "react";
+import { useSearchParams } from "react-router-dom"; // Import useSearchParams
 import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
@@ -14,13 +15,16 @@ const PAGE_SIZE = 9;                     // 9 cards per page
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const Rent = () => {
+  const [searchParams] = useSearchParams(); // Get search params
+  const initialLocation = searchParams.get('location') || ''; // Get initial location
+
   const [allProperties, setAllProperties] = useState<any[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
   const [sortOption, setSortOption] = useState("recommended");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchFilters, setSearchFilters] = useState<any>({});
+  const [searchFilters, setSearchFilters] = useState<any>({ location: initialLocation });
 
   /* ───── scroll back to top when page changes ───── */
   const first = useRef(true);
@@ -162,7 +166,12 @@ const Rent = () => {
 
       {/* Search Filters */}
       <section className="container mx-auto px-4 mt-4">
-        <SearchFilters forSale={false} onSearch={handleSearch} />
+        <SearchFilters
+          forSale={false}
+          onSearch={handleSearch}
+          initialLocation={initialLocation}
+          buttonClassName="bg-purple-600 hover:bg-purple-700 text-white"
+        />
       </section>
 
       {/* Properties List */}

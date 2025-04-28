@@ -4,6 +4,7 @@ import {
   useRef,
   useLayoutEffect,          // ← NEW
 } from "react";
+import { useSearchParams } from "react-router-dom"; // Import useSearchParams
 import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
@@ -14,13 +15,16 @@ const PAGE_SIZE = 9; // Show 9 property cards per page
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const Buy = () => {
+  const [searchParams] = useSearchParams(); // Get search params
+  const initialLocation = searchParams.get('location') || ''; // Get initial location
+
   const [allProperties, setAllProperties] = useState<any[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
   const [sortOption, setSortOption] = useState("recommended");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchFilters, setSearchFilters] = useState<any>({});
+  const [searchFilters, setSearchFilters] = useState<any>({ location: initialLocation });
 
   /* ───────── scroll back to top on page change ───────── */
   const first = useRef(true);
@@ -183,6 +187,7 @@ const Buy = () => {
           forSale
           onSearch={handleSearch}
           buttonClassName="bg-green-600 text-white font-semibold py-1 px-3 rounded-md"
+          initialLocation={initialLocation}
         />
       </section>
 
