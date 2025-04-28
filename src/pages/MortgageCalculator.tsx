@@ -17,7 +17,7 @@ const MortgageCalculator: React.FC = () => {
   const calculateMortgage = () => {
     const downPaymentAmount = propertyPrice * (downPaymentPercent / 100);
     const principal = propertyPrice - downPaymentAmount;
-    
+
     if (principal <= 0 || loanTermYears <= 0) {
       setMonthlyPayment(0);
       setTotalPayment(principal > 0 ? principal : 0);
@@ -28,11 +28,11 @@ const MortgageCalculator: React.FC = () => {
     const numberOfPayments = loanTermYears * 12;
 
     if (interestRate <= 0) {
-        const payment = numberOfPayments > 0 ? principal / numberOfPayments : 0;
-        setMonthlyPayment(payment);
-        setTotalPayment(principal);
-        setTotalInterestPaid(0);
-        return;
+      const payment = numberOfPayments > 0 ? principal / numberOfPayments : 0;
+      setMonthlyPayment(payment);
+      setTotalPayment(principal);
+      setTotalInterestPaid(0);
+      return;
     }
 
     const monthlyInterestRate = interestRate / 100 / 12;
@@ -40,10 +40,10 @@ const MortgageCalculator: React.FC = () => {
     const denominator = Math.pow(1 + monthlyInterestRate, numberOfPayments) - 1;
 
     if (denominator <= 0) {
-        setMonthlyPayment(null); 
-        setTotalPayment(null);
-        setTotalInterestPaid(null);
-        return;
+      setMonthlyPayment(null);
+      setTotalPayment(null);
+      setTotalInterestPaid(null);
+      return;
     }
 
     const payment = principal * (numerator / denominator);
@@ -64,12 +64,13 @@ const MortgageCalculator: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 min-h-screen py-12 flex items-center justify-center">
+    <div className="bg-gray-50 min-h-screen pt-20 pb-12 flex items-center justify-center">
+      {/* pt-20 pushes the calculator below the fixed/relative nav */}
       <div className="container mx-auto px-4 max-w-lg w-full">
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">Mortgage Calculator</h1>
-          
-          <div className="space-y-5"> 
+
+          <div className="space-y-5">
             {/* Property Price */}
             <div>
               <label htmlFor="propertyPrice" className="block text-sm font-semibold text-gray-600 mb-1.5">Property Price</label>
@@ -105,14 +106,14 @@ const MortgageCalculator: React.FC = () => {
                 <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">%</span>
               </div>
               {/* Slider for Down Payment */}
-              <input 
-                 type="range"
-                 min="0"
-                 max="100"
-                 step="0.5" 
-                 value={downPaymentPercent}
-                 onChange={(e) => setDownPaymentPercent(parseFloat(e.target.value))}
-                 className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2 accent-blue-600"
+              <input
+                type="range"
+                min="0"
+                max="100"
+                step="0.5"
+                value={downPaymentPercent}
+                onChange={(e) => setDownPaymentPercent(parseFloat(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer mt-2 accent-blue-600"
               />
               <div className="mt-2 space-y-1 text-sm text-gray-500">
                 <p>Down Payment Amount: <span className="font-medium text-gray-700">{formatCurrency(propertyPrice * (downPaymentPercent / 100))}</span></p>
@@ -132,19 +133,19 @@ const MortgageCalculator: React.FC = () => {
                 placeholder="e.g., 30"
                 min="1"
               />
-               {/* Slider for Loan Term */}
-               <div className="flex items-center space-x-3 mt-2">
-                 <input 
-                   type="range"
-                   min="1"
-                   max="40" // Example max term
-                   step="1"
-                   value={loanTermYears}
-                   onChange={(e) => setLoanTermYears(parseInt(e.target.value))}
-                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                 />
-                 <span className="text-sm font-medium text-gray-600 w-12 text-right">{loanTermYears} yrs</span>
-               </div>
+              {/* Slider for Loan Term */}
+              <div className="flex items-center space-x-3 mt-2">
+                <input
+                  type="range"
+                  min="1"
+                  max="40" // Example max term
+                  step="1"
+                  value={loanTermYears}
+                  onChange={(e) => setLoanTermYears(parseInt(e.target.value))}
+                  className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                />
+                <span className="text-sm font-medium text-gray-600 w-12 text-right">{loanTermYears} yrs</span>
+              </div>
             </div>
 
             {/* Interest Rate (Editable) */}
@@ -174,29 +175,29 @@ const MortgageCalculator: React.FC = () => {
                 </p>
                 <p className="text-xs text-gray-500 text-center mt-1">(Principal & Interest)</p>
               </div>
-              
+
               <div className="grid grid-cols-2 gap-4 text-center">
-                 <div>
-                     <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Payment</h3>
-                     <p className="text-lg font-medium text-gray-700">
-                       {formatCurrency(totalPayment)}
-                     </p>
-                 </div>
-                 <div>
-                     <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Interest Paid</h3>
-                     <p className="text-lg font-medium text-gray-700">
-                       {formatCurrency(totalInterestPaid)}
-                     </p>
-                 </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Payment</h3>
+                  <p className="text-lg font-medium text-gray-700">
+                    {formatCurrency(totalPayment)}
+                  </p>
+                </div>
+                <div>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Interest Paid</h3>
+                  <p className="text-lg font-medium text-gray-700">
+                    {formatCurrency(totalInterestPaid)}
+                  </p>
+                </div>
               </div>
 
-              <p className="text-xs text-gray-500 text-center pt-2"> (Estimates do not include taxes, insurance, or HOA fees.)</p>
+              <p className="text-xs text-gray-500 text-center pt-2">(Estimates do not include taxes, insurance, or HOA fees.)</p>
             </div>
-          </div> 
+          </div>
         </div>
       </div>
     </div>
   );
 };
 
-export default MortgageCalculator; 
+export default MortgageCalculator;
