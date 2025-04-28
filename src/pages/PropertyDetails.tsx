@@ -388,7 +388,7 @@ const PropertyDetails = () => {
                       {Number.isFinite(property.area)
                         ? property.area.toLocaleString()
                         : "0"}{" "}
-                      sqft
+                      sqm
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
