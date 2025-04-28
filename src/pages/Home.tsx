@@ -30,7 +30,23 @@ const Home = () => {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
         const data = await response.json();
-        setFeaturedProperties(data.results || data);
+        
+        // Ensure data is an array (handle potential pagination)
+        const propertiesData = data.results || data;
+        
+        // Ensure propertiesData is an array before mapping
+        if (Array.isArray(propertiesData)) {
+          // Convert price to number
+          const transformedProperties = propertiesData.map((property: Property) => ({
+            ...property,
+            price: typeof property.price === 'string' ? parseFloat(property.price) : property.price,
+          }));
+          setFeaturedProperties(transformedProperties);
+        } else {
+          console.error("Featured properties data is not an array:", propertiesData);
+          setFeaturedProperties([]); // Set to empty array if data format is unexpected
+        }
+
       } catch (err) {
         console.error("Error fetching featured properties:", err);
         setError(err instanceof Error ? err.message : "An unknown error occurred");
