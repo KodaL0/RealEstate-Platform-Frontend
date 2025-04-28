@@ -1,81 +1,24 @@
-/* ────────────────────────────────────────────────────────────────
-   pages/CreateListing.tsx
-   – phone prefix dropdown, no Additional-Features section, single
-     default export.
-   ──────────────────────────────────────────────────────────────── */
-
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import {
-  Home,
-  DollarSign,
-  MapPin,
-  Building2,
-  Bed,
-  Bath,
-  DotSquare as SquareFootage,
+import { 
+  Home, 
+  DollarSign, 
+  MapPin, 
+  Building2, 
+  Bed, 
+  Bath, 
+  DotSquare as SquareFootage, 
   Upload,
   X,
-  Loader2,
+  Loader2
 } from 'lucide-react';
+
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
-/* ───────────── reference data ───────────── */
-const COUNTRY_CODES = [
-  { code: '+357', label: '🇨🇾 +357' },
-  { code: '+1',   label: '🇺🇸 +1' },
-  { code: '+44',  label: '🇬🇧 +44' },
-  { code: '+30',  label: '🇬🇷 +30' },
-  { code: '+49',  label: '🇩🇪 +49' },
-  { code: '+33',  label: '🇫🇷 +33' },
-  { code: '+39',  label: '🇮🇹 +39' },
-  { code: '+61',  label: '🇦🇺 +61' },
-  { code: '+91',  label: '🇮🇳 +91' },
-];
-
-const PROPERTY_TYPES = [
-  { value: 'house',     label: 'House' },
-  { value: 'apartment', label: 'Apartment' },
-  { value: 'condo',     label: 'Condo' },
-  { value: 'townhouse', label: 'Townhouse' },
-  { value: 'villa',     label: 'Villa' },
-  { value: 'studio',    label: 'Studio' },
-  { value: 'duplex',    label: 'Duplex' },
-  { value: 'penthouse', label: 'Penthouse' },
-];
-
-const PROPERTY_STATUS = [
-  { value: 'forSale', label: 'For Sale' },
-  { value: 'forRent', label: 'For Rent' },
-];
-
-const AMENITIES = [
-  { id: 'parking',    label: 'Parking' },
-  { id: 'pool',       label: 'Swimming Pool' },
-  { id: 'gym',        label: 'Gym' },
-  { id: 'security',   label: 'Security System' },
-  { id: 'ac',         label: 'Air Conditioning' },
-  { id: 'heating',    label: 'Central Heating' },
-  { id: 'laundry',    label: 'Laundry Facilities' },
-  { id: 'pets',       label: 'Pet Friendly' },
-  { id: 'furnished',  label: 'Furnished' },
-  { id: 'balcony',    label: 'Balcony' },
-  { id: 'storage',    label: 'Storage Space' },
-  { id: 'wifi',       label: 'High-Speed Internet' },
-  { id: 'dishwasher', label: 'Dishwasher' },
-  { id: 'elevator',   label: 'Elevator' },
-  { id: 'fireplace',  label: 'Fireplace' },
-  { id: 'garden',     label: 'Garden' },
-  { id: 'roofDeck',   label: 'Roof Deck' },
-  { id: 'doorman',    label: 'Doorman' },
-  { id: 'garage',     label: 'Garage' },
-  { id: 'waterfront', label: 'Waterfront' },
-];
-
-/* ───────────── types & defaults ───────────── */
+// Define the ListingForm interface
 interface ListingForm {
   title: string;
   description: string;
@@ -96,13 +39,54 @@ interface ListingForm {
   floorLevel: string;
   totalFloors: string;
   availableFrom: string;
-  contactPhone: string; // numeric part only
+  contactPhone: string;
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
 }
 
-const BLANK_FORM: ListingForm = {
+// Reference data constants 
+const PROPERTY_TYPES = [
+  { value: 'house', label: 'House' },
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'condo', label: 'Condo' },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'villa', label: 'Villa' },
+  { value: 'studio', label: 'Studio' },
+  { value: 'duplex', label: 'Duplex' },
+  { value: 'penthouse', label: 'Penthouse' }
+];
+
+const PROPERTY_STATUS = [
+  { value: 'forSale', label: 'For Sale' },
+  { value: 'forRent', label: 'For Rent' },
+];
+
+const AMENITIES = [
+  { id: 'parking', label: 'Parking', category: 'Exterior' },
+  { id: 'pool', label: 'Swimming Pool', category: 'Exterior' },
+  { id: 'gym', label: 'Gym', category: 'Community' },
+  { id: 'security', label: 'Security System', category: 'Safety' },
+  { id: 'ac', label: 'Air Conditioning', category: 'Climate' },
+  { id: 'heating', label: 'Central Heating', category: 'Climate' },
+  { id: 'laundry', label: 'Laundry Facilities', category: 'Interior' },
+  { id: 'pets', label: 'Pet Friendly', category: 'Policy' },
+  { id: 'furnished', label: 'Furnished', category: 'Interior' },
+  { id: 'balcony', label: 'Balcony', category: 'Exterior' },
+  { id: 'storage', label: 'Storage Space', category: 'Interior' },
+  { id: 'wifi', label: 'High-Speed Internet', category: 'Utilities' },
+  { id: 'dishwasher', label: 'Dishwasher', category: 'Appliances' },
+  { id: 'elevator', label: 'Elevator', category: 'Building' },
+  { id: 'fireplace', label: 'Fireplace', category: 'Interior' },
+  { id: 'garden', label: 'Garden', category: 'Exterior' },
+  { id: 'roofDeck', label: 'Roof Deck', category: 'Exterior' },
+  { id: 'doorman', label: 'Doorman', category: 'Security' },
+  { id: 'garage', label: 'Garage', category: 'Parking' },
+  { id: 'waterfront', label: 'Waterfront', category: 'Location' }
+];
+
+// Default empty form state
+const DEFAULT_FORM_STATE: Omit<ListingForm, 'additionalFeatures'> = {
   title: '',
   description: '',
   price: '',
@@ -128,594 +112,717 @@ const BLANK_FORM: ListingForm = {
   videoUrl: '',
 };
 
-/* ─────────────────────────────────────────── */
+const CreateListing = () => {
+  const navigate = useNavigate();
+  const { id } = useParams<{ id?: string }>();
+  const isEditing = Boolean(id);
+  const { user } = useUser();
+  const username = user?.username || '';
 
-function CreateListing() {
-  const navigate           = useNavigate();
-  const { id }             = useParams<{ id?: string }>();
-  const isEditing          = Boolean(id);
-  const { user }           = useUser();
-  const username           = user?.username || '';
+  // Core state
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formData, setFormData] = useState<Omit<ListingForm, 'additionalFeatures'>>(DEFAULT_FORM_STATE);
+  
+  // Image handling state
+  const [previewImages, setPreviewImages] = useState<string[]>([]);
+  const [primaryIndex, setPrimaryIndex] = useState<number>(0);
+  const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
 
-  const [form, setForm]           = useState<ListingForm>(BLANK_FORM);
-  const [prefix, setPrefix]       = useState('+357');
-  const [previews, setPreviews]   = useState<string[]>([]);
-  const [primary, setPrimary]     = useState(0);
-  const [existing, setExisting]   = useState<string[]>([]);
-  const [loading, setLoading]     = useState(false);
-  const [submitting, setSubmitting] = useState(false);
-  const [error, setError]         = useState('');
-
-  /* drop-zone */
-  const onDrop = useCallback((files: File[]) => {
-    setForm(f => ({ ...f, images: [...f.images, ...files] }));
-    setPreviews(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
+  // Handle image uploads
+  const onDrop = useCallback((acceptedFiles: File[]) => {
+    setFormData(prev => ({
+      ...prev,
+      images: [...prev.images, ...acceptedFiles]
+    }));
+    const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
+    setPreviewImages(prev => [...prev, ...newPreviews]);
   }, []);
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] },
+    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 10,
-    maxSize: 5 * 1024 * 1024,
+    maxSize: 5 * 1024 * 1024, // 5MB
   });
-  const removeImg = (i: number) => {
-    setForm(f => ({ ...f, images: f.images.filter((_, n) => n !== i) }));
-    if (i < previews.length) URL.revokeObjectURL(previews[i]);
-    setPreviews(p => p.filter((_, n) => n !== i));
-    if (i < existing.length) setExisting(e => e.filter((_, n) => n !== i));
-    if (i === primary) setPrimary(0);
-    else if (i < primary) setPrimary(n => n - 1);
-  };
 
-  /* generic input */
-  const handleInput = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
-
-  const toggleAmenity = (id: string) =>
-    setForm(f => ({
-      ...f,
-      amenities: f.amenities.includes(id)
-        ? f.amenities.filter(a => a !== id)
-        : [...f.amenities, id],
+  const removeImage = (index: number) => {
+    // Remove from the File array
+    setFormData(prev => ({
+      ...prev,
+      images: prev.images.filter((_, i) => i !== index)
     }));
-
-  /* validation */
-  const valid = () => {
-    if (!form.title.trim())          return setError('Enter title'), false;
-    if (!form.description.trim())    return setError('Enter description'), false;
-    if (!form.price || +form.price <= 0) return setError('Enter valid price'), false;
-    if (!form.location.trim())       return setError('Enter location'), false;
-    if (!form.propertyType)          return setError('Select type'), false;
-    if (!form.propertyStatus)        return setError('Select listing type'), false;
-    if (!form.contactPhone.trim())   return setError('Enter phone'), false;
-    if (form.images.length === 0 && previews.length === 0)
-      return setError('Upload at least one image'), false;
-    return true;
-  };
-
-  /* edit-mode fetch */
-  useEffect(() => {
-    if (!isEditing || !id) return;
-    setLoading(true);
-    apiClient
-      .get(`/properties/${username}/property/${id}/`)
-      .then(({ data }) => {
-        const imgs = data.images || [];
-        setPreviews(imgs.map((i: any) => (typeof i === 'string' ? i : i.image)));
-        setExisting(imgs.map((i: any) => (typeof i === 'object' ? i.id || '' : '')));
-        setPrimary(Math.max(0, imgs.findIndex((i: any) => i?.is_primary)));
-
-        /* phone split */
-        if (data.contact_phone) {
-          const m = data.contact_phone.match(/^(\+\d{1,4})(.*)$/);
-          if (m) {
-            setPrefix(m[1]);
-            data.contact_phone = m[2].trim();
-          }
-        }
-
-        /* amenities label→id */
-        const amenIds = (data.amenities || []).map((lab: string) => {
-          const m = AMENITIES.find(a => a.label.toLowerCase() === lab.toLowerCase());
-          return m?.id;
-        }).filter(Boolean) as string[];
-
-        let status = data.property_status || '';
-        if (status === 'for_sale') status = 'forSale';
-        if (status === 'for_rent') status = 'forRent';
-
-        setForm({
-          title: data.title || '',
-          description: data.description || '',
-          price: data.price?.toString() || '',
-          location: data.location || '',
-          propertyType: data.property_type || '',
-          bedrooms: data.bedrooms?.toString() || '',
-          bathrooms: data.bathrooms?.toString() || '',
-          area: data.area?.toString() || '',
-          images: [],
-          amenities: amenIds,
-          yearBuilt: data.year_built?.toString() || '',
-          parkingSpaces: data.parking_spaces?.toString() || '',
-          lotSize: data.lot_size?.toString() || '',
-          propertyStatus: status,
-          energyRating: data.energy_rating || '',
-          constructionMaterial: data.construction_material || '',
-          floorLevel: data.floor_level?.toString() || '',
-          totalFloors: data.total_floors?.toString() || '',
-          availableFrom: data.available_from || '',
-          contactPhone: data.contact_phone || '',
-          contactEmail: data.contact_email || '',
-          virtualTourUrl: data.virtual_tour_url || '',
-          videoUrl: data.video_url || '',
-        });
-      })
-      .catch(() => {
-        setError('Failed to load property data.');
-        toast.error('Could not load property data');
-      })
-      .finally(() => setLoading(false));
-  }, [isEditing, id, username]);
-
-  /* submit */
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!valid()) return;
-    if (isEditing && !username) return toast.error('User not loaded');
-    setSubmitting(true);
-    try {
-      const fd = new FormData();
-
-      /* images */
-      if (form.images.length) {
-        const prim = Math.min(primary, form.images.length - 1);
-        [form.images[prim], ...form.images.filter((_, i) => i !== prim)].forEach(f =>
-          fd.append('images[]', f)
-        );
-      }
-      if (isEditing && previews.length) {
-        previews.forEach((_, i) => {
-          if (!form.images[i]) {
-            const idOrUrl = existing[i] || previews[i];
-            fd.append('existing_images[]', idOrUrl);
-            if (i === primary) fd.append('primary_image_id', idOrUrl);
-          }
-        });
-      }
-      fd.append('primary_is_first', 'true');
-
-      /* other fields */
-      Object.entries(form).forEach(([k, v]) => {
-        if (k === 'images') return;
-        if (k === 'contactPhone') fd.append('contactPhone', `${prefix}${v}`);
-        else if (Array.isArray(v)) v.forEach(val => fd.append(`${k}[]`, val));
-        else if (v) fd.append(k, v.toString());
-      });
-
-      const url = isEditing
-        ? `/properties/${username}/property/${id}/edit/`
-        : '/properties/create_property/';
-      const method = isEditing ? 'put' : 'post';
-
-      const res = await apiClient[method](url, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
-
-      if (res.status < 300) {
-        toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
-        navigate('/my-listings');
-      } else setError(`Unexpected status ${res.status}`);
-    } catch (err: any) {
-      const msg = err.response?.data?.error || 'Failed to process listing.';
-      setError(msg);
-      toast.error(msg);
-    } finally {
-      setSubmitting(false);
+    
+    // If it's a preview URL from the server, revoke it
+    if (index < previewImages.length) {
+      URL.revokeObjectURL(previewImages[index]);
+    }
+    
+    // Remove from preview images
+    setPreviewImages(prev => prev.filter((_, i) => i !== index));
+    
+    // Update existing image IDs if removing an existing image
+    if (index < existingImageIds.length) {
+      setExistingImageIds(prev => prev.filter((_, i) => i !== index));
+    }
+    
+    // Adjust primary index if needed
+    if (index === primaryIndex) {
+      setPrimaryIndex(0);
+    } else if (index < primaryIndex) {
+      setPrimaryIndex(prev => prev - 1);
     }
   };
 
-  /* early loader */
-  if (loading)
+  // Form field handlers
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCheckboxChange = (id: string) => {
+    setFormData(prev => {
+      const currentArray = prev.amenities;
+      const updatedArray = currentArray.includes(id)
+        ? currentArray.filter(item => item !== id)
+        : [...currentArray, id];
+      return { ...prev, amenities: updatedArray };
+    });
+  };
+
+  // Simple form validation
+  const validateForm = (): boolean => {
+    if (!formData.title.trim()) {
+      setError('Please enter a title');
+      return false;
+    }
+    if (!formData.description.trim()) {
+      setError('Please enter a description');
+      return false;
+    }
+    if (!formData.price || parseFloat(formData.price) <= 0) {
+      setError('Please enter a valid price');
+      return false;
+    }
+    if (!formData.location.trim()) {
+      setError('Please enter a location');
+      return false;
+    }
+    if (!formData.propertyType) {
+      setError('Please select a property type');
+      return false;
+    }
+    if (!formData.propertyStatus) {
+      setError('Please select a property status');
+      return false;
+    }
+    if (formData.images.length === 0 && previewImages.length === 0) {
+      setError('Please upload at least one image');
+      return false;
+    }
+    return true;
+  };
+
+  // Fetch existing data for editing
+  useEffect(() => {
+    if (isEditing && id) {
+      setLoading(true);
+      apiClient.get(`/properties/${username}/property/${id}/`)
+        .then(response => {
+          const data = response.data;
+          const existingImages = data.images || [];
+          setPreviewImages(existingImages.map((img: any) => img.image));
+          setExistingImageIds(existingImages.map((img: any) => img.id || img.image));
+          
+          const primary = existingImages.find((img: any) => img.is_primary);
+          setPrimaryIndex(primary ? existingImages.indexOf(primary) : 0);
+          
+          let propertyStatus = data.property_status || '';
+          if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+          if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+          
+          // Map amenity labels (received from API) back to IDs for the form state
+          const fetchedAmenities = data.amenities || [];
+          const amenityIds = fetchedAmenities.map((label: string) => {
+            const match = AMENITIES.find(a => a.label.toLowerCase() === label.toLowerCase());
+            return match ? match.id : null; // Return ID if found, null otherwise
+          }).filter(Boolean); // Filter out any nulls (amenities not found in our constant)
+          
+          // Map API data to form fields
+          setFormData({
+            title: data.title || '',
+            description: data.description || '',
+            price: data.price?.toString() || '',
+            location: data.location || '',
+            propertyType: data.property_type || '',
+            bedrooms: data.bedrooms?.toString() || '',
+            bathrooms: data.bathrooms?.toString() || '',
+            area: data.area?.toString() || '',
+            images: [], 
+            amenities: amenityIds as string[], // Use the mapped IDs
+            yearBuilt: data.year_built?.toString() || '',
+            parkingSpaces: data.parking_spaces?.toString() || '',
+            lotSize: data.lot_size?.toString() || '',
+            propertyStatus,
+            energyRating: data.energy_rating || '',
+            constructionMaterial: data.construction_material || '',
+            floorLevel: data.floor_level?.toString() || '',
+            totalFloors: data.total_floors?.toString() || '',
+            availableFrom: data.available_from || '',
+            contactPhone: data.contact_phone || '',
+            contactEmail: data.contact_email || '',
+            virtualTourUrl: data.virtual_tour_url || '',
+            videoUrl: data.video_url || '',
+          });
+        })
+        .catch(error => {
+          console.error("Error fetching listing:", error);
+          toast.error("Could not load property data");
+          setError("Failed to load property data. Please try again.");
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [isEditing, id, username]);
+
+  // Handle form submission
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Validate form
+    if (!validateForm()) return;
+    
+    // Require username for editing
+    if (isEditing && !username) {
+      toast.error('User profile data is not available. Please refresh and try again.');
+      return;
+    }
+    
+    setError('');
+    setIsSubmitting(true);
+    
+    try {
+      const formDataToSend = new FormData();
+      
+      // ---------------- IMAGE HANDLING ----------------
+      
+      // Prepare images with primary first
+      if (formData.images.length > 0) {
+        // Calculate primary index within newly uploaded images
+        const effectivePrimaryIndex = Math.min(primaryIndex, formData.images.length - 1);
+        
+        // Rearrange images so primary is first
+        const orderedImages = [
+          formData.images[effectivePrimaryIndex],
+          ...formData.images.filter((_, i) => i !== effectivePrimaryIndex)
+        ];
+        
+        // Add images to FormData
+        orderedImages.forEach(file => {
+          formDataToSend.append('images[]', file);
+        });
+      }
+      
+      // Add information about existing images (edit mode)
+      if (isEditing && previewImages.length > 0) {
+        const existingImages = previewImages
+          .filter((_, i) => !formData.images.some((__, j) => i === j))
+          .map((url, i) => ({ 
+            url, 
+            id: existingImageIds[i] || url,
+            isPrimary: i === primaryIndex && primaryIndex >= formData.images.length
+          }));
+        
+        // Add existing image IDs
+        if (existingImages.length > 0) {
+          existingImages.forEach(img => {
+            formDataToSend.append('existing_images[]', img.id);
+            if (img.isPrimary) {
+              formDataToSend.append('primary_image_id', img.id);
+            }
+          });
+        }
+      }
+      
+      // Flag primary as first image (simplifies backend logic)
+      formDataToSend.append('primary_is_first', 'true');
+      
+      // ---------------- FORM FIELDS ----------------
+      
+      // Add all other form fields 
+      Object.entries(formData).forEach(([key, value]) => {
+        // Skip images and ensure additionalFeatures is not included
+        if (key !== 'images' /* && key !== 'additionalFeatures' */) { 
+          if (Array.isArray(value)) {
+            // Handle amenities specifically
+            if (key === 'amenities') {
+              value.forEach(item => {
+                formDataToSend.append(`${key}[]`, item);
+              });
+            }
+            // Skip other arrays if any (though none expected now)
+          } else if (value) {
+            formDataToSend.append(key, value.toString());
+          }
+        }
+      });
+      
+      // Determine API endpoint - simplify by using a consistent pattern
+      let endpoint;
+      let method;
+      
+      if (isEditing) {
+        endpoint = `/properties/${username}/property/${id}/edit/`;
+        method = 'put';
+      } else {
+        endpoint = '/properties/create_property/'; 
+        method = 'post';
+      }
+      
+      // Send the request
+      const response = await apiClient[method](endpoint, formDataToSend, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      });
+      
+      if (response.status >= 200 && response.status < 300) {
+        toast.success(isEditing ? 'Listing updated successfully!' : 'Listing created successfully!');
+        navigate('/my-listings');
+      } else {
+        setError(`Unexpected response: ${response.status}`);
+      }
+    } catch (error: any) {
+      console.error("Error in form submission:", error);
+      const errorMessage = error.response?.data?.error || 'Failed to process listing. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // Show loading states
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading property data…</p>
+        <p className="text-xl">Loading property data...</p>
       </div>
     );
+  }
 
-  /* ───────────── UI ───────────── */
+  // Check if user is loaded when in edit mode
+  if (isEditing && !user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading user data...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          {/* header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <h1 className="text-3xl font-bold text-white flex items-center">
               <Home className="mr-3 h-8 w-8" />
               {isEditing ? 'Edit Property Listing' : 'Create New Property Listing'}
             </h1>
             <p className="text-blue-100 mt-2">
-              {isEditing
+              {isEditing 
                 ? 'Update the details below to modify your property listing'
                 : 'Fill in the details below to list your property'}
             </p>
           </div>
-
-          {/* error banner */}
+  
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-8 my-6">
               <div className="flex">
-                <X className="h-5 w-5 text-red-400 flex-shrink-0" />
-                <p className="ml-3 text-sm text-red-700">{error}</p>
+                <div className="flex-shrink-0">
+                  <X className="h-5 w-5 text-red-400" />
+                </div>
+                <div className="ml-3">
+                  <p className="text-sm text-red-700">{error}</p>
+                </div>
               </div>
             </div>
           )}
-
-          {/* form */}
-          <form onSubmit={submit} className="p-8 space-y-10">
-            {/* ─── Basic Information ─── */}
+  
+          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="p-8 space-y-10">
+            {/* Basic Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
+                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
+                    Title
+                  </label>
                   <input
+                    type="text"
+                    id="title"
                     name="title"
-                    value={form.title}
-                    onChange={handleInput}
+                    value={formData.title}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
                     placeholder="e.g., Luxurious Waterfront Penthouse"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="propertyStatus" className="block text-sm font-medium text-gray-700 mb-1">
                     Listing Type
                   </label>
                   <select
+                    id="propertyStatus"
                     name="propertyStatus"
-                    value={form.propertyStatus}
-                    onChange={handleInput}
+                    value={formData.propertyStatus}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="">Select status</option>
-                    {PROPERTY_STATUS.map(s => (
-                      <option key={s.value} value={s.value}>
-                        {s.label}
+                    {PROPERTY_STATUS.map(status => (
+                      <option key={status.value} value={status.value}>
+                        {status.label}
                       </option>
                     ))}
                   </select>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
+                  <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
+                    Price
+                  </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
-                      name="price"
                       type="number"
+                      id="price"
+                      name="price"
+                      value={formData.price}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
                       min="0"
                       step="0.01"
-                      value={form.price}
-                      onChange={handleInput}
-                      required
                       placeholder="Enter price"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+                  <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
+                    Location
+                  </label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
+                      type="text"
+                      id="location"
                       name="location"
-                      value={form.location}
-                      onChange={handleInput}
+                      value={formData.location}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                       placeholder="Full address"
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
                 </div>
               </div>
             </section>
-
-            {/* ─── Property Details ─── */}
+  
+            {/* Property Details Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
                     Property Type
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <select
+                      id="propertyType"
                       name="propertyType"
-                      value={form.propertyType}
-                      onChange={handleInput}
+                      value={formData.propertyType}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select type</option>
-                      {PROPERTY_TYPES.map(t => (
-                        <option key={t.value} value={t.value}>
-                          {t.label}
+                      {PROPERTY_TYPES.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bedrooms
                   </label>
                   <div className="relative">
-                    <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
-                      name="bedrooms"
                       type="number"
-                      min="0"
-                      value={form.bedrooms}
-                      onChange={handleInput}
+                      id="bedrooms"
+                      name="bedrooms"
+                      value={formData.bedrooms}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      placeholder="Number of bedrooms"
                     />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bathrooms
                   </label>
                   <div className="relative">
-                    <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
-                      name="bathrooms"
                       type="number"
+                      id="bathrooms"
+                      name="bathrooms"
+                      value={formData.bathrooms}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
                       min="0"
                       step="0.5"
-                      value={form.bathrooms}
-                      onChange={handleInput}
-                      required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      placeholder="Number of bathrooms"
                     />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
                     Living Area (sq m)
                   </label>
                   <div className="relative">
-                    <SquareFootage className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <SquareFootage className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
                     <input
-                      name="area"
                       type="number"
-                      min="0"
-                      value={form.area}
-                      onChange={handleInput}
+                      id="area"
+                      name="area"
+                      value={formData.area}
+                      onChange={handleInputChange}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                      min="0"
+                      placeholder="Square footage"
                     />
                   </div>
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="yearBuilt" className="block text-sm font-medium text-gray-700 mb-1">
                     Year Built
                   </label>
                   <input
-                    name="yearBuilt"
                     type="number"
+                    id="yearBuilt"
+                    name="yearBuilt"
+                    value={formData.yearBuilt}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="1800"
                     max={new Date().getFullYear()}
-                    value={form.yearBuilt}
-                    onChange={handleInput}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Year of construction"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
                     Lot Size (sq m)
                   </label>
                   <input
-                    name="lotSize"
                     type="number"
+                    id="lotSize"
+                    name="lotSize"
+                    value={formData.lotSize}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     min="0"
-                    value={form.lotSize}
-                    onChange={handleInput}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Total lot size"
                   />
                 </div>
               </div>
             </section>
-
-            {/* ─── Images ─── */}
+  
+            {/* Property Images Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
-              <div
-                {...getRootProps()}
+              <div 
+                {...getRootProps()} 
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
-                ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
+                  ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">Drag & drop images here, or click to select</p>
-                <p className="text-xs text-gray-500">Max 10 images, 5 MB each (JPG, PNG, WebP)</p>
+                <p className="mt-2 text-sm text-gray-600">
+                  Drag & drop images here, or click to select files
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Maximum 10 images, up to 5MB each. Supported formats: JPG, PNG, WebP
+                </p>
               </div>
-
-              {previews.length > 0 && (
+  
+              {previewImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {previews.map((src, i) => (
-                    <div key={src} className="relative group">
+                  {previewImages.map((preview, index) => (
+                    <div key={preview} className="relative group">
                       <img
-                        src={src}
-                        alt=""
-                        className={`h-24 w-full object-cover rounded-lg ${
-                          i === primary ? 'border-4 border-blue-500' : ''
-                        }`}
+                        src={preview}
+                        alt={`Preview ${index + 1}`}
+                        className={`h-24 w-full object-cover rounded-lg ${index === primaryIndex ? 'border-4 border-blue-500' : ''}`}
                       />
                       <button
                         type="button"
-                        onClick={() => removeImg(i)}
+                        onClick={() => removeImage(index)}
                         className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={14} />
                       </button>
                       <button
                         type="button"
-                        onClick={() => setPrimary(i)}
+                        onClick={() => setPrimaryIndex(index)}
                         className="absolute bottom-1 left-1 bg-blue-500 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity text-xs"
                       >
-                        Set Primary
+                        Set as Primary
                       </button>
                     </div>
                   ))}
                 </div>
               )}
             </section>
-
-            {/* ─── Amenities ─── */}
+  
+            {/* Amenities Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {AMENITIES.map(a => (
-                  <label key={a.id} className="flex items-center space-x-2">
+                {AMENITIES.map((amenity) => (
+                  <div key={amenity.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={form.amenities.includes(a.id)}
-                      onChange={() => toggleAmenity(a.id)}
-                      className="h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      id={`amenity-${amenity.id}`}
+                      name="amenities"
+                      value={amenity.id}
+                      checked={formData.amenities.includes(amenity.id)}
+                      onChange={() => handleCheckboxChange(amenity.id)}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <span className="text-sm text-gray-700">{a.label}</span>
-                  </label>
+                    <label htmlFor={`amenity-${amenity.id}`} className="text-sm text-gray-700">
+                      {amenity.label}
+                    </label>
+                  </div>
                 ))}
               </div>
             </section>
-
-            {/* ─── Description ─── */}
+  
+            {/* Description Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
+                id="description"
                 name="description"
+                value={formData.description}
+                onChange={handleInputChange}
                 rows={6}
-                value={form.description}
-                onChange={handleInput}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
-                placeholder="Provide a detailed description…"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                placeholder="Provide a detailed description of the property..."
               />
             </section>
-
-            {/* ─── Contact ─── */}
+  
+            {/* Contact Information Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
+                    Email
+                  </label>
                   <input
-                    name="contactEmail"
                     type="email"
-                    value={form.contactEmail}
-                    onChange={handleInput}
+                    id="contactEmail"
+                    name="contactEmail"
+                    value={formData.contactEmail}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
-                    placeholder="you@example.com"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your email address"
                   />
                 </div>
-
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-                  <div className="flex">
-                    <select
-                      value={prefix}
-                      onChange={e => setPrefix(e.target.value)}
-                      className="mr-2 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
-                    >
-                      {COUNTRY_CODES.map(c => (
-                        <option key={c.code} value={c.code}>
-                          {c.label}
-                        </option>
-                      ))}
-                    </select>
-                    <input
-                      name="contactPhone"
-                      type="tel"
-                      pattern="\d{4,}" // min 4 digits
-                      value={form.contactPhone}
-                      onChange={handleInput}
-                      required
-                      placeholder="12345678"
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                    />
-                  </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    Enter number without prefix; choose prefix on left.
-                  </p>
+                  <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
+                    Phone
+                  </label>
+                  <input
+                    type="tel"
+                    id="contactPhone"
+                    name="contactPhone"
+                    value={formData.contactPhone}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    required
+                    placeholder="Your phone number"
+                  />
                 </div>
               </div>
             </section>
-
-            {/* ─── Virtual Tour & Video ─── */}
+  
+            {/* Virtual Tour & Video Section */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="virtualTourUrl" className="block text-sm font-medium text-gray-700 mb-1">
                     Virtual Tour URL (optional)
                   </label>
                   <input
-                    name="virtualTourUrl"
                     type="url"
-                    value={form.virtualTourUrl}
-                    onChange={handleInput}
-                    placeholder="Matterport or similar link"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    id="virtualTourUrl"
+                    name="virtualTourUrl"
+                    value={formData.virtualTourUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., Matterport or similar virtual tour link"
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                  <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-1">
                     Video URL (optional)
                   </label>
                   <input
-                    name="videoUrl"
                     type="url"
-                    value={form.videoUrl}
-                    onChange={handleInput}
-                    placeholder="YouTube or Vimeo link"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    id="videoUrl"
+                    name="videoUrl"
+                    value={formData.videoUrl}
+                    onChange={handleInputChange}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="e.g., YouTube or Vimeo video link"
                   />
                 </div>
               </div>
             </section>
-
-            {/* ─── submit ─── */}
+  
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
-                disabled={submitting}
-                className={`flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
-                  ${
-                    submitting
-                      ? 'bg-blue-400 cursor-not-allowed'
-                      : 'bg-blue-600 hover:bg-blue-700'
-                  } transition-colors shadow-lg`}
+                disabled={isSubmitting}
+                className={`
+                  flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
+                  ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'}
+                  transition-colors duration-200 shadow-lg
+                `}
               >
-                {submitting ? (
+                {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin -ml-1 mr-3 h-6 w-6" />
-                    {isEditing ? 'Updating…' : 'Creating…'}
+                    {isEditing ? 'Updating Listing...' : 'Creating Listing...'}
                   </>
-                ) : isEditing ? (
-                  'Update Listing'
                 ) : (
-                  'Create Listing'
+                  isEditing ? 'Update Listing' : 'Create Listing'
                 )}
               </button>
             </div>
@@ -724,6 +831,6 @@ function CreateListing() {
       </div>
     </div>
   );
-}
+};
 
 export default CreateListing;

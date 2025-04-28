@@ -445,46 +445,38 @@ const PropertyDetails = () => {
             {/* ─── sidebar ─── */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm sticky top-24">
-                <h3 className="text-xl font-bold mb-6">Listing Owner</h3>
-                {property.owner ? (
+                <h3 className="text-xl font-bold mb-6">Contact Information</h3>
+                {property.contact_phone || property.contact_email ? (
                   <div className="space-y-4">
-                    {property.owner.name && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Name</p>
-                        <p className="text-gray-900 font-medium">
-                          {property.owner.name}
-                        </p>
-                      </div>
-                    )}
-                    {property.owner.phone && (
+                    {property.contact_phone && (
                       <div>
                         <p className="text-gray-500 text-sm uppercase">Phone</p>
                         <p className="text-gray-900 font-medium">
                           <a
-                            href={`tel:${property.owner.phone}`}
+                            href={`tel:${property.contact_phone}`}
                             className="text-emerald-600"
                           >
-                            {property.owner.phone}
+                            {property.contact_phone}
                           </a>
                         </p>
                       </div>
                     )}
-                    {property.owner.email && (
+                    {property.contact_email && (
                       <div>
                         <p className="text-gray-500 text-sm uppercase">Email</p>
                         <p className="text-gray-900 font-medium">
                           <a
-                            href={`mailto:${property.owner.email}`}
+                            href={`mailto:${property.contact_email}`}
                             className="text-emerald-600"
                           >
-                            {property.owner.email}
+                            {property.contact_email}
                           </a>
                         </p>
                       </div>
                     )}
                   </div>
                 ) : (
-                  <p className="text-gray-600">Owner details not available.</p>
+                  <p className="text-gray-600">Contact details not provided.</p>
                 )}
               </div>
             </div>
