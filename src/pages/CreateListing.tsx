@@ -134,7 +134,6 @@ const DEFAULT_FORM_STATE: ListingForm = {
 };
 
 /* ───────────── component ───────────── */
-export default function CreateListing() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
