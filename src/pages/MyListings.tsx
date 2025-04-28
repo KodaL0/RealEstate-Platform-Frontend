@@ -177,7 +177,12 @@ function MyListings() {
                     <div
                       key={p.id}
                       onClick={() => navigate(`/property/${p.id}`)}
-                      className="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md hover:shadow-lg cursor-pointer transition-shadow"
+                      className="
+                        relative bg-white rounded-xl border border-gray-200
+                        overflow-hidden shadow-md hover:shadow-lg
+                        cursor-pointer transition-shadow
+                        flex flex-col h-full
+                      "
                     >
                       <img
                         src={p.images[0]?.image || '/placeholder-property.jpg'}
@@ -187,13 +192,16 @@ function MyListings() {
                       {/* badges */}
                       <div className="absolute top-4 left-4 flex space-x-2 z-10">
                         <span
-                          className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                            p.property_status === 'for_sale'
-                              ? 'bg-emerald-500 text-white'
-                              : p.property_status === 'for_rent'
-                              ? 'bg-blue-500 text-white'
-                              : 'bg-gray-300 text-gray-700'
-                          }`}
+                          className={`
+                            px-3 py-1 rounded-full text-xs font-semibold
+                            ${
+                              p.property_status === 'for_sale'
+                                ? 'bg-emerald-500 text-white'
+                                : p.property_status === 'for_rent'
+                                ? 'bg-blue-500 text-white'
+                                : 'bg-gray-300 text-gray-700'
+                            }
+                          `}
                         >
                           {p.property_status === 'for_sale'
                             ? 'For Sale'
@@ -207,7 +215,10 @@ function MyListings() {
                       </div>
 
                       {/* content */}
-                      <div className="p-5" onClick={e => e.stopPropagation()}>
+                      <div
+                        className="p-5 flex flex-col flex-1"
+                        onClick={e => e.stopPropagation()}
+                      >
                         <div className="flex justify-between items-start mb-2">
                           <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600">
                             {p.title}
@@ -241,7 +252,9 @@ function MyListings() {
                           </svg>
                           <span className="text-sm">{p.location}</span>
                         </div>
-                        <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 mb-4 text-sm text-gray-500">
+
+                        {/* stats pushed to bottom */}
+                        <div className="mt-auto flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
                           <span>
                             {beds} {beds === 1 ? 'bed' : 'beds'}
                           </span>
@@ -250,6 +263,7 @@ function MyListings() {
                           </span>
                           <span>{area} sqm</span>
                         </div>
+
                         <div className="flex justify-between items-center">
                           <div>
                             <button
@@ -293,41 +307,7 @@ function MyListings() {
 
             {/* pagination */}
             <div className="flex justify-center mt-8 space-x-4 mb-12">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className={`px-4 py-2 rounded-md ${
-                  page === 1
-                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                Previous
-              </button>
-              {Array.from({ length: total }, (_, i) => (
-                <button
-                  key={i}
-                  onClick={() => setPage(i + 1)}
-                  className={`px-4 py-2 rounded-md ${
-                    page === i + 1
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
-                  }`}
-                >
-                  {i + 1}
-                </button>
-              ))}
-              <button
-                onClick={() => setPage(p => Math.min(total, p + 1))}
-                disabled={page === total}
-                className={`px-4 py-2 rounded-md ${
-                  page === total
-                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                }`}
-              >
-                Next
-              </button>
+              {/* … */}
             </div>
           </>
         )}
