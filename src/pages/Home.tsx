@@ -150,49 +150,6 @@ const Home = () => {
         </div>
       </section>
 
-
-      {/* Newsletter Subscription Section */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl overflow-hidden shadow-xl">
-            <div className="flex flex-col md:flex-row items-center">
-              <div className="md:w-1/2 p-8 md:p-12">
-                <div className="bg-white/10 backdrop-blur-sm w-16 h-16 rounded-full flex items-center justify-center mb-6">
-                  <Mail className="h-8 w-8 text-white" />
-                </div>
-                <h2 className="text-2xl md:text-3xl font-bold text-white mb-4">Subscribe to Our Newsletter</h2>
-                <p className="text-white/90 mb-6">
-                  Stay updated with the latest property listings, market trends, and exclusive offers.
-                </p>
-                <form onSubmit={handleSubmit} className="flex flex-col sm:flex-row gap-3">
-                  <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Enter your email"
-                    required
-                    className="flex-grow py-3 px-4 rounded-lg focus:outline-none focus:ring-2 focus:ring-white/50"
-                  />
-                  <button
-                    type="submit"
-                    className="bg-white text-blue-600 hover:bg-blue-50 px-6 py-3 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
-                  >
-                    Subscribe
-                  </button>
-                </form>
-              </div>
-              <div className="hidden md:block md:w-1/2 h-full">
-                <img
-                  src="https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80"
-                  alt="Newsletter"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* Feedback Form Section */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
