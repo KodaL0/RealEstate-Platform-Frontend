@@ -292,7 +292,7 @@ function Home() {
               </div> */}
 
               {/* form */}
-              <div className="md:w-1/2 p-8 md:p-12">
+      {/*  <div className="md:w-1/2 p-8 md:p-12">
                 <form className="space-y-4">
                   <div>
                     <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
