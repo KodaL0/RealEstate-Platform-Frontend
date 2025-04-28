@@ -264,12 +264,12 @@ function Home() {
       </section>
 
       {/* ───────────── Feedback Form Section ───────────── */}
-      <section className="py-20 bg-gray-50">
+      {/* <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
             <div className="flex flex-col md:flex-row">
               {/* contact details */}
-              <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-12 text-white">
+      {/* <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-12 text-white">
                 <h2 className="text-2xl md:text-3xl font-bold mb-4">We Value Your Feedback</h2>
                 <p className="mb-6 text-white/90">
                   Your opinions help us improve our services and provide a better experience for all our clients.
@@ -289,7 +289,7 @@ function Home() {
                     <span>Cyprus</span>
                   </div>
                 </div>
-              </div>
+              </div> */}
 
               {/* form */}
               <div className="md:w-1/2 p-8 md:p-12">
