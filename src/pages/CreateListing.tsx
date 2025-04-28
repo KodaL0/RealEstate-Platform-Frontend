@@ -91,15 +91,15 @@ const AMENITIES = [
 
 /* small list of codes – extend as needed */
 const COUNTRY_CODES = [
-  { code: '+357', label: '🇨🇾 +357' },
-  { code: '+1',   label: '🇺🇸 +1' },
-  { code: '+44',  label: '🇬🇧 +44' },
-  { code: '+30',  label: '🇬🇷 +30' },
-  { code: '+49',  label: '🇩🇪 +49' },
-  { code: '+33',  label: '🇫🇷 +33' },
-  { code: '+39',  label: '🇮🇹 +39' },
-  { code: '+61',  label: '🇦🇺 +61' },
-  { code: '+91',  label: '🇮🇳 +91' },
+  { code: '+357', label: '🇨🇾' },
+  { code: '+1',   label: '🇺🇸' },
+  { code: '+44',  label: '🇬🇧' },
+  { code: '+30',  label: '🇬🇷' },
+  { code: '+49',  label: '🇩🇪' },
+  { code: '+33',  label: '🇫🇷' },
+  { code: '+39',  label: '🇮🇹' },
+  { code: '+61',  label: '🇦🇺' },
+  { code: '+91',  label: '🇮🇳' },
 ];
 
 /* ───────────── defaults ───────────── */
