@@ -3,66 +3,69 @@
 // ───────────────────────────────────────────────────────────────
 
 // Global Leaflet marker icon fix
-import '../components/leafletMarkerFix';
+import "../components/leafletMarkerFix";
 
-import { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+} from "react";
+import { useParams, Link } from "react-router-dom";
 import {
   MapPin, Bed, Bath, Square, Calendar, Heart, Share2,
   CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
-  Flower, Sun, UserCheck, Anchor
-} from 'lucide-react';
-import { apiClient } from '../middleware/auth';
-import { Property } from '../types';
-import MapView from '../components/MapView';
-import { useUser } from '../context/UserContext';
+  Flower, Sun, UserCheck, Anchor,
+  X, ArrowLeft, ArrowRight             // ← NEW for light-box
+} from "lucide-react";
+import { apiClient } from "../middleware/auth";
+import { Property } from "../types";
+import MapView from "../components/MapView";
+import { useUser } from "../context/UserContext";
 
-/* ───────────── helpers ───────────── */
+/* ───────────── helpers (unchanged) ───────────── */
 
 async function geocodeAddress(address: string) {
   const q = encodeURIComponent(address);
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?q=${q}&format=json`
-  );
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`);
   const json = await res.json();
   if (json?.length) return { lat: +json[0].lat, lng: +json[0].lon };
-  throw new Error('geocoding failed');
+  throw new Error("geocoding failed");
 }
 
-// force raw image → { image: string }
 const normaliseImages = (imgs: any[] = []) =>
-  imgs.map(i => (typeof i === 'string' ? { image: i } : i));
+  imgs.map(i => (typeof i === "string" ? { image: i } : i));
 
 const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
-  title: raw?.title ?? 'Untitled Property',
-  description: raw?.description ?? '',
+  title: raw?.title ?? "Untitled Property",
+  description: raw?.description ?? "",
   price: raw?.price ? +raw.price : 0,
-  location: raw?.location ?? '',
-  property_type: raw?.property_type ?? '',
+  location: raw?.location ?? "",
+  property_type: raw?.property_type ?? "",
   bedrooms: raw?.bedrooms ?? 0,
   bathrooms: raw?.bathrooms ? +raw.bathrooms : 0,
   area: raw?.area ? +raw.area : 0,
-  year_built: raw?.year_built ?? '',
+  year_built: raw?.year_built ?? "",
   parking_spaces: raw?.parking_spaces ?? 0,
-  lot_size: raw?.lot_size ?? '',
-  property_status: raw?.property_status ?? 'unavailable',
-  energy_rating: raw?.energy_rating ?? '',
-  construction_material: raw?.construction_material ?? '',
-  floor_level: raw?.floor_level ?? '',
-  total_floors: raw?.total_floors ?? '',
-  available_from: raw?.available_from ?? '',
-  contact_phone: raw?.contact_phone ?? '',
-  contact_email: raw?.contact_email ?? '',
-  virtual_tour_url: raw?.virtual_tour_url ?? '',
-  video_url: raw?.video_url ?? '',
+  lot_size: raw?.lot_size ?? "",
+  property_status: raw?.property_status ?? "unavailable",
+  energy_rating: raw?.energy_rating ?? "",
+  construction_material: raw?.construction_material ?? "",
+  floor_level: raw?.floor_level ?? "",
+  total_floors: raw?.total_floors ?? "",
+  available_from: raw?.available_from ?? "",
+  contact_phone: raw?.contact_phone ?? "",
+  contact_email: raw?.contact_email ?? "",
+  virtual_tour_url: raw?.virtual_tour_url ?? "",
+  video_url: raw?.video_url ?? "",
   amenities: raw?.amenities ?? [],
   additional_features: raw?.additional_features ?? [],
   owner: raw?.owner ?? null,
   is_published: raw?.is_published ?? false,
-  created_at: raw?.created_at ?? '',
-  updated_at: raw?.updated_at ?? '',
+  created_at: raw?.created_at ?? "",
+  updated_at: raw?.updated_at ?? "",
   images: normaliseImages(raw?.images),
 });
 
@@ -104,17 +107,21 @@ const PropertyDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  /* fetch property */
+  /* NEW ▸ light-box gallery state */
+  const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
+
+  /* ───────── fetch property (unchanged) ───────── */
   useEffect(() => {
     if (!id || userLoading) return;
 
-    const API = 'https://propertprodjango.onrender.com/api';
+    const API = "https://propertprodjango.onrender.com/api";
 
     const scanEndpoint = async (url: string) => {
       const res = await fetch(url);
       if (!res.ok) return null;
       const text = await res.text();
-      if (text.includes('<html')) return null;
+      if (text.includes("<html")) return null;
       const json = JSON.parse(text);
       const list = Array.isArray(json) ? json : json.results ?? [];
       return list.find((p: any) => p.id.toString() === id) ?? null;
@@ -128,7 +135,7 @@ const PropertyDetails = () => {
           (await scanEndpoint(`${API}/properties/rent`));
 
         if (!raw && user) {
-          const my = await apiClient.get('/properties/my-properties');
+          const my = await apiClient.get("/properties/my-properties");
           const mine = Array.isArray(my.data) ? my.data : my.data.results ?? [];
           raw = mine.find((p: any) => p.id.toString() === id) ?? null;
         }
@@ -141,7 +148,7 @@ const PropertyDetails = () => {
             try {
               setCoords(await geocodeAddress(mapped.location));
             } catch (e) {
-              console.error('geocode fail', e);
+              console.error("geocode fail", e);
             }
           }
         } else {
@@ -158,7 +165,33 @@ const PropertyDetails = () => {
     fetchData();
   }, [id, user, userLoading]);
 
-  /* early states */
+  /* ───── light-box helpers ───── */
+  const totalImages = property?.images.length ?? 0;
+  const openLightbox = (idx: number) => {
+    setLightboxIdx(idx);
+    setLightboxOpen(true);
+  };
+  const closeLightbox = () => setLightboxOpen(false);
+  const prevImg = useCallback(() => {
+    setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1));
+  }, [totalImages]);
+  const nextImg = useCallback(() => {
+    setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1));
+  }, [totalImages]);
+
+  /* keyboard navigation when overlay open */
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowRight") nextImg();
+      if (e.key === "ArrowLeft") prevImg();
+      if (e.key === "Escape") closeLightbox();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, nextImg, prevImg]);
+
+  /* ───── early states ───── */
   if (loading || userLoading) {
     return (
       <div className="pt-20 min-h-screen flex justify-center items-center">
@@ -182,15 +215,15 @@ const PropertyDetails = () => {
     );
   }
 
-  /* image helpers */
+  /* ───── image helpers ───── */
   const toUrl = (img: { image: string }) => img.image;
   const mainUrl =
-    property.images.length > 0 ? toUrl(property.images[activeImage]) : '';
+    property.images.length > 0 ? toUrl(property.images[activeImage]) : "";
   const thumbnails = property.images
     .map((img, idx) => ({ idx, url: toUrl(img) }))
     .filter(t => t.idx !== activeImage);
 
-  /* notice */
+  /* unpublished notice */
   const unpublished =
     !property.is_published && (
       <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
@@ -200,42 +233,77 @@ const PropertyDetails = () => {
       </div>
     );
 
-  /* render */
+  /* ───────── render ───────── */
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
+      {/* ───── Light-box Overlay ───── */}
+      {lightboxOpen && (
+        <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
+          <button
+            onClick={closeLightbox}
+            className="absolute top-6 right-6 text-white hover:text-red-400"
+          >
+            <X className="w-8 h-8" />
+          </button>
+
+          <button
+            onClick={prevImg}
+            className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+          >
+            <ArrowLeft className="w-10 h-10" />
+          </button>
+
+          <img
+            src={toUrl(property.images[lightboxIdx])}
+            alt=""
+            className="max-h-[80vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
+          />
+
+          <button
+            onClick={nextImg}
+            className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+          >
+            <ArrowRight className="w-10 h-10" />
+          </button>
+        </div>
+      )}
+
       <div className="container mx-auto px-4 py-8">
         {unpublished}
 
-        {/* ───── images ───── */}
+        {/* ───── images section ───── */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* main */}
+            {/* main image */}
             <div className="lg:w-2/3">
-              <div className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden">
+              <div
+                className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden cursor-zoom-in"
+                onClick={() => openLightbox(activeImage)}
+              >
                 <img
                   src={
                     mainUrl ||
-                    'https://via.placeholder.com/800x600?text=No+Image+Available'
+                    "https://via.placeholder.com/800x600?text=No+Image+Available"
                   }
                   className="w-full h-full object-cover"
                   alt=""
                 />
+
                 <div className="absolute top-4 left-4 flex gap-2 z-30">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === 'for_sale'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-blue-500 text-white'
+                      property.property_status === "for_sale"
+                        ? "bg-emerald-500 text-white"
+                        : "bg-blue-500 text-white"
                     }`}
                   >
-                    {property.property_status === 'for_sale'
-                      ? 'For Sale'
-                      : 'For Rent'}
+                    {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
+
                 <div className="absolute top-4 right-4 flex gap-2 z-30">
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500" />
@@ -247,13 +315,16 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* thumbs */}
+            {/* thumbnails */}
             <div className="lg:w-1/3 grid grid-cols-2 gap-4">
               {thumbnails.slice(0, 4).map((t, i) => (
                 <div
                   key={t.idx}
                   className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
-                  onClick={() => setActiveImage(t.idx)}
+                  onClick={() => {
+                    setActiveImage(t.idx);
+                    openLightbox(t.idx);
+                  }}
                 >
                   <img
                     src={t.url}
@@ -271,13 +342,13 @@ const PropertyDetails = () => {
           </div>
         </section>
 
-        {/* ───── details ───── */}
+        {/* ───── details / description / amenities / map ───── */}
         <section className="mt-8">
           <div className="flex flex-col lg:flex-row lg:gap-8">
-            {/* content */}
+            {/* ─── content ─── */}
             <div className="lg:w-2/3">
+              {/* basic info */}
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                {/* header */}
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -292,7 +363,7 @@ const PropertyDetails = () => {
                     €
                     {Number.isFinite(property.price)
                       ? property.price.toLocaleString()
-                      : '0'}
+                      : "0"}
                   </p>
                 </div>
 
@@ -301,14 +372,14 @@ const PropertyDetails = () => {
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
                     <span>
-                      {property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}
+                      {property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Bath className="h-5 w-5 mr-2 text-gray-500" />
                     <span>
-                      {property.bathrooms}{' '}
-                      {property.bathrooms === 1 ? 'Bath' : 'Baths'}
+                      {property.bathrooms}{" "}
+                      {property.bathrooms === 1 ? "Bath" : "Baths"}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
@@ -316,7 +387,7 @@ const PropertyDetails = () => {
                     <span>
                       {Number.isFinite(property.area)
                         ? property.area.toLocaleString()
-                        : '0'}{' '}
+                        : "0"}{" "}
                       sqft
                     </span>
                   </div>
@@ -325,7 +396,7 @@ const PropertyDetails = () => {
                     <span>
                       {property.year_built
                         ? `Built in ${property.year_built}`
-                        : 'Year built n/a'}
+                        : "Year built n/a"}
                     </span>
                   </div>
                 </div>
@@ -360,7 +431,9 @@ const PropertyDetails = () => {
                 {coords ? (
                   <MapView lat={coords.lat} lng={coords.lng} />
                 ) : (
-                  <p className="text-gray-600">Location coordinates unavailable.</p>
+                  <p className="text-gray-600">
+                    Location coordinates unavailable.
+                  </p>
                 )}
                 <div className="flex items-start mt-4">
                   <MapPin className="h-5 w-5 mr-2 text-gray-500" />
@@ -369,7 +442,7 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* sidebar */}
+            {/* ─── sidebar ─── */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm sticky top-24">
                 <h3 className="text-xl font-bold mb-6">Listing Owner</h3>
