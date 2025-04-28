@@ -1,11 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ArrowRight, Building, Home as HomeIcon, Briefcase, Award, Mail, Phone, MapPin, Star, ChevronRight } from 'lucide-react';
+import { Search, ArrowRight, Building, Home as HomeIcon, Briefcase, Award, Mail, Phone, MapPin, Star, ChevronRight, Loader2 } from 'lucide-react';
 import PropertyCard from '../components/PropertyCard';
-import { featuredProperties, testimonials } from '../data/properties';
+import { testimonials } from '../data/properties';
+import { Property } from '../types';
+
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
 const Home = () => {
   const [email, setEmail] = useState('');
+  const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const stats = [
     { id: 1, value: "2,500+", label: "Properties Sold" },
@@ -13,6 +19,28 @@ const Home = () => {
     { id: 3, value: "15+", label: "Years of Experience" },
     { id: 4, value: "$1.2B+", label: "Sales Volume" }
   ];
+
+  useEffect(() => {
+    const fetchFeaturedProperties = async () => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const response = await fetch(`${API_BASE_URL}/properties/featured/`);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        const data = await response.json();
+        setFeaturedProperties(data.results || data);
+      } catch (err) {
+        console.error("Error fetching featured properties:", err);
+        setError(err instanceof Error ? err.message : "An unknown error occurred");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchFeaturedProperties();
+  }, []);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -97,11 +125,27 @@ const Home = () => {
             </Link>
           </div>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {featuredProperties.map(property => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          {isLoading && (
+            <div className="flex justify-center items-center h-64">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+            </div>
+          )}
+          {error && (
+            <div className="text-center text-red-600 bg-red-100 p-4 rounded-lg">
+              <p>Could not load featured properties: {error}</p>
+            </div>
+          )}
+          {!isLoading && !error && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {featuredProperties.length > 0 ? (
+                featuredProperties.map(property => (
+                  <PropertyCard key={property.id} property={property} />
+                ))
+              ) : (
+                <p className="col-span-full text-center text-gray-500">No featured properties available at the moment.</p>
+              )}
+            </div>
+          )}
         </div>
       </section>
 
