@@ -27,17 +27,12 @@ function Home() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
   const [page,     setPage]     = useState(1);
+  const [searchTerm, setSearchTerm] = useState("");
 
   /* ref to scroll back to the section top */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-  /* mini-stats */
-  const stats = [
-    { id: 1, value: "2,500+", label: "Properties Sold" },
-    { id: 2, value: "98%",    label: "Client Satisfaction" },
-    { id: 3, value: "15+",    label: "Years of Experience" },
-    { id: 4, value: "$1.2B+", label: "Sales Volume" },
-  ];
+
 
   /* ───────────── fetch featured properties ───────────── */
   useEffect(() => {
@@ -111,18 +106,20 @@ function Home() {
                       type="text"
                       placeholder="Enter an address, city, or ZIP code"
                       className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
                     />
                   </div>
                 </div>
                 <div className="flex space-x-4">
                   <Link
-                    to="/buy"
+                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Buy
                   </Link>
                   <Link
-                    to="/rent"
+                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Rent
@@ -358,7 +355,7 @@ function Home() {
             Ready to Find Your Perfect Property?
           </h2>
           <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you’re looking to buy, rent, or invest, our team is here to
+            Whether you're looking to buy, rent, or invest, our team is here to
             help you every step of the way.
           </p>
 
