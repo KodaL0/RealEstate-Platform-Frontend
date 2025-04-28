@@ -233,16 +233,21 @@ const CreateListing = () => {
           const data = response.data;
           const existingImages = data.images || [];
           setPreviewImages(existingImages.map((img: any) => img.image));
-          setExistingImageIds(existingImages.map((img: any) => img.id || img.image)); // Store IDs or URLs
+          setExistingImageIds(existingImages.map((img: any) => img.id || img.image));
           
-          // Find and set primary index based on existing images
           const primary = existingImages.find((img: any) => img.is_primary);
           setPrimaryIndex(primary ? existingImages.indexOf(primary) : 0);
           
-          // Map status from snake_case (backend) to camelCase (frontend state if needed)
           let propertyStatus = data.property_status || '';
           if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
           if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+          
+          // Map amenity labels (received from API) back to IDs for the form state
+          const fetchedAmenities = data.amenities || [];
+          const amenityIds = fetchedAmenities.map((label: string) => {
+            const match = AMENITIES.find(a => a.label.toLowerCase() === label.toLowerCase());
+            return match ? match.id : null; // Return ID if found, null otherwise
+          }).filter(Boolean); // Filter out any nulls (amenities not found in our constant)
           
           // Map API data to form fields
           setFormData({
@@ -254,8 +259,8 @@ const CreateListing = () => {
             bedrooms: data.bedrooms?.toString() || '',
             bathrooms: data.bathrooms?.toString() || '',
             area: data.area?.toString() || '',
-            images: [], // Existing images handled separately
-            amenities: data.amenities || [], // Directly use amenities if they are string IDs
+            images: [], 
+            amenities: amenityIds as string[], // Use the mapped IDs
             yearBuilt: data.year_built?.toString() || '',
             parkingSpaces: data.parking_spaces?.toString() || '',
             lotSize: data.lot_size?.toString() || '',
@@ -280,7 +285,7 @@ const CreateListing = () => {
           setLoading(false);
         });
     }
-  }, [isEditing, id, username]); // Add username dependency
+  }, [isEditing, id, username]);
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
