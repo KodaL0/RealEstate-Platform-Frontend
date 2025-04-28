@@ -598,7 +598,7 @@ const CreateListing = () => {
                 </div>
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
-                    Living Area (sq ft)
+                    Living Area (sq m)
                   </label>
                   <div className="relative">
                     <SquareFootage className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
@@ -633,7 +633,7 @@ const CreateListing = () => {
                 </div>
                 <div>
                   <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
-                    Lot Size (sq ft)
+                    Lot Size (sq m)
                   </label>
                   <input
                     type="number"

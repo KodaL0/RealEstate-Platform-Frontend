@@ -272,7 +272,7 @@ const MyListings = () => {
                       <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 mb-4 text-sm text-gray-500">
                         <span>{p.bedrooms} beds</span>
                         <span>{p.bathrooms} baths</span>
-                        <span>{p.area} sqft</span>
+                        <span>{p.area} sqm</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <div>
