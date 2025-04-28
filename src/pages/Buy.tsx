@@ -323,22 +323,6 @@ const Buy = () => {
           </div>
         )}
       </section>
-
-      {/* CTA Section */}
-      <section className="bg-white py-16">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
-            Can't Find What You're Looking For?
-          </h2>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-8">
-            Our expert agents can help you find the perfect property that meets
-            all your requirements.
-          </p>
-          <button className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-medium transition-colors">
-            Contact an Agent
-          </button>
-        </div>
-      </section>
     </div>
   );
 };
