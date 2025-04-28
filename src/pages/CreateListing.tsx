@@ -61,8 +61,6 @@ const PROPERTY_TYPES = [
 const PROPERTY_STATUS = [
   { value: 'forSale', label: 'For Sale' },
   { value: 'forRent', label: 'For Rent' },
-  { value: 'newConstruction', label: 'New Construction' },
-  { value: 'foreclosure', label: 'Foreclosure' }
 ];
 
 const AMENITIES = [
