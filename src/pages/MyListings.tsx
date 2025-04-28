@@ -78,7 +78,7 @@ function MyListings() {
     })();
   }, [user, userLoading]);
 
-  /* publish / remove (unchanged) */
+  /* publish / remove */
   const handlePublish = async (id: number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Publish this listing?')) return;
@@ -169,9 +169,9 @@ function MyListings() {
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
                 {view.map(p => {
-                  const beds  = cleanNumber(p.bedrooms);
+                  const beds = cleanNumber(p.bedrooms);
                   const baths = cleanNumber(p.bathrooms);
-                  const area  = cleanNumber(p.area);
+                  const area = cleanNumber(p.area);
 
                   return (
                     <div
@@ -189,6 +189,7 @@ function MyListings() {
                         alt={p.title}
                         className="w-full h-64 object-cover"
                       />
+
                       {/* badges */}
                       <div className="absolute top-4 left-4 flex space-x-2 z-10">
                         <span
@@ -219,18 +220,21 @@ function MyListings() {
                         className="p-5 flex flex-col flex-1"
                         onClick={e => e.stopPropagation()}
                       >
-                        <div className="flex justify-between items-start mb-2">
+                        {/* Title + Price */}
+                        <div className="flex justify-between items-start">
                           <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600">
                             {p.title}
                           </h3>
                           <p className="text-lg font-bold text-blue-600">
-                            €
-                            {Number(p.price).toLocaleString(undefined, {
-                              maximumFractionDigits: 0,
-                            })}
+                            €{Number(p.price).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                           </p>
                         </div>
-                        <div className="flex items-center text-gray-500 mb-4">
+
+                        {/* spacer */}
+                        <div className="flex-1" />
+
+                        {/* Location */}
+                        <div className="flex items-center text-gray-500 mb-2">
                           <svg
                             className="w-4 h-4 mr-1"
                             fill="none"
@@ -253,18 +257,15 @@ function MyListings() {
                           <span className="text-sm">{p.location}</span>
                         </div>
 
-                        {/* stats pushed to bottom */}
-                        <div className="mt-auto flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                          <span>
-                            {beds} {beds === 1 ? 'bed' : 'beds'}
-                          </span>
-                          <span>
-                            {baths} {baths === 1 ? 'bath' : 'baths'}
-                          </span>
+                        {/* Stats */}
+                        <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
+                          <span>{beds} {beds === 1 ? 'bed' : 'beds'}</span>
+                          <span>{baths} {baths === 1 ? 'bath' : 'baths'}</span>
                           <span>{area} sqm</span>
                         </div>
 
-                        <div className="flex justify-between items-center">
+                        {/* Actions & Date */}
+                        <div className="flex justify-between items-center mt-2">
                           <div>
                             <button
                               onClick={e => {
@@ -307,7 +308,41 @@ function MyListings() {
 
             {/* pagination */}
             <div className="flex justify-center mt-8 space-x-4 mb-12">
-              {/* … */}
+              <button
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className={`px-4 py-2 rounded-md ${
+                  page === 1
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                Previous
+              </button>
+              {Array.from({ length: total }, (_, i) => (
+                <button
+                  key={i}
+                  onClick={() => setPage(i + 1)}
+                  className={`px-4 py-2 rounded-md ${
+                    page === i + 1
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                  }`}
+                >
+                  {i + 1}
+                </button>
+              ))}
+              <button
+                onClick={() => setPage(p => Math.min(total, p + 1))}
+                disabled={page === total}
+                className={`px-4 py-2 rounded-md ${
+                  page === total
+                    ? 'bg-gray-300 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                }`}
+              >
+                Next
+              </button>
             </div>
           </>
         )}
