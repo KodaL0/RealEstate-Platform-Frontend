@@ -69,7 +69,7 @@ const Navbar = () => {
             <Link
               to="/"
               className={`font-medium ${
-                isActive("/") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
+                isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
               } transition-colors`}
             >
               Home
@@ -78,7 +78,7 @@ const Navbar = () => {
             <Link
               to="/buy"
               className={`font-medium ${
-                isActive("/buy") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
+                isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
               } transition-colors`}
             >
               Buy
@@ -87,7 +87,7 @@ const Navbar = () => {
             <Link
               to="/rent"
               className={`font-medium ${
-                isActive("/rent") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
+                isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
               } transition-colors`}
             >
               Rent
@@ -95,7 +95,7 @@ const Navbar = () => {
 
             {/* ─── Services dropdown (desktop only) ──────────────────────── */}
             <div className="relative group">
-              <button className="flex items-center font-medium text-gray-700 hover:text-blue-600 transition-colors">
+              <button className="flex items-center font-medium text-white-700 hover:text-blue-600 transition-colors">
                 Services <ChevronDown className="ml-1 h-4 w-4" />
               </button>
 
