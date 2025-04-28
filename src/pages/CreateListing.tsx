@@ -86,17 +86,6 @@ const AMENITIES = [
   { id: 'waterfront', label: 'Waterfront', category: 'Location' }
 ];
 
-const ADDITIONAL_FEATURES = [
-  { id: 'smartHome', label: 'Smart Home Technology' },
-  { id: 'solarPanels', label: 'Solar Panels' },
-  { id: 'rainwaterHarvesting', label: 'Rainwater Harvesting' },
-  { id: 'evCharging', label: 'EV Charging Station' },
-  { id: 'soundproofing', label: 'Soundproofing' },
-  { id: 'homeTheater', label: 'Home Theater' },
-  { id: 'wineRoom', label: 'Wine Room' },
-  { id: 'motherInLaw', label: 'Mother-in-law Suite' }
-];
-
 // Default empty form state
 const DEFAULT_FORM_STATE: ListingForm = {
   title: '',
