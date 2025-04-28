@@ -1,24 +1,28 @@
+// ───────────────────────────────────────────────────────────────
+// pages/CreateListing.tsx
+// ───────────────────────────────────────────────────────────────
+
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { 
-  Home, 
-  DollarSign, 
-  MapPin, 
-  Building2, 
-  Bed, 
-  Bath, 
-  DotSquare as SquareFootage, 
+import {
+  Home,
+  DollarSign,
+  MapPin,
+  Building2,
+  Bed,
+  Bath,
+  DotSquare as SquareFootage,
   Upload,
   X,
-  Loader2
+  Loader2,
 } from 'lucide-react';
 
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
-// Define the ListingForm interface
+/* ───────────── types ───────────── */
 interface ListingForm {
   title: string;
   description: string;
@@ -39,13 +43,13 @@ interface ListingForm {
   floorLevel: string;
   totalFloors: string;
   availableFrom: string;
-  contactPhone: string;
+  contactPhone: string; // *local* part, no +code
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
 }
 
-// Reference data constants 
+/* ───────────── reference data ───────────── */
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
@@ -54,7 +58,7 @@ const PROPERTY_TYPES = [
   { value: 'villa', label: 'Villa' },
   { value: 'studio', label: 'Studio' },
   { value: 'duplex', label: 'Duplex' },
-  { value: 'penthouse', label: 'Penthouse' }
+  { value: 'penthouse', label: 'Penthouse' },
 ];
 
 const PROPERTY_STATUS = [
@@ -82,11 +86,24 @@ const AMENITIES = [
   { id: 'roofDeck', label: 'Roof Deck', category: 'Exterior' },
   { id: 'doorman', label: 'Doorman', category: 'Security' },
   { id: 'garage', label: 'Garage', category: 'Parking' },
-  { id: 'waterfront', label: 'Waterfront', category: 'Location' }
+  { id: 'waterfront', label: 'Waterfront', category: 'Location' },
 ];
 
-// Default empty form state
-const DEFAULT_FORM_STATE: Omit<ListingForm, 'additionalFeatures'> = {
+/* small list of codes – extend as needed */
+const COUNTRY_CODES = [
+  { code: '+357', label: '🇨🇾 +357' },
+  { code: '+1',   label: '🇺🇸 +1' },
+  { code: '+44',  label: '🇬🇧 +44' },
+  { code: '+30',  label: '🇬🇷 +30' },
+  { code: '+49',  label: '🇩🇪 +49' },
+  { code: '+33',  label: '🇫🇷 +33' },
+  { code: '+39',  label: '🇮🇹 +39' },
+  { code: '+61',  label: '🇦🇺 +61' },
+  { code: '+91',  label: '🇮🇳 +91' },
+];
+
+/* ───────────── defaults ───────────── */
+const DEFAULT_FORM_STATE: ListingForm = {
   title: '',
   description: '',
   price: '',
@@ -112,348 +129,265 @@ const DEFAULT_FORM_STATE: Omit<ListingForm, 'additionalFeatures'> = {
   videoUrl: '',
 };
 
-const CreateListing = () => {
+/* ───────────── component ───────────── */
+function CreateListing() {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
   const { user } = useUser();
   const username = user?.username || '';
 
-  // Core state
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string>('');
+  /* state */
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<Omit<ListingForm, 'additionalFeatures'>>(DEFAULT_FORM_STATE);
-  
-  // Image handling state
+  const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
+
+  /* NEW – country code state */
+  const [countryCode, setCountryCode] = useState('+357');
+
+  /* image state */
   const [previewImages, setPreviewImages] = useState<string[]>([]);
-  const [primaryIndex, setPrimaryIndex] = useState<number>(0);
+  const [primaryIndex, setPrimaryIndex] = useState(0);
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
 
-  // Handle image uploads
-  const onDrop = useCallback((acceptedFiles: File[]) => {
-    setFormData(prev => ({
-      ...prev,
-      images: [...prev.images, ...acceptedFiles]
-    }));
-    const newPreviews = acceptedFiles.map(file => URL.createObjectURL(file));
-    setPreviewImages(prev => [...prev, ...newPreviews]);
+  /* drop-zone */
+  const onDrop = useCallback((files: File[]) => {
+    setFormData(p => ({ ...p, images: [...p.images, ...files] }));
+    setPreviewImages(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
   }, []);
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 10,
-    maxSize: 5 * 1024 * 1024, // 5MB
+    maxSize: 5 * 1024 * 1024,
   });
 
-  const removeImage = (index: number) => {
-    // Remove from the File array
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-    
-    // If it's a preview URL from the server, revoke it
-    if (index < previewImages.length) {
-      URL.revokeObjectURL(previewImages[index]);
-    }
-    
-    // Remove from preview images
-    setPreviewImages(prev => prev.filter((_, i) => i !== index));
-    
-    // Update existing image IDs if removing an existing image
-    if (index < existingImageIds.length) {
-      setExistingImageIds(prev => prev.filter((_, i) => i !== index));
-    }
-    
-    // Adjust primary index if needed
-    if (index === primaryIndex) {
-      setPrimaryIndex(0);
-    } else if (index < primaryIndex) {
-      setPrimaryIndex(prev => prev - 1);
-    }
+  const removeImage = (idx: number) => {
+    setFormData(p => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
+    if (idx < previewImages.length) URL.revokeObjectURL(previewImages[idx]);
+    setPreviewImages(p => p.filter((_, i) => i !== idx));
+    if (idx < existingImageIds.length)
+      setExistingImageIds(p => p.filter((_, i) => i !== idx));
+    if (idx === primaryIndex) setPrimaryIndex(0);
+    else if (idx < primaryIndex) setPrimaryIndex(i => i - 1);
   };
 
-  // Form field handlers
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  /* generic inputs */
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(p => ({ ...p, [name]: value }));
   };
-
   const handleCheckboxChange = (id: string) => {
-    setFormData(prev => {
-      const currentArray = prev.amenities;
-      const updatedArray = currentArray.includes(id)
-        ? currentArray.filter(item => item !== id)
-        : [...currentArray, id];
-      return { ...prev, amenities: updatedArray };
-    });
+    setFormData(p => ({
+      ...p,
+      amenities: p.amenities.includes(id)
+        ? p.amenities.filter(a => a !== id)
+        : [...p.amenities, id],
+    }));
   };
 
-  // Simple form validation
-  const validateForm = (): boolean => {
-    if (!formData.title.trim()) {
-      setError('Please enter a title');
-      return false;
-    }
-    if (!formData.description.trim()) {
-      setError('Please enter a description');
-      return false;
-    }
-    if (!formData.price || parseFloat(formData.price) <= 0) {
-      setError('Please enter a valid price');
-      return false;
-    }
-    if (!formData.location.trim()) {
-      setError('Please enter a location');
-      return false;
-    }
-    if (!formData.propertyType) {
-      setError('Please select a property type');
-      return false;
-    }
-    if (!formData.propertyStatus) {
-      setError('Please select a property status');
-      return false;
-    }
-    if (formData.images.length === 0 && previewImages.length === 0) {
-      setError('Please upload at least one image');
-      return false;
-    }
+  /* validation */
+  const validateForm = () => {
+    if (!formData.title.trim()) return setError('Please enter a title'), false;
+    if (!formData.description.trim())
+      return setError('Please enter a description'), false;
+    if (!formData.price || +formData.price <= 0)
+      return setError('Please enter a valid price'), false;
+    if (!formData.location.trim())
+      return setError('Please enter a location'), false;
+    if (!formData.propertyType)
+      return setError('Please select a property type'), false;
+    if (!formData.propertyStatus)
+      return setError('Please select a property status'), false;
+    if (formData.images.length === 0 && previewImages.length === 0)
+      return setError('Please upload at least one image'), false;
     return true;
   };
 
-  // Fetch existing data for editing
+  /* fetch for edit */
   useEffect(() => {
-    if (isEditing && id) {
-      setLoading(true);
-      apiClient.get(`/properties/${username}/property/${id}/`)
-        .then(response => {
-          const data = response.data;
-          const existingImages = data.images || [];
-          setPreviewImages(existingImages.map((img: any) => img.image));
-          setExistingImageIds(existingImages.map((img: any) => img.id || img.image));
-          
-          const primary = existingImages.find((img: any) => img.is_primary);
-          setPrimaryIndex(primary ? existingImages.indexOf(primary) : 0);
-          
-          let propertyStatus = data.property_status || '';
-          if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
-          if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
-          
-          // Map amenity labels (received from API) back to IDs for the form state
-          const fetchedAmenities = data.amenities || [];
-          const amenityIds = fetchedAmenities.map((label: string) => {
-            const match = AMENITIES.find(a => a.label.toLowerCase() === label.toLowerCase());
-            return match ? match.id : null; // Return ID if found, null otherwise
-          }).filter(Boolean); // Filter out any nulls (amenities not found in our constant)
-          
-          // Map API data to form fields
-          setFormData({
-            title: data.title || '',
-            description: data.description || '',
-            price: data.price?.toString() || '',
-            location: data.location || '',
-            propertyType: data.property_type || '',
-            bedrooms: data.bedrooms?.toString() || '',
-            bathrooms: data.bathrooms?.toString() || '',
-            area: data.area?.toString() || '',
-            images: [], 
-            amenities: amenityIds as string[], // Use the mapped IDs
-            yearBuilt: data.year_built?.toString() || '',
-            parkingSpaces: data.parking_spaces?.toString() || '',
-            lotSize: data.lot_size?.toString() || '',
-            propertyStatus,
-            energyRating: data.energy_rating || '',
-            constructionMaterial: data.construction_material || '',
-            floorLevel: data.floor_level?.toString() || '',
-            totalFloors: data.total_floors?.toString() || '',
-            availableFrom: data.available_from || '',
-            contactPhone: data.contact_phone || '',
-            contactEmail: data.contact_email || '',
-            virtualTourUrl: data.virtual_tour_url || '',
-            videoUrl: data.video_url || '',
-          });
-        })
-        .catch(error => {
-          console.error("Error fetching listing:", error);
-          toast.error("Could not load property data");
-          setError("Failed to load property data. Please try again.");
-        })
-        .finally(() => {
-          setLoading(false);
+    if (!isEditing || !id) return;
+    setLoading(true);
+    apiClient
+      .get(`/properties/${username}/property/${id}/`)
+      .then(res => {
+        const d = res.data;
+        const imgs = d.images || [];
+        setPreviewImages(imgs.map((i: any) => i.image));
+        setExistingImageIds(imgs.map((i: any) => i.id || i.image));
+        const primary = imgs.find((i: any) => i.is_primary);
+        setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+
+        let propertyStatus = d.property_status || '';
+        if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+        if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+
+        /* split phone to code + local part */
+        let phone = d.contact_phone || '';
+        let cc = countryCode;
+        const m = phone.match(/^\+[\d]{1,4}/);
+        if (m) {
+          cc = m[0];
+          phone = phone.replace(cc, '').trim();
+        }
+        setCountryCode(cc);
+
+        setFormData({
+          ...DEFAULT_FORM_STATE,
+          title: d.title || '',
+          description: d.description || '',
+          price: d.price?.toString() || '',
+          location: d.location || '',
+          propertyType: d.property_type || '',
+          bedrooms: d.bedrooms?.toString() || '',
+          bathrooms: d.bathrooms?.toString() || '',
+          area: d.area?.toString() || '',
+          amenities: (d.amenities || []).map((lab: string) => {
+            const match = AMENITIES.find(a => a.label.toLowerCase() === lab.toLowerCase());
+            return match ? match.id : lab;
+          }),
+          yearBuilt: d.year_built?.toString() || '',
+          parkingSpaces: d.parking_spaces?.toString() || '',
+          lotSize: d.lot_size?.toString() || '',
+          propertyStatus,
+          energyRating: d.energy_rating || '',
+          constructionMaterial: d.construction_material || '',
+          floorLevel: d.floor_level?.toString() || '',
+          totalFloors: d.total_floors?.toString() || '',
+          availableFrom: d.available_from || '',
+          contactPhone: phone,
+          contactEmail: d.contact_email || '',
+          virtualTourUrl: d.virtual_tour_url || '',
+          videoUrl: d.video_url || '',
+          images: [],
         });
-    }
+      })
+      .catch(err => {
+        console.error(err);
+        setError('Failed to load property data. Please try again.');
+      })
+      .finally(() => setLoading(false));
   }, [isEditing, id, username]);
 
-  // Handle form submission
+  /* submit */
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate form
     if (!validateForm()) return;
-    
-    // Require username for editing
-    if (isEditing && !username) {
-      toast.error('User profile data is not available. Please refresh and try again.');
-      return;
-    }
-    
-    setError('');
+    if (isEditing && !username) return toast.error('User not loaded');
+
     setIsSubmitting(true);
-    
+    setError('');
+
     try {
-      const formDataToSend = new FormData();
-      
-      // ---------------- IMAGE HANDLING ----------------
-      
-      // Prepare images with primary first
-      if (formData.images.length > 0) {
-        // Calculate primary index within newly uploaded images
-        const effectivePrimaryIndex = Math.min(primaryIndex, formData.images.length - 1);
-        
-        // Rearrange images so primary is first
-        const orderedImages = [
-          formData.images[effectivePrimaryIndex],
-          ...formData.images.filter((_, i) => i !== effectivePrimaryIndex)
-        ];
-        
-        // Add images to FormData
-        orderedImages.forEach(file => {
-          formDataToSend.append('images[]', file);
+      const fd = new FormData();
+
+      /* images */
+      if (formData.images.length) {
+        const prim = Math.min(primaryIndex, formData.images.length - 1);
+        [formData.images[prim], ...formData.images.filter((_, i) => i !== prim)].forEach(f =>
+          fd.append('images[]', f)
+        );
+      }
+      if (isEditing && previewImages.length) {
+        previewImages.forEach((url, i) => {
+          if (!formData.images.length || i >= formData.images.length) {
+            fd.append('existing_images[]', existingImageIds[i] || url);
+            if (i === primaryIndex)
+              fd.append('primary_image_id', existingImageIds[i] || url);
+          }
         });
       }
-      
-      // Add information about existing images (edit mode)
-      if (isEditing && previewImages.length > 0) {
-        const existingImages = previewImages
-          .filter((_, i) => !formData.images.some((__, j) => i === j))
-          .map((url, i) => ({ 
-            url, 
-            id: existingImageIds[i] || url,
-            isPrimary: i === primaryIndex && primaryIndex >= formData.images.length
-          }));
-        
-        // Add existing image IDs
-        if (existingImages.length > 0) {
-          existingImages.forEach(img => {
-            formDataToSend.append('existing_images[]', img.id);
-            if (img.isPrimary) {
-              formDataToSend.append('primary_image_id', img.id);
-            }
-          });
+      fd.append('primary_is_first', 'true');
+
+      /* rest of fields */
+      Object.entries(formData).forEach(([k, v]) => {
+        if (k === 'images') return;
+        if (k === 'amenities') {
+          (v as string[]).forEach(a => fd.append('amenities[]', a));
+          return;
         }
-      }
-      
-      // Flag primary as first image (simplifies backend logic)
-      formDataToSend.append('primary_is_first', 'true');
-      
-      // ---------------- FORM FIELDS ----------------
-      
-      // Add all other form fields 
-      Object.entries(formData).forEach(([key, value]) => {
-        // Skip images and ensure additionalFeatures is not included
-        if (key !== 'images' /* && key !== 'additionalFeatures' */) { 
-          if (Array.isArray(value)) {
-            // Handle amenities specifically
-            if (key === 'amenities') {
-              value.forEach(item => {
-                formDataToSend.append(`${key}[]`, item);
-              });
-            }
-            // Skip other arrays if any (though none expected now)
-          } else if (value) {
-            formDataToSend.append(key, value.toString());
-          }
-        }
+        if (v) fd.append(k, v.toString());
       });
-      
-      // Determine API endpoint - simplify by using a consistent pattern
-      let endpoint;
-      let method;
-      
-      if (isEditing) {
-        endpoint = `/properties/${username}/property/${id}/edit/`;
-        method = 'put';
-      } else {
-        endpoint = '/properties/create_property/'; 
-        method = 'post';
-      }
-      
-      // Send the request
-      const response = await apiClient[method](endpoint, formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' }
+
+      /* phone */
+      fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
+
+      /* endpoint */
+      const url = isEditing
+        ? `/properties/${username}/property/${id}/edit/`
+        : '/properties/create_property/';
+      const method = isEditing ? 'put' : 'post';
+
+      const res = await apiClient[method](url, fd, {
+        headers: { 'Content-Type': 'multipart/form-data' },
       });
-      
-      if (response.status >= 200 && response.status < 300) {
-        toast.success(isEditing ? 'Listing updated successfully!' : 'Listing created successfully!');
+
+      if (res.status >= 200 && res.status < 300) {
+        toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
         navigate('/my-listings');
       } else {
-        setError(`Unexpected response: ${response.status}`);
+        setError(`Unexpected response ${res.status}`);
       }
-    } catch (error: any) {
-      console.error("Error in form submission:", error);
-      const errorMessage = error.response?.data?.error || 'Failed to process listing. Please try again.';
-      setError(errorMessage);
-      toast.error(errorMessage);
+    } catch (err: any) {
+      console.error(err);
+      setError(err.response?.data?.error || 'Failed to process listing.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Show loading states
-  if (loading) {
+  /* loading screens */
+  if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading property data...</p>
+        <p className="text-xl">Loading property data…</p>
       </div>
     );
-  }
-
-  // Check if user is loaded when in edit mode
-  if (isEditing && !user) {
+  if (isEditing && !user)
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl">Loading user data...</p>
+        <p className="text-xl">Loading user data…</p>
       </div>
     );
-  }
 
+  /* ───────────── JSX ───────────── */
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
+          {/* ===== header ===== */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <h1 className="text-3xl font-bold text-white flex items-center">
               <Home className="mr-3 h-8 w-8" />
               {isEditing ? 'Edit Property Listing' : 'Create New Property Listing'}
             </h1>
             <p className="text-blue-100 mt-2">
-              {isEditing 
-                ? 'Update the details below to modify your property listing'
+              {isEditing
+                ? 'Update the details below to modify your listing'
                 : 'Fill in the details below to list your property'}
             </p>
           </div>
-  
+
+          {/* ===== inline error ===== */}
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mx-8 my-6">
               <div className="flex">
-                <div className="flex-shrink-0">
-                  <X className="h-5 w-5 text-red-400" />
-                </div>
-                <div className="ml-3">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+                <X className="h-5 w-5 text-red-400 flex-shrink-0" />
+                <p className="ml-3 text-sm text-red-700">{error}</p>
               </div>
             </div>
           )}
-  
-          <form onSubmit={handleSubmit} noValidate autoComplete="off" className="p-8 space-y-10">
-            {/* Basic Information Section */}
+
+          {/* ===== form ===== */}
+          <form onSubmit={handleSubmit} className="p-8 space-y-10" noValidate>
+            {/* ――― Basic Information ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* title */}
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
                     Title
@@ -469,6 +403,8 @@ const CreateListing = () => {
                     placeholder="e.g., Luxurious Waterfront Penthouse"
                   />
                 </div>
+
+                {/* listing type */}
                 <div>
                   <label htmlFor="propertyStatus" className="block text-sm font-medium text-gray-700 mb-1">
                     Listing Type
@@ -482,19 +418,21 @@ const CreateListing = () => {
                     required
                   >
                     <option value="">Select status</option>
-                    {PROPERTY_STATUS.map(status => (
-                      <option key={status.value} value={status.value}>
-                        {status.label}
+                    {PROPERTY_STATUS.map(s => (
+                      <option key={s.value} value={s.value}>
+                        {s.label}
                       </option>
                     ))}
                   </select>
                 </div>
+
+                {/* price */}
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
                     Price
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="number"
                       id="price"
@@ -509,12 +447,14 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
+
+                {/* location */}
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                     Location
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="text"
                       id="location"
@@ -529,17 +469,18 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-  
-            {/* Property Details Section */}
+
+            {/* ――― Property Details ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* property type */}
                 <div>
                   <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
                     Property Type
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <select
                       id="propertyType"
                       name="propertyType"
@@ -549,20 +490,22 @@ const CreateListing = () => {
                       required
                     >
                       <option value="">Select type</option>
-                      {PROPERTY_TYPES.map(type => (
-                        <option key={type.value} value={type.value}>
-                          {type.label}
+                      {PROPERTY_TYPES.map(t => (
+                        <option key={t.value} value={t.value}>
+                          {t.label}
                         </option>
                       ))}
                     </select>
                   </div>
                 </div>
+
+                {/* bedrooms */}
                 <div>
                   <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bedrooms
                   </label>
                   <div className="relative">
-                    <Bed className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="number"
                       id="bedrooms"
@@ -576,12 +519,14 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
+
+                {/* bathrooms */}
                 <div>
                   <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
                     Bathrooms
                   </label>
                   <div className="relative">
-                    <Bath className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="number"
                       id="bathrooms"
@@ -596,12 +541,14 @@ const CreateListing = () => {
                     />
                   </div>
                 </div>
+
+                {/* area */}
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
-                    Living Area (sq m)
+                    Living Area (sq&nbsp;m)
                   </label>
                   <div className="relative">
-                    <SquareFootage className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                    <SquareFootage className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
                     <input
                       type="number"
                       id="area"
@@ -611,10 +558,12 @@ const CreateListing = () => {
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       required
                       min="0"
-                      placeholder="Square footage"
+                      placeholder="Square metres"
                     />
                   </div>
                 </div>
+
+                {/* year built */}
                 <div>
                   <label htmlFor="yearBuilt" className="block text-sm font-medium text-gray-700 mb-1">
                     Year Built
@@ -631,9 +580,11 @@ const CreateListing = () => {
                     placeholder="Year of construction"
                   />
                 </div>
+
+                {/* lot size */}
                 <div>
                   <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
-                    Lot Size (sq m)
+                    Lot Size (sq&nbsp;m)
                   </label>
                   <input
                     type="number"
@@ -648,25 +599,25 @@ const CreateListing = () => {
                 </div>
               </div>
             </section>
-  
-            {/* Property Images Section */}
+
+            {/* ――― Property Images ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
-              <div 
-                {...getRootProps()} 
+              <div
+                {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
                   ${isDragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 hover:border-blue-400'}`}
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
                 <p className="mt-2 text-sm text-gray-600">
-                  Drag & drop images here, or click to select files
+                  Drag &amp; drop images here, or click to select files
                 </p>
                 <p className="text-xs text-gray-500 mt-1">
-                  Maximum 10 images, up to 5MB each. Supported formats: JPG, PNG, WebP
+                  Maximum 10 images, up to 5&nbsp;MB each. Supported formats: JPG, PNG, WebP
                 </p>
               </div>
-  
+
               {previewImages.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
                   {previewImages.map((preview, index) => (
@@ -674,7 +625,9 @@ const CreateListing = () => {
                       <img
                         src={preview}
                         alt={`Preview ${index + 1}`}
-                        className={`h-24 w-full object-cover rounded-lg ${index === primaryIndex ? 'border-4 border-blue-500' : ''}`}
+                        className={`h-24 w-full object-cover rounded-lg ${
+                          index === primaryIndex ? 'border-4 border-blue-500' : ''
+                        }`}
                       />
                       <button
                         type="button"
@@ -695,31 +648,29 @@ const CreateListing = () => {
                 </div>
               )}
             </section>
-  
-            {/* Amenities Section */}
+
+            {/* ――― Amenities ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {AMENITIES.map((amenity) => (
-                  <div key={amenity.id} className="flex items-center space-x-2">
+                {AMENITIES.map(a => (
+                  <div key={a.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={`amenity-${amenity.id}`}
-                      name="amenities"
-                      value={amenity.id}
-                      checked={formData.amenities.includes(amenity.id)}
-                      onChange={() => handleCheckboxChange(amenity.id)}
+                      id={`amenity-${a.id}`}
+                      checked={formData.amenities.includes(a.id)}
+                      onChange={() => handleCheckboxChange(a.id)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label htmlFor={`amenity-${amenity.id}`} className="text-sm text-gray-700">
-                      {amenity.label}
+                    <label htmlFor={`amenity-${a.id}`} className="text-sm text-gray-700">
+                      {a.label}
                     </label>
                   </div>
                 ))}
               </div>
             </section>
-  
-            {/* Description Section */}
+
+            {/* ――― Description ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
@@ -730,14 +681,15 @@ const CreateListing = () => {
                 rows={6}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 required
-                placeholder="Provide a detailed description of the property..."
+                placeholder="Provide a detailed description of the property…"
               />
             </section>
-  
-            {/* Contact Information Section */}
+
+            {/* ――― Contact Information ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* email */}
                 <div>
                   <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
                     Email
@@ -750,34 +702,49 @@ const CreateListing = () => {
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     required
-                    placeholder="Your email address"
+                    placeholder="your@email.com"
                   />
                 </div>
+
+                {/* phone with drop-down */}
                 <div>
                   <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
                     Phone
                   </label>
-                  <input
-                    type="tel"
-                    id="contactPhone"
-                    name="contactPhone"
-                    value={formData.contactPhone}
-                    onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    required
-                    placeholder="Your phone number"
-                  />
+                  <div className="flex">
+                    <select
+                      value={countryCode}
+                      onChange={e => setCountryCode(e.target.value)}
+                      className="rounded-l-lg border border-gray-300 bg-gray-100 px-3 text-sm focus:outline-none"
+                    >
+                      {COUNTRY_CODES.map(c => (
+                        <option key={c.code} value={c.code}>
+                          {c.label} {c.code}
+                        </option>
+                      ))}
+                    </select>
+                    <input
+                      type="tel"
+                      id="contactPhone"
+                      name="contactPhone"
+                      value={formData.contactPhone}
+                      onChange={handleInputChange}
+                      className="flex-1 px-4 py-2 border-t border-b border-r border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      required
+                      placeholder="phone number"
+                    />
+                  </div>
                 </div>
               </div>
             </section>
-  
-            {/* Virtual Tour & Video Section */}
+
+            {/* ――― Virtual Tour / Video ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour &amp; Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label htmlFor="virtualTourUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                    Virtual Tour URL (optional)
+                    Virtual&nbsp;Tour&nbsp;URL&nbsp;(optional)
                   </label>
                   <input
                     type="url"
@@ -786,12 +753,12 @@ const CreateListing = () => {
                     value={formData.virtualTourUrl}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., Matterport or similar virtual tour link"
+                    placeholder="e.g., Matterport link"
                   />
                 </div>
                 <div>
                   <label htmlFor="videoUrl" className="block text-sm font-medium text-gray-700 mb-1">
-                    Video URL (optional)
+                    Video&nbsp;URL&nbsp;(optional)
                   </label>
                   <input
                     type="url"
@@ -800,29 +767,30 @@ const CreateListing = () => {
                     value={formData.videoUrl}
                     onChange={handleInputChange}
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="e.g., YouTube or Vimeo video link"
+                    placeholder="e.g., YouTube link"
                   />
                 </div>
               </div>
             </section>
-  
+
+            {/* ――― submit ――― */}
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className={`
-                  flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
-                  ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700 active:bg-blue-800'}
-                  transition-colors duration-200 shadow-lg
-                `}
+                className={`flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
+                  ${isSubmitting ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'}
+                  transition-colors duration-200 shadow-lg`}
               >
                 {isSubmitting ? (
                   <>
                     <Loader2 className="animate-spin -ml-1 mr-3 h-6 w-6" />
-                    {isEditing ? 'Updating Listing...' : 'Creating Listing...'}
+                    {isEditing ? 'Updating Listing…' : 'Creating Listing…'}
                   </>
+                ) : isEditing ? (
+                  'Update Listing'
                 ) : (
-                  isEditing ? 'Update Listing' : 'Create Listing'
+                  'Create Listing'
                 )}
               </button>
             </div>
@@ -831,6 +799,6 @@ const CreateListing = () => {
       </div>
     </div>
   );
-};
+}
 
 export default CreateListing;
