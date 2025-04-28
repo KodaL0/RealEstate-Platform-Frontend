@@ -7,35 +7,46 @@ interface PropertyCardProps {
   featured?: boolean;
 }
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
-  // Destructure common fields; note that the public listing data may have different keys.
-  const { id, title, price, address, bedrooms, bathrooms, area, forSale, listing_type } = property;
+/* helper: turn “2.0” → “2”, keep 1 ½ etc. */
+const cleanNumber = (value: unknown) => {
+  const num = Number(value);
+  if (!Number.isFinite(num)) return value; // fallback to raw
+  return Number.isInteger(num) ? num : num; // 1.5 stays 1.5
+};
 
-  // Use property.images if available; fallback to property.property_images.
+const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false }) => {
+  const {
+    id,
+    title,
+    price,
+    address,
+    bedrooms,
+    bathrooms,
+    area,
+    forSale,
+    listing_type,
+  } = property;
+
   const imageUrl =
-    (property.images &&
-      Array.isArray(property.images) &&
-      property.images.length > 0 &&
-      property.images[0].image) ||
-    (property.property_images &&
-      Array.isArray(property.property_images) &&
-      property.property_images.length > 0 &&
-      property.property_images[0]) ||
+    (Array.isArray(property.images) && property.images[0]?.image) ||
+    (Array.isArray(property.property_images) && property.property_images[0]) ||
     '/placeholder-property.jpg';
 
-  // Determine if the property is for sale.
-  // Preference is given to property.property_status if available.
   const isForSale = property.property_status
     ? property.property_status === 'for_sale'
     : typeof forSale === 'boolean'
     ? forSale
-    : listing_type && listing_type.toLowerCase() === 'sale';
+    : listing_type?.toLowerCase() === 'sale';
 
-  // Use property.property_type if available, otherwise fallback to the "type" field.
-  const propertyType = property.property_type || property.type;
-
-  // Use property.location if it exists; otherwise, fall back to address.
+  const propertyType = property.property_type || (property as any).type;
   const propertyAddress = property.location || address;
+
+  /* numbers cleaned for display */
+  const bedsDisp  = cleanNumber(bedrooms);
+  const bathsDisp = cleanNumber(bathrooms);
+  const areaDisp  = Number.isFinite(Number(area))
+    ? Number(area).toLocaleString()
+    : area;
 
   return (
     <div
@@ -51,7 +62,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
-        {/* Badges at Top-Left */}
+
+        {/* badges */}
         <div className="absolute top-4 left-4 flex space-x-2">
           <span
             className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -64,46 +76,53 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             {propertyType}
           </span>
         </div>
-        {/* Favorite Button at Top-Right */}
-        <button className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-colors">
+
+        {/* favourite */}
+        <button className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
           <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
         </button>
       </div>
 
       <div className="p-5">
-        {/* Title & Price Row */}
+        {/* title + price */}
         <div className="flex justify-between items-start mb-2">
           <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
           <p className="text-lg font-bold text-blue-600">
-            {typeof price === 'number' && isFinite(price) 
+            {Number.isFinite(Number(price))
               ? isForSale
-                ? `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}`
-                : `€${price.toLocaleString('en-US', { maximumFractionDigits: 0 })}/mo`
-              : isForSale ? '€0' : '€0/mo'}
+                ? `€${Number(price).toLocaleString()}`
+                : `€${Number(price).toLocaleString()}/mo`
+              : isForSale
+              ? '€0'
+              : '€0/mo'}
           </p>
         </div>
 
-        {/* Address */}
+        {/* address */}
         <div className="flex items-center text-gray-500 mb-4">
           <MapPin className="h-4 w-4 mr-1" />
           <span className="text-sm">{propertyAddress}</span>
         </div>
 
-        {/* Stats: Beds, Baths, Area */}
+        {/* stats */}
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{bedrooms} {bedrooms === 1 ? 'Bed' : 'Beds'}</span>
+            <span>
+              {bedsDisp} {bedsDisp === 1 ? 'Bed' : 'Beds'}
+            </span>
           </div>
           <div className="flex items-center text-gray-700">
             <Bath className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{bathrooms} {bathrooms === 1 ? 'Bath' : 'Baths'}</span>
+            <span>
+              {bathsDisp} {bathsDisp === 1 ? 'Bath' : 'Baths'}
+            </span>
           </div>
           <div className="flex items-center text-gray-700">
             <Square className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{typeof area === 'number' && isFinite(area) ? area.toLocaleString() : '0'} sq m</span>
+            <span>{areaDisp} sq&nbsp;m</span>
           </div>
         </div>
       </div>
