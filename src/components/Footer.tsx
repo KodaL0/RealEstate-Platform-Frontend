@@ -46,9 +46,6 @@ const Footer = () => {
             <ul className="space-y-3">
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Property Valuation</Link></li>
               <li><Link to="/mortgage-calculator" className="text-gray-400 hover:text-blue-500 transition-colors">Mortgage Calculator</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Property Management </Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Investment Advisory</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Market Analysis</Link></li>
             </ul>
           </div>
 
@@ -57,7 +54,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <Phone className="h-5 w-5 text-blue-500 mr-3 mt-1" />
-                <span className="text-gray-400">+357 94046844</span>
+                <span className="text-gray-400">+357 12345678</span>
               </li>
               <li className="flex items-start">
                 <Mail className="h-5 w-5 text-blue-500 mr-3 mt-1" />
