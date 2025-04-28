@@ -1,9 +1,7 @@
 /* ────────────────────────────────────────────────────────────────
    pages/CreateListing.tsx
-   – full file with:
-     • country-code dropdown for phone
-     • no “Additional Features” section
-     • flexible phone-number length (≥ 4 digits)
+   – phone prefix dropdown, no Additional-Features section, single
+     default export.
    ──────────────────────────────────────────────────────────────── */
 
 import { useState, useCallback, useEffect } from 'react';
@@ -22,34 +20,31 @@ import {
   X,
   Loader2,
 } from 'lucide-react';
-
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
 /* ───────────── reference data ───────────── */
-// country dial-codes shown in the phone selector
 const COUNTRY_CODES = [
-  { code: '+357', label: '🇨🇾 +357' }, // default Cyprus
-  { code: '+1', label: '🇺🇸 +1' },
-  { code: '+44', label: '🇬🇧 +44' },
-  { code: '+30', label: '🇬🇷 +30' },
-  { code: '+49', label: '🇩🇪 +49' },
-  { code: '+33', label: '🇫🇷 +33' },
-  { code: '+39', label: '🇮🇹 +39' },
-  { code: '+61', label: '🇦🇺 +61' },
-  { code: '+91', label: '🇮🇳 +91' },
+  { code: '+357', label: '🇨🇾 +357' },
+  { code: '+1',   label: '🇺🇸 +1' },
+  { code: '+44',  label: '🇬🇧 +44' },
+  { code: '+30',  label: '🇬🇷 +30' },
+  { code: '+49',  label: '🇩🇪 +49' },
+  { code: '+33',  label: '🇫🇷 +33' },
+  { code: '+39',  label: '🇮🇹 +39' },
+  { code: '+61',  label: '🇦🇺 +61' },
+  { code: '+91',  label: '🇮🇳 +91' },
 ];
 
-// property-type, status & amenity lists
 const PROPERTY_TYPES = [
-  { value: 'house',      label: 'House' },
-  { value: 'apartment',  label: 'Apartment' },
-  { value: 'condo',      label: 'Condo' },
-  { value: 'townhouse',  label: 'Townhouse' },
-  { value: 'villa',      label: 'Villa' },
-  { value: 'studio',     label: 'Studio' },
-  { value: 'duplex',     label: 'Duplex' },
-  { value: 'penthouse',  label: 'Penthouse' },
+  { value: 'house',     label: 'House' },
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'condo',     label: 'Condo' },
+  { value: 'townhouse', label: 'Townhouse' },
+  { value: 'villa',     label: 'Villa' },
+  { value: 'studio',    label: 'Studio' },
+  { value: 'duplex',    label: 'Duplex' },
+  { value: 'penthouse', label: 'Penthouse' },
 ];
 
 const PROPERTY_STATUS = [
@@ -80,7 +75,7 @@ const AMENITIES = [
   { id: 'waterfront', label: 'Waterfront' },
 ];
 
-/* ───────────── form types & defaults ───────────── */
+/* ───────────── types & defaults ───────────── */
 interface ListingForm {
   title: string;
   description: string;
@@ -101,13 +96,13 @@ interface ListingForm {
   floorLevel: string;
   totalFloors: string;
   availableFrom: string;
-  contactPhone: string;       // numeric part only
+  contactPhone: string; // numeric part only
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
 }
 
-const DEFAULT_FORM_STATE: ListingForm = {
+const BLANK_FORM: ListingForm = {
   title: '',
   description: '',
   price: '',
@@ -133,145 +128,126 @@ const DEFAULT_FORM_STATE: ListingForm = {
   videoUrl: '',
 };
 
-/* ───────────── component ───────────── */
-  const navigate = useNavigate();
-  const { id } = useParams<{ id?: string }>();
-  const isEditing = Boolean(id);
-  const { user } = useUser();
-  const username = user?.username || '';
+/* ─────────────────────────────────────────── */
 
-  /* state */
-  const [loading, setLoading]         = useState(false);
-  const [error, setError]             = useState('');
-  const [isSubmitting, setSubmitting] = useState(false);
-  const [formData, setFormData]       = useState<ListingForm>(DEFAULT_FORM_STATE);
+function CreateListing() {
+  const navigate           = useNavigate();
+  const { id }             = useParams<{ id?: string }>();
+  const isEditing          = Boolean(id);
+  const { user }           = useUser();
+  const username           = user?.username || '';
 
-  /* NEW: selected country dial-code */
-  const [phonePrefix, setPhonePrefix] = useState('+357');
-
-  /* image handling */
-  const [previewImages, setPreview]   = useState<string[]>([]);
-  const [primaryIndex, setPrimary]    = useState(0);
-  const [existingIds, setExisting]    = useState<string[]>([]);
+  const [form, setForm]           = useState<ListingForm>(BLANK_FORM);
+  const [prefix, setPrefix]       = useState('+357');
+  const [previews, setPreviews]   = useState<string[]>([]);
+  const [primary, setPrimary]     = useState(0);
+  const [existing, setExisting]   = useState<string[]>([]);
+  const [loading, setLoading]     = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [error, setError]         = useState('');
 
   /* drop-zone */
   const onDrop = useCallback((files: File[]) => {
-    setFormData(f => ({ ...f, images: [...f.images, ...files] }));
-    setPreview(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
+    setForm(f => ({ ...f, images: [...f.images, ...files] }));
+    setPreviews(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
   }, []);
-
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] },
     maxFiles: 10,
     maxSize: 5 * 1024 * 1024,
   });
-
-  const removeImage = (i: number) => {
-    setFormData(f => ({ ...f, images: f.images.filter((_, n) => n !== i) }));
-    if (i < previewImages.length) URL.revokeObjectURL(previewImages[i]);
-    setPreview(p => p.filter((_, n) => n !== i));
-    if (i < existingIds.length) setExisting(e => e.filter((_, n) => n !== i));
-    if (i === primaryIndex) setPrimary(0);
-    else if (i < primaryIndex) setPrimary(n => n - 1);
+  const removeImg = (i: number) => {
+    setForm(f => ({ ...f, images: f.images.filter((_, n) => n !== i) }));
+    if (i < previews.length) URL.revokeObjectURL(previews[i]);
+    setPreviews(p => p.filter((_, n) => n !== i));
+    if (i < existing.length) setExisting(e => e.filter((_, n) => n !== i));
+    if (i === primary) setPrimary(0);
+    else if (i < primary) setPrimary(n => n - 1);
   };
 
-  /* handlers */
+  /* generic input */
   const handleInput = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(f => ({ ...f, [name]: value }));
-  };
+  ) => setForm(f => ({ ...f, [e.target.name]: e.target.value }));
 
   const toggleAmenity = (id: string) =>
-    setFormData(f => ({
+    setForm(f => ({
       ...f,
       amenities: f.amenities.includes(id)
         ? f.amenities.filter(a => a !== id)
         : [...f.amenities, id],
     }));
 
-  /* validation (no strict length for phone) */
-  const validate = () => {
-    if (!formData.title.trim())           return setError('Please enter a title'), false;
-    if (!formData.description.trim())     return setError('Please enter a description'), false;
-    if (!formData.price || +formData.price <= 0)
-      return setError('Enter a valid price'), false;
-    if (!formData.location.trim())        return setError('Please enter a location'), false;
-    if (!formData.propertyType)           return setError('Select property type'), false;
-    if (!formData.propertyStatus)         return setError('Select listing type'), false;
-    if (!formData.contactPhone.trim())    return setError('Enter a phone number'), false;
-    if (formData.images.length === 0 && previewImages.length === 0)
+  /* validation */
+  const valid = () => {
+    if (!form.title.trim())          return setError('Enter title'), false;
+    if (!form.description.trim())    return setError('Enter description'), false;
+    if (!form.price || +form.price <= 0) return setError('Enter valid price'), false;
+    if (!form.location.trim())       return setError('Enter location'), false;
+    if (!form.propertyType)          return setError('Select type'), false;
+    if (!form.propertyStatus)        return setError('Select listing type'), false;
+    if (!form.contactPhone.trim())   return setError('Enter phone'), false;
+    if (form.images.length === 0 && previews.length === 0)
       return setError('Upload at least one image'), false;
     return true;
   };
 
-  /* fetch existing listing */
+  /* edit-mode fetch */
   useEffect(() => {
     if (!isEditing || !id) return;
     setLoading(true);
     apiClient
       .get(`/properties/${username}/property/${id}/`)
       .then(({ data }) => {
-        /* images → previews */
-        const urls = (data.images || []).map((i: any) =>
-          typeof i === 'string' ? i : i.image
-        );
-        const ids  = (data.images || []).map((i: any) =>
-          typeof i === 'object' ? i.id || '' : ''
-        );
-        const prim = (data.images || []).findIndex((i: any) => i?.is_primary);
-        setPreview(urls);
-        setExisting(ids);
-        setPrimary(Math.max(0, prim));
+        const imgs = data.images || [];
+        setPreviews(imgs.map((i: any) => (typeof i === 'string' ? i : i.image)));
+        setExisting(imgs.map((i: any) => (typeof i === 'object' ? i.id || '' : '')));
+        setPrimary(Math.max(0, imgs.findIndex((i: any) => i?.is_primary)));
 
-        /* split phone into prefix & number */
+        /* phone split */
         if (data.contact_phone) {
           const m = data.contact_phone.match(/^(\+\d{1,4})(.*)$/);
           if (m) {
-            setPhonePrefix(m[1]);
+            setPrefix(m[1]);
             data.contact_phone = m[2].trim();
           }
         }
 
-        /* map amenities labels → ids */
-        const amenityIds = (data.amenities || []).map((lab: string) => {
-          const match = AMENITIES.find(
-            a => a.label.toLowerCase() === lab.toLowerCase()
-          );
-          return match ? match.id : null;
+        /* amenities label→id */
+        const amenIds = (data.amenities || []).map((lab: string) => {
+          const m = AMENITIES.find(a => a.label.toLowerCase() === lab.toLowerCase());
+          return m?.id;
         }).filter(Boolean) as string[];
 
-        /* convert property_status snake → camel */
         let status = data.property_status || '';
         if (status === 'for_sale') status = 'forSale';
         if (status === 'for_rent') status = 'forRent';
 
-        setFormData({
-          title:            data.title || '',
-          description:      data.description || '',
-          price:            data.price?.toString() || '',
-          location:         data.location || '',
-          propertyType:     data.property_type || '',
-          bedrooms:         data.bedrooms?.toString() || '',
-          bathrooms:        data.bathrooms?.toString() || '',
-          area:             data.area?.toString() || '',
-          images:           [],
-          amenities:        amenityIds,
-          yearBuilt:        data.year_built?.toString() || '',
-          parkingSpaces:    data.parking_spaces?.toString() || '',
-          lotSize:          data.lot_size?.toString() || '',
-          propertyStatus:   status,
-          energyRating:     data.energy_rating || '',
+        setForm({
+          title: data.title || '',
+          description: data.description || '',
+          price: data.price?.toString() || '',
+          location: data.location || '',
+          propertyType: data.property_type || '',
+          bedrooms: data.bedrooms?.toString() || '',
+          bathrooms: data.bathrooms?.toString() || '',
+          area: data.area?.toString() || '',
+          images: [],
+          amenities: amenIds,
+          yearBuilt: data.year_built?.toString() || '',
+          parkingSpaces: data.parking_spaces?.toString() || '',
+          lotSize: data.lot_size?.toString() || '',
+          propertyStatus: status,
+          energyRating: data.energy_rating || '',
           constructionMaterial: data.construction_material || '',
-          floorLevel:       data.floor_level?.toString() || '',
-          totalFloors:      data.total_floors?.toString() || '',
-          availableFrom:    data.available_from || '',
-          contactPhone:     data.contact_phone || '',
-          contactEmail:     data.contact_email || '',
-          virtualTourUrl:   data.virtual_tour_url || '',
-          videoUrl:         data.video_url || '',
+          floorLevel: data.floor_level?.toString() || '',
+          totalFloors: data.total_floors?.toString() || '',
+          availableFrom: data.available_from || '',
+          contactPhone: data.contact_phone || '',
+          contactEmail: data.contact_email || '',
+          virtualTourUrl: data.virtual_tour_url || '',
+          videoUrl: data.video_url || '',
         });
       })
       .catch(() => {
@@ -282,65 +258,55 @@ const DEFAULT_FORM_STATE: ListingForm = {
   }, [isEditing, id, username]);
 
   /* submit */
-  const handleSubmit = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validate()) return;
-    if (isEditing && !username) {
-      toast.error('User data unavailable. Refresh and try again.');
-      return;
-    }
+    if (!valid()) return;
+    if (isEditing && !username) return toast.error('User not loaded');
     setSubmitting(true);
     try {
       const fd = new FormData();
 
-      /* images – primary first */
-      if (formData.images.length) {
-        const prim = Math.min(primaryIndex, formData.images.length - 1);
-        const ordered = [
-          formData.images[prim],
-          ...formData.images.filter((_, i) => i !== prim),
-        ];
-        ordered.forEach(f => fd.append('images[]', f));
+      /* images */
+      if (form.images.length) {
+        const prim = Math.min(primary, form.images.length - 1);
+        [form.images[prim], ...form.images.filter((_, i) => i !== prim)].forEach(f =>
+          fd.append('images[]', f)
+        );
       }
-      /* existing images */
-      if (isEditing && previewImages.length) {
-        previewImages.forEach((_, i) => {
-          if (!formData.images[i]) {
-            const id = existingIds[i] || previewImages[i];
-            fd.append('existing_images[]', id);
-            if (i === primaryIndex) fd.append('primary_image_id', id);
+      if (isEditing && previews.length) {
+        previews.forEach((_, i) => {
+          if (!form.images[i]) {
+            const idOrUrl = existing[i] || previews[i];
+            fd.append('existing_images[]', idOrUrl);
+            if (i === primary) fd.append('primary_image_id', idOrUrl);
           }
         });
       }
       fd.append('primary_is_first', 'true');
 
       /* other fields */
-      Object.entries(formData).forEach(([k, v]) => {
+      Object.entries(form).forEach(([k, v]) => {
         if (k === 'images') return;
-        if (k === 'contactPhone') {
-          fd.append('contactPhone', `${phonePrefix}${v}`);
-        } else if (Array.isArray(v)) {
-          v.forEach(val => fd.append(`${k}[]`, val));
-        } else if (v) fd.append(k, v.toString());
+        if (k === 'contactPhone') fd.append('contactPhone', `${prefix}${v}`);
+        else if (Array.isArray(v)) v.forEach(val => fd.append(`${k}[]`, val));
+        else if (v) fd.append(k, v.toString());
       });
 
-      /* endpoint */
-      const endpoint = isEditing
+      const url = isEditing
         ? `/properties/${username}/property/${id}/edit/`
         : '/properties/create_property/';
       const method = isEditing ? 'put' : 'post';
 
-      const res = await apiClient[method](endpoint, fd, {
+      const res = await apiClient[method](url, fd, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
 
-      if (res.status >= 200 && res.status < 300) {
+      if (res.status < 300) {
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
         navigate('/my-listings');
-      } else setError(`Unexpected response ${res.status}`);
+      } else setError(`Unexpected status ${res.status}`);
     } catch (err: any) {
-      const msg =
-        err.response?.data?.error || 'Failed to process listing. Please try again.';
+      const msg = err.response?.data?.error || 'Failed to process listing.';
       setError(msg);
       toast.error(msg);
     } finally {
@@ -348,7 +314,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
     }
   };
 
-  /* early loading states */
+  /* early loader */
   if (loading)
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -361,7 +327,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="container mx-auto px-6 max-w-6xl">
         <div className="bg-white shadow-xl rounded-2xl overflow-hidden">
-          {/* header bar */}
+          {/* header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
             <h1 className="text-3xl font-bold text-white flex items-center">
               <Home className="mr-3 h-8 w-8" />
@@ -385,21 +351,16 @@ const DEFAULT_FORM_STATE: ListingForm = {
           )}
 
           {/* form */}
-          <form onSubmit={handleSubmit} className="p-8 space-y-10">
+          <form onSubmit={submit} className="p-8 space-y-10">
             {/* ─── Basic Information ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Basic Information
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Basic Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Title</label>
                   <input
-                    id="title"
                     name="title"
-                    value={formData.title}
+                    value={form.title}
                     onChange={handleInput}
                     required
                     placeholder="e.g., Luxurious Waterfront Penthouse"
@@ -408,16 +369,12 @@ const DEFAULT_FORM_STATE: ListingForm = {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="propertyStatus"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Listing Type
                   </label>
                   <select
-                    id="propertyStatus"
                     name="propertyStatus"
-                    value={formData.propertyStatus}
+                    value={form.propertyStatus}
                     onChange={handleInput}
                     required
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -432,21 +389,15 @@ const DEFAULT_FORM_STATE: ListingForm = {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="price"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Price
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Price</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
-                      id="price"
                       name="price"
                       type="number"
                       min="0"
                       step="0.01"
-                      value={formData.price}
+                      value={form.price}
                       onChange={handleInput}
                       required
                       placeholder="Enter price"
@@ -456,18 +407,12 @@ const DEFAULT_FORM_STATE: ListingForm = {
                 </div>
 
                 <div>
-                  <label
-                    htmlFor="location"
-                    className="block text-sm font-medium text-gray-700 mb-1"
-                  >
-                    Location
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <input
-                      id="location"
                       name="location"
-                      value={formData.location}
+                      value={form.location}
                       onChange={handleInput}
                       required
                       placeholder="Full address"
@@ -480,9 +425,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
 
             {/* ─── Property Details ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Property Details
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Details</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -492,7 +435,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
                     <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
                     <select
                       name="propertyType"
-                      value={formData.propertyType}
+                      value={form.propertyType}
                       onChange={handleInput}
                       required
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -517,10 +460,9 @@ const DEFAULT_FORM_STATE: ListingForm = {
                       name="bedrooms"
                       type="number"
                       min="0"
-                      value={formData.bedrooms}
+                      value={form.bedrooms}
                       onChange={handleInput}
                       required
-                      placeholder="0"
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -537,10 +479,9 @@ const DEFAULT_FORM_STATE: ListingForm = {
                       type="number"
                       min="0"
                       step="0.5"
-                      value={formData.bathrooms}
+                      value={form.bathrooms}
                       onChange={handleInput}
                       required
-                      placeholder="0"
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -556,10 +497,9 @@ const DEFAULT_FORM_STATE: ListingForm = {
                       name="area"
                       type="number"
                       min="0"
-                      value={formData.area}
+                      value={form.area}
                       onChange={handleInput}
                       required
-                      placeholder="0"
                       className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                     />
                   </div>
@@ -574,9 +514,8 @@ const DEFAULT_FORM_STATE: ListingForm = {
                     type="number"
                     min="1800"
                     max={new Date().getFullYear()}
-                    value={formData.yearBuilt}
+                    value={form.yearBuilt}
                     onChange={handleInput}
-                    placeholder="YYYY"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -589,9 +528,8 @@ const DEFAULT_FORM_STATE: ListingForm = {
                     name="lotSize"
                     type="number"
                     min="0"
-                    value={formData.lotSize}
+                    value={form.lotSize}
                     onChange={handleInput}
-                    placeholder="0"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
@@ -600,9 +538,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
 
             {/* ─── Images ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Property Images
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -610,28 +546,24 @@ const DEFAULT_FORM_STATE: ListingForm = {
               >
                 <input {...getInputProps()} />
                 <Upload className="mx-auto h-12 w-12 text-gray-400" />
-                <p className="mt-2 text-sm text-gray-600">
-                  Drag & drop images here, or click to select files
-                </p>
-                <p className="text-xs text-gray-500">
-                  Maximum 10 images, up to 5 MB each
-                </p>
+                <p className="mt-2 text-sm text-gray-600">Drag & drop images here, or click to select</p>
+                <p className="text-xs text-gray-500">Max 10 images, 5 MB each (JPG, PNG, WebP)</p>
               </div>
 
-              {previewImages.length > 0 && (
+              {previews.length > 0 && (
                 <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {previewImages.map((src, i) => (
+                  {previews.map((src, i) => (
                     <div key={src} className="relative group">
                       <img
                         src={src}
                         alt=""
                         className={`h-24 w-full object-cover rounded-lg ${
-                          i === primaryIndex ? 'border-4 border-blue-500' : ''
+                          i === primary ? 'border-4 border-blue-500' : ''
                         }`}
                       />
                       <button
                         type="button"
-                        onClick={() => removeImage(i)}
+                        onClick={() => removeImg(i)}
                         className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       >
                         <X size={14} />
@@ -651,15 +583,13 @@ const DEFAULT_FORM_STATE: ListingForm = {
 
             {/* ─── Amenities ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Amenities
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Amenities</h2>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 {AMENITIES.map(a => (
                   <label key={a.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={formData.amenities.includes(a.id)}
+                      checked={form.amenities.includes(a.id)}
                       onChange={() => toggleAmenity(a.id)}
                       className="h-4 w-4 text-blue-600 border-gray-300 rounded"
                     />
@@ -671,49 +601,41 @@ const DEFAULT_FORM_STATE: ListingForm = {
 
             {/* ─── Description ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Description
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Description</h2>
               <textarea
                 name="description"
                 rows={6}
-                value={formData.description}
+                value={form.description}
                 onChange={handleInput}
                 required
-                placeholder="Provide a detailed description of the property…"
+                placeholder="Provide a detailed description…"
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </section>
 
             {/* ─── Contact ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Contact Information
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Contact Information</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input
                     name="contactEmail"
                     type="email"
-                    value={formData.contactEmail}
+                    value={form.contactEmail}
                     onChange={handleInput}
                     required
-                    placeholder="your@email.com"
+                    placeholder="you@example.com"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
                   <div className="flex">
                     <select
-                      value={phonePrefix}
-                      onChange={e => setPhonePrefix(e.target.value)}
+                      value={prefix}
+                      onChange={e => setPrefix(e.target.value)}
                       className="mr-2 px-3 py-2 border border-gray-300 rounded-lg bg-gray-50"
                     >
                       {COUNTRY_CODES.map(c => (
@@ -723,11 +645,10 @@ const DEFAULT_FORM_STATE: ListingForm = {
                       ))}
                     </select>
                     <input
-                      id="contactPhone"
                       name="contactPhone"
                       type="tel"
-                      pattern="\d{4,}" /* ≥ 4 digits */
-                      value={formData.contactPhone}
+                      pattern="\d{4,}" // min 4 digits
+                      value={form.contactPhone}
                       onChange={handleInput}
                       required
                       placeholder="12345678"
@@ -741,11 +662,9 @@ const DEFAULT_FORM_STATE: ListingForm = {
               </div>
             </section>
 
-            {/* ─── Virtual tour & video ─── */}
+            {/* ─── Virtual Tour & Video ─── */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">
-                Virtual Tour & Video
-              </h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour & Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -754,7 +673,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
                   <input
                     name="virtualTourUrl"
                     type="url"
-                    value={formData.virtualTourUrl}
+                    value={form.virtualTourUrl}
                     onChange={handleInput}
                     placeholder="Matterport or similar link"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -767,7 +686,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
                   <input
                     name="videoUrl"
                     type="url"
-                    value={formData.videoUrl}
+                    value={form.videoUrl}
                     onChange={handleInput}
                     placeholder="YouTube or Vimeo link"
                     className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
@@ -780,15 +699,15 @@ const DEFAULT_FORM_STATE: ListingForm = {
             <div className="flex justify-end pt-6">
               <button
                 type="submit"
-                disabled={isSubmitting}
+                disabled={submitting}
                 className={`flex items-center px-8 py-4 rounded-xl text-white font-semibold text-lg
                   ${
-                    isSubmitting
+                    submitting
                       ? 'bg-blue-400 cursor-not-allowed'
                       : 'bg-blue-600 hover:bg-blue-700'
                   } transition-colors shadow-lg`}
               >
-                {isSubmitting ? (
+                {submitting ? (
                   <>
                     <Loader2 className="animate-spin -ml-1 mr-3 h-6 w-6" />
                     {isEditing ? 'Updating…' : 'Creating…'}
