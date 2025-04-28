@@ -306,7 +306,7 @@ const PropertyDetails = () => {
                 {thumbPage > 0 && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
-                    className="absolute -left-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute -left-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
@@ -314,7 +314,7 @@ const PropertyDetails = () => {
                 {thumbPage < lastThumbPage && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
-                    className="absolute -right-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute -right-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowRight className="w-6 h-6 text-gray-600" />
                   </button>
@@ -328,7 +328,7 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="grid grid-cols-2 gap-4"
+                    className="grid grid-cols-2 gap-6"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
