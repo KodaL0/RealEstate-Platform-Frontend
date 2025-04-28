@@ -299,26 +299,52 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* thumbnail carousel */}
-            <div className="lg:w-1/3 flex flex-col">
-              <div className="relative flex-1 pt-6">
-                {/* nav arrows */}
-                {thumbPage > 0 && (
-                  <button
-                    onClick={() => setThumbPage(p => p - 1)}
-                    className="absolute -left-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
-                  >
-                    <ArrowLeft className="w-6 h-6 text-gray-600" />
-                  </button>
-                )}
-                {thumbPage < lastThumbPage && (
-                  <button
-                    onClick={() => setThumbPage(p => p + 1)}
-                    className="absolute -right-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
-                  >
-                    <ArrowRight className="w-6 h-6 text-gray-600" />
-                  </button>
-                )}
+{/* ───────── thumbnail carousel ───────── */}
+<div className="lg:w-1/3 flex flex-col">
+  <div className="relative flex-1">
+
+    {/* left arrow */}
+    {thumbPage > 0 && (
+      <button
+        onClick={() => setThumbPage(p => p - 1)}
+        className="absolute -left-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+      >
+        <ArrowLeft className="w-6 h-6 text-gray-600" />
+      </button>
+    )}
+
+    {/* right arrow */}
+    {thumbPage < lastThumbPage && (
+      <button
+        onClick={() => setThumbPage(p => p + 1)}
+        className="absolute -right-4 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+      >
+        <ArrowRight className="w-6 h-6 text-gray-600" />
+      </button>
+    )}
+
+    {/* thumbnails grid (gap-y is larger) */}
+    <div className="grid grid-cols-2 gap-x-4 gap-y-6">
+      {visibleThumbs.map(t => (
+        <div
+          key={t.idx}
+          className="relative h-44 rounded-xl overflow-hidden cursor-pointer"
+          onClick={() => {
+            setActiveImage(t.idx);
+            openLightbox(t.idx);
+          }}
+        >
+          <img
+            src={t.url}
+            className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
+            alt=""
+          />
+        </div>
+      ))}
+    </div>
+  </div>
+</div>
+
 
                 {/* animated grid of thumbs */}
                 <AnimatePresence mode="wait" initial={false}>
