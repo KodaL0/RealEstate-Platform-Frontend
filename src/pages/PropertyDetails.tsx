@@ -1,15 +1,12 @@
 // ───────────────────────────────────────────────────────────────
-// pages/PropertyDetails.tsx
+// pages/PropertyDetails.tsx      (FULL – ready to copy/paste)
 // ───────────────────────────────────────────────────────────────
 
 // Global Leaflet marker icon fix
 import "../components/leafletMarkerFix";
 
 import {
-  useState,
-  useEffect,
-  useRef,
-  useCallback,
+  useState, useEffect, useRef, useCallback,
 } from "react";
 import { useParams, Link } from "react-router-dom";
 import {
@@ -17,8 +14,9 @@ import {
   CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
-  X, ArrowLeft, ArrowRight             // ← NEW for light-box
+  X, ArrowLeft, ArrowRight, Grid
 } from "lucide-react";
+
 import { apiClient } from "../middleware/auth";
 import { Property } from "../types";
 import MapView from "../components/MapView";
@@ -28,14 +26,16 @@ import { useUser } from "../context/UserContext";
 
 async function geocodeAddress(address: string) {
   const q = encodeURIComponent(address);
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`);
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/search?q=${q}&format=json`
+  );
   const json = await res.json();
   if (json?.length) return { lat: +json[0].lat, lng: +json[0].lon };
   throw new Error("geocoding failed");
 }
 
 const normaliseImages = (imgs: any[] = []) =>
-  imgs.map(i => (typeof i === "string" ? { image: i } : i));
+  imgs.map((i) => (typeof i === "string" ? { image: i } : i));
 
 const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
@@ -107,9 +107,12 @@ const PropertyDetails = () => {
   const [activeImage, setActiveImage] = useState(0);
   const [loading, setLoading] = useState(true);
 
-  /* NEW ▸ light-box gallery state */
+  /* light-box (one-by-one) */
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
+
+  /* gallery modal (grid of all) */
+  const [galleryOpen, setGalleryOpen] = useState(false);
 
   /* ───────── fetch property (unchanged) ───────── */
   useEffect(() => {
@@ -165,7 +168,7 @@ const PropertyDetails = () => {
     fetchData();
   }, [id, user, userLoading]);
 
-  /* ───── light-box helpers ───── */
+  /* light-box helpers */
   const totalImages = property?.images.length ?? 0;
   const openLightbox = (idx: number) => {
     setLightboxIdx(idx);
@@ -173,23 +176,28 @@ const PropertyDetails = () => {
   };
   const closeLightbox = () => setLightboxOpen(false);
   const prevImg = useCallback(() => {
-    setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1));
+    setLightboxIdx((i) => (i === 0 ? totalImages - 1 : i - 1));
   }, [totalImages]);
   const nextImg = useCallback(() => {
-    setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1));
+    setLightboxIdx((i) => (i === totalImages - 1 ? 0 : i + 1));
   }, [totalImages]);
 
-  /* keyboard navigation when overlay open */
+  /* keyboard navigation for overlays */
   useEffect(() => {
-    if (!lightboxOpen) return;
+    if (!lightboxOpen && !galleryOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowRight") nextImg();
-      if (e.key === "ArrowLeft") prevImg();
-      if (e.key === "Escape") closeLightbox();
+      if (lightboxOpen) {
+        if (e.key === "ArrowRight") nextImg();
+        if (e.key === "ArrowLeft") prevImg();
+      }
+      if (e.key === "Escape") {
+        closeLightbox();
+        setGalleryOpen(false);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, nextImg, prevImg]);
+  }, [lightboxOpen, galleryOpen, nextImg, prevImg]);
 
   /* ───── early states ───── */
   if (loading || userLoading) {
@@ -221,7 +229,7 @@ const PropertyDetails = () => {
     property.images.length > 0 ? toUrl(property.images[activeImage]) : "";
   const thumbnails = property.images
     .map((img, idx) => ({ idx, url: toUrl(img) }))
-    .filter(t => t.idx !== activeImage);
+    .filter((t) => t.idx !== activeImage);
 
   /* unpublished notice */
   const unpublished =
@@ -236,7 +244,7 @@ const PropertyDetails = () => {
   /* ───────── render ───────── */
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* ───── Light-box Overlay ───── */}
+      {/* ───── Light-box Overlay (single image) ───── */}
       {lightboxOpen && (
         <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
           <button
@@ -246,25 +254,63 @@ const PropertyDetails = () => {
             <X className="w-8 h-8" />
           </button>
 
-          <button
-            onClick={prevImg}
-            className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
-          >
-            <ArrowLeft className="w-10 h-10" />
-          </button>
+          {totalImages > 1 && (
+            <>
+              <button
+                onClick={prevImg}
+                className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
+                <ArrowLeft className="w-10 h-10" />
+              </button>
+
+              <button
+                onClick={nextImg}
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
+                <ArrowRight className="w-10 h-10" />
+              </button>
+            </>
+          )}
 
           <img
             src={toUrl(property.images[lightboxIdx])}
             alt=""
             className="max-h-[80vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           />
+        </div>
+      )}
 
-          <button
-            onClick={nextImg}
-            className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
-          >
-            <ArrowRight className="w-10 h-10" />
-          </button>
+      {/* ───── Gallery Overlay (grid) ───── */}
+      {galleryOpen && (
+        <div className="fixed inset-0 bg-black/90 z-50 flex flex-col">
+          <div className="flex justify-between items-center px-6 py-4">
+            <h3 className="text-white text-lg flex items-center">
+              <Grid className="mr-2" /> All Photos
+            </h3>
+            <button
+              onClick={() => setGalleryOpen(false)}
+              className="text-white hover:text-red-400"
+            >
+              <X className="w-8 h-8" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-6 pb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+              {property.images.map((img, idx) => (
+                <img
+                  key={idx}
+                  src={toUrl(img)}
+                  alt=""
+                  className="w-full h-56 object-cover rounded-lg cursor-pointer hover:opacity-80"
+                  onClick={() => {
+                    openLightbox(idx);
+                    setGalleryOpen(false);
+                  }}
+                />
+              ))}
+            </div>
+          </div>
         </div>
       )}
 
@@ -297,7 +343,9 @@ const PropertyDetails = () => {
                         : "bg-blue-500 text-white"
                     }`}
                   >
-                    {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
+                    {property.property_status === "for_sale"
+                      ? "For Sale"
+                      : "For Rent"}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
@@ -331,8 +379,16 @@ const PropertyDetails = () => {
                     className="w-full h-full object-cover hover:scale-105 transition-transform duration-300"
                     alt=""
                   />
+
+                  {/* “+N more” overlay */}
                   {i === 3 && thumbnails.length > 4 && (
-                    <div className="absolute inset-0 bg-black/50 flex justify-center items-center text-white font-medium">
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setGalleryOpen(true);
+                      }}
+                      className="absolute inset-0 bg-black/60 flex flex-col justify-center items-center text-white font-medium text-lg backdrop-blur-sm"
+                    >
                       +{thumbnails.length - 4} more
                     </div>
                   )}
@@ -372,7 +428,8 @@ const PropertyDetails = () => {
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
                     <span>
-                      {property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}
+                      {property.bedrooms}{" "}
+                      {property.bedrooms === 1 ? "Bed" : "Beds"}
                     </span>
                   </div>
                   <div className="flex items-center text-gray-700">
