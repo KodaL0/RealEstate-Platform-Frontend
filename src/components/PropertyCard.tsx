@@ -53,7 +53,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
       className={`
         bg-white rounded-xl overflow-hidden
         shadow-lg hover:shadow-xl transition-shadow duration-300
-        flex flex-col h-full             /* ← make the card full height flex container */
+        flex flex-col h-full
         ${featured ? 'col-span-2' : ''}
       `}
     >
@@ -85,31 +85,34 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
       </div>
 
       {/* content */}
-      <div className="p-5 flex flex-col flex-1"> {/* ← this flex-1 makes it grow */}
-        {/* title + price + address */}
-        <div className="space-y-2">
-          <div className="flex justify-between items-start">
-            <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
-              <Link to={`/property/${id}`}>{title}</Link>
-            </h3>
-            <p className="text-lg font-bold text-blue-600">
-              {Number.isFinite(Number(price))
-                ? isForSale
-                  ? `€${Number(price).toLocaleString()}`
-                  : `€${Number(price).toLocaleString()}/mo`
-                : isForSale
-                ? '€0'
-                : '€0/mo'}
-            </p>
-          </div>
-          <div className="flex items-center text-gray-500">
-            <MapPin className="h-4 w-4 mr-1" />
-            <span className="text-sm">{propertyAddress}</span>
-          </div>
+      <div className="p-5 flex flex-col flex-1">
+        {/* title + price */}
+        <div className="flex justify-between items-start">
+          <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
+            <Link to={`/property/${id}`}>{title}</Link>
+          </h3>
+          <p className="text-lg font-bold text-blue-600">
+            {Number.isFinite(Number(price))
+              ? isForSale
+                ? `€${Number(price).toLocaleString()}`
+                : `€${Number(price).toLocaleString()}/mo`
+              : isForSale
+              ? '€0'
+              : '€0/mo'}
+          </p>
         </div>
 
-        {/* stats bar, pushed down */}
-        <div className="mt-auto flex justify-between pt-4 border-t border-gray-100">
+        {/* spacer grows to push address down */}
+        <div className="flex-1" />
+
+        {/* address: now always sits immediately above the stats line */}
+        <div className="flex items-center text-gray-500 mb-2">
+          <MapPin className="h-4 w-4 mr-1" />
+          <span className="text-sm">{propertyAddress}</span>
+        </div>
+
+        {/* stats bar at the very bottom */}
+        <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
             <span>{bedsDisp} {bedsDisp === 1 ? 'Bed' : 'Beds'}</span>
