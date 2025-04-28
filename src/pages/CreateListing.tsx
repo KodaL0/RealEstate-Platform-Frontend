@@ -43,7 +43,6 @@ interface ListingForm {
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
-  additionalFeatures: string[];
 }
 
 // Reference data constants 
@@ -87,7 +86,7 @@ const AMENITIES = [
 ];
 
 // Default empty form state
-const DEFAULT_FORM_STATE: ListingForm = {
+const DEFAULT_FORM_STATE: Omit<ListingForm, 'additionalFeatures'> = {
   title: '',
   description: '',
   price: '',
@@ -111,7 +110,6 @@ const DEFAULT_FORM_STATE: ListingForm = {
   contactEmail: '',
   virtualTourUrl: '',
   videoUrl: '',
-  additionalFeatures: []
 };
 
 const CreateListing = () => {
@@ -125,7 +123,7 @@ const CreateListing = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string>('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
+  const [formData, setFormData] = useState<Omit<ListingForm, 'additionalFeatures'>>(DEFAULT_FORM_STATE);
   
   // Image handling state
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -183,13 +181,13 @@ const CreateListing = () => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCheckboxChange = (id: string, type: 'amenities' | 'additionalFeatures') => {
+  const handleCheckboxChange = (id: string) => {
     setFormData(prev => {
-      const currentArray = prev[type];
+      const currentArray = prev.amenities;
       const updatedArray = currentArray.includes(id)
         ? currentArray.filter(item => item !== id)
         : [...currentArray, id];
-      return { ...prev, [type]: updatedArray };
+      return { ...prev, amenities: updatedArray };
     });
   };
 
@@ -226,126 +224,25 @@ const CreateListing = () => {
     return true;
   };
 
-  // Process the array fields from the API response
-  const processArrayField = (field: any, lookupTable: Array<{id: string, label: string}> = []) => {
-    // If it's already a string array, return it
-    if (Array.isArray(field) && (field.length === 0 || typeof field[0] === 'string')) {
-      // Check if these are labels that need to be converted to IDs
-      if (lookupTable.length > 0 && typeof field[0] === 'string') {
-        return field.map(label => {
-          // Try to find the ID by matching the label
-          const match = lookupTable.find(item => 
-            item.label.toLowerCase() === label.toLowerCase());
-          return match ? match.id : label;
-        });
-      }
-      return field;
-    }
-    
-    // If it's an array of objects, extract the id/value
-    if (Array.isArray(field)) {
-      return field.map(item => {
-        if (typeof item === 'object' && item !== null) {
-          // Try matching against lookup table
-          if (lookupTable.length > 0 && item.name) {
-            const match = lookupTable.find(lookup => 
-              lookup.label.toLowerCase() === item.name.toLowerCase());
-            if (match) return match.id;
-          }
-          
-          // Return first available id property
-          return item.id || item.value || item.name || item;
-        }
-        return item;
-      });
-    }
-    
-    // Handle comma-separated string
-    if (typeof field === 'string') {
-      return field.split(',').map(item => item.trim());
-    }
-    
-    return [];
-  };
-
-  // Extract image information from API response
-  const processImages = (images: any[]) => {
-    if (!images || !images.length) return { urls: [], ids: [] };
-    
-    const imageUrls = images.map(img => {
-      // Handle object or string
-      if (typeof img === 'object' && img !== null) {
-        // Find the image URL property
-        if (img.image && typeof img.image === 'string') return img.image;
-        if (img.url && typeof img.url === 'string') return img.url;
-        if (img.src && typeof img.src === 'string') return img.src;
-        
-        // Fall back to any string that looks like an image
-        for (const key in img) {
-          if (typeof img[key] === 'string' && (
-            img[key].endsWith('.jpg') || 
-            img[key].endsWith('.jpeg') || 
-            img[key].endsWith('.png') || 
-            img[key].endsWith('.webp')
-          )) {
-            return img[key];
-          }
-        }
-      }
-      return typeof img === 'string' ? img : '';
-    }).filter(Boolean); // Remove empty strings
-    
-    // Extract image IDs
-    const imageIds = images.map(img => {
-      if (typeof img === 'object' && img !== null) {
-        return img.id || '';
-      }
-      
-      // Try to extract ID from URL string
-      if (typeof img === 'string') {
-        const match = img.match(/\/(\d+)\/|_(\d+)\.|\/images\/(\d+)|id=(\d+)/);
-        if (match) {
-          return match.slice(1).find(group => group !== undefined) || '';
-        }
-      }
-      return '';
-    });
-    
-    // Find primary image index
-    const primaryIndex = images.findIndex(img => 
-      img && typeof img === 'object' && img.is_primary === true
-    );
-    
-    return { 
-      urls: imageUrls, 
-      ids: imageIds,
-      primaryIndex: primaryIndex !== -1 ? primaryIndex : 0
-    };
-  };
-
-  // Load existing property data when editing
+  // Fetch existing data for editing
   useEffect(() => {
     if (isEditing && id) {
       setLoading(true);
-      
-      apiClient.get(`/properties/${id}`)
+      apiClient.get(`/properties/${username}/property/${id}/`)
         .then(response => {
           const data = response.data;
-          if (!data) {
-            setError("Couldn't load property data");
-            return;
-          }
+          const existingImages = data.images || [];
+          setPreviewImages(existingImages.map((img: any) => img.image));
+          setExistingImageIds(existingImages.map((img: any) => img.id || img.image)); // Store IDs or URLs
           
-          // Process images
-          const { urls, ids, primaryIndex: primIdx } = processImages(data.images || []);
-          setPreviewImages(urls);
-          setExistingImageIds(ids);
-          setPrimaryIndex(primIdx);
+          // Find and set primary index based on existing images
+          const primary = existingImages.find((img: any) => img.is_primary);
+          setPrimaryIndex(primary ? existingImages.indexOf(primary) : 0);
           
-          // Convert status from snake_case if needed
+          // Map status from snake_case (backend) to camelCase (frontend state if needed)
           let propertyStatus = data.property_status || '';
           if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
-          else if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+          if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
           
           // Map API data to form fields
           setFormData({
@@ -358,7 +255,7 @@ const CreateListing = () => {
             bathrooms: data.bathrooms?.toString() || '',
             area: data.area?.toString() || '',
             images: [], // Existing images handled separately
-            amenities: processArrayField(data.amenities, AMENITIES),
+            amenities: data.amenities || [], // Directly use amenities if they are string IDs
             yearBuilt: data.year_built?.toString() || '',
             parkingSpaces: data.parking_spaces?.toString() || '',
             lotSize: data.lot_size?.toString() || '',
@@ -372,7 +269,6 @@ const CreateListing = () => {
             contactEmail: data.contact_email || '',
             virtualTourUrl: data.virtual_tour_url || '',
             videoUrl: data.video_url || '',
-            additionalFeatures: processArrayField(data.additional_features, ADDITIONAL_FEATURES),
           });
         })
         .catch(error => {
@@ -384,7 +280,7 @@ const CreateListing = () => {
           setLoading(false);
         });
     }
-  }, [isEditing, id]);
+  }, [isEditing, id, username]); // Add username dependency
 
   // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
@@ -403,7 +299,6 @@ const CreateListing = () => {
     setIsSubmitting(true);
     
     try {
-      // Create a single FormData instance for both create and edit
       const formDataToSend = new FormData();
       
       // ---------------- IMAGE HANDLING ----------------
@@ -453,11 +348,16 @@ const CreateListing = () => {
       
       // Add all other form fields 
       Object.entries(formData).forEach(([key, value]) => {
-        if (key !== 'images') { // Skip images as we handled them above
+        // Skip images and ensure additionalFeatures is not included
+        if (key !== 'images' /* && key !== 'additionalFeatures' */) { 
           if (Array.isArray(value)) {
-            value.forEach(item => {
-              formDataToSend.append(`${key}[]`, item);
-            });
+            // Handle amenities specifically
+            if (key === 'amenities') {
+              value.forEach(item => {
+                formDataToSend.append(`${key}[]`, item);
+              });
+            }
+            // Skip other arrays if any (though none expected now)
           } else if (value) {
             formDataToSend.append(key, value.toString());
           }
@@ -799,12 +699,14 @@ const CreateListing = () => {
                   <div key={amenity.id} className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      id={amenity.id}
+                      id={`amenity-${amenity.id}`}
+                      name="amenities"
+                      value={amenity.id}
                       checked={formData.amenities.includes(amenity.id)}
-                      onChange={() => handleCheckboxChange(amenity.id, 'amenities')}
+                      onChange={() => handleCheckboxChange(amenity.id)}
                       className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
                     />
-                    <label htmlFor={amenity.id} className="text-sm text-gray-700">
+                    <label htmlFor={`amenity-${amenity.id}`} className="text-sm text-gray-700">
                       {amenity.label}
                     </label>
                   </div>

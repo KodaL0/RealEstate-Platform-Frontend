@@ -34,7 +34,6 @@ export interface Property {
   virtual_tour_url?: string;
   video_url?: string;
   amenities: string[];
-  additional_features: string[];
   owner: Owner;
   is_published: boolean;
   created_at: string;
@@ -91,5 +90,4 @@ export interface ListingForm {
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
-  additionalFeatures: string[];
 }
