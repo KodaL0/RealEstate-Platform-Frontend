@@ -347,7 +347,7 @@ function Home() {
       </section>
 
       {/* ───────────── CTA Section ───────────── */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
+    <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
 
         <div className="container mx-auto px-4 text-center relative z-10">
@@ -358,24 +358,18 @@ function Home() {
             Ready to Find Your Perfect Property?
           </h2>
           <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you’re looking to buy, rent, or invest, our team is here to help you every step of the way.
+            Whether you’re looking to buy, rent, or invest, our team is here to
+            help you every step of the way.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <Link
-              to="/buy"
-              className="group bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
-            >
-              Browse Properties
-              <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-            <Link
-              to="/contact"
-              className="group bg-transparent border-2 border-white text-white hover:bg-white/10 px-8 py-4 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl flex items-center justify-center"
-            >
-              Contact an Agent
-              <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-            </Link>
-          </div>
+
+          {/* single CTA button */}
+          <Link
+            to="/buy"
+            className="group bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl inline-flex items-center justify-center"
+          >
+            Browse Properties
+            <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+          </Link>
         </div>
       </section>
     </div>
