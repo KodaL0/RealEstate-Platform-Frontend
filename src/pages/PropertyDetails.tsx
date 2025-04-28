@@ -328,7 +328,7 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="grid grid-cols-2 gap-6"
+                    className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
