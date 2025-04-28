@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Home, Plus } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";      // ← NEW
+import { motion, AnimatePresence } from "framer-motion";      // ← added
 import { apiClient } from "../middleware/auth";
 import { useUser } from "../context/UserContext";
 
@@ -28,7 +28,7 @@ const MyListings = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  /* ───── pagination state ───── */
+  /* pagination */
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 6;
   const totalPages = Math.ceil(properties.length / itemsPerPage);
@@ -40,7 +40,7 @@ const MyListings = () => {
   const navigate = useNavigate();
   const username = user?.username ?? "";
 
-  /* smooth-scroll to top when page changes (kept from your code) */
+  /* smooth-scroll on page change */
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -50,17 +50,19 @@ const MyListings = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  /* …fetch listings logic stays exactly as before… */
+  /* fetch listings (unchanged) */
   useEffect(() => {
     if (userLoading) return;
     if (!user) {
       setLoading(false);
       return;
     }
-    const fetchListings = async () => {
+    (async () => {
       setLoading(true);
       try {
-        const { data } = await apiClient.get<Property[]>("/properties/my-properties");
+        const { data } = await apiClient.get<Property[]>(
+          "/properties/my-properties"
+        );
         setProperties(data.map(p => ({ ...p, price: Number(p.price) || 0 })));
         setError(null);
       } catch (err: any) {
@@ -72,23 +74,50 @@ const MyListings = () => {
       } finally {
         setLoading(false);
       }
-    };
-    fetchListings();
+    })();
   }, [user, userLoading]);
 
-  /* publish / remove handlers unchanged … */
-  const handlePublish = async (id: number) => { /* … */ };
-  const handleRemove  = async (id: number) => { /* … */ };
+  /* publish / remove handlers (unchanged) */
+  const handlePublish = async (id: number) => {
+    /* same body as before */
+  };
+  const handleRemove = async (id: number) => {
+    /* same body as before */
+  };
 
-  /* ───── Loading & error UI (unchanged) ───── */
-  if (loading || userLoading) { /* … */ }
-  if (error) { /* … */ }
+  /* Loading & Error UI (unchanged) */
+  if (loading || userLoading) {
+    return (
+      <div className="min-h-screen pt-20 px-4">
+        <div className="container mx-auto flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
+        </div>
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="min-h-screen pt-20 px-4">
+        <div className="container mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <p className="text-red-600">{error}</p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
-  /* ───── Main UI ───── */
+  /* Main UI */
   return (
     <div className="min-h-screen pt-20 px-4">
       <div className="container mx-auto">
-        {/* header & create-listing button (unchanged) */}
+        {/* header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
           <button
@@ -99,15 +128,26 @@ const MyListings = () => {
           </button>
         </div>
 
-        {/* empty-state block (unchanged) */}
+        {/* empty-state */}
         {properties.length === 0 ? (
-          /* … your No-Properties block … */
           <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-            {/* … */}
+            <Home className="mx-auto h-16 w-16 text-gray-400 mb-6" />
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              No Properties Listed Yet
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Get started by creating your first property listing.
+            </p>
+            <button
+              onClick={() => navigate("/create-listing")}
+              className="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
+            >
+              <Plus className="w-5 h-5 mr-2" /> Create Listing
+            </button>
           </div>
         ) : (
           <>
-            {/* ───── Animated grid (only part that changed) ───── */}
+            {/* ─── animated grid (cards unchanged) ─── */}
             <AnimatePresence mode="wait">
               <motion.div
                 key={currentPage}
@@ -123,19 +163,117 @@ const MyListings = () => {
                     onClick={() => navigate(`/property/${p.id}`)}
                     className="relative bg-white rounded-xl border border-gray-200 overflow-hidden shadow-md hover:shadow-lg transition-shadow cursor-pointer"
                   >
-                    {/* …card markup exactly as you had it… */}
                     <img
                       src={p.images[0]?.image || "/placeholder-property.jpg"}
                       alt={p.title}
                       className="w-full h-64 object-cover"
                     />
-                    {/* badges, details, buttons … unchanged … */}
+                    <div className="absolute top-4 left-4 flex space-x-2 z-10">
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          p.property_status === "for_sale"
+                            ? "bg-emerald-500 text-white"
+                            : p.property_status === "for_rent"
+                            ? "bg-blue-500 text-white"
+                            : "bg-gray-300 text-gray-700"
+                        }`}
+                      >
+                        {p.property_status === "for_sale"
+                          ? "For Sale"
+                          : p.property_status === "for_rent"
+                          ? "For Rent"
+                          : "Draft"}
+                      </span>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          p.property_type.toLowerCase() === "apartment"
+                            ? "bg-gray-900/70 text-white"
+                            : "bg-blue-600 text-white"
+                        }`}
+                      >
+                        {p.property_type}
+                      </span>
+                    </div>
+                    <div className="p-5" onClick={e => e.stopPropagation()}>
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
+                          {p.title}
+                        </h3>
+                        <p className="text-lg font-bold text-blue-600">
+                          €
+                          {(p.price as number).toLocaleString(undefined, {
+                            maximumFractionDigits: 0,
+                          })}
+                        </p>
+                      </div>
+                      <div className="flex items-center text-gray-500 mb-4">
+                        <svg
+                          className="w-4 h-4 mr-1"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+                          />
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
+                          />
+                        </svg>
+                        <span className="text-sm">{p.location}</span>
+                      </div>
+                      <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 mb-4 text-sm text-gray-500">
+                        <span>{p.bedrooms} beds</span>
+                        <span>{p.bathrooms} baths</span>
+                        <span>{p.area} sqft</span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              navigate(`/edit-listing/${p.id}`);
+                            }}
+                            className="text-blue-600 hover:text-blue-700 font-medium"
+                          >
+                            Edit Listing
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handleRemove(p.id);
+                            }}
+                            className="ml-4 text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Remove
+                          </button>
+                          <button
+                            onClick={e => {
+                              e.stopPropagation();
+                              handlePublish(p.id);
+                            }}
+                            className="ml-4 text-green-600 hover:text-green-700 font-medium"
+                          >
+                            Publish
+                          </button>
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          Listed {new Date(p.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 ))}
               </motion.div>
             </AnimatePresence>
 
-            {/* ───── Pagination buttons (unchanged) ───── */}
+            {/* pagination buttons (unchanged) */}
             <div className="flex justify-center items-center mt-8 space-x-4 mb-12">
               <button
                 onClick={() => setCurrentPage(curr => Math.max(curr - 1, 1))}
@@ -162,7 +300,9 @@ const MyListings = () => {
                 </button>
               ))}
               <button
-                onClick={() => setCurrentPage(curr => Math.min(curr + 1, totalPages))}
+                onClick={() =>
+                  setCurrentPage(curr => Math.min(curr + 1, totalPages))
+                }
                 disabled={currentPage === totalPages}
                 className={`px-4 py-2 rounded-md ${
                   currentPage === totalPages
