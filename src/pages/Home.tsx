@@ -297,11 +297,11 @@ function Home() {
                   </div>
                   <div className="flex items-center mb-3">
                     <Mail className="h-5 w-5 mr-3 text-blue-300" />
-                    <span>support@propertypro.com</span>
+                    <span>support@propertpro.com</span>
                   </div>
                   <div className="flex items-center">
                     <MapPin className="h-5 w-5 mr-3 text-blue-300" />
-                    <span>123 Real Estate Ave, New York, NY 10001</span>
+                    <span>Cyprus</span>
                   </div>
                 </div>
               </div>
