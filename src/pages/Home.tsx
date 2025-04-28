@@ -1,70 +1,78 @@
-import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, ArrowRight, Building, Home as HomeIcon, Briefcase, Award, Mail, Phone, MapPin, Star, ChevronRight, Loader2 } from 'lucide-react';
-import PropertyCard from '../components/PropertyCard';
-import { testimonials } from '../data/properties';
-import { Property } from '../types';
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+import {
+  Search,
+  ArrowRight,
+  Building,
+  Home as HomeIcon,
+  Briefcase,
+  Award,
+  Mail,
+  Phone,
+  MapPin,
+  ChevronRight,
+  Loader2,
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";      // ← NEW
+import PropertyCard from "../components/PropertyCard";
+import { testimonials } from "../data/properties";
+import { Property } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+
+const pageSize = 12;                                          // ← NEW (how many per page)
 
 const Home = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [featuredProperties, setFeaturedProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  
-  const stats = [
-    { id: 1, value: "2,500+", label: "Properties Sold" },
-    { id: 2, value: "98%", label: "Client Satisfaction" },
-    { id: 3, value: "15+", label: "Years of Experience" },
-    { id: 4, value: "$1.2B+", label: "Sales Volume" }
-  ];
+  const [currentPage, setCurrentPage] = useState(1);          // ← NEW
 
+  const totalPages = Math.max(1, Math.ceil(featuredProperties.length / pageSize));   // ← NEW
+  const paginated = featuredProperties.slice(                  // ← NEW
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+
+  /* -------------------------------------------------------------------------- */
+  /*                               Fetch section                                */
+  /* -------------------------------------------------------------------------- */
   useEffect(() => {
     const fetchFeaturedProperties = async () => {
       setIsLoading(true);
       setError(null);
       try {
-        const response = await fetch(`${API_BASE_URL}/properties/featured/`);
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const data = await response.json();
-        
-        // Ensure data is an array (handle potential pagination)
-        const propertiesData = data.results || data;
-        
-        // Ensure propertiesData is an array before mapping
-        if (Array.isArray(propertiesData)) {
-          // Convert price to number
-          const transformedProperties = propertiesData.map((property: Property) => ({
-            ...property,
-            price: typeof property.price === 'string' ? parseFloat(property.price) : property.price,
-          }));
-          setFeaturedProperties(transformedProperties);
-        } else {
-          console.error("Featured properties data is not an array:", propertiesData);
-          setFeaturedProperties([]); // Set to empty array if data format is unexpected
-        }
-
+        const res = await fetch(`${API_BASE_URL}/properties/featured/`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        const arr = Array.isArray(data.results) ? data.results : data;
+        const parsed = arr.map((p: Property) => ({
+          ...p,
+          price: typeof p.price === "string" ? +p.price : p.price,
+        }));
+        setFeaturedProperties(parsed);
       } catch (err) {
-        console.error("Error fetching featured properties:", err);
-        setError(err instanceof Error ? err.message : "An unknown error occurred");
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchFeaturedProperties();
   }, []);
 
+  /* -------------------------------------------------------------------------- */
+  /*                          Newsletter (unchanged)                            */
+  /* -------------------------------------------------------------------------- */
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real implementation, this would send the email to your newsletter service
     console.log(`Subscribing email: ${email}`);
-    setEmail('');
-    // Here you would typically show a success message
+    setEmail("");
   };
+
+  /* -------------------------------------------------------------------------- */
+  /*                                 JSX start                                  */
+  /* -------------------------------------------------------------------------- */
 
   return (
     <div className="bg-white">
@@ -125,22 +133,33 @@ const Home = () => {
           </div>
         </div>
       </section>
-
-      {/* Featured Properties with enhanced cards */}
+      {/* ──────────────────────── Featured Properties Section ──────────────────────── */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
+          {/* Header row */}
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
-              <span className="inline-block text-blue-600 font-medium mb-2">Exclusive Listings</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Featured Properties</h2>
-              <p className="text-gray-600 mt-2 max-w-2xl">Explore our handpicked selection of premium properties in the most desirable locations</p>
+              <span className="inline-block text-blue-600 font-medium mb-2">
+                Exclusive Listings
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Featured Properties
+              </h2>
+              <p className="text-gray-600 mt-2 max-w-2xl">
+                Explore our hand-picked selection of premium properties in the
+                most desirable locations
+              </p>
             </div>
-            <Link to="/buy" className="group flex items-center text-blue-600 hover:text-blue-700 font-medium mt-4 md:mt-0">
-              View All 
+            <Link
+              to="/buy"
+              className="group flex items-center text-blue-600 hover:text-blue-700 font-medium mt-4 md:mt-0"
+            >
+              View All
               <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
             </Link>
           </div>
-          
+
+          {/* Loader / error */}
           {isLoading && (
             <div className="flex justify-center items-center h-64">
               <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
@@ -148,19 +167,57 @@ const Home = () => {
           )}
           {error && (
             <div className="text-center text-red-600 bg-red-100 p-4 rounded-lg">
-              <p>Could not load featured properties: {error}</p>
+              Could not load featured properties: {error}
             </div>
           )}
+
+          {/* Cards with slide animation */}
           {!isLoading && !error && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {featuredProperties.length > 0 ? (
-                featuredProperties.map(property => (
-                  <PropertyCard key={property.id} property={property} />
-                ))
-              ) : (
-                <p className="col-span-full text-center text-gray-500">No featured properties available at the moment.</p>
+            <>
+              <AnimatePresence mode="wait">
+                <motion.div
+                  key={currentPage}                         // ← changes on page flip
+                  initial={{ x: 200, opacity: 0 }}
+                  animate={{ x: 0, opacity: 1 }}
+                  exit={{ x: -200, opacity: 0 }}
+                  transition={{ duration: 0.45, ease: "easeOut" }}
+                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                >
+                  {paginated.length > 0 ? (
+                    paginated.map((property) => (
+                      <PropertyCard key={property.id} property={property} />
+                    ))
+                  ) : (
+                    <p className="col-span-full text-center text-gray-500">
+                      No featured properties available at the moment.
+                    </p>
+                  )}
+                </motion.div>
+              </AnimatePresence>
+
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center mt-12 space-x-2">
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const page = i + 1;
+                    const active = page === currentPage;
+                    return (
+                      <button
+                        key={page}
+                        onClick={() => setCurrentPage(page)}
+                        className={`h-10 w-10 rounded-full border ${
+                          active
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                        } transition-all`}
+                      >
+                        {page}
+                      </button>
+                    );
+                  })}
+                </div>
               )}
-            </div>
+            </>
           )}
         </div>
       </section>
