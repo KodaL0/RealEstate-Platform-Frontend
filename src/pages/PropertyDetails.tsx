@@ -1,113 +1,106 @@
-/* eslint-disable react/no-array-index-key */
-
-// Global Leaflet marker icon fix
-import "../components/leafletMarkerFix";
-
-import {
-  useState, useEffect, useCallback,
-} from "react";
-import { Link, useParams } from "react-router-dom";
+import React from 'react';
+import { Link, useParams } from 'react-router-dom';
 import {
   MapPin, Bed, Bath, Square, Calendar,
   Heart, Share2, CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
   X, ArrowLeft, ArrowRight,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-
-import { apiClient } from "../middleware/auth";
-import { useUser }   from "../context/UserContext";
-import { Property }  from "../types";
-import MapView       from "../components/MapView";
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { apiClient } from '../middleware/auth';
+import { useUser } from '../context/UserContext';
+import { Property } from '../types';
+import MapView from '../components/MapView';
 
 /* ───────────────── helpers ───────────────── */
 
 async function geocodeAddress(address: string) {
-  const q   = encodeURIComponent(address);
+  const q = encodeURIComponent(address);
   const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`);
-  const js  = await res.json();
+  const js = await res.json();
   if (js?.length) return { lat: +js[0].lat, lng: +js[0].lon };
-  throw new Error("geocoding failed");
+  throw new Error('geocoding failed');
 }
 
 const normaliseImages = (imgs: any[] = []) =>
-  imgs.map(i => (typeof i === "string" ? { image: i } : i));
+  imgs.map(i => (typeof i === 'string' ? { image: i } : i));
 
 const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
-  title: raw?.title ?? "Untitled Property",
-  description: raw?.description ?? "",
+  title: raw?.title ?? 'Untitled Property',
+  description: raw?.description ?? '',
   price: raw?.price ? +raw.price : 0,
-  location: raw?.location ?? "",
-  property_type: raw?.property_type ?? "",
+  location: raw?.location ?? '',
+  property_type: raw?.property_type ?? '',
   bedrooms: raw?.bedrooms ?? 0,
   bathrooms: raw?.bathrooms ? +raw.bathrooms : 0,
   area: raw?.area ? +raw.area : 0,
-  year_built: raw?.year_built ?? "",
+  year_built: raw?.year_built ?? '',
   parking_spaces: raw?.parking_spaces ?? 0,
-  lot_size: raw?.lot_size ?? "",
-  property_status: raw?.property_status ?? "unavailable",
-  energy_rating: raw?.energy_rating ?? "",
-  construction_material: raw?.construction_material ?? "",
-  floor_level: raw?.floor_level ?? "",
-  total_floors: raw?.total_floors ?? "",
-  available_from: raw?.available_from ?? "",
-  contact_phone: raw?.contact_phone ?? "",
-  contact_email: raw?.contact_email ?? "",
-  virtual_tour_url: raw?.virtual_tour_url ?? "",
-  video_url: raw?.video_url ?? "",
+  lot_size: raw?.lot_size ?? '',
+  property_status: raw?.property_status ?? 'unavailable',
+  energy_rating: raw?.energy_rating ?? '',
+  construction_material: raw?.construction_material ?? '',
+  floor_level: raw?.floor_level ?? '',
+  total_floors: raw?.total_floors ?? '',
+  available_from: raw?.available_from ?? '',
+  contact_phone: raw?.contact_phone ?? '',
+  contact_email: raw?.contact_email ?? '',
+  virtual_tour_url: raw?.virtual_tour_url ?? '',
+  video_url: raw?.video_url ?? '',
   amenities: raw?.amenities ?? [],
   additional_features: raw?.additional_features ?? [],
   owner: raw?.owner ?? null,
   is_published: raw?.is_published ?? false,
-  created_at: raw?.created_at ?? "",
-  updated_at: raw?.updated_at ?? "",
+  created_at: raw?.created_at ?? '',
+  updated_at: raw?.updated_at ?? '',
   images: normaliseImages(raw?.images),
 });
 
 /* amenity → icon */
 const amenityIcons: Record<string, JSX.Element> = {
-  parking:    <Car          className="h-5 w-5 mr-3 text-emerald-600" />,
-  pool:       <Droplet      className="h-5 w-5 mr-3 text-emerald-600" />,
-  gym:        <Dumbbell     className="h-5 w-5 mr-3 text-emerald-600" />,
-  security:   <Shield       className="h-5 w-5 mr-3 text-emerald-600" />,
-  ac:         <Wind         className="h-5 w-5 mr-3 text-emerald-600" />,
-  heating:    <Flame        className="h-5 w-5 mr-3 text-emerald-600" />,
-  laundry:    <CheckCircle  className="h-5 w-5 mr-3 text-emerald-600" />,
-  pets:       <Smile        className="h-5 w-5 mr-3 text-emerald-600" />,
-  furnished:  <Bed          className="h-5 w-5 mr-3 text-emerald-600" />,
-  balcony:    <DoorOpen     className="h-5 w-5 mr-3 text-emerald-600" />,
-  storage:    <Archive      className="h-5 w-5 mr-3 text-emerald-600" />,
-  wifi:       <Wifi         className="h-5 w-5 mr-3 text-emerald-600" />,
-  dishwasher: <Package      className="h-5 w-5 mr-3 text-emerald-600" />,
-  elevator:   <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  fireplace:  <Flame        className="h-5 w-5 mr-3 text-emerald-600" />,
-  garden:     <Flower       className="h-5 w-5 mr-3 text-emerald-600" />,
-  roofDeck:   <Sun          className="h-5 w-5 mr-3 text-emerald-600" />,
-  doorman:    <UserCheck    className="h-5 w-5 mr-3 text-emerald-600" />,
-  garage:     <Car          className="h-5 w-5 mr-3 text-emerald-600" />,
-  waterfront: <Anchor       className="h-5 w-5 mr-3 text-emerald-600" />,
-  default:    <CheckCircle  className="h-5 w-5 mr-3 text-emerald-600" />,
+  parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
+  gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
+  security: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
+  ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
+  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
+  laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
+  furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
+  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />,
+  storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
+  wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
+  dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
+  elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
+  garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
+  roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
+  doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
+  garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  waterfront: <Anchor className="h-5 w-5 mr-3 text-emerald-600" />,
+  default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 4;          // thumbnails beside hero image
+const THUMBS_PER_PAGE = 4; // thumbnails beside hero image
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isLoading: userLoading } = useUser();
 
   /* core state */
-  const [property,    setProperty]    = useState<Property | null>(null);
-  const [coords,      setCoords]      = useState<{ lat: number; lng: number } | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [loading,     setLoading]     = useState(true);
+  const [loading, setLoading] = useState(true);
 
   /* light-box */
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIdx,  setLightboxIdx]  = useState(0);
+  const [lightboxIdx, setLightboxIdx] = useState(0);
 
   /* thumbnail carousel page */
   const [thumbPage, setThumbPage] = useState(0);
@@ -116,13 +109,13 @@ const PropertyDetails = () => {
   useEffect(() => {
     if (!id || userLoading) return;
 
-    const API = "https://propertprodjango.onrender.com/api";
+    const API = 'https://propertprodjango.onrender.com/api';
 
     const scanEndpoint = async (url: string) => {
       const res = await fetch(url);
       if (!res.ok) return null;
       const txt = await res.text();
-      if (txt.includes("<html")) return null;
+      if (txt.includes('<html')) return null;
       const js = JSON.parse(txt);
       const list = Array.isArray(js) ? js : js.results ?? [];
       return list.find((p: any) => p.id.toString() === id) ?? null;
@@ -136,8 +129,8 @@ const PropertyDetails = () => {
           (await scanEndpoint(`${API}/properties/rent`));
 
         if (!raw && user) {
-          const mine = await apiClient.get("/properties/my-properties");
-          const arr  = Array.isArray(mine.data) ? mine.data : mine.data.results ?? [];
+          const mine = await apiClient.get('/properties/my-properties');
+          const arr = Array.isArray(mine.data) ? mine.data : mine.data.results ?? [];
           raw = arr.find((p: any) => p.id.toString() === id) ?? null;
         }
 
@@ -146,8 +139,11 @@ const PropertyDetails = () => {
           setProperty(mapped);
 
           if (!raw.latitude && mapped.location) {
-            try { setCoords(await geocodeAddress(mapped.location)); }
-            catch (e) { console.error("geocode fail", e); }
+            try {
+              setCoords(await geocodeAddress(mapped.location));
+            } catch (e) {
+              console.error('geocode fail', e);
+            }
           }
         } else {
           setProperty(null);
@@ -162,14 +158,17 @@ const PropertyDetails = () => {
   }, [id, user, userLoading]);
 
   /* derived thumbnail info */
-  const totalImages    = property?.images.length ?? 0;
-  const lastThumbPage  = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
-  const startIdx       = thumbPage * THUMBS_PER_PAGE;
-  const endIdx         = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
-  const visibleThumbs  = property?.images.slice(startIdx, endIdx) ?? [];
+  const totalImages = property?.images.length ?? 0;
+  const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
+  const startIdx = thumbPage * THUMBS_PER_PAGE;
+  const endIdx = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
+  const visibleThumbs = property?.images.slice(startIdx, endIdx) ?? [];
 
   /* light-box helpers */
-  const openLightbox  = (idx: number) => { setLightboxIdx(idx); setLightboxOpen(true); };
+  const openLightbox = (idx: number) => {
+    setLightboxIdx(idx);
+    setLightboxOpen(true);
+  };
   const closeLightbox = () => setLightboxOpen(false);
   const prevImg = useCallback(
     () => setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1)),
@@ -184,12 +183,12 @@ const PropertyDetails = () => {
   useEffect(() => {
     if (!lightboxOpen) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft")  prevImg();
-      if (e.key === "ArrowRight") nextImg();
-      if (e.key === "Escape")     closeLightbox();
+      if (e.key === 'ArrowLeft') prevImg();
+      if (e.key === 'ArrowRight') nextImg();
+      if (e.key === 'Escape') closeLightbox();
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
   }, [lightboxOpen, prevImg, nextImg]);
 
   /* early states */
@@ -218,9 +217,7 @@ const PropertyDetails = () => {
   /* unpublished notice */
   const unpublishedBanner = !property.is_published && (
     <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
-      <p className="text-sm text-amber-700">
-        This property is not published. Only you can see it.
-      </p>
+      <p className="text-sm text-amber-700">This property is not published. Only you can see it.</p>
     </div>
   );
 
@@ -230,15 +227,24 @@ const PropertyDetails = () => {
       {/* light-box overlay */}
       {lightboxOpen && (
         <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
-          <button onClick={closeLightbox} className="absolute top-6 right-6 text-white hover:text-red-400">
+          <button
+            onClick={closeLightbox}
+            className="absolute top-6 right-6 text-white hover:text-red-400"
+          >
             <X className="w-8 h-8" />
           </button>
           {totalImages > 1 && (
             <>
-              <button onClick={prevImg} className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
+              <button
+                onClick={prevImg}
+                className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
                 <ArrowLeft className="w-10 h-10" />
               </button>
-              <button onClick={nextImg} className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
+              <button
+                onClick={nextImg}
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
                 <ArrowRight className="w-10 h-10" />
               </button>
             </>
@@ -255,12 +261,12 @@ const PropertyDetails = () => {
         {unpublishedBanner}
 
         {/* ───── Hero + Thumbnails ───── */}
-        <section className="bg-white">
-          <div className="flex flex-col lg:flex-row gap-4">
+        <section className="bg-white rounded-xl overflow-hidden shadow-sm">
+          <div className="flex flex-col lg:flex-row">
             {/* hero image */}
             <div className="lg:w-2/3">
               <div
-                className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden cursor-zoom-in"
+                className="relative h-96 lg:h-[500px] cursor-zoom-in"
                 onClick={() => openLightbox(activeImage)}
               >
                 <img
@@ -272,12 +278,12 @@ const PropertyDetails = () => {
                 <div className="absolute top-4 left-4 flex gap-2 z-30">
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === "for_sale"
-                        ? "bg-emerald-500 text-white"
-                        : "bg-blue-500 text-white"
+                      property.property_status === 'for_sale'
+                        ? 'bg-emerald-500 text-white'
+                        : 'bg-blue-500 text-white'
                     }`}
                   >
-                    {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
+                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
@@ -297,7 +303,7 @@ const PropertyDetails = () => {
 
             {/* thumbnail carousel */}
             <div className="lg:w-1/3 lg:h-[500px] bg-gray-50">
-              <div className="relative h-full">
+              <div className="relative h-[250px] lg:h-full">
                 {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
@@ -323,16 +329,16 @@ const PropertyDetails = () => {
                     initial={{ x: thumbPage > 0 ? 200 : -200, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
-                    transition={{ duration: 0.35, ease: "easeOut" }}
+                    transition={{ duration: 0.35, ease: 'easeOut' }}
                     className="grid grid-cols-2 grid-rows-2 h-full gap-4 p-4"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
                       return (
-                        <div 
+                        <div
                           key={realIdx}
-                          className={`relative w-full h-full overflow-hidden rounded-xl ${
-                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""
+                          className={`relative aspect-square w-full overflow-hidden rounded-xl ${
+                            realIdx === activeImage ? 'ring-2 ring-blue-600' : ''
                           }`}
                         >
                           <img
@@ -347,14 +353,16 @@ const PropertyDetails = () => {
                         </div>
                       );
                     })}
-                    
+
                     {/* Fill empty slots with placeholder divs to maintain grid structure */}
-                    {Array(THUMBS_PER_PAGE - visibleThumbs.length).fill(0).map((_, idx) => (
-                      <div 
-                        key={`placeholder-${idx}`}
-                        className="w-full h-full bg-gray-100 rounded-xl"
-                      />
-                    ))}
+                    {Array(THUMBS_PER_PAGE - visibleThumbs.length)
+                      .fill(0)
+                      .map((_, idx) => (
+                        <div
+                          key={`placeholder-${idx}`}
+                          className="aspect-square w-full bg-gray-100 rounded-xl"
+                        />
+                      ))}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -372,16 +380,14 @@ const PropertyDetails = () => {
                 {/* title & price */}
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">
-                      {property.title}
-                    </h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
                     <div className="flex items-center text-gray-600">
                       <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                       <span>{property.location}</span>
                     </div>
                   </div>
                   <p className="text-3xl font-bold text-blue-600 mt-4 md:mt-0">
-                    €{Number.isFinite(property.price) ? property.price.toLocaleString() : "0"}
+                    €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                   </p>
                 </div>
 
@@ -389,19 +395,27 @@ const PropertyDetails = () => {
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bedrooms} {property.bedrooms === 1 ? "Bed" : "Beds"}</span>
+                    <span>
+                      {property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bathrooms} {property.bathrooms === 1 ? "Bath" : "Baths"}</span>
+                    <span>
+                      {property.bathrooms} {property.bathrooms === 1 ? 'Bath' : 'Baths'}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{Number.isFinite(property.area) ? property.area.toLocaleString() : "0"} sqm</span>
+                    <span>
+                      {Number.isFinite(property.area) ? property.area.toLocaleString() : '0'} sqm
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.year_built ? `Built in ${property.year_built}` : "Year built n/a"}</span>
+                    <span>
+                      {property.year_built ? `Built in ${property.year_built}` : 'Year built n/a'}
+                    </span>
                   </div>
                 </div>
 
