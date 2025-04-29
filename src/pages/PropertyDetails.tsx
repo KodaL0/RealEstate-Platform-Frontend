@@ -303,7 +303,7 @@ const PropertyDetails = () => {
 
             {/* thumbnail carousel */}
             <div className="lg:w-1/3 lg:h-[500px] bg-gray-50">
-              <div className="relative h-[250px] lg:h-full">
+              <div className="relative h-auto lg:h-full">
                 {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
@@ -337,7 +337,7 @@ const PropertyDetails = () => {
                       return (
                         <div
                           key={realIdx}
-                          className={`relative aspect-square w-full overflow-hidden rounded-xl ${
+                          className={`relative w-full pt-[100%] overflow-hidden rounded-xl ${
                             realIdx === activeImage ? 'ring-2 ring-blue-600' : ''
                           }`}
                         >
