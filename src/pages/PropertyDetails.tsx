@@ -21,7 +21,7 @@ import { useUser }   from "../context/UserContext";
 import { Property }  from "../types";
 import MapView       from "../components/MapView";
 
-/* ───────────────── helpers ───────────────── */
+const THUMBS_PER_PAGE = 4;
 
 async function geocodeAddress(address: string) {
   const q   = encodeURIComponent(address);
@@ -66,7 +66,6 @@ const mapPropertyData = (raw: any): Property => ({
   images: normaliseImages(raw?.images),
 });
 
-/* amenity → icon */
 const amenityIcons: Record<string, JSX.Element> = {
   parking:    <Car          className="h-5 w-5 mr-3 text-emerald-600" />,
   pool:       <Droplet      className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -91,28 +90,18 @@ const amenityIcons: Record<string, JSX.Element> = {
   default:    <CheckCircle  className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
-/* ───────────────── component ───────────────── */
-
-const THUMBS_PER_PAGE = 4;          // thumbnails beside hero image
-
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isLoading: userLoading } = useUser();
 
-  /* core state */
-  const [property,    setProperty]    = useState<Property | null>(null);
-  const [coords,      setCoords]      = useState<{ lat: number; lng: number } | null>(null);
+  const [property, setProperty] = useState<Property | null>(null);
+  const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
-  const [loading,     setLoading]     = useState(true);
-
-  /* light-box */
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [lightboxIdx,  setLightboxIdx]  = useState(0);
-
-  /* thumbnail carousel page */
+  const [lightboxIdx, setLightboxIdx] = useState(0);
   const [thumbPage, setThumbPage] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  /* ─── fetch property (same logic you already had) ─── */
   useEffect(() => {
     if (!id || userLoading) return;
 
@@ -161,38 +150,6 @@ const PropertyDetails = () => {
     })();
   }, [id, user, userLoading]);
 
-  /* derived thumbnail info */
-  const totalImages    = property?.images.length ?? 0;
-  const lastThumbPage  = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
-  const startIdx       = thumbPage * THUMBS_PER_PAGE;
-  const endIdx         = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
-  const visibleThumbs  = property?.images.slice(startIdx, endIdx) ?? [];
-
-  /* light-box helpers */
-  const openLightbox  = (idx: number) => { setLightboxIdx(idx); setLightboxOpen(true); };
-  const closeLightbox = () => setLightboxOpen(false);
-  const prevImg = useCallback(
-    () => setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1)),
-    [totalImages]
-  );
-  const nextImg = useCallback(
-    () => setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1)),
-    [totalImages]
-  );
-
-  /* key navigation inside light-box */
-  useEffect(() => {
-    if (!lightboxOpen) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft")  prevImg();
-      if (e.key === "ArrowRight") nextImg();
-      if (e.key === "Escape")     closeLightbox();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [lightboxOpen, prevImg, nextImg]);
-
-  /* early states */
   if (loading || userLoading) {
     return (
       <div className="pt-20 min-h-screen flex justify-center items-center">
@@ -213,27 +170,47 @@ const PropertyDetails = () => {
     );
   }
 
-  const toUrl = (img: { image: string }) => img.image;
+  // build unique thumbnails (skip the hero and any duplicates)
+  const thumbImages = property.images
+    .filter((img, idx) => idx !== activeImage)
+    .filter((img, i, arr) => arr.findIndex(x => x.image === img.image) === i);
 
-  /* unpublished notice */
-  const unpublishedBanner = !property.is_published && (
-    <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
-      <p className="text-sm text-amber-700">
-        This property is not published. Only you can see it.
-      </p>
-    </div>
+  const totalThumbs   = thumbImages.length;
+  const lastThumbPage = Math.max(0, Math.ceil(totalThumbs / THUMBS_PER_PAGE) - 1);
+  const startIdx      = thumbPage * THUMBS_PER_PAGE;
+  const visibleThumbs = thumbImages.slice(startIdx, startIdx + THUMBS_PER_PAGE);
+
+  const openLightbox  = (idx: number) => { setLightboxIdx(idx); setLightboxOpen(true); };
+  const closeLightbox = () => setLightboxOpen(false);
+  const prevImg = useCallback(
+    () => setLightboxIdx(i => (i === 0 ? property.images.length - 1 : i - 1)),
+    [property]
+  );
+  const nextImg = useCallback(
+    () => setLightboxIdx(i => (i === property.images.length - 1 ? 0 : i + 1)),
+    [property]
   );
 
-  /* ───────────────── render ───────────────── */
+  useEffect(() => {
+    if (!lightboxOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft")  prevImg();
+      if (e.key === "ArrowRight") nextImg();
+      if (e.key === "Escape")     closeLightbox();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxOpen, prevImg, nextImg]);
+
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* light-box overlay */}
+      {/* Lightbox */}
       {lightboxOpen && (
         <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
           <button onClick={closeLightbox} className="absolute top-6 right-6 text-white hover:text-red-400">
             <X className="w-8 h-8" />
           </button>
-          {totalImages > 1 && (
+          {property.images.length > 1 && (
             <>
               <button onClick={prevImg} className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
                 <ArrowLeft className="w-10 h-10" />
@@ -244,7 +221,7 @@ const PropertyDetails = () => {
             </>
           )}
           <img
-            src={toUrl(property.images[lightboxIdx])}
+            src={property.images[lightboxIdx].image}
             alt=""
             className="max-h-[80vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           />
@@ -252,60 +229,50 @@ const PropertyDetails = () => {
       )}
 
       <div className="container mx-auto px-4 py-8">
-        {unpublishedBanner}
-
-        {/* ───── Hero + Thumbnails ───── */}
+        {/* Hero + Thumbnails */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* hero image */}
+            {/* Hero */}
             <div className="lg:w-2/3">
               <div
                 className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden cursor-zoom-in"
                 onClick={() => openLightbox(activeImage)}
               >
                 <img
-                  src={toUrl(property.images[activeImage])}
+                  src={property.images[activeImage].image}
                   className="w-full h-full object-cover"
                   alt=""
                 />
-                {/* status badges */}
+                {/* Badges & Actions */}
                 <div className="absolute top-4 left-4 flex gap-2 z-30">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === "for_sale"
-                        ? "bg-emerald-500 text-white"
-                        : "bg-blue-500 text-white"
-                    }`}
-                  >
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    property.property_status === "for_sale"
+                      ? "bg-emerald-500 text-white"
+                      : "bg-blue-500 text-white"
+                  }`}>
                     {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
-                {/* fav / share */}
                 <div className="absolute top-4 right-4 flex gap-2 z-30">
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
+                  <button className="p-2 bg-white/80 rounded-full shadow-md hover:bg-white">
                     <Heart className="h-5 w-5 text-gray-600 hover:text-red-500" />
                   </button>
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
+                  <button className="p-2 bg-white/80 rounded-full shadow-md hover:bg-white">
                     <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
                   </button>
                 </div>
               </div>
             </div>
-
-            {/* thumbnail carousel */}
+            {/* Thumbnails */}
             <div className="lg:w-1/3 flex flex-col">
-              {/*
-                MATCH HERO HEIGHT (500px) AND STOP CONTENT FROM BLEEDING OUT
-              */}
               <div className="relative flex-1 lg:h-[500px] overflow-hidden">
-                {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 shadow-lg z-10 hover:bg-gray-50"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
@@ -313,13 +280,11 @@ const PropertyDetails = () => {
                 {thumbPage < lastThumbPage && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 shadow-lg z-10 hover:bg-gray-50"
                   >
                     <ArrowRight className="w-6 h-6 text-gray-600" />
                   </button>
                 )}
-
-                {/* animated grid of thumbs */}
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={thumbPage}
@@ -327,29 +292,21 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    /*
-                      grid-rows-2 + h-full makes two equal rows that stretch
-                      to consume the full 500px height so the bottom thumbnails
-                      sit flush with the container bottom.
-                    */
                     className="grid grid-cols-2 grid-rows-2 h-full gap-4"
                   >
-                    {visibleThumbs.map((img, idx) => {
-                      const realIdx = startIdx + idx;
-                      return (
-                        <img
-                          key={realIdx}
-                          src={toUrl(img)}
-                          onClick={() => {
-                            setActiveImage(realIdx);
-                            openLightbox(realIdx);
-                          }}
-                          className={`h-full w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
-                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""}`}
-                          alt=""
-                        />
-                      );
-                    })}
+                    {visibleThumbs.map((img, idx) => (
+                      <img
+                        key={idx}
+                        src={img.image}
+                        onClick={() => {
+                          const realIdx = property.images.findIndex(x => x.image === img.image);
+                          setActiveImage(realIdx);
+                          openLightbox(realIdx);
+                        }}
+                        className="h-full w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform"
+                        alt=""
+                      />
+                    ))}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -357,14 +314,14 @@ const PropertyDetails = () => {
           </div>
         </section>
 
-        {/* ───── DETAILS / DESCRIPTION / AMENITIES / MAP ───── */}
+        {/* Details / Description / Amenities / Map */}
         <section className="mt-8">
           <div className="flex flex-col lg:flex-row lg:gap-8">
-            {/* main content */}
+            {/* Main Content */}
             <div className="lg:w-2/3">
-              {/* info card */}
+              {/* Info Card */}
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                {/* title & price */}
+                {/* Title & Price */}
                 <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -380,7 +337,7 @@ const PropertyDetails = () => {
                   </p>
                 </div>
 
-                {/* basic stats */}
+                {/* Basic Stats */}
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
@@ -400,7 +357,7 @@ const PropertyDetails = () => {
                   </div>
                 </div>
 
-                {/* description */}
+                {/* Description */}
                 <div className="mt-6">
                   <h2 className="text-xl font-bold mb-4">Description</h2>
                   <p className="text-gray-700 leading-relaxed whitespace-pre-line">
@@ -409,7 +366,7 @@ const PropertyDetails = () => {
                 </div>
               </div>
 
-              {/* amenities */}
+              {/* Amenities */}
               {property.amenities.length > 0 && (
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                   <h2 className="text-xl font-bold mb-4">Amenities</h2>
@@ -417,14 +374,14 @@ const PropertyDetails = () => {
                     {property.amenities.map((a, i) => (
                       <div key={i} className="flex items-center">
                         {amenityIcons[a] ?? amenityIcons.default}
-                        <span>{a}</span>
+                        <span className="capitalize">{a}</span>
                       </div>
                     ))}
                   </div>
                 </div>
               )}
 
-              {/* map */}
+              {/* Map */}
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h2 className="text-xl font-bold mb-4">Location</h2>
                 {coords ? (
@@ -439,7 +396,7 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* sidebar */}
+            {/* Sidebar */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm sticky top-24">
                 <h3 className="text-xl font-bold mb-6">Contact Information</h3>
