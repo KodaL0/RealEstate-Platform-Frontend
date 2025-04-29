@@ -93,7 +93,7 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 4;          // thumbnails shown at once
+const THUMBS_PER_PAGE = 4;          // thumbnails beside hero image
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -123,7 +123,7 @@ const PropertyDetails = () => {
       if (!res.ok) return null;
       const txt = await res.text();
       if (txt.includes("<html")) return null;
-      const js  = JSON.parse(txt);
+      const js = JSON.parse(txt);
       const list = Array.isArray(js) ? js : js.results ?? [];
       return list.find((p: any) => p.id.toString() === id) ?? null;
     };
@@ -295,17 +295,14 @@ const PropertyDetails = () => {
               </div>
             </div>
 
-            {/* ─── thumbnail carousel ─── */}
+            {/* thumbnail carousel */}
             <div className="lg:w-1/3 flex flex-col">
-              {/* wrapper clips its children */}
-              <div className="relative flex-1 overflow-hidden">
-                {/* nav arrows (inside box, hidden on small screens) */}
+              <div className="relative flex-1">
+                {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
-                    className="hidden lg:block absolute left-2 top-1/2 -translate-y-1/2
-                               bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
-                    aria-label="Previous thumbnails"
+                    className="absolute -left-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
@@ -313,9 +310,7 @@ const PropertyDetails = () => {
                 {thumbPage < lastThumbPage && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
-                    className="hidden lg:block absolute right-2 top-1/2 -translate-y-1/2
-                               bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
-                    aria-label="Next thumbnails"
+                    className="absolute -right-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowRight className="w-6 h-6 text-gray-600" />
                   </button>
@@ -329,7 +324,7 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="grid grid-cols-2 gap-4 pt-8"
+                    className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
@@ -341,9 +336,9 @@ const PropertyDetails = () => {
                             setActiveImage(realIdx);
                             openLightbox(realIdx);
                           }}
-                          className={`h-32 w-full object-cover rounded-xl cursor-pointer
-                                      hover:scale-105 transition-transform
-                                      ${realIdx === activeImage ? "ring-2 ring-blue-600" : ""}`}
+                          className={`h-44 w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
+                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""
+                          }`}
                           alt=""
                         />
                       );
