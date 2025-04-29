@@ -332,7 +332,7 @@ const PropertyDetails = () => {
                       to consume the full 500px height so the bottom thumbnails
                       sit flush with the container bottom.
                     */
-                    className="grid grid-cols-2 grid-rows-2 h-full gap-4 pt-8"
+                    className="grid grid-cols-2 grid-rows-2 h-full gap-4"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
