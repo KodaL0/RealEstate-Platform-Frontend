@@ -41,7 +41,7 @@ function App() {
           </main>
           <Footer />
         </div>
-       <Analytics />
+        <Analytics />
       </Router>
     </UserProvider>
   );
