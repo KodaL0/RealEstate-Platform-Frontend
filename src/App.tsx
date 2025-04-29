@@ -7,8 +7,10 @@ import Rent from "./pages/Rent";
 import PropertyDetails from "./pages/PropertyDetails";
 import { AuthPage } from "./pages/AuthPage";
 import ProfilePage from "./pages/ProfilePage"; 
+import Favourites from './pages/Favourites'; 
 import { UserProvider } from './context/UserContext'; // Import UserProvider
 import CreateListing from "./pages/CreateListing";
+
 import MyListings from "./pages/MyListings"; // Import MyListings component
 import ScrollToTop from "./components/ScrollToTop"; // ✅ Import ScrollToTop
 import MortgageCalculator from "./pages/MortgageCalculator"; // Import MortgageCalculator
