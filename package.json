@@ -25,7 +25,8 @@
     "leaflet": "^1.9.3",
     "react-leaflet": "^4.1.0",
     "framer-motion": "^12.9.2",
-    "react-icons": "^4.10.1"
+    "react-icons": "^4.10.1",
+    "@vercel/analytics": "^1.0.0"
     
   },
   "devDependencies": {
