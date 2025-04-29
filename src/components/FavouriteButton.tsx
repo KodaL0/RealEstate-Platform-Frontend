@@ -1,7 +1,6 @@
 // src/components/FavouriteButton.tsx
 import React, { useState } from 'react';
-import { Heart as HeartOutline, HeartFill } from 'lucide-react'; // if you have a filled heart icon
-// If you don’t have a filled icon, you can just swap colors on the outline
+import { Heart } from 'lucide-react';
 
 interface FavouriteButtonProps {
   /** initial favourite state */
@@ -29,11 +28,11 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       aria-pressed={liked}
       aria-label={liked ? 'Remove from favourites' : 'Add to favourites'}
     >
-      {liked ? (
-        <HeartFill className="h-5 w-5 text-red-500 transition-colors" />
-      ) : (
-        <HeartOutline className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
-      )}
+      <Heart
+        className="h-5 w-5"
+        stroke={liked ? 'red' : '#4B5563'}
+        fill={liked ? 'red' : 'none'}
+      />
     </button>
   );
 };
