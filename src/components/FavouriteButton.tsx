@@ -85,7 +85,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       onClick={handleClick}
       // Disable button while loading
       disabled={isLoading}
-      className={`absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md z-20 transition-opacity ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`} // Adjusted position slightly
+      className={`p-2 bg-white/80 hover:bg-white rounded-full shadow-md transition-opacity ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`} // Adjusted position slightly
       aria-pressed={liked}
       aria-label={liked ? 'Remove from favourites' : 'Add to favourites'}
     >
