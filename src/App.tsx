@@ -10,6 +10,7 @@ import ProfilePage from "./pages/ProfilePage";
 import Favourites from './pages/Favourites'; 
 import { UserProvider } from './context/UserContext'; // Import UserProvider
 import CreateListing from "./pages/CreateListing";
+import { Analytics } from "@vercel/analytics/react"
 
 import MyListings from "./pages/MyListings"; // Import MyListings component
 import ScrollToTop from "./components/ScrollToTop"; // ✅ Import ScrollToTop
