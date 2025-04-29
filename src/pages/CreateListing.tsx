@@ -51,12 +51,12 @@ interface ListingForm {
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
-  { value: 'condo', label: 'Condo' },
+  {/* value: 'condo', label: 'Condo' },
   { value: 'townhouse', label: 'Townhouse' },
   { value: 'villa', label: 'Villa' },
   { value: 'studio', label: 'Studio' },
   { value: 'duplex', label: 'Duplex' },
-  { value: 'penthouse', label: 'Penthouse' },
+  { value: 'penthouse', label: 'Penthouse' */},
 ];
 
 const PROPERTY_STATUS = [
