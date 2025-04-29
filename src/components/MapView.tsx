@@ -1,65 +1,66 @@
-import React, { useState } from 'react';
+// src/components/MapView.tsx
+import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+
+// ─── Fix Leaflet’s default icon URLs ─────────────────────────────────────────
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
+  iconUrl:       require('leaflet/dist/images/marker-icon.png'),
+  shadowUrl:     require('leaflet/dist/images/marker-shadow.png'),
+});
 
 interface MapViewProps {
   lat: number;
   lng: number;
+  // optional: your email to pass to Nominatim, e.g. "you@example.com"
+  email?: string;
 }
 
-const MapView: React.FC<MapViewProps> = ({ lat, lng }) => {
+const MapView: React.FC<MapViewProps> = ({ lat, lng, email }) => {
   const position: [number, number] = [lat, lng];
-  const [address, setAddress] = useState<string>('Property Location');
+  const [address, setAddress] = useState<string>('Loading address…');
 
-  // Fetch address details using Nominatim's reverse geocoding API.
-  const fetchAddress = async () => {
-    // Optionally add a zoom parameter (e.g., zoom=18) for more detailed results:
-    const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&addressdetails=1`;
-    try {
-      // Add a User-Agent header for better compliance with Nominatim's usage policy.
-      const response = await fetch(url, {
-        headers: {
-          'User-Agent': 'YourAppName/1.0'
-        }
+  useEffect(() => {
+    async function fetchAddress() {
+      const params = new URLSearchParams({
+        format: 'json',
+        lat: lat.toString(),
+        lon: lng.toString(),
+        addressdetails: '1',
+        ...(email ? { email } : {}),
       });
-      const data = await response.json();
-      console.log('Reverse geocoding response:', data);
-      if (data.error) {
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`);
+        const data = await res.json();
+        if (data.error) {
+          setAddress('Address not found');
+        } else {
+          setAddress(data.display_name || 'Address not found');
+        }
+      } catch (err) {
+        console.error('Reverse geocoding failed', err);
         setAddress('Address not found');
-        return;
       }
-      // Prefer the display_name property if it exists.
-      const fullAddress =
-        data.display_name ||
-        `${data.address.house_number ? data.address.house_number + ' ' : ''}${
-          data.address.road || ''
-        }, ${data.address.city || data.address.town || data.address.village || ''}, ${
-          data.address.state || ''
-        }, ${data.address.country || ''}`.trim();
-      setAddress(fullAddress || 'Address not found');
-    } catch (error) {
-      console.error('Error fetching address:', error);
-      setAddress('Address not found');
     }
-  };
+    fetchAddress();
+  }, [lat, lng, email]);
 
   return (
-    <MapContainer center={position} zoom={13} style={{ height: '400px', width: '100%' }}>
+    <MapContainer
+      center={position}
+      zoom={13}
+      scrollWheelZoom={false}
+      style={{ height: '400px', width: '100%' }}
+    >
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
-      <Marker
-        position={position}
-        eventHandlers={{
-          click: () => {
-            fetchAddress();
-          },
-        }}
-      >
-        <Popup>
-          {address}
-        </Popup>
+      <Marker position={position}>
+        <Popup>{address}</Popup>
       </Marker>
     </MapContainer>
   );
