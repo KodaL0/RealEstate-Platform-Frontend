@@ -1,6 +1,9 @@
+// src/components/PropertyCard.tsx
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, MapPin, Bed, Bath, Square } from 'lucide-react';
+import { MapPin, Bed, Bath, Square } from 'lucide-react';
 import { Property } from '../types';
+import FavouriteButton from './FavouriteButton';
 
 interface PropertyCardProps {
   property: Property;
@@ -19,27 +22,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
     id,
     title,
     price,
-    address,
+    location,
+    images,
+    property_status,
+    property_type,
     bedrooms,
     bathrooms,
     area,
-    forSale,
     listing_type,
+    forSale,
   } = property;
 
   const imageUrl =
-    (Array.isArray(property.images) && property.images[0]?.image) ||
-    (Array.isArray(property.property_images) && property.property_images[0]) ||
+    (Array.isArray(images) && images[0]?.image) ||
     '/placeholder-property.jpg';
 
-  const isForSale = property.property_status
-    ? property.property_status === 'for_sale'
+  const isForSale = property_status
+    ? property_status === 'for_sale'
     : typeof forSale === 'boolean'
     ? forSale
     : listing_type?.toLowerCase() === 'sale';
 
-  const propertyType = property.property_type || (property as any).type;
-  const propertyAddress = property.location || address;
+  const propertyType = property_type || (property as any).type;
+  const propertyAddress = location;
 
   /* numbers cleaned for display */
   const bedsDisp  = cleanNumber(bedrooms);
@@ -79,9 +84,15 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
             {propertyType}
           </span>
         </div>
-        <button className="absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
-          <Heart className="h-5 w-5 text-gray-600 hover:text-red-500 transition-colors" />
-        </button>
+
+        {/* favourite button component */}
+        <FavouriteButton
+          defaultLiked={false}   // or pass property.isFavorited if available
+          onToggle={(liked) => {
+            // TODO: call your API or context to save the liked state for property.id
+            console.log(`Property ${id} liked:`, liked);
+          }}
+        />
       </div>
 
       {/* content */}
@@ -105,13 +116,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         {/* spacer grows to push address down */}
         <div className="flex-1" />
 
-        {/* address: now always sits immediately above the stats line */}
+        {/* address */}
         <div className="flex items-center text-gray-500 mb-2">
           <MapPin className="h-4 w-4 mr-1" />
           <span className="text-sm">{propertyAddress}</span>
         </div>
 
-        {/* stats bar at the very bottom */}
+        {/* stats bar */}
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
