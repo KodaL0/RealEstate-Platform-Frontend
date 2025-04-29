@@ -297,12 +297,15 @@ const PropertyDetails = () => {
 
             {/* thumbnail carousel */}
             <div className="lg:w-1/3 flex flex-col">
-              <div className="relative flex-1">
+              {/*
+                MATCH HERO HEIGHT (500px) AND STOP CONTENT FROM BLEEDING OUT
+              */}
+              <div className="relative flex-1 lg:h-[500px] overflow-hidden">
                 {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
-                    className="absolute -left-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
@@ -310,7 +313,7 @@ const PropertyDetails = () => {
                 {thumbPage < lastThumbPage && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
-                    className="absolute -right-6 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
                   >
                     <ArrowRight className="w-6 h-6 text-gray-600" />
                   </button>
@@ -324,7 +327,12 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="grid grid-cols-2 gap-x-4 gap-y-6 pt-8"
+                    /*
+                      grid-rows-2 + h-full makes two equal rows that stretch
+                      to consume the full 500px height so the bottom thumbnails
+                      sit flush with the container bottom.
+                    */
+                    className="grid grid-cols-2 grid-rows-2 h-full gap-4 pt-8"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
@@ -336,9 +344,8 @@ const PropertyDetails = () => {
                             setActiveImage(realIdx);
                             openLightbox(realIdx);
                           }}
-                          className={`h-44 w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
-                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""
-                          }`}
+                          className={`h-full w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
+                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""}`}
                           alt=""
                         />
                       );
