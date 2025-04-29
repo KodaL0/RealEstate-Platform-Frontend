@@ -23,12 +23,12 @@ const Navbar: React.FC = () => {
   }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
-  const toggleMenu = () => setIsOpen((prev) => !prev);
+  const toggleMenu = () => setIsOpen(prev => !prev);
 
   const handleLogout = async () => {
     try {
       await apiClient.post("/users/logout");
-    } catch (_) { }
+    } catch (_) {}
     setUser(null);
     navigate("/login");
   };
@@ -54,7 +54,7 @@ const Navbar: React.FC = () => {
             <Link
               to="/"
               className={`font-medium ${
-                isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+                isActive("/") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               } transition-colors`}
             >
               Home
@@ -62,7 +62,7 @@ const Navbar: React.FC = () => {
             <Link
               to="/buy"
               className={`font-medium ${
-                isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+                isActive("/buy") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               } transition-colors`}
             >
               Buy
@@ -70,14 +70,13 @@ const Navbar: React.FC = () => {
             <Link
               to="/rent"
               className={`font-medium ${
-                isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"
+                isActive("/rent") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"
               } transition-colors`}
             >
               Rent
             </Link>
-            {/* Services Dropdown */}
             <div className="relative group">
-              <button className="flex items-center font-medium text-white-700 hover:text-blue-600 transition-colors">
+              <button className="flex items-center font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 Services <ChevronDown className="ml-1 h-4 w-4" />
               </button>
               <div className="absolute left-0 mt-2 w-56 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-left z-50">
@@ -104,18 +103,12 @@ const Navbar: React.FC = () => {
                   <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
                     Profile
                   </Link>
-                  <Link
-                    to="/my-listings"
-                    className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-                  >
+                  <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
                     My Listings
                   </Link>
-+                 <Link
-+                   to="/favourites"
-+                   className="block px-4 py-2 text-gray-700 hover:bg-blue-50"
-+                 >
-+                   Favourites
-+                 </Link>
+                  <Link to="/favourites" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">
+                    Favourites
+                  </Link>
                   <button
                     onMouseDown={handleLogout}
                     className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-blue-50"
@@ -192,17 +185,14 @@ const Navbar: React.FC = () => {
                   >
                     My Listings
                   </Link>
-+                 <Link
-+                   to="/favourites"
-+                   onClick={() => setIsOpen(false)}
-+                   className="font-medium text-gray-700"
-+                 >
-+                   Favourites
-+                 </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="font-medium text-gray-700 text-left"
+                  <Link
+                    to="/favourites"
+                    onClick={() => setIsOpen(false)}
+                    className="font-medium text-gray-700"
                   >
+                    Favourites
+                  </Link>
+                  <button onClick={handleLogout} className="font-medium text-gray-700 text-left">
                     Logout
                   </button>
                 </>
