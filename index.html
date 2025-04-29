@@ -10,13 +10,10 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-7S7FKWE6F7"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag(){ dataLayer.push(arguments); }
+      function gtag() { dataLayer.push(arguments); }
       gtag('js', new Date());
-      gtag('config', 'G-7S7FKWE6F7', {
-        // This prevents GA from logging page_load twice if you
-        // also manually send a pageview on route change below.
-        send_page_view: false
-      });
+      // Auto-send initial page_view
+      gtag('config', 'G-7S7FKWE6F7');
     </script>
   </head>
   <body>
