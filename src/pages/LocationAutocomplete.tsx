@@ -1,0 +1,80 @@
+// components/LocationAutocomplete.tsx
+import { useState, useEffect, useRef } from 'react';
+
+interface Suggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
+interface Props {
+  value: string;
+  onChange: (val: string) => void;
+  onSelect: (address: string, lat: number, lng: number) => void;
+  placeholder?: string;
+}
+
+export default function LocationAutocomplete({
+  value, onChange, onSelect, placeholder = 'Type address…',
+}: Props) {
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // fetch whenever the user stops typing for 300ms
+  useEffect(() => {
+    if (!value) return setSuggestions([]);
+    const tid = setTimeout(async () => {
+      const q = encodeURIComponent(value);
+      const res = await fetch(
+        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=5`
+      );
+      const js: Suggestion[] = await res.json();
+      setSuggestions(js);
+      setOpen(true);
+    }, 300);
+    return () => clearTimeout(tid);
+  }, [value]);
+
+  // close dropdown on outside click
+  useEffect(() => {
+    const onClick = (e: MouseEvent) => {
+      if (!containerRef.current?.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('click', onClick);
+    return () => document.removeEventListener('click', onClick);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        type="text"
+        className="w-full pl-10 pr-4 py-2 border rounded-lg"
+        placeholder={placeholder}
+        value={value}
+        onChange={e => {
+          onChange(e.target.value);
+        }}
+        onFocus={() => suggestions.length > 0 && setOpen(true)}
+      />
+      {open && suggestions.length > 0 && (
+        <ul className="absolute z-10 bg-white border rounded-lg w-full mt-1 max-h-60 overflow-auto">
+          {suggestions.map((s, i) => (
+            <li
+              key={i}
+              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+              onClick={() => {
+                onSelect(s.display_name, +s.lat, +s.lon);
+                setOpen(false);
+              }}
+            >
+              {s.display_name}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
