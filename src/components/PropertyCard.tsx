@@ -1,7 +1,7 @@
 // src/components/PropertyCard.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Property } from '../types';
 import FavouriteButton from './FavouriteButton';
 
@@ -10,7 +10,6 @@ interface PropertyCardProps {
   featured?: boolean;
 }
 
-/* helper: turn "2.0" → "2", keep 1 ½ etc. */
 const cleanNumber = (value: unknown) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return value;
@@ -34,22 +33,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
     property_type,
   } = property;
 
-  // slideshow state
-  const [hovering, setHovering] = useState(false);
+  // slide state
   const [currentImage, setCurrentImage] = useState(0);
+  const imgCount = images.length;
 
-  // start / stop a simple interval when we hover
-  useEffect(() => {
-    let timer: NodeJS.Timeout;
-    if (hovering && images.length > 1) {
-      timer = setInterval(() => {
-        setCurrentImage(i => (i + 1) % images.length);
-      }, 2000);
-    } else {
-      setCurrentImage(0);
-    }
-    return () => clearInterval(timer);
-  }, [hovering, images.length]);
+  const prevImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImage(i => (i - 1 + imgCount) % imgCount);
+  };
+  const nextImage = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    setCurrentImage(i => (i + 1) % imgCount);
+  };
 
   const imageUrl = images[currentImage]?.image || '/placeholder-property.jpg';
 
@@ -71,12 +68,26 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
         flex flex-col h-full ${featured ? 'col-span-2' : ''}
       `}
     >
-      {/* image + badges + favourite */}
-      <div
-        className="relative"
-        onMouseEnter={() => setHovering(true)}
-        onMouseLeave={() => setHovering(false)}
-      >
+      {/* image + badges + arrows + favourite */}
+      <div className="relative">
+        {/* arrows only if >1 image */}
+        {imgCount > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow z-10"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow z-10"
+            >
+              <ArrowRight className="h-5 w-5 text-gray-700" />
+            </button>
+          </>
+        )}
+
         <Link to={`/property/${id}`}>
           <img
             src={imageUrl}
@@ -99,7 +110,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </span>
         </div>
 
-        {/* favourite button */}
+        {/* favourite */}
         <div className="absolute top-4 right-4 z-20">
           <FavouriteButton propertyId={id} defaultLiked={!!is_favourite} />
         </div>
@@ -123,7 +134,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           </p>
         </div>
 
-        {/* spacer */}
         <div className="flex-1" />
 
         {/* address */}
@@ -132,7 +142,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           <span className="text-sm">{location}</span>
         </div>
 
-        {/* stats bar */}
+        {/* stats */}
         <div className="flex justify-between pt-4 border-t border-gray-100">
           <div className="flex items-center text-gray-700">
             <Bed className="h-5 w-5 mr-2 text-gray-500" />
