@@ -246,9 +246,11 @@ const PropertyDetails: React.FC = () => {
                     propertyId={numericId}
                     defaultLiked={!!property?.is_favourite}
                   />
+                  {/*
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
                     <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
                   </button>
+                  */}
                 </div>
               </div>
             </div>
