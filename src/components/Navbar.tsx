@@ -118,7 +118,7 @@ const Navbar: React.FC = () => {
                   </Link>
                   <button
                     onMouseDown={handleLogout}
-                    className="w-full text-left block px-4 py-2 text-gray-700 hover:bg-blue-50"
+                    className="w-full text-left block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors"
                   >
                     Logout
                   </button>
@@ -205,7 +205,7 @@ const Navbar: React.FC = () => {
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="font-medium text-gray-700 text-left"
+                    className="font-medium text-red-600 text-left hover:bg-red-50 transition-colors rounded-md px-2 py-1"
                   >
                     Logout
                   </button>
