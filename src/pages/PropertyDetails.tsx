@@ -93,8 +93,6 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 4;          // thumbnails beside hero image
-
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
   const { user, isLoading: userLoading } = useUser();
@@ -257,7 +255,7 @@ const PropertyDetails = () => {
         {/* ───── Hero + Thumbnails ───── */}
         <section className="bg-white">
           <div className="flex flex-col lg:flex-row gap-4">
-            {/* hero image */}
+            {/* Hero */}
             <div className="lg:w-2/3">
               <div
                 className="relative h-96 lg:h-[500px] rounded-xl overflow-hidden cursor-zoom-in"
@@ -268,44 +266,35 @@ const PropertyDetails = () => {
                   className="w-full h-full object-cover"
                   alt=""
                 />
-                {/* status badges */}
                 <div className="absolute top-4 left-4 flex gap-2 z-30">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === "for_sale"
-                        ? "bg-emerald-500 text-white"
-                        : "bg-blue-500 text-white"
-                    }`}
-                  >
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                    property.property_status === "for_sale" ?
+                      "bg-emerald-500 text-white" : "bg-blue-500 text-white"
+                  }`}>
                     {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
                   </span>
                   <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
                     {property.property_type}
                   </span>
                 </div>
-                {/* fav / share */}
                 <div className="absolute top-4 right-4 flex gap-2 z-30">
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
-                    <Heart className="h-5 w-5 text-gray-600 hover:text-red-500" />
+                  <button className="p-2 bg-white/80 rounded-full shadow-md hover:bg-white">
+                    <Heart className="w-5 h-5 text-gray-600 hover:text-red-500" />
                   </button>
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
-                    <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
+                  <button className="p-2 bg-white/80 rounded-full shadow-md hover:bg-white">
+                    <Share2 className="w-5 h-5 text-gray-600 hover:text-blue-500" />
                   </button>
                 </div>
               </div>
             </div>
 
-            {/* thumbnail carousel */}
+            {/* 🔧 CHANGED thumbnail carousel */}
             <div className="lg:w-1/3 flex flex-col">
-              {/*
-                MATCH HERO HEIGHT (500px) AND STOP CONTENT FROM BLEEDING OUT
-              */}
               <div className="relative flex-1 lg:h-[500px] overflow-hidden">
-                {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 shadow z-10 hover:bg-gray-50"
                   >
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
@@ -313,13 +302,11 @@ const PropertyDetails = () => {
                 {thumbPage < lastThumbPage && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white rounded-full p-1 shadow z-10 hover:bg-gray-50"
                   >
                     <ArrowRight className="w-6 h-6 text-gray-600" />
                   </button>
                 )}
-
-                {/* animated grid of thumbs */}
                 <AnimatePresence mode="wait" initial={false}>
                   <motion.div
                     key={thumbPage}
@@ -327,11 +314,6 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    /*
-                      grid-rows-2 + h-full makes two equal rows that stretch
-                      to consume the full 500px height so the bottom thumbnails
-                      sit flush with the container bottom.
-                    */
                     className="grid grid-cols-2 grid-rows-2 h-full gap-4"
                   >
                     {visibleThumbs.map((img, idx) => {
@@ -345,7 +327,8 @@ const PropertyDetails = () => {
                             openLightbox(realIdx);
                           }}
                           className={`h-full w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
-                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""}`}
+                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""
+                          }`}
                           alt=""
                         />
                       );
@@ -354,6 +337,7 @@ const PropertyDetails = () => {
                 </AnimatePresence>
               </div>
             </div>
+            {/* 🔧 END CHANGED */}
           </div>
         </section>
 
