@@ -18,7 +18,7 @@ import {
 
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
-import LocationAutocomplete from '../components/LocationAutocomplete';
+import LocationAutocomplete from '../pages/LocationAutocomplete';
 
 /* ───────────── types ───────────── */
 interface ListingForm {
