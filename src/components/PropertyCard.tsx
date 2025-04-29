@@ -91,7 +91,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
           <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
-          <p className="text-lg font-bold text-blue-600">
+          <p className="text-lg font-bold text-blue-600 whitespace-nowrap">
             {Number.isFinite(Number(price))
               ? isForSale
                 ? `€${Number(price).toLocaleString()}`
