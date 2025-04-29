@@ -1,10 +1,11 @@
-import { useState } from 'react';
+// src/pages/AuthPage.tsx
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, User } from 'lucide-react';
+import { Building2, Mail, Lock, User, Facebook, Google, Apple } from 'lucide-react';
 import { login, register } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
-export const AuthPage = () => {
+export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
@@ -18,53 +19,37 @@ export const AuthPage = () => {
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
-  
-    try {
-      let res;
-      if (isLogin) {
-        console.log("Submitting login form with email:", email);
-        res = await login(email, password);
-        console.log("Login response:", res);
 
-        if (res && res.status === 200) { 
-          console.log("Login successful, waiting to refresh user data...");
-          
-          // Add a delay to ensure cookies are available
+    try {
+      if (isLogin) {
+        const res = await login(email, password);
+        if (res?.status === 200) {
+          // delay to let cookie set
           setTimeout(async () => {
             try {
-              console.log("Attempting to refresh user after login");
               await refreshUser();
-              console.log("User refresh completed");
               setFeedback('Login successful');
               navigate('/');
-            } catch (error) {
-              console.error("Error refreshing user:", error);
-              setFeedback('Login successful, but failed to load profile');
+            } catch {
+              setFeedback('Login succeeded, but failed to load profile');
             }
-          }, 500); // Half-second delay
+          }, 500);
         } else {
-          // Handle error response
-          const errorMessage = typeof res?.error === 'string' 
-            ? res.error 
-            : (res?.error?.message || 'Login failed. Please try again.');
-          console.error("Login failed:", errorMessage);
-          setFeedback(errorMessage);
+          setFeedback(typeof res?.error === 'string' ? res.error : 'Login failed');
         }
       } else {
         const username = formData.get('name') as string;
-        res = await register(username, email, password);
-        console.log("Registration response:", res);
-
-        if (res && res.status === 201) {
+        const res = await register(username, email, password);
+        if (res?.status === 201) {
           setFeedback('Registration successful');
           navigate('/login');
         } else {
           setFeedback(res?.message || 'Registration failed');
         }
       }
-    } catch (error) {
-      console.error("Error during auth process:", error);
-      setFeedback('Error processing your request. Please try again later.');
+    } catch (err) {
+      console.error(err);
+      setFeedback('Error processing your request');
     } finally {
       setLoading(false);
     }
@@ -96,7 +81,8 @@ export const AuthPage = () => {
                     name="name"
                     type="text"
                     required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                               placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                     <User className="h-5 w-5 text-gray-400" />
@@ -115,7 +101,8 @@ export const AuthPage = () => {
                   name="email"
                   type="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <Mail className="h-5 w-5 text-gray-400" />
@@ -133,7 +120,8 @@ export const AuthPage = () => {
                   name="password"
                   type="password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
                   <Lock className="h-5 w-5 text-gray-400" />
@@ -141,13 +129,47 @@ export const AuthPage = () => {
               </div>
             </div>
 
+            {/* Social Login Buttons */}
+            <div className="mt-4 grid grid-cols-3 gap-2">
+              <button
+                type="button"
+                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
+                           hover:bg-gray-50 transition"
+              >
+                <Google className="h-5 w-5 mr-2 text-red-600" />
+                Google
+              </button>
+              <button
+                type="button"
+                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
+                           hover:bg-gray-50 transition"
+              >
+                <Facebook className="h-5 w-5 mr-2 text-blue-600" />
+                Facebook
+              </button>
+              <button
+                type="button"
+                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
+                           hover:bg-gray-50 transition"
+              >
+                <Apple className="h-5 w-5 mr-2" />
+                Apple
+              </button>
+            </div>
+
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm
+                           text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none
+                           focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                {loading ? 'Loading...' : isLogin ? 'Sign in' : 'Register'}
+                {loading
+                  ? 'Loading…'
+                  : isLogin
+                  ? 'Sign in'
+                  : 'Register'}
               </button>
             </div>
           </form>
@@ -163,7 +185,9 @@ export const AuthPage = () => {
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:text-blue-500"
             >
-              {isLogin ? 'Create an account' : 'Sign in to existing account'}
+              {isLogin
+                ? 'Create an account'
+                : 'Sign in to existing account'}
             </button>
           </div>
         </div>
