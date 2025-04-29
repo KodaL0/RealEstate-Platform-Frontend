@@ -296,11 +296,8 @@ const PropertyDetails = () => {
             </div>
 
             {/* thumbnail carousel */}
-            <div className="lg:w-1/3 flex flex-col">
-              {/*
-                MATCH HERO HEIGHT (500px) AND STOP CONTENT FROM BLEEDING OUT
-              */}
-              <div className="relative flex-1 lg:h-[500px] overflow-hidden">
+            <div className="lg:w-1/3 lg:h-[500px] bg-gray-50">
+              <div className="relative h-full">
                 {/* nav arrows */}
                 {thumbPage > 0 && (
                   <button
@@ -327,29 +324,37 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    /*
-                      grid-rows-2 + h-full makes two equal rows that stretch
-                      to consume the full 500px height so the bottom thumbnails
-                      sit flush with the container bottom.
-                    */
-                    className="grid grid-cols-2 grid-rows-2 h-full gap-4"
+                    className="grid grid-cols-2 grid-rows-2 h-full gap-4 p-4"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
                       return (
-                        <img
+                        <div 
                           key={realIdx}
-                          src={toUrl(img)}
-                          onClick={() => {
-                            setActiveImage(realIdx);
-                            openLightbox(realIdx);
-                          }}
-                          className={`h-full w-full object-cover rounded-xl cursor-pointer hover:scale-105 transition-transform ${
-                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""}`}
-                          alt=""
-                        />
+                          className={`relative w-full h-full overflow-hidden rounded-xl ${
+                            realIdx === activeImage ? "ring-2 ring-blue-600" : ""
+                          }`}
+                        >
+                          <img
+                            src={toUrl(img)}
+                            onClick={() => {
+                              setActiveImage(realIdx);
+                              openLightbox(realIdx);
+                            }}
+                            className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform hover:scale-105"
+                            alt=""
+                          />
+                        </div>
                       );
                     })}
+                    
+                    {/* Fill empty slots with placeholder divs to maintain grid structure */}
+                    {Array(THUMBS_PER_PAGE - visibleThumbs.length).fill(0).map((_, idx) => (
+                      <div 
+                        key={`placeholder-${idx}`}
+                        className="w-full h-full bg-gray-100 rounded-xl"
+                      />
+                    ))}
                   </motion.div>
                 </AnimatePresence>
               </div>
