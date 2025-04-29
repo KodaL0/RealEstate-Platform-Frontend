@@ -5,6 +5,9 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
-    exclude: ['lucide-react'],
+    // include Vercel’s analytics runtime so Vite bundles it
+    include: ["@vercel/analytics/react"],
+    // still excluding any you don’t want (e.g. lucide-react)
+    exclude: ["lucide-react"],
   },
 });
