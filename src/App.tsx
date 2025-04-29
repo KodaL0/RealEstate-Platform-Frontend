@@ -31,6 +31,7 @@ function App() {
               <Route path="/create-listing" element={<CreateListing />} />
               {/* New edit route reusing CreateListing so existing data can be preloaded */}
               <Route path="/edit-listing/:id" element={<CreateListing />} />
+              <Route path="/favourites" element={<Favourites />} /> 
               <Route path="/my-listings" element={<MyListings />} /> {/* Add MyListings route */}
               <Route path="/mortgage-calculator" element={<MortgageCalculator />} /> {/* Add Mortgage Calculator route */}
             </Routes>
