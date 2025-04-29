@@ -33,7 +33,18 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     const previousLikedState = liked;
     const nextLikedState = !liked;
 
-    // Optimistic UI update
+    // ---> Confirmation Step <----
+    if (previousLikedState === true) { // Only ask for confirmation when unliking
+      const userConfirmed = window.confirm(
+        'Are you sure you want to remove this property from your favourites?'
+      );
+      if (!userConfirmed) {
+        return; // Stop execution if user cancels
+      }
+    }
+    // ---> End Confirmation Step <----
+
+    // Optimistic UI update (proceed only if confirmed or if liking)
     setLiked(nextLikedState);
     setIsLoading(true);
     onToggle?.(nextLikedState); // Notify parent immediately if needed
@@ -41,7 +52,6 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     try {
       // Use apiClient for authenticated request
       const response = await apiClient.post(`/properties/${propertyId}/favourite/`);
-      // Update state based on successful API response if needed (optional, as backend confirms state)
       console.log('Favourite toggled successfully:', response.data);
       setLiked(response.data.is_favourite); // Ensure state matches backend
     } catch (error) {
