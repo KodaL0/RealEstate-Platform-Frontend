@@ -11,7 +11,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
-import { Property } from '../types';
+import { Property, PropertyImage } from '../types';
 import MapView from '../components/MapView';
 import FavouriteButton from '../components/FavouriteButton';
 
@@ -58,6 +58,7 @@ const mapPropertyData = (raw: any): Property => ({
   created_at: raw?.created_at ?? '',
   updated_at: raw?.updated_at ?? '',
   images: normaliseImages(raw?.images),
+  is_favourite: raw?.is_favourite ?? false,
 });
 
 const amenityIcons: Record<string, JSX.Element> = {
@@ -90,6 +91,7 @@ const THUMBS_PER_PAGE = 4;
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
   const [property, setProperty] = useState<Property | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -100,50 +102,30 @@ const PropertyDetails: React.FC = () => {
   const [thumbPage, setThumbPage] = useState(0);
 
   useEffect(() => {
-    if (!id || userLoading) return;
-    const API = 'https://propertprodjango.onrender.com/api';
-
-    const scanEndpoint = async (url: string) => {
-      const res = await fetch(url);
-      if (!res.ok) return null;
-      const txt = await res.text();
-      if (txt.includes('<html')) return null;
-      const js = JSON.parse(txt);
-      const list = Array.isArray(js) ? js : js.results ?? [];
-      return list.find((p: any) => p.id.toString() === id) ?? null;
-    };
-
-    (async () => {
+    if (!numericId || userLoading) return;
+    const fetchProperty = async () => {
       setLoading(true);
       try {
-        let raw =
-          (await scanEndpoint(`${API}/properties/buy`)) ??
-          (await scanEndpoint(`${API}/properties/rent`));
-
-        if (!raw && user) {
-          const mine = await apiClient.get('/properties/my-properties');
-          const arr = Array.isArray(mine.data) ? mine.data : mine.data.results ?? [];
-          raw = arr.find((p: any) => p.id.toString() === id) ?? null;
+        // Try fetching directly using the detail endpoint first
+        // Assuming apiClient handles authentication and base URL
+        const response = await apiClient.get(`/api/properties/${numericId}/`);
+        const mapped = mapPropertyData(response.data);
+        setProperty(mapped);
+        if (!mapped.latitude && mapped.location) {
+          try { setCoords(await geocodeAddress(mapped.location)); }
+          catch (e) { console.error('geocode fail', e); }
         }
-
-        if (raw) {
-          const mapped = mapPropertyData(raw);
-          setProperty(mapped);
-          if (!raw.latitude && mapped.location) {
-            try { setCoords(await geocodeAddress(mapped.location)); }
-            catch (e) { console.error('geocode fail', e); }
-          }
-        } else {
-          setProperty(null);
-        }
-      } catch (e) {
-        console.error(e);
-        setProperty(null);
+      } catch (error) {
+        console.error("Failed to fetch property details:", error);
+        // Optional: Add fallback logic (like scanning lists) if detail endpoint fails
+        setProperty(null); // Set to null on error
       } finally {
         setLoading(false);
       }
-    })();
-  }, [id, user, userLoading]);
+    };
+
+    fetchProperty();
+  }, [numericId, userLoading]); // Depend on numericId and userLoading
 
   const totalImages = property?.images.length ?? 0;
   const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
@@ -261,8 +243,8 @@ const PropertyDetails: React.FC = () => {
                 {/* Favourite & Share */}
                 <div className="absolute top-4 right-4 flex flex-col items-center gap-2 z-30">
                   <FavouriteButton
-                    defaultLiked={false}
-                    onToggle={liked => console.log(`Property ${id} liked:`, liked)}
+                    propertyId={numericId}
+                    defaultLiked={!!property?.is_favourite}
                   />
                   <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
                     <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />

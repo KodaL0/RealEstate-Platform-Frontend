@@ -1,36 +1,78 @@
 // src/components/FavouriteButton.tsx
-import React, { useState, MouseEvent } from 'react';
+import React, { useState, MouseEvent, useCallback } from 'react';
 import { Heart } from 'lucide-react';
+import { apiClient } from '../middleware/auth'; // Import apiClient
+import { useUser } from '../context/UserContext'; // Import useUser
 
 interface FavouriteButtonProps {
+  propertyId: number; // Add propertyId prop
   defaultLiked?: boolean;
-  onToggle?: (liked: boolean) => void;
+  onToggle?: (liked: boolean) => void; // Keep onToggle for immediate UI feedback if needed
 }
 
 const FavouriteButton: React.FC<FavouriteButtonProps> = ({
+  propertyId, // Destructure propertyId
   defaultLiked = false,
   onToggle,
 }) => {
   const [liked, setLiked] = useState(defaultLiked);
+  const [isLoading, setIsLoading] = useState(false); // Add loading state
+  const { user } = useUser(); // Get user context
 
-  const handleClick = (e: MouseEvent<HTMLButtonElement>) => {
-    // Prevent the parent <div onClick> from firing
-    e.stopPropagation();
-    const next = !liked;
-    setLiked(next);
-    onToggle?.(next);
-  };
+  const handleClick = useCallback(async (e: MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Prevent parent onClick
+
+    if (!user) {
+      console.warn("User not logged in. Cannot toggle favourite.");
+      // Optionally: trigger login modal or redirect
+      return;
+    }
+
+    if (isLoading) return; // Prevent multiple clicks while loading
+
+    const previousLikedState = liked;
+    const nextLikedState = !liked;
+
+    // Optimistic UI update
+    setLiked(nextLikedState);
+    setIsLoading(true);
+    onToggle?.(nextLikedState); // Notify parent immediately if needed
+
+    try {
+      // Use apiClient for authenticated request
+      const response = await apiClient.post(`/api/properties/${propertyId}/favourite/`);
+      // Update state based on successful API response if needed (optional, as backend confirms state)
+      console.log('Favourite toggled successfully:', response.data);
+      setLiked(response.data.is_favourite); // Ensure state matches backend
+    } catch (error) {
+      console.error('Failed to toggle favourite:', error);
+      // Revert optimistic UI update on error
+      setLiked(previousLikedState);
+      onToggle?.(previousLikedState); // Notify parent of reversion
+      // Optionally: show error message to user
+    } finally {
+      setIsLoading(false);
+    }
+  }, [liked, isLoading, propertyId, onToggle, user]); // Add dependencies
+
+  // Update local state if defaultLiked prop changes (e.g., after initial data load)
+  React.useEffect(() => {
+    setLiked(defaultLiked);
+  }, [defaultLiked]);
+
 
   return (
     <button
       onClick={handleClick}
-      className="absolute top-4 right-12 p-2 bg-white/80 hover:bg-white rounded-full shadow-md z-20"
+      // Disable button while loading
+      disabled={isLoading}
+      className={`absolute top-4 right-4 p-2 bg-white/80 hover:bg-white rounded-full shadow-md z-20 transition-opacity ${isLoading ? 'opacity-50 cursor-not-allowed' : ''}`} // Adjusted position slightly
       aria-pressed={liked}
       aria-label={liked ? 'Remove from favourites' : 'Add to favourites'}
     >
       <Heart
         className={`h-5 w-5 transition-colors ${
-          liked ? 'text-red-500' : 'text-gray-600 hover:text-red-500'
+          liked ? 'text-red-500 fill-current' : 'text-gray-600 hover:text-red-500' // Added fill
         }`}
       />
     </button>

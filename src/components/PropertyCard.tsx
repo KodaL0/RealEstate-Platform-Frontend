@@ -10,7 +10,7 @@ interface PropertyCardProps {
   featured?: boolean;
 }
 
-/* helper: turn “2.0” → “2”, keep 1 ½ etc. */
+/* helper: turn "2.0" → "2", keep 1 ½ etc. */
 const cleanNumber = (value: unknown) => {
   const num = Number(value);
   if (!Number.isFinite(num)) return value; // fallback to raw
@@ -31,6 +31,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
     area,
     listing_type,
     forSale,
+    is_favourite,
   } = property;
 
   const imageUrl =
@@ -87,11 +88,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false 
 
         {/* favourite button component */}
         <FavouriteButton
-          defaultLiked={false}   // or pass property.isFavorited if available
-          onToggle={(liked) => {
-            // TODO: call your API or context to save the liked state for property.id
-            console.log(`Property ${id} liked:`, liked);
-          }}
+          propertyId={id}
+          defaultLiked={!!is_favourite}
         />
       </div>
 
