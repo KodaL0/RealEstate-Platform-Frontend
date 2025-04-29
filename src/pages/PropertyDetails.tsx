@@ -108,7 +108,7 @@ const PropertyDetails: React.FC = () => {
       try {
         // Try fetching directly using the detail endpoint first
         // Assuming apiClient handles authentication and base URL
-        const response = await apiClient.get(`/api/properties/${numericId}/`);
+        const response = await apiClient.get(`/properties/${numericId}/`);
         const mapped = mapPropertyData(response.data);
         setProperty(mapped);
         if (!mapped.latitude && mapped.location) {
