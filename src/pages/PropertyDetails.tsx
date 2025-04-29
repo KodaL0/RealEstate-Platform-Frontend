@@ -378,15 +378,15 @@ const PropertyDetails = () => {
               {/* info card */}
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                 {/* title & price */}
-                <div className="flex flex-col md:flex-row md:justify-between md:items-start mb-6">
+                <div className="flex flex-col md:flex-row md:justify-between md:items-baseline md:gap-8 mb-6">
                   <div>
-                    <h1 className="text-3xl font-bold text-gray-900 mb-2">{property.title}</h1>
+                    <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
                     <div className="flex items-center text-gray-600">
                       <MapPin className="h-5 w-5 mr-2 text-gray-500" />
                       <span>{property.location}</span>
                     </div>
                   </div>
-                  <p className="text-3xl font-bold text-blue-600 mt-4 md:mt-0">
+                  <p className="text-3xl font-bold text-blue-600">
                     €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                   </p>
                 </div>
