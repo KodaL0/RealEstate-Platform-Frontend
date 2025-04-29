@@ -1,8 +1,5 @@
-// ───────────────────────────────────────────────────────────────
-// pages/CreateListing.tsx
-// ───────────────────────────────────────────────────────────────
-
-import { useState, useCallback, useEffect } from 'react';
+// src/pages/CreateListing.tsx
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
@@ -21,6 +18,7 @@ import {
 
 import { apiClient } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
+import LocationAutocomplete from '../components/LocationAutocomplete';
 
 /* ───────────── types ───────────── */
 interface ListingForm {
@@ -43,7 +41,7 @@ interface ListingForm {
   floorLevel: string;
   totalFloors: string;
   availableFrom: string;
-  contactPhone: string; // *local* part, no +code
+  contactPhone: string;
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
@@ -89,7 +87,6 @@ const AMENITIES = [
   { id: 'waterfront', label: 'Waterfront', category: 'Location' },
 ];
 
-/* small list of codes – extend as needed */
 const COUNTRY_CODES = [
   { code: '+357', label: '🇨🇾' },
   { code: '+1',   label: '🇺🇸' },
@@ -129,8 +126,7 @@ const DEFAULT_FORM_STATE: ListingForm = {
   videoUrl: '',
 };
 
-/* ───────────── component ───────────── */
-function CreateListing() {
+const CreateListing: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
@@ -143,7 +139,10 @@ function CreateListing() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
 
-  /* NEW – country code state */
+  // new: hold selected coords
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+
+  // country code for phone
   const [countryCode, setCountryCode] = useState('+357');
 
   /* image state */
@@ -163,6 +162,7 @@ function CreateListing() {
     maxSize: 5 * 1024 * 1024,
   });
 
+  /* remove image */
   const removeImage = (idx: number) => {
     setFormData(p => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
     if (idx < previewImages.length) URL.revokeObjectURL(previewImages[idx]);
@@ -180,6 +180,7 @@ function CreateListing() {
     const { name, value } = e.target;
     setFormData(p => ({ ...p, [name]: value }));
   };
+
   const handleCheckboxChange = (id: string) => {
     setFormData(p => ({
       ...p,
@@ -191,19 +192,16 @@ function CreateListing() {
 
   /* validation */
   const validateForm = () => {
-    if (!formData.title.trim()) return setError('Please enter a title'), false;
-    if (!formData.description.trim())
-      return setError('Please enter a description'), false;
+    if (!formData.title.trim())       { setError('Please enter a title'); return false; }
+    if (!formData.description.trim()) { setError('Please enter a description'); return false; }
     if (!formData.price || +formData.price <= 0)
-      return setError('Please enter a valid price'), false;
+                                       { setError('Please enter a valid price'); return false; }
     if (!formData.location.trim())
-      return setError('Please enter a location'), false;
-    if (!formData.propertyType)
-      return setError('Please select a property type'), false;
-    if (!formData.propertyStatus)
-      return setError('Please select a property status'), false;
+                                       { setError('Please select a valid location'); return false; }
+    if (!formData.propertyType)       { setError('Please select a property type'); return false; }
+    if (!formData.propertyStatus)     { setError('Please select a property status'); return false; }
     if (formData.images.length === 0 && previewImages.length === 0)
-      return setError('Please upload at least one image'), false;
+                                       { setError('Please upload at least one image'); return false; }
     return true;
   };
 
@@ -276,7 +274,10 @@ function CreateListing() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
-    if (isEditing && !username) return toast.error('User not loaded');
+    if (isEditing && !username) {
+      toast.error('User not loaded');
+      return;
+    }
 
     setIsSubmitting(true);
     setError('');
@@ -314,6 +315,12 @@ function CreateListing() {
 
       /* phone */
       fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
+
+      /* include coords */
+      if (locationCoords) {
+        fd.append('latitude',  locationCoords.lat.toString());
+        fd.append('longitude', locationCoords.lng.toString());
+      }
 
       /* endpoint */
       const url = isEditing
@@ -353,7 +360,6 @@ function CreateListing() {
       </div>
     );
 
-  /* ───────────── JSX ───────────── */
   return (
     <div className="min-h-screen bg-gray-50 pt-24 pb-12">
       <div className="container mx-auto px-6 max-w-6xl">
@@ -406,7 +412,10 @@ function CreateListing() {
 
                 {/* listing type */}
                 <div>
-                  <label htmlFor="propertyStatus" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="propertyStatus"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Listing Type
                   </label>
                   <select
@@ -432,7 +441,10 @@ function CreateListing() {
                     Price
                   </label>
                   <div className="relative">
-                    <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <DollarSign
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="number"
                       id="price"
@@ -454,16 +466,20 @@ function CreateListing() {
                     Location
                   </label>
                   <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-                    <input
-                      type="text"
-                      id="location"
-                      name="location"
+                    <MapPin
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
+                    <LocationAutocomplete
                       value={formData.location}
-                      onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      required
-                      placeholder="Full address"
+                      onChange={val =>
+                        setFormData(f => ({ ...f, location: val }))
+                      }
+                      onSelect={(addr, lat, lng) => {
+                        setFormData(f => ({ ...f, location: addr }));
+                        setLocationCoords({ lat, lng });
+                      }}
+                      placeholder="Type address…"
                     />
                   </div>
                 </div>
@@ -476,11 +492,17 @@ function CreateListing() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* property type */}
                 <div>
-                  <label htmlFor="propertyType" className="block text-sm font-medium text-gray-700 mb-1">
+                  <label
+                    htmlFor="propertyType"
+                    className="block text-sm font-medium text-gray-700 mb-1"
+                  >
                     Property Type
                   </label>
                   <div className="relative">
-                    <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Building2
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <select
                       id="propertyType"
                       name="propertyType"
@@ -505,7 +527,10 @@ function CreateListing() {
                     Bedrooms
                   </label>
                   <div className="relative">
-                    <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Bed
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="number"
                       id="bedrooms"
@@ -526,7 +551,10 @@ function CreateListing() {
                     Bathrooms
                   </label>
                   <div className="relative">
-                    <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <Bath
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="number"
                       id="bathrooms"
@@ -548,7 +576,10 @@ function CreateListing() {
                     Living Area (sq&nbsp;m)
                   </label>
                   <div className="relative">
-                    <SquareFootage className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+                    <SquareFootage
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                      size={18}
+                    />
                     <input
                       type="number"
                       id="area"
@@ -799,6 +830,6 @@ function CreateListing() {
       </div>
     </div>
   );
-}
+};
 
 export default CreateListing;
