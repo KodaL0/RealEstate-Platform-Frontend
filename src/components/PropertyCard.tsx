@@ -1,7 +1,7 @@
 // src/components/PropertyCard.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square } from 'lucide-react';
+import { MapPin, Bed, Bath, Square, ArrowLeft, ArrowRight } from 'lucide-react';
 import { Property } from '../types';
 import FavouriteButton from './FavouriteButton';
 
@@ -18,13 +18,17 @@ const cleanNumber = (value: unknown) => {
   return Number.isInteger(num) ? num : num; // 1.5 stays 1.5
 };
 
-const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false, onUnlikeSuccess }) => {
+const PropertyCard: React.FC<PropertyCardProps> = ({
+  property,
+  featured = false,
+  onUnlikeSuccess
+}) => {
   const {
     id,
     title,
     price,
     location,
-    images,
+    images = [],
     property_status,
     property_type,
     bedrooms,
@@ -35,9 +39,27 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
     is_favourite,
   } = property;
 
+  // slideshow state
+  const [currentImage, setCurrentImage] = useState(0);
+  const imgCount = images.length;
+
+  const prevImage = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (imgCount > 0) {
+      setCurrentImage(i => (i - 1 + imgCount) % imgCount);
+    }
+  };
+  const nextImage = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (imgCount > 0) {
+      setCurrentImage(i => (i + 1) % imgCount);
+    }
+  };
+
   const imageUrl =
-    (Array.isArray(images) && images[0]?.image) ||
-    '/placeholder-property.jpg';
+    (imgCount > 0 && images[currentImage]?.image) || '/placeholder-property.jpg';
 
   const isForSale = property_status
     ? property_status === 'for_sale'
@@ -45,13 +67,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
     ? forSale
     : listing_type?.toLowerCase() === 'sale';
 
-  const propertyType = property_type || (property as any).type;
-  const propertyAddress = location;
-
-  /* numbers cleaned for display */
-  const bedsDisp  = cleanNumber(bedrooms);
+  const bedsDisp = cleanNumber(bedrooms);
   const bathsDisp = cleanNumber(bathrooms);
-  const areaDisp  = Number.isFinite(Number(area))
+  const areaDisp = Number.isFinite(Number(area))
     ? Number(area).toLocaleString()
     : area;
 
@@ -64,8 +82,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
         ${featured ? 'col-span-2' : ''}
       `}
     >
-      {/* image + badges + favourite */}
+      {/* image + badges + arrows + favourite */}
       <div className="relative">
+        {imgCount > 1 && (
+          <>
+            <button
+              onClick={prevImage}
+              className="absolute top-1/2 left-2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow z-10"
+            >
+              <ArrowLeft className="h-5 w-5 text-gray-700" />
+            </button>
+            <button
+              onClick={nextImage}
+              className="absolute top-1/2 right-2 -translate-y-1/2 bg-white/70 hover:bg-white p-2 rounded-full shadow z-10"
+            >
+              <ArrowRight className="h-5 w-5 text-gray-700" />
+            </button>
+          </>
+        )}
+
         <Link to={`/property/${id}`}>
           <img
             src={imageUrl}
@@ -73,6 +108,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
             className={`w-full object-cover ${featured ? 'h-80' : 'h-64'}`}
           />
         </Link>
+
         <div className="absolute top-4 left-4 flex space-x-2">
           <span
             className={`
@@ -83,16 +119,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
             {isForSale ? 'For Sale' : 'For Rent'}
           </span>
           <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-            {propertyType}
+            {property_type}
           </span>
         </div>
 
-        {/* favourite button component */}
-        <FavouriteButton
-          propertyId={id}
-          defaultLiked={!!is_favourite}
-          onUnlikeSuccess={onUnlikeSuccess}
-        />
+        <div className="absolute top-4 right-4 z-20">
+          <FavouriteButton
+            propertyId={id}
+            defaultLiked={!!is_favourite}
+            onUnlikeSuccess={onUnlikeSuccess}
+          />
+        </div>
       </div>
 
       {/* content */}
@@ -113,13 +150,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({ property, featured = false,
           </p>
         </div>
 
-        {/* spacer grows to push address down */}
         <div className="flex-1" />
 
         {/* address */}
         <div className="flex items-center text-gray-500 mb-2">
           <MapPin className="h-4 w-4 mr-1" />
-          <span className="text-sm">{propertyAddress}</span>
+          <span className="text-sm">{location}</span>
         </div>
 
         {/* stats bar */}
