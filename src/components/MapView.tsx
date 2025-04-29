@@ -4,18 +4,23 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ─── Fix Leaflet’s default icon URLs ─────────────────────────────────────────
+// ─── Import the marker icon assets ─────────────────────────────────────────────
+import iconUrl from 'leaflet/dist/images/marker-icon.png';
+import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
+import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
+
+// ─── Patch Leaflet’s default icon settings ─────────────────────────────────────
 delete (L.Icon.Default.prototype as any)._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: require('leaflet/dist/images/marker-icon-2x.png'),
-  iconUrl:       require('leaflet/dist/images/marker-icon.png'),
-  shadowUrl:     require('leaflet/dist/images/marker-shadow.png'),
+  iconRetinaUrl,
+  iconUrl,
+  shadowUrl,
 });
 
 interface MapViewProps {
   lat: number;
   lng: number;
-  // optional: your email to pass to Nominatim, e.g. "you@example.com"
+  // optional: your email to pass to Nominatim
   email?: string;
 }
 
@@ -35,11 +40,7 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng, email }) => {
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`);
         const data = await res.json();
-        if (data.error) {
-          setAddress('Address not found');
-        } else {
-          setAddress(data.display_name || 'Address not found');
-        }
+        setAddress(data.error ? 'Address not found' : data.display_name || 'Address not found');
       } catch (err) {
         console.error('Reverse geocoding failed', err);
         setAddress('Address not found');
