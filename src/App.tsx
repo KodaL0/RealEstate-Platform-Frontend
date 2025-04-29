@@ -1,6 +1,7 @@
-// src/App.jsx (or App.js)
+// src/App.tsx
 
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
+import { useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -15,13 +16,30 @@ import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
-import { Analytics } from "@vercel/analytics/react";
+
+// Helper component to fire a GA page_view on every client-side navigation
+function RouteChangeTracker() {
+  const location = useLocation();
+
+  useEffect(() => {
+    if (typeof window.gtag === "function") {
+      window.gtag("event", "page_view", {
+        page_path: location.pathname + location.search,
+      });
+    }
+  }, [location]);
+
+  return null;
+}
 
 function App() {
   return (
     <UserProvider>
       <Router>
+        {/* Tracks route changes for Google Analytics */}
+        <RouteChangeTracker />
         <ScrollToTop />
+
         <div className="min-h-screen flex flex-col">
           <Navbar />
 
@@ -37,18 +55,12 @@ function App() {
               <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/favourites" element={<Favourites />} />
               <Route path="/my-listings" element={<MyListings />} />
-              <Route
-                path="/mortgage-calculator"
-                element={<MortgageCalculator />}
-              />
+              <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
             </Routes>
           </main>
 
           <Footer />
         </div>
-
-        {/* Vercel Analytics: place this at the root inside Router */}
-        <Analytics />
       </Router>
     </UserProvider>
   );
