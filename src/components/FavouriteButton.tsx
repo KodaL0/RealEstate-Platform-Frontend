@@ -8,12 +8,14 @@ interface FavouriteButtonProps {
   propertyId: number; // Add propertyId prop
   defaultLiked?: boolean;
   onToggle?: (liked: boolean) => void; // Keep onToggle for immediate UI feedback if needed
+  onUnlikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful unlike
 }
 
 const FavouriteButton: React.FC<FavouriteButtonProps> = ({
   propertyId, // Destructure propertyId
   defaultLiked = false,
   onToggle,
+  onUnlikeSuccess, // Destructure the new prop
 }) => {
   const [liked, setLiked] = useState(defaultLiked);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
@@ -53,7 +55,14 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       // Use apiClient for authenticated request
       const response = await apiClient.post(`/properties/${propertyId}/favourite/`);
       console.log('Favourite toggled successfully:', response.data);
-      setLiked(response.data.is_favourite); // Ensure state matches backend
+      const actualLikedState = response.data.is_favourite;
+      setLiked(actualLikedState);
+
+      // If the action resulted in unliking, call the success callback
+      if (previousLikedState === true && actualLikedState === false) {
+        onUnlikeSuccess?.(propertyId);
+      }
+
     } catch (error) {
       console.error('Failed to toggle favourite:', error);
       // Revert optimistic UI update on error
@@ -63,7 +72,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [liked, isLoading, propertyId, onToggle, user]); // Add dependencies
+  }, [liked, isLoading, propertyId, onToggle, onUnlikeSuccess, user]); // Add onUnlikeSuccess to dependencies
 
   // Update local state if defaultLiked prop changes (e.g., after initial data load)
   React.useEffect(() => {

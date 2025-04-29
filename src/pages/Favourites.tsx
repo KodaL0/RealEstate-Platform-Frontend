@@ -1,5 +1,5 @@
 // src/pages/Favourites.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
 import { apiClient } from '../middleware/auth';
 import { Property } from '../types';
@@ -48,6 +48,14 @@ const Favourites: React.FC = () => {
 
   }, [user, userLoading]); // Rerun effect if user or userLoading status changes
 
+  // Callback function to remove an item from the local state
+  const handleUnlikeSuccess = useCallback((propertyId: number) => {
+    setFavourites(prevFavourites =>
+      prevFavourites.filter(fav => fav.id !== propertyId)
+    );
+    console.log(`Removed property ${propertyId} from local favourites list.`);
+  }, []); // Empty dependency array as it doesn't depend on component state
+
   const renderContent = () => {
     if (loading || userLoading) {
       return <p className="text-center text-gray-500">Loading favourites...</p>;
@@ -72,7 +80,11 @@ const Favourites: React.FC = () => {
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {favourites.map((property) => (
-          <PropertyCard key={property.id} property={property} />
+          <PropertyCard
+            key={property.id}
+            property={property}
+            onUnlikeSuccess={handleUnlikeSuccess}
+          />
         ))}
       </div>
     );
