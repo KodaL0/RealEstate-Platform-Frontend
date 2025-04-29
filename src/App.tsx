@@ -1,5 +1,3 @@
-// src/App.tsx
-
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import Navbar from "./components/Navbar";
@@ -17,17 +15,17 @@ import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
 
-// Helper component to fire a GA page_view on every client-side navigation
 function RouteChangeTracker() {
-  const location = useLocation();
+  const { pathname, search } = useLocation();
 
   useEffect(() => {
     if (typeof window.gtag === "function") {
+      // Sends a page_view event on every route change
       window.gtag("event", "page_view", {
-        page_path: location.pathname + location.search,
+        page_path: pathname + search,
       });
     }
-  }, [location]);
+  }, [pathname, search]);
 
   return null;
 }
@@ -36,7 +34,7 @@ function App() {
   return (
     <UserProvider>
       <Router>
-        {/* Tracks route changes for Google Analytics */}
+        {/* Track route changes for GA */}
         <RouteChangeTracker />
         <ScrollToTop />
 
@@ -55,7 +53,10 @@ function App() {
               <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/favourites" element={<Favourites />} />
               <Route path="/my-listings" element={<MyListings />} />
-              <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
+              <Route
+                path="/mortgage-calculator"
+                element={<MortgageCalculator />}
+              />
             </Routes>
           </main>
 
