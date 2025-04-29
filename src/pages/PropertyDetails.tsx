@@ -259,7 +259,7 @@ const PropertyDetails: React.FC = () => {
                   </span>
                 </div>
                 {/* Favourite & Share */}
-                <div className="absolute top-4 right-4 flex gap-2 z-30">
+                <div className="absolute top-4 right-4 flex flex-col items-center gap-2 z-30">
                   <FavouriteButton
                     defaultLiked={false}
                     onToggle={liked => console.log(`Property ${id} liked:`, liked)}
