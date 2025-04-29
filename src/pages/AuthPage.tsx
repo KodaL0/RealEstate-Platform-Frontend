@@ -1,7 +1,8 @@
 // src/pages/AuthPage.tsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Building2, Mail, Lock, User, Facebook, Google, Apple } from 'lucide-react';
+import { Building2, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { SiGoogle, SiFacebook, SiApple } from 'react-icons/si';
 import { login, register } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
@@ -24,11 +25,10 @@ export const AuthPage: React.FC = () => {
       if (isLogin) {
         const res = await login(email, password);
         if (res?.status === 200) {
-          // delay to let cookie set
+          // wait a moment for auth cookie
           setTimeout(async () => {
             try {
               await refreshUser();
-              setFeedback('Login successful');
               navigate('/');
             } catch {
               setFeedback('Login succeeded, but failed to load profile');
@@ -41,7 +41,6 @@ export const AuthPage: React.FC = () => {
         const username = formData.get('name') as string;
         const res = await register(username, email, password);
         if (res?.status === 201) {
-          setFeedback('Registration successful');
           navigate('/login');
         } else {
           setFeedback(res?.message || 'Registration failed');
@@ -85,7 +84,7 @@ export const AuthPage: React.FC = () => {
                                placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <User className="h-5 w-5 text-gray-400" />
+                    <UserIcon className="h-5 w-5 text-gray-400" />
                   </div>
                 </div>
               </div>
@@ -136,7 +135,7 @@ export const AuthPage: React.FC = () => {
                 className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
                            hover:bg-gray-50 transition"
               >
-                <Google className="h-5 w-5 mr-2 text-red-600" />
+                <SiGoogle className="h-5 w-5 mr-2 text-[#4285F4]" />
                 Google
               </button>
               <button
@@ -144,7 +143,7 @@ export const AuthPage: React.FC = () => {
                 className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
                            hover:bg-gray-50 transition"
               >
-                <Facebook className="h-5 w-5 mr-2 text-blue-600" />
+                <SiFacebook className="h-5 w-5 mr-2 text-[#1877F2]" />
                 Facebook
               </button>
               <button
@@ -152,7 +151,7 @@ export const AuthPage: React.FC = () => {
                 className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
                            hover:bg-gray-50 transition"
               >
-                <Apple className="h-5 w-5 mr-2" />
+                <SiApple className="h-5 w-5 mr-2 text-black" />
                 Apple
               </button>
             </div>
