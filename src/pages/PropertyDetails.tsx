@@ -1,7 +1,3 @@
-// ───────────────────────────────────────────────────────────────
-// pages/PropertyDetails.tsx      ⟶  FULL COPY-PASTE VERSION
-// ───────────────────────────────────────────────────────────────
-
 /* eslint-disable react/no-array-index-key */
 
 // Global Leaflet marker icon fix
@@ -108,6 +104,9 @@ const PropertyDetails = () => {
   const [coords,      setCoords]      = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
   const [loading,     setLoading]     = useState(true);
+
+  /* description expand / collapse */
+  const [expanded, setExpanded] = useState(false);
 
   /* light-box */
   const [lightboxOpen, setLightboxOpen] = useState(false);
@@ -400,9 +399,22 @@ const PropertyDetails = () => {
                 {/* description */}
                 <div className="mt-6">
                   <h2 className="text-xl font-bold mb-4">Description</h2>
-                  <p className="text-gray-700 leading-relaxed">
+                  <p
+                    className={`text-gray-700 leading-relaxed whitespace-pre-line ${
+                      expanded ? "" : "line-clamp-5"
+                    }`}
+                  >
                     {property.description}
                   </p>
+
+                  {property.description && property.description.length > 300 && (
+                    <button
+                      className="mt-2 text-sm font-medium text-blue-600 hover:underline"
+                      onClick={() => setExpanded(!expanded)}
+                    >
+                      {expanded ? "Show less" : "Show more"}
+                    </button>
+                  )}
                 </div>
               </div>
 
