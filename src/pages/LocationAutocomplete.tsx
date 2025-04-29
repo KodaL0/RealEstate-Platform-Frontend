@@ -1,5 +1,4 @@
-// components/LocationAutocomplete.tsx
-import { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 interface Suggestion {
   display_name: string;
@@ -12,18 +11,26 @@ interface Props {
   onChange: (val: string) => void;
   onSelect: (address: string, lat: number, lng: number) => void;
   placeholder?: string;
+  inputClassName?: string;
 }
 
 export default function LocationAutocomplete({
-  value, onChange, onSelect, placeholder = 'Type address…',
+  value,
+  onChange,
+  onSelect,
+  placeholder = 'Type address…',
+  inputClassName = 'pl-3'
 }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // fetch whenever the user stops typing for 300ms
+  // Fetch suggestions 300ms after user stops typing
   useEffect(() => {
-    if (!value) return setSuggestions([]);
+    if (!value) {
+      setSuggestions([]);
+      return;
+    }
     const tid = setTimeout(async () => {
       const q = encodeURIComponent(value);
       const res = await fetch(
@@ -36,7 +43,7 @@ export default function LocationAutocomplete({
     return () => clearTimeout(tid);
   }, [value]);
 
-  // close dropdown on outside click
+  // Close dropdown on outside click
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) {
@@ -51,16 +58,19 @@ export default function LocationAutocomplete({
     <div ref={containerRef} className="relative">
       <input
         type="text"
-        className="w-full pl-10 pr-4 py-2 border rounded-lg"
+        className={`
+          w-full
+          ${inputClassName}
+          pr-3 py-2 border border-gray-300 rounded-lg
+          focus:ring-2 focus:ring-blue-500 focus:border-transparent
+        `}
         placeholder={placeholder}
         value={value}
-        onChange={e => {
-          onChange(e.target.value);
-        }}
+        onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
       />
       {open && suggestions.length > 0 && (
-        <ul className="absolute z-10 bg-white border rounded-lg w-full mt-1 max-h-60 overflow-auto">
+        <ul className="absolute z-10 bg-white border border-gray-200 rounded-lg w-full mt-1 max-h-60 overflow-auto shadow-lg">
           {suggestions.map((s, i) => (
             <li
               key={i}
