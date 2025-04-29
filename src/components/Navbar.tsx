@@ -12,12 +12,14 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Add/remove shadow on scroll
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Close mobile menu on route change
   useEffect(() => {
     setIsOpen(false);
   }, [location.pathname]);
@@ -28,9 +30,12 @@ const Navbar: React.FC = () => {
   const handleLogout = async () => {
     try {
       await apiClient.post("/users/logout");
-    } catch (_) {}
-    setUser(null);
-    navigate("/login");
+    } catch (_) {
+      // ignore
+    } finally {
+      setUser(null);
+      navigate("/login");
+    }
   };
 
   return (
@@ -41,7 +46,7 @@ const Navbar: React.FC = () => {
     >
       <div className="container mx-auto px-4 md:px-6">
         <div className="flex justify-between items-center">
-          {/* Logo */}
+          {/* Logo / Brand */}
           <Link to="/" className="flex items-center space-x-2">
             <Building2 className="h-8 w-8 text-blue-600" />
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent">
@@ -75,6 +80,8 @@ const Navbar: React.FC = () => {
             >
               Rent
             </Link>
+
+            {/* Services Dropdown */}
             <div className="relative group">
               <button className="flex items-center font-medium text-gray-700 hover:text-blue-600 transition-colors">
                 Services <ChevronDown className="ml-1 h-4 w-4" />
@@ -130,7 +137,11 @@ const Navbar: React.FC = () => {
 
           {/* Mobile Toggle */}
           <button className="md:hidden p-2" onClick={toggleMenu}>
-            {isOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+            {isOpen ? (
+              <X className="h-6 w-6 text-gray-700" />
+            ) : (
+              <Menu className="h-6 w-6 text-gray-700" />
+            )}
           </button>
         </div>
 
@@ -192,7 +203,10 @@ const Navbar: React.FC = () => {
                   >
                     Favourites
                   </Link>
-                  <button onClick={handleLogout} className="font-medium text-gray-700 text-left">
+                  <button
+                    onClick={handleLogout}
+                    className="font-medium text-gray-700 text-left"
+                  >
                     Logout
                   </button>
                 </>
