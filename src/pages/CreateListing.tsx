@@ -56,7 +56,7 @@ const PROPERTY_TYPES = [
   { value: 'villa', label: 'Villa' },
   { value: 'studio', label: 'Studio' },
   { value: 'duplex', label: 'Duplex' },
-  { value: 'penthouse', label: 'Penthouse' */},
+  { value: 'penthouse', label: 'Penthouse' */}
 ];
 
 const PROPERTY_STATUS = [
