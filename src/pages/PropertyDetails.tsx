@@ -93,7 +93,7 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 4;          // how many thumbs we page through
+const THUMBS_PER_PAGE = 4;          // thumbnails shown at once
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
@@ -329,7 +329,7 @@ const PropertyDetails = () => {
                     animate={{ x: 0, opacity: 1 }}
                     exit={{ x: thumbPage > 0 ? -200 : 200, opacity: 0 }}
                     transition={{ duration: 0.35, ease: "easeOut" }}
-                    className="grid grid-cols-2 sm:grid-cols-3 gap-4 pt-8"
+                    className="grid grid-cols-2 gap-4 pt-8"
                   >
                     {visibleThumbs.map((img, idx) => {
                       const realIdx = startIdx + idx;
