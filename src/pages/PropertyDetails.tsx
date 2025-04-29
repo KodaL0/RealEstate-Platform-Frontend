@@ -93,7 +93,7 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 6;          // how many thumbs we page through
+const THUMBS_PER_PAGE = 4;          // how many thumbs we page through
 
 const PropertyDetails = () => {
   const { id } = useParams<{ id: string }>();
