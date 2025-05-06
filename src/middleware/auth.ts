@@ -1,43 +1,44 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosError } from 'axios';
+import axios from 'axios';
+// Attempt to import types directly, hoping the module resolution works
+import { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || "/api";
 
-// Extend AxiosRequestConfig to include a custom _retry flag for token refresh
+// Extend AxiosRequestConfig to include a custom _retryCount flag for token refresh
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {
-  _retry?: boolean;
+  _retryCount?: number;
 }
 
-// Create an Axios instance with default configuration
-const apiClient: AxiosInstance = axios.create({
-  baseURL: API_URL,
-  withCredentials: true, // Ensures cookies are sent on each request
-});
+// --- Token State (In-memory, to be replaced by cookie handling) ---
+// let accessToken: string | null = null;
+// let refreshToken: string | null = null;
 
-// REQUEST INTERCEPTOR: Since cookies are automatically attached by the browser,
-// we don't need to modify the headers here.
-apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => {
-    // Add X-CSRFToken header for non-GET requests
-    // Re-enable CSRF header logic
-    if (config.method && !['GET', 'HEAD', 'OPTIONS'].includes(config.method.toUpperCase())) {
-      // Get CSRF token from cookies
-      const csrfToken = getCookieValue('XSRF-TOKEN');
-      if (csrfToken) {
-        // Set the header Django expects
-        config.headers = config.headers || {};
-        config.headers['X-CSRFToken'] = csrfToken;
-        console.log('Adding X-CSRFToken header to request');
-      } else {
-        // Log a warning but allow the request to proceed. 
-        // Some public POST endpoints might not need CSRF, 
-        // or the backend might handle missing CSRF appropriately.
-        console.warn('No XSRF-TOKEN cookie found for CSRF protection header');
-      }
-    }
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+// export const setTokens = (newAccessToken: string, newRefreshToken: string) => {
+//   accessToken = newAccessToken;
+//   refreshToken = newRefreshToken;
+//   // Potentially save to localStorage here if persistence across tabs/sessions is needed
+//   // localStorage.setItem('accessToken', newAccessToken);
+//   // localStorage.setItem('refreshToken', newRefreshToken);
+// };
+
+// export const getAccessToken = () => {
+//   // return accessToken || localStorage.getItem('accessToken');
+//   return accessToken;
+// };
+
+// export const getRefreshToken = () => {
+//   // return refreshToken || localStorage.getItem('refreshToken');
+//   return refreshToken;
+// };
+
+// export const clearTokens = () => {
+//   accessToken = null;
+//   refreshToken = null;
+//   // localStorage.removeItem('accessToken');
+//   // localStorage.removeItem('refreshToken');
+// };
+// --- End Token State ---
+
 
 // Helper function to get a cookie value by name
 function getCookieValue(name: string): string | null {
@@ -47,15 +48,92 @@ function getCookieValue(name: string): string | null {
   return null;
 }
 
+// Helper function to set a cookie
+function setCookie(name: string, value: string, days: number) {
+  let expires = "";
+  if (days) {
+    const date = new Date();
+    date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
+    expires = "; expires=" + date.toUTCString();
+  }
+  document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax"; // Add SameSite=Lax
+  console.log(`Cookie set: ${name}, Expires: ${expires || 'session'}`);
+}
+
+// Helper function to clear a cookie
+function clearCookie(name: string) {
+  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
+  console.log(`Cookie cleared: ${name}`);
+}
+
+export function setAuthCookies(accessToken: string, refreshToken: string) {
+  setCookie("access_token", accessToken, 1/24); // 1 hour for access token
+  setCookie("refresh_token", refreshToken, 7);  // 7 days for refresh token
+  console.log("Access and Refresh cookies have been set from setAuthCookies.");
+}
+
+export function clearAuthCookies() {
+  clearCookie("access_token");
+  clearCookie("refresh_token");
+  clearCookie("XSRF-TOKEN"); // Also clear CSRF token on logout
+  console.log("Auth cookies have been cleared.");
+}
+
+
+// Create an Axios instance with default configuration
+const apiClient: AxiosInstance = axios.create({
+  baseURL: API_URL,
+  withCredentials: true, 
+});
+
+// REQUEST INTERCEPTOR:
+apiClient.interceptors.request.use(
+  (config: AxiosRequestConfig) => {
+    // Add Authorization header if access token cookie exists
+    const token = getCookieValue('access_token');
+    if (token) {
+      config.headers = config.headers || {};
+      if (config.headers) {
+        config.headers['Authorization'] = `Bearer ${token}`;
+      }
+    }
+
+    // Add X-CSRFToken header for non-GET requests
+    if (config.method && !['GET', 'HEAD', 'OPTIONS'].includes(config.method.toUpperCase())) {
+      const csrfToken = getCookieValue('XSRF-TOKEN'); // Django's default CSRF cookie name might be 'csrftoken'
+      if (csrfToken) {
+        config.headers = config.headers || {};
+        if (config.headers) {
+            config.headers['X-CSRFToken'] = csrfToken;
+        }
+        console.log('Adding X-CSRFToken header to request');
+      } else {
+        console.warn('No XSRF-TOKEN cookie found for CSRF protection header. Django might use csrftoken.');
+      }
+    }
+    return config;
+  },
+  (error: AxiosError) => Promise.reject(error)
+);
+
+
 // RESPONSE INTERCEPTOR: Handle token refresh on 401 errors.
-// It assumes your backend reads the refresh token from cookies.
 apiClient.interceptors.response.use(
-  response => response,
+  (response: AxiosResponse) => response,
   async (error: AxiosError) => {
-    const originalRequest = error.config as CustomAxiosRequestConfig;
+    const originalRequest = error.config as CustomAxiosRequestConfig | undefined;
+
+    if (!originalRequest) {
+      return Promise.reject(error);
+    }
     
+    const status = error.response?.status;
+    const url = originalRequest.url;
+
     // Prevent infinite loop for refresh endpoint errors:
-    if (originalRequest.url?.includes('/users/refresh')) {
+    if (url && url.includes('/users/refresh')) {
+      console.error("Refresh token request itself failed. Clearing auth cookies.");
+      clearAuthCookies(); // Clear tokens if refresh fails
       return Promise.reject(error);
     }
     
@@ -75,51 +153,62 @@ apiClient.interceptors.response.use(
       '/rent/'
     ];
     
-    // Check if it's a public property details route (matches /properties/{number})
-    const isPublicPropertyDetail = originalRequest.url && /\/properties\/\d+\/?$/.test(originalRequest.url);
+    const isPublicPropertyDetail = url && /\/properties\/\d+\/?$/.test(url);
+    const isPublicRoute = publicRoutes.some(route => url?.includes(route)) || isPublicPropertyDetail;
     
-    // Skip token refresh for public routes
-    const isPublicRoute = publicRoutes.some(route => originalRequest.url?.includes(route)) || isPublicPropertyDetail;
-    
-    if (error.response?.status === 401 && isPublicRoute) {
+    if (status === 401 && isPublicRoute) {
       console.log('Unauthenticated access to public route, continuing without refresh');
       return Promise.reject(error);
     }
     
-    // Initialize or increment the retry count
     originalRequest._retryCount = originalRequest._retryCount || 0;
 
-    // Limit refresh attempts to, say, 2 additional tries (3 in total)
-    if (error.response?.status === 401 && originalRequest._retryCount < 3) {
+    if (status === 401 && originalRequest._retryCount < 2) { // Limit to 1 retry for refresh
       originalRequest._retryCount += 1;
-      console.warn(`Attempt ${originalRequest._retryCount}: Access token expired, attempting refresh...`);
+      console.warn(`Attempt ${originalRequest._retryCount}: Access token expired or invalid, attempting refresh...`);
+      
+      const currentRefreshToken = getCookieValue('refresh_token');
+      if (!currentRefreshToken) {
+        console.error("No refresh token cookie found. Cannot attempt refresh.");
+        clearAuthCookies(); // Clear any lingering auth state
+        // Optionally redirect to login: window.location.href = '/login';
+        return Promise.reject(error);
+      }
+
       try {
-        const refreshResponse = await apiClient.post(
-          '/users/refresh',
-          {},
-          { withCredentials: true }
+        console.log("Attempting to refresh token with refresh_token from cookie...");
+        const refreshResponse = await axios.post( // Use a new axios instance or the global one for refresh
+          `${API_URL}/users/refresh`,
+          { refresh: currentRefreshToken }, // Send refresh token in body
+          { withCredentials: true } // Important for backend to read session/CSRF if needed, and set new cookies
         );
+
         if (refreshResponse.status === 200) {
-          console.log("Token refreshed successfully.");
-          // Retry the original request now that the token is refreshed.
-          return apiClient(originalRequest);
+          console.log("Token refreshed successfully. Backend should have set new cookies.");
+          // The backend's response to /users/refresh is expected to set new httpOnly cookies.
+          // The browser will automatically use these new cookies for the retried request.
+          // If the backend also returns new tokens in the response body (and they are not httpOnly),
+          // you could update them here using setAuthCookies if needed, but relying on Set-Cookie is preferred.
+          // For example, if refreshResponse.data.access and refreshResponse.data.refresh exist:
+          // setAuthCookies(refreshResponse.data.access, refreshResponse.data.refresh);
+
+          return apiClient(originalRequest); // Retry original request
         } else {
+          console.error("Token refresh responded with status:", refreshResponse.status);
+          clearAuthCookies();
+          // Optionally redirect to login
           return Promise.reject(error);
         }
       } catch (refreshError) {
-        console.error("Token refresh failed on attempt", originalRequest._retryCount, ":", refreshError);
-        // Clear the cookies when refresh fails.
-        document.cookie =
-          'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-        document.cookie =
-          'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
+        console.error("Token refresh request failed:", refreshError);
+        clearAuthCookies();
+        // Optionally redirect to login: window.location.href = '/login';
         return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);
   }
 );
-
 
 
 /**
@@ -129,11 +218,11 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     console.log("Attempting login with email:", email);
-    console.log("API URL base:", apiClient.defaults.baseURL);
-    
     const response = await apiClient.post('/users/login', { email, password });
     console.log("Login successful, received response:", response.status);
-    // No client-side cookie setting is done; rely on the backend.
+    // Backend's /users/login endpoint is expected to set access_token and refresh_token cookies.
+    // No explicit client-side cookie setting needed here after login.
+    // We might want to fetch the XSRF-TOKEN if the backend sets it on login.
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Login Error:", error);
@@ -165,6 +254,11 @@ export async function login(email: string, password: string) {
 export async function register(username: string, email: string, password: string) {
   try {
     const response = await apiClient.post('/users/register', { username, email, password });
+    // Assuming backend sets cookies on successful registration too, or returns tokens
+    // If tokens are returned in body, and we need to set them as JS-accessible cookies:
+    // if (response.data.access_token && response.data.refresh_token) {
+    //   setAuthCookies(response.data.access_token, response.data.refresh_token);
+    // }
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Registration Error:", error);
@@ -179,17 +273,21 @@ export async function register(username: string, email: string, password: string
  */
 export async function logout() {
   try {
-    const response = await apiClient.post('/users/logout');
-    // Clear cookies.
-    document.cookie =
-      'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    document.cookie =
-      'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT';
-    return { status: response.status, ...response.data };
+    // Important: Call backend logout first. It might do session invalidation or token blacklisting.
+    await apiClient.post('/users/logout'); 
+    console.log("Logout API call successful.");
   } catch (error: any) {
-    console.error("Logout Error:", error);
-    return { error: error.response?.data?.error || "Logout failed" };
+    // Log the error but proceed to clear client-side tokens anyway
+    console.error("Logout API call failed:", error.response?.data?.error || error.message);
+  } finally {
+    // Always clear client-side auth state
+    clearAuthCookies();
+    console.log("Client-side auth cookies cleared after logout attempt.");
+    // Optionally redirect to home or login page
+    // window.location.href = '/'; 
   }
+  // Return a resolved promise or some status, as the original function did
+  return { status: 200, message: "Logout process completed on client." };
 }
 
 /**
@@ -197,37 +295,19 @@ export async function logout() {
  */
 export async function fetchUser() {
   console.log("Attempting to fetch user data");
-  console.log("API URL:", API_URL);
-  console.log("Cookies available:", document.cookie); // Check if cookies exist
+  console.log("Cookies available at fetchUser call:", document.cookie);
   
   try {
-    // Try with explicit URL to bypass any potential routing issues
-    const response = await apiClient.get('/users/get_user', {
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-      }
-    });
-    
-    // Log response details for debugging
+    const response = await apiClient.get('/users/get_user');
     console.log("User fetch response status:", response.status);
-    console.log("Response headers:", response.headers);
-    
-    // Check if response is actually JSON
-    const contentType = response.headers['content-type'];
-    console.log("Content-Type of response:", contentType);
-    
-    if (contentType && contentType.includes('text/html')) {
-      console.error("Received HTML instead of JSON. This likely indicates a routing issue.");
-      throw new Error("Invalid response format: expected JSON, received HTML");
-    }
-    
     console.log("User data:", response.data);
     return response.data;
   } catch (error: any) {
     console.error("Fetch User Error:", error);
-    console.error("Error response:", error.response?.data);
-    throw error;
+    console.error("Error response from fetchUser:", error.response?.data);
+    // If 401 and refresh didn't work or wasn't attempted, it will be rejected by interceptor.
+    // No need to clear cookies here, interceptor handles it on failed refresh.
+    throw error; 
   }
 }
 
