@@ -18,8 +18,8 @@ const apiClient: AxiosInstance = axios.create({
 apiClient.interceptors.request.use(
   (config: AxiosRequestConfig) => {
     // Add X-CSRFToken header for non-GET requests
-    /* // Temporarily disable CSRF header for testing SameSite=Lax
-    if (config.method !== 'get' && config.method !== 'GET') {
+    // Re-enable CSRF header logic
+    if (config.method && !['GET', 'HEAD', 'OPTIONS'].includes(config.method.toUpperCase())) {
       // Get CSRF token from cookies
       const csrfToken = getCookieValue('XSRF-TOKEN');
       if (csrfToken) {
@@ -28,10 +28,12 @@ apiClient.interceptors.request.use(
         config.headers['X-CSRFToken'] = csrfToken;
         console.log('Adding X-CSRFToken header to request');
       } else {
-        console.warn('No CSRF token found in cookies for non-GET request');
+        // Log a warning but allow the request to proceed. 
+        // Some public POST endpoints might not need CSRF, 
+        // or the backend might handle missing CSRF appropriately.
+        console.warn('No XSRF-TOKEN cookie found for CSRF protection header');
       }
     }
-    */
     return config;
   },
   (error) => Promise.reject(error)
