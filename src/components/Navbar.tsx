@@ -96,7 +96,7 @@ const Navbar: React.FC = () => {
 
         {/* Mobile Toggle */}
         <button className="md:hidden p-2" onClick={toggleMenu}>
-          {isOpen ? <X className="h-6 w-6 text-gray-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
+          {isOpen ? <X className="h-6 w-6 text-white-700" /> : <Menu className="h-6 w-6 text-gray-700" />}
         </button>
       </div>
 
