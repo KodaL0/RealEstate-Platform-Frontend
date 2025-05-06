@@ -56,8 +56,13 @@ function setCookie(name: string, value: string, days: number) {
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
     expires = "; expires=" + date.toUTCString();
   }
-  document.cookie = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax"; // Add SameSite=Lax
-  console.log(`Cookie set: ${name}, Expires: ${expires || 'session'}`);
+  const cookieString = name + "=" + (value || "")  + expires + "; path=/; SameSite=Lax";
+  console.log(`[setCookie] Attempting to set cookie: ${cookieString}`);
+  document.cookie = cookieString;
+  // Log the specific cookie being set and then all cookies for verification
+  const currentCookieValue = getCookieValue(name);
+  console.log(`[setCookie] Value of ${name} after setting: ${currentCookieValue}`);
+  console.log(`[setCookie] Current document.cookie after trying to set ${name}:`, document.cookie);
 }
 
 // Helper function to clear a cookie
@@ -67,9 +72,12 @@ function clearCookie(name: string) {
 }
 
 export function setAuthCookies(accessToken: string, refreshToken: string) {
+  console.log('[setAuthCookies] Received accessToken:', accessToken);
+  console.log('[setAuthCookies] Received refreshToken:', refreshToken);
   setCookie("access_token", accessToken, 1/24); // 1 hour for access token
   setCookie("refresh_token", refreshToken, 7);  // 7 days for refresh token
-  console.log("Access and Refresh cookies have been set from setAuthCookies.");
+  console.log("[setAuthCookies] Auth cookies setting process complete.");
+  console.log('[setAuthCookies] Final document.cookie after all setAuthCookies operations:', document.cookie);
 }
 
 export function clearAuthCookies() {
