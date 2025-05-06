@@ -16,9 +16,32 @@ const apiClient: AxiosInstance = axios.create({
 // REQUEST INTERCEPTOR: Since cookies are automatically attached by the browser,
 // we don't need to modify the headers here.
 apiClient.interceptors.request.use(
-  (config: AxiosRequestConfig) => config,
+  (config: AxiosRequestConfig) => {
+    // Add X-CSRFToken header for non-GET requests
+    if (config.method !== 'get' && config.method !== 'GET') {
+      // Get CSRF token from cookies
+      const csrfToken = getCookieValue('XSRF-TOKEN');
+      if (csrfToken) {
+        // Set the header Django expects
+        config.headers = config.headers || {};
+        config.headers['X-CSRFToken'] = csrfToken;
+        console.log('Adding X-CSRFToken header to request');
+      } else {
+        console.warn('No CSRF token found in cookies for non-GET request');
+      }
+    }
+    return config;
+  },
   (error) => Promise.reject(error)
 );
+
+// Helper function to get a cookie value by name
+function getCookieValue(name: string): string | null {
+  const value = `; ${document.cookie}`;
+  const parts = value.split(`; ${name}=`);
+  if (parts.length === 2) return parts.pop()?.split(';').shift() || null;
+  return null;
+}
 
 // RESPONSE INTERCEPTOR: Handle token refresh on 401 errors.
 // It assumes your backend reads the refresh token from cookies.
