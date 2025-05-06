@@ -14,6 +14,7 @@ import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
+import AuthTokenProcessor from "./components/AuthTokenProcessor";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -34,6 +35,7 @@ function App() {
   return (
     <UserProvider>
       <Router>
+        <AuthTokenProcessor />
         {/* Track route changes for GA */}
         <RouteChangeTracker />
         <ScrollToTop />
