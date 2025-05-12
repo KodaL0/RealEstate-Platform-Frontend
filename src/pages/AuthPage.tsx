@@ -17,29 +17,25 @@ export const AuthPage: React.FC = () => {
     // Construct the backend URL. Use environment variable if available, otherwise default.
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     
-    // Add timestamp to force a fresh authentication flow
+    // Generate a cache-busting random ID that will force a new authentication flow
+    // This ensures the browser doesn't reuse any cached authentication state
+    const uniqueId = Math.random().toString(36).substring(2, 15) + 
+                     Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
     
-    // Build the login URL with aggressive parameters to force account selection
-    const loginUrl = `${backendUrl}/accounts/google/login/?prompt=select_account consent&approval_prompt=force&include_granted_scopes=false&login_hint=&t=${timestamp}`;
+    // Build the login URL with parameters that force a completely new authentication flow
+    const loginUrl = `${backendUrl}/accounts/google/login/` + 
+                     `?prompt=select_account consent` +
+                     `&approval_prompt=force` + 
+                     `&include_granted_scopes=false` + 
+                     `&login_hint=_force_new_${uniqueId}` +
+                     `&state=${uniqueId}` + 
+                     `&t=${timestamp}` + 
+                     `&authuser=-1`; // Force no default user
     
-    // Try opening a popup window first (this can help avoid reusing Google session)
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    const popup = window.open(
-      loginUrl,
-      'googleLoginPopup',
-      `width=${width},height=${height},left=${left},top=${top},popup=1`
-    );
-    
-    // If popup was blocked, fall back to redirection
-    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
-      console.log('Popup blocked, falling back to redirection');
-      window.location.href = loginUrl;
-    }
+    // Try to open in a new tab - this helps break any session sharing with current window
+    // as popups may still share some browser session data
+    window.open(loginUrl, '_blank', 'noopener,noreferrer');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
