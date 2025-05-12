@@ -90,11 +90,11 @@ export function setAuthCookies(accessToken: string, refreshToken: string) {
 export function clearAuthCookies() {
   clearCookie("access_token");
   clearCookie("refresh_token");
-  clearCookie("XSRF-TOKEN"); // Also clear CSRF token on logout
+  clearCookie("XSRF-TOKEN"); // Clear CSRF token on logout
+  clearCookie("csrftoken");  // Also clear Django's default CSRF token name
   
   // Clear potential Django admin session cookies
   clearCookie("sessionid"); 
-  clearCookie("csrftoken");
   
   // Try to clear Google auth-related cookies that might be set at root domain
   const domains = [null, window.location.hostname, `.${window.location.hostname}`, "localhost"];
@@ -137,15 +137,17 @@ apiClient.interceptors.request.use(
 
     // Add X-CSRFToken header for non-GET requests
     if (config.method && !['GET', 'HEAD', 'OPTIONS'].includes(config.method.toUpperCase())) {
-      const csrfToken = getCookieValue('XSRF-TOKEN'); // Django's default CSRF cookie name might be 'csrftoken'
+      // Try to get the CSRF token from XSRF-TOKEN first, then fall back to Django's default csrftoken
+      let csrfToken = getCookieValue('XSRF-TOKEN') || getCookieValue('csrftoken');
+      
       if (csrfToken) {
         config.headers = config.headers || {};
         if (config.headers) {
-            config.headers['X-CSRFToken'] = csrfToken;
+          config.headers['X-CSRFToken'] = csrfToken;
         }
-        console.log('Adding X-CSRFToken header to request');
+        console.log(`Adding X-CSRFToken header to request: ${csrfToken.substring(0, 8)}...`);
       } else {
-        console.warn('No XSRF-TOKEN cookie found for CSRF protection header. Django might use csrftoken.');
+        console.warn('No CSRF token cookie found (tried both XSRF-TOKEN and csrftoken)');
       }
     }
     return config;
