@@ -16,12 +16,30 @@ export const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
     // Construct the backend URL. Use environment variable if available, otherwise default.
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    // Add additional parameters to force new account selection:
-    // - prompt=select_account: forces account chooser
-    // - approval_prompt=force: forces consent screen
-    // - include_granted_scopes=false: ignores previously granted permissions
-    // - login_hint=: empty login hint to avoid auto-selection
-    window.location.href = `${backendUrl}/accounts/google/login/?prompt=select_account consent&approval_prompt=force&include_granted_scopes=false&login_hint=`;
+    
+    // Add timestamp to force a fresh authentication flow
+    const timestamp = new Date().getTime();
+    
+    // Build the login URL with aggressive parameters to force account selection
+    const loginUrl = `${backendUrl}/accounts/google/login/?prompt=select_account consent&approval_prompt=force&include_granted_scopes=false&login_hint=&t=${timestamp}`;
+    
+    // Try opening a popup window first (this can help avoid reusing Google session)
+    const width = 500;
+    const height = 600;
+    const left = window.screenX + (window.outerWidth - width) / 2;
+    const top = window.screenY + (window.outerHeight - height) / 2;
+    
+    const popup = window.open(
+      loginUrl,
+      'googleLoginPopup',
+      `width=${width},height=${height},left=${left},top=${top},popup=1`
+    );
+    
+    // If popup was blocked, fall back to redirection
+    if (!popup || popup.closed || typeof popup.closed === 'undefined') {
+      console.log('Popup blocked, falling back to redirection');
+      window.location.href = loginUrl;
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
