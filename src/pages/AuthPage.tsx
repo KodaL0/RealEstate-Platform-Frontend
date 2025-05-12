@@ -14,6 +14,17 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
+    // First, clear any potential session data
+    sessionStorage.clear();
+    
+    // Remove any Google-specific localStorage items
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
+        localStorage.removeItem(key);
+      }
+    }
+    
     // Construct the backend URL. Use environment variable if available, otherwise default.
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     

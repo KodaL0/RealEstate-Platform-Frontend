@@ -29,8 +29,26 @@ const Navbar: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      // Clear Google session storage that might be persisting state
+      try {
+        sessionStorage.clear();
+        localStorage.removeItem('googleOneTap');
+        localStorage.removeItem('googleToken');
+        
+        // Try to remove any potential Google-specific items
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
+            localStorage.removeItem(key);
+          }
+        }
+      } catch (e) {
+        console.error("Error clearing storage:", e);
+      }
+      
       await apiClient.post("/users/logout");
     } catch (_) {}
+    
     // Use the enhanced logout function from auth middleware
     // which handles cookie clearing and redirects properly
     import('../middleware/auth').then(auth => {
