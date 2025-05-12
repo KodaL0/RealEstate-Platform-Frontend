@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Building2, Mail, Lock, User as UserIcon } from 'lucide-react';
-import { SiGoogle, SiFacebook, SiApple } from 'react-icons/si';
+import { SiGoogle } from 'react-icons/si';
 import { login, register } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
 
@@ -14,37 +14,27 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
-    // First, clear any potential session data
     sessionStorage.clear();
-    
-    // Remove any Google-specific localStorage items
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
       if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
         localStorage.removeItem(key);
       }
     }
-    
-    // Construct the backend URL. Use environment variable if available, otherwise default.
+
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    
-    // Generate a cache-busting random ID that will force a new authentication flow
-    // This ensures the browser doesn't reuse any cached authentication state
-    const uniqueId = Math.random().toString(36).substring(2, 15) + 
+    const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
-    
-    // Build the login URL with parameters that force a completely new authentication flow
-    const loginUrl = `${backendUrl}/accounts/google/login/` + 
+
+    const loginUrl = `${backendUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
-                     `&include_granted_scopes=false` + 
+                     `&include_granted_scopes=false` +
                      `&login_hint=_force_new_${uniqueId}` +
-                     `&state=${uniqueId}` + 
-                     `&t=${timestamp}` + 
-                     `&authuser=-1`; // Force no default user
-    
-    // Try to open in a new tab - this helps break any session sharing with current window
-    // as popups may still share some browser session data
+                     `&state=${uniqueId}` +
+                     `&t=${timestamp}` +
+                     `&authuser=-1`;
+
     window.open(loginUrl, '_blank', 'noopener,noreferrer');
   };
 
@@ -60,7 +50,6 @@ export const AuthPage: React.FC = () => {
       if (isLogin) {
         const res = await login(email, password);
         if (res?.status === 200) {
-          // wait a moment for auth cookie
           setTimeout(async () => {
             try {
               await refreshUser();
@@ -164,31 +153,15 @@ export const AuthPage: React.FC = () => {
             </div>
 
             {/* Social Login Buttons */}
-            <div className="mt-4 grid grid-cols-3 gap-2">
+            <div className="mt-4">
               <button
                 type="button"
                 onClick={handleGoogleLogin}
-                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
+                className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
                            hover:bg-gray-50 transition"
               >
                 <SiGoogle className="h-5 w-5 mr-2 text-[#4285F4]" />
-                Google
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
-                           hover:bg-gray-50 transition"
-              >
-                <SiFacebook className="h-5 w-5 mr-2 text-[#1877F2]" />
-                Facebook
-              </button>
-              <button
-                type="button"
-                className="flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
-                           hover:bg-gray-50 transition"
-              >
-                <SiApple className="h-5 w-5 mr-2 text-black" />
-                Apple
+                Continue with Google
               </button>
             </div>
 
