@@ -66,9 +66,16 @@ function setCookie(name: string, value: string, days: number) {
 }
 
 // Helper function to clear a cookie
-function clearCookie(name: string) {
-  document.cookie = name + '=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
-  console.log(`Cookie cleared: ${name}`);
+function clearCookie(name: string, domain?: string | null, path: string = '/') {
+  let cookieStr = `${name}=; Path=${path}; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax`;
+  
+  // Add domain if specified
+  if (domain) {
+    cookieStr += `; Domain=${domain}`;
+  }
+  
+  document.cookie = cookieStr;
+  console.log(`Cookie cleared: ${name}${domain ? ' (domain: ' + domain + ')' : ''}${path !== '/' ? ' (path: ' + path + ')' : ''}`);
 }
 
 export function setAuthCookies(accessToken: string, refreshToken: string) {
@@ -84,6 +91,28 @@ export function clearAuthCookies() {
   clearCookie("access_token");
   clearCookie("refresh_token");
   clearCookie("XSRF-TOKEN"); // Also clear CSRF token on logout
+  
+  // Clear potential Django admin session cookies
+  clearCookie("sessionid"); 
+  clearCookie("csrftoken");
+  
+  // Try to clear Google auth-related cookies that might be set at root domain
+  const domains = [null, window.location.hostname, `.${window.location.hostname}`, "localhost"];
+  const paths = ["/", "/admin/", "/accounts/", "/api/"];
+  
+  // Clear potential Google OAuth cookies across multiple paths and domains
+  domains.forEach(domain => {
+    paths.forEach(path => {
+      clearCookie("g_state", domain, path);
+      clearCookie("g_csrf_token", domain, path);
+      clearCookie("g_auth_state", domain, path);
+    });
+  });
+  
+  // Clear localStorage items that might be related to auth
+  localStorage.removeItem("g_state");
+  localStorage.removeItem("g_auth_state");
+  
   console.log("Auth cookies have been cleared.");
 }
 
@@ -291,8 +320,10 @@ export async function logout() {
     // Always clear client-side auth state
     clearAuthCookies();
     console.log("Client-side auth cookies cleared after logout attempt.");
-    // Optionally redirect to home or login page
-    // window.location.href = '/'; 
+    
+    // Force redirect to login page with a cache-busting parameter
+    const timestamp = new Date().getTime();
+    window.location.href = `/login?nocache=${timestamp}`; 
   }
   // Return a resolved promise or some status, as the original function did
   return { status: 200, message: "Logout process completed on client." };

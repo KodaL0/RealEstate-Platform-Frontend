@@ -31,8 +31,11 @@ const Navbar: React.FC = () => {
     try {
       await apiClient.post("/users/logout");
     } catch (_) {}
-    setUser(null);
-    navigate("/login");
+    // Use the enhanced logout function from auth middleware
+    // which handles cookie clearing and redirects properly
+    import('../middleware/auth').then(auth => {
+      auth.logout();
+    });
   };
 
   return (

@@ -16,8 +16,12 @@ export const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
     // Construct the backend URL. Use environment variable if available, otherwise default.
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    // Redirect to the Django allauth Google login endpoint with prompt=select_account parameter
-    window.location.href = `${backendUrl}/accounts/google/login/?prompt=select_account`;
+    // Add additional parameters to force new account selection:
+    // - prompt=select_account: forces account chooser
+    // - approval_prompt=force: forces consent screen
+    // - include_granted_scopes=false: ignores previously granted permissions
+    // - login_hint=: empty login hint to avoid auto-selection
+    window.location.href = `${backendUrl}/accounts/google/login/?prompt=select_account consent&approval_prompt=force&include_granted_scopes=false&login_hint=`;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
