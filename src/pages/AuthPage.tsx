@@ -15,11 +15,9 @@ export const AuthPage: React.FC = () => {
 
   const handleGoogleLogin = () => {
     // Construct the backend URL. Use environment variable if available, otherwise default.
-    // Ensure this variable (e.g., REACT_APP_BACKEND_URL or VITE_BACKEND_URL)
-    // is set in your Vercel deployment environment.
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || process.env.REACT_APP_BACKEND_URL || 'http://localhost:8000';
-    // Redirect to the Django allauth Google login endpoint
-    window.location.href = `${backendUrl}/accounts/google/login/`;
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    // Redirect to the Django allauth Google login endpoint with prompt=select_account parameter
+    window.location.href = `${backendUrl}/accounts/google/login/?prompt=select_account`;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
