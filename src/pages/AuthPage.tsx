@@ -26,7 +26,6 @@ export const AuthPage: React.FC = () => {
     // Build the login URL with parameters that force a completely new authentication flow
     const loginUrl = `${backendUrl}/accounts/google/login/` + 
                      `?prompt=select_account consent` +
-                     `&approval_prompt=force` + 
                      `&include_granted_scopes=false` + 
                      `&login_hint=_force_new_${uniqueId}` +
                      `&state=${uniqueId}` + 

@@ -323,15 +323,10 @@ export async function logout() {
     clearAuthCookies();
     console.log("Client-side auth cookies cleared after logout attempt.");
     
-    // Force a complete Google logout by redirecting to Google's logout endpoint
-    // This will sign the user out of their Google account in the browser session
-    // and then redirect back to our login page with a cache-busting parameter
+    // Redirect back to login page with cache-busting parameter
+    // This avoids logging out of Google account completely
     const timestamp = new Date().getTime();
-    const returnTo = encodeURIComponent(`${window.location.origin}/login?nocache=${timestamp}`);
-    const googleLogoutUrl = `https://www.google.com/accounts/Logout?continue=https://appengine.google.com/_ah/logout?continue=${returnTo}`;
-    
-    // Redirect to Google's logout endpoint
-    window.location.href = googleLogoutUrl;
+    window.location.href = `/login?nocache=${timestamp}`;
   }
   // Return a resolved promise or some status, as the original function did
   return { status: 200, message: "Logout process completed on client." };
