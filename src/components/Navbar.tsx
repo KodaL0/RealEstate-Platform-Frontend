@@ -92,7 +92,7 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Desktop Auth */}
-        <div className="hidden md:flex items-center space-x-4">
+        <div className="hidden md:flex items-center space-x-4 min-w-[200px] justify-end">
           {user ? (
             <div className="relative group">
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
