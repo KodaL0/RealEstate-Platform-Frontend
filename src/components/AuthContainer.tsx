@@ -57,26 +57,37 @@ const AuthContainer: React.FC<AuthContainerProps> = ({ onAuthComplete }) => {
             setError('Auto-login after registration failed.');
           }
         } else {
-          // Check for specific errors
-          if (data && data.error && data.error === 'This email is already in use.') {
+          // Enhanced error handling - log the full error object to help with debugging
+          console.log("Registration error data:", data);
+          
+          // Check for email-related errors in multiple possible locations
+          const emailErrorPattern = /email.*already|already.*use|already.*registered/i;
+          
+          if (data && data.error && emailErrorPattern.test(data.error)) {
+            // Direct error message contains the email already exists pattern
             setError('This email is already registered. You can log in instead.');
-            // Optionally switch to login mode after a delay
             setTimeout(() => setMode('login'), 2000);
-          } else if (data && data.error && data.error === 'This username is already taken.') {
+          } else if (data && data.details && data.details.email && 
+                     (typeof data.details.email === 'string' ? 
+                      emailErrorPattern.test(data.details.email) : 
+                      data.details.email.some((err: string) => emailErrorPattern.test(err)))) {
+            // Email error in details.email field
+            setError('This email is already registered. You can log in instead.');
+            setTimeout(() => setMode('login'), 2000);
+          } else if (data && typeof data.error === 'object' && data.error.email && 
+                     emailErrorPattern.test(data.error.email.toString())) {
+            // Sometimes error might be an object with email field
+            setError('This email is already registered. You can log in instead.');
+            setTimeout(() => setMode('login'), 2000);
+          } else if (data && data.status && data.status === 400 && 
+                     emailErrorPattern.test(JSON.stringify(data))) {
+            // Last resort - check the entire data object for email error patterns
+            setError('This email is already registered. You can log in instead.');
+            setTimeout(() => setMode('login'), 2000);
+          } else if (data && data.error && data.error.includes('username')) {
+            // Username error
             setError('This username is already taken. Please choose another one.');
-          } else if (data && data.details && data.details.email) {
-            // Handle nested email validation errors from backend
-            const emailError = Array.isArray(data.details.email) ? data.details.email[0] : data.details.email;
-            
-            if (typeof emailError === 'string' && emailError.includes('already in use')) {
-              setError('This email is already registered. You can log in instead.');
-              // Optionally switch to login mode after a delay
-              setTimeout(() => setMode('login'), 2000);
-            } else {
-              setError(`Email error: ${emailError}`);
-            }
           } else {
-            console.error('Registration failed with data:', data);
             setError('Registration failed. Please try again.');
           }
         }

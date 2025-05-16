@@ -301,7 +301,22 @@ export async function register(username: string, email: string, password: string
     return { status: response.status, ...response.data };
   } catch (error: any) {
     console.error("Registration Error:", error);
-    return { error: error.response?.data?.error || "Registration failed" };
+    
+    // Add more detailed debugging for error responses
+    if (error.response) {
+      console.error("Error response status:", error.response.status);
+      console.error("Error response data:", JSON.stringify(error.response.data));
+      
+      // Return a more structured error object that includes all possible fields
+      return { 
+        status: error.response.status,
+        error: error.response?.data?.error || "Registration failed",
+        details: error.response?.data?.details || error.response?.data || {},
+        message: error.response?.data?.message
+      };
+    }
+    
+    return { error: error.message || "Registration failed" };
   }
 }
 
