@@ -57,7 +57,16 @@ const AuthContainer: React.FC<AuthContainerProps> = ({ onAuthComplete }) => {
             setError('Auto-login after registration failed.');
           }
         } else {
-          setError('Registration failed. Please try again.');
+          // Check for specific errors
+          if (data && data.error && data.error === 'Email already exists') {
+            setError('This email is already registered. You can log in instead.');
+            // Optionally switch to login mode after a delay
+            setTimeout(() => setMode('login'), 2000);
+          } else if (data && data.error && data.error === 'Username already exists') {
+            setError('This username is already taken. Please choose another one.');
+          } else {
+            setError('Registration failed. Please try again.');
+          }
         }
       }
     } catch (err) {
