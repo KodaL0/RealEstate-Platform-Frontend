@@ -67,7 +67,7 @@ export const AuthPage: React.FC = () => {
         if (res?.status === 201) {
           navigate('/login');
         } else {
-          setFeedback(res?.message || 'Registration failed');
+          setFeedback(res?.message || 'Email Already In Use');
         }
       }
     } catch (err) {
