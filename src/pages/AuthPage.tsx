@@ -65,9 +65,13 @@ export const AuthPage: React.FC = () => {
         const username = formData.get('name') as string;
         const res = await register(username, email, password);
         if (res?.status === 201) {
-          navigate('/login');
+          setFeedback('Registration successful!');
+          setTimeout(() => navigate('/login'), 1500);
+        } else if (res?.errors && typeof res.errors === 'object') {
+          const errorMessages = Object.values(res.errors).flat().join(' ');
+          setFeedback(errorMessages);
         } else {
-          setFeedback(res?.message || 'Email Already In Use');
+          setFeedback(res?.message || 'Registration failed.');
         }
       }
     } catch (err) {
@@ -183,7 +187,13 @@ export const AuthPage: React.FC = () => {
           </form>
 
           {feedback && (
-            <div className="mt-4 text-center text-sm text-gray-700">
+            <div
+              className={`mt-4 text-center text-sm ${
+                feedback.toLowerCase().includes('successful')
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}
+            >
               {feedback}
             </div>
           )}
