@@ -307,16 +307,19 @@ export async function register(username: string, email: string, password: string
       console.error("Error response status:", error.response.status);
       console.error("Error response data:", JSON.stringify(error.response.data));
       
-      // Return a more structured error object that includes all possible fields
+      // Convert details to error field if needed
+      const errorMsg = error.response?.data?.error || 
+                      (error.response?.data?.details ? 
+                        Object.values(error.response.data.details).flat().join(' ') : 
+                        "Registration failed");
+      
       return { 
         status: error.response.status,
-        error: error.response?.data?.error || "Registration failed",
-        details: error.response?.data?.details || error.response?.data || {},
-        message: error.response?.data?.message
+        error: errorMsg
       };
     }
     
-    return { error: error.message || "Email Already In Use" };
+    return { error: error.message || "Registration failed" };
   }
 }
 

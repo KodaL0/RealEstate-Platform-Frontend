@@ -67,11 +67,9 @@ export const AuthPage: React.FC = () => {
         if (res?.status === 201) {
           setFeedback('Registration successful!');
           setTimeout(() => navigate('/login'), 1500);
-        } else if (res?.errors && typeof res.errors === 'object') {
-          const errorMessages = Object.values(res.errors).flat().join(' ');
-          setFeedback(errorMessages);
         } else {
-          setFeedback(res?.message || 'Registration failed.');
+          // Now we can simply use the error field
+          setFeedback(res?.error || 'Registration failed.');
         }
       }
     } catch (err) {

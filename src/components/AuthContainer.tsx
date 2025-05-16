@@ -1,184 +1,215 @@
-// project/src/components/AuthContainer.tsx
-import * as React from 'react';
-import { useState } from 'react';
-import { useAuth } from '../middleware/authContext';
-import { login, register, logout, getProtectedData } from '../middleware/auth';
+// src/pages/AuthPage.tsx
+import React, { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Building2, Mail, Lock, User as UserIcon } from 'lucide-react';
+import { SiGoogle } from 'react-icons/si';
+import { login, register } from '../middleware/auth';
+import { useUser } from '../context/UserContext';
 
-interface AuthContainerProps {
-  onAuthComplete?: () => void;
-}
+export const AuthPage: React.FC = () => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [feedback, setFeedback] = useState('');
+  const { refreshUser } = useUser();
+  const navigate = useNavigate();
 
-const AuthContainer: React.FC<AuthContainerProps> = ({ onAuthComplete }) => {
-  const { user, setUser } = useAuth();
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
-  const [error, setError] = useState<string | null>(null);
+  const handleGoogleLogin = () => {
+    sessionStorage.clear();
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
+        localStorage.removeItem(key);
+      }
+    }
 
-  const handleSubmit = async (e: React.FormEvent) => {
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const uniqueId = Math.random().toString(36).substring(2, 15) +
+                     Math.random().toString(36).substring(2, 15);
+    const timestamp = new Date().getTime();
+
+    const loginUrl = `${backendUrl}/accounts/google/login/` +
+                     `?prompt=select_account consent` +
+                     `&include_granted_scopes=false` +
+                     `&login_hint=_force_new_${uniqueId}` +
+                     `&state=${uniqueId}` +
+                     `&t=${timestamp}` +
+                     `&authuser=-1`;
+
+    window.open(loginUrl, '_blank', 'noopener,noreferrer');
+  };
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    setError(null);
+    setLoading(true);
+    setFeedback('');
+    const formData = new FormData(e.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+
     try {
-      if (mode === 'login') {
-        const data = await login(email, password);
-        console.log("Login response:", data);
-        if (data && data.message === 'Login successful') {
-          // Fetch complete user details from the protected endpoint
-          const userData = await getProtectedData();
-          console.log("Protected data:", userData);
-          if (userData && userData.id) {
-            setUser(userData);
-            onAuthComplete?.();
-          } else {
-            setError('Login succeeded but fetching user data failed.');
-          }
+      if (isLogin) {
+        const res = await login(email, password);
+        if (res?.status === 200) {
+          setTimeout(async () => {
+            try {
+              await refreshUser();
+              navigate('/');
+            } catch {
+              setFeedback('Login succeeded, but failed to load profile');
+            }
+          }, 500);
         } else {
-          setError('Login failed. Please check your credentials.');
+          setFeedback(typeof res?.error === 'string' ? res.error : 'Login failed');
         }
       } else {
-        // Registration flow
-        const data = await register(username, email, password);
-        console.log("Register response:", data);
-        if (data && data.message && data.message.toLowerCase().includes('registered')) {
-          // Auto-login after successful registration
-          const loginData = await login(email, password);
-          console.log("Login after registration response:", loginData);
-          if (loginData && loginData.message === 'Login successful') {
-            const userData = await getProtectedData();
-            console.log("Protected data after registration:", userData);
-            if (userData && userData.id) {
-              setUser(userData);
-              onAuthComplete?.();
-            } else {
-              setError('Registration succeeded but fetching user data failed.');
-            }
-          } else {
-            setError('Auto-login after registration failed.');
-          }
+        const username = formData.get('name') as string;
+        const res = await register(username, email, password);
+        if (res?.status === 201) {
+          setFeedback('Registration successful!');
+          setTimeout(() => navigate('/login'), 1500);
+        } else if (res?.errors && typeof res.errors === 'object') {
+          const errorMessages = Object.values(res.errors).flat().join(' ');
+          setFeedback(errorMessages);
         } else {
-          // Enhanced error handling - log the full error object to help with debugging
-          console.log("Registration error data:", data);
-          
-          // Check for email-related errors in multiple possible locations
-          const emailErrorPattern = /email.*already|already.*use|already.*registered/i;
-          
-          if (data && data.error && emailErrorPattern.test(data.error)) {
-            // Direct error message contains the email already exists pattern
-            setError('This email is already registered. You can log in instead.');
-            setTimeout(() => setMode('login'), 2000);
-          } else if (data && data.details && data.details.email && 
-                     (typeof data.details.email === 'string' ? 
-                      emailErrorPattern.test(data.details.email) : 
-                      data.details.email.some((err: string) => emailErrorPattern.test(err)))) {
-            // Email error in details.email field
-            setError('This email is already registered. You can log in instead.');
-            setTimeout(() => setMode('login'), 2000);
-          } else if (data && typeof data.error === 'object' && data.error.email && 
-                     emailErrorPattern.test(data.error.email.toString())) {
-            // Sometimes error might be an object with email field
-            setError('This email is already registered. You can log in instead.');
-            setTimeout(() => setMode('login'), 2000);
-          } else if (data && data.status && data.status === 400 && 
-                     emailErrorPattern.test(JSON.stringify(data))) {
-            // Last resort - check the entire data object for email error patterns
-            setError('This email is already registered. You can log in instead.');
-            setTimeout(() => setMode('login'), 2000);
-          } else if (data && data.error && data.error.includes('username')) {
-            // Username error
-            setError('This username is already taken. Please choose another one.');
-          } else {
-            setError('Registration failed. Please try again.');
-          }
+          setFeedback(res?.message || 'Registration failed.');
         }
       }
     } catch (err) {
       console.error(err);
-      setError('An error occurred. Please try again.');
+      setFeedback('Error processing your request');
+    } finally {
+      setLoading(false);
     }
   };
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      setUser(null);
-      onAuthComplete?.();
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  if (user) {
-    return (
-      <div className="flex flex-col items-start space-y-2">
-        <h2 className="font-semibold text-lg">Welcome, {user.name}!</h2>
-        <button onClick={handleLogout} className="btn btn-primary bg-red-600 hover:bg-red-700">
-          Logout
-        </button>
-      </div>
-    );
-  }
 
   return (
-    <div className="flex flex-col space-y-4">
-      <h2 className="font-semibold text-lg">{mode === 'login' ? 'Login' : 'Register'}</h2>
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-2">
-        {mode === 'register' && (
-          <div className="flex flex-col">
-            <label className="text-sm font-medium">Username:</label>
-            <input
-              type="text"
-              value={username}
-              onChange={(e) => setUsername(e.target.value)}
-              required
-              className="border rounded px-2 py-1 text-sm"
-            />
+    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+      <div className="sm:mx-auto sm:w-full sm:max-w-md">
+        <Link to="/" className="flex justify-center items-center space-x-2">
+          <Building2 className="h-8 w-8 text-blue-600" />
+          <span className="text-2xl font-bold text-gray-900">PROPERTPRO</span>
+        </Link>
+        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          {isLogin ? 'Sign in to your account' : 'Create your account'}
+        </h2>
+      </div>
+
+      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
+          <form className="space-y-6" onSubmit={handleSubmit}>
+            {!isLogin && (
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Username
+                </label>
+                <div className="mt-1 relative">
+                  <input
+                    id="name"
+                    name="name"
+                    type="text"
+                    required
+                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                               placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                    <UserIcon className="h-5 w-5 text-gray-400" />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
+                Email address
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <Mail className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+                Password
+              </label>
+              <div className="mt-1 relative">
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  required
+                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
+                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                />
+                <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
+                  <Lock className="h-5 w-5 text-gray-400" />
+                </div>
+              </div>
+            </div>
+
+            {/* Social Login Buttons */}
+            <div className="mt-4">
+              <button
+                type="button"
+                onClick={handleGoogleLogin}
+                className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
+                           hover:bg-gray-50 transition"
+              >
+                <SiGoogle className="h-5 w-5 mr-2 text-[#4285F4]" />
+                Continue with Google
+              </button>
+            </div>
+
+            <div>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm
+                           text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none
+                           focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                {loading
+                  ? 'Loading…'
+                  : isLogin
+                  ? 'Sign in'
+                  : 'Register'}
+              </button>
+            </div>
+          </form>
+
+          {feedback && (
+            <div
+              className={`mt-4 text-center text-sm ${
+                feedback.toLowerCase().includes('successful')
+                  ? 'text-green-600'
+                  : 'text-red-600'
+              }`}
+            >
+              {feedback}
+            </div>
+          )}
+
+          <div className="mt-6 text-center">
+            <button
+              onClick={() => setIsLogin(!isLogin)}
+              className="text-blue-600 hover:text-blue-500"
+            >
+              {isLogin
+                ? 'Create an account'
+                : 'Sign in to existing account'}
+            </button>
           </div>
-        )}
-        <div className="flex flex-col">
-          <label className="text-sm font-medium">Email:</label>
-          <input
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="border rounded px-2 py-1 text-sm"
-          />
         </div>
-        <div className="flex flex-col">
-          <label className="text-sm font-medium">Password:</label>
-          <input
-            type="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className="border rounded px-2 py-1 text-sm"
-          />
-        </div>
-        {error && <p className="text-red-600 text-sm">{error}</p>}
-        <button type="submit" className="btn btn-primary">
-          {mode === 'login' ? 'Login' : 'Register'}
-        </button>
-      </form>
-      <div className="text-sm">
-        {mode === 'login' ? (
-          <p>
-            Don't have an account?{' '}
-            <button onClick={() => setMode('register')} className="underline text-blue-600">
-              Register here.
-            </button>
-          </p>
-        ) : (
-          <p>
-            Already have an account?{' '}
-            <button onClick={() => setMode('login')} className="underline text-blue-600">
-              Login here.
-            </button>
-          </p>
-        )}
       </div>
     </div>
   );
 };
-
-export default AuthContainer;
