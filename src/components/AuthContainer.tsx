@@ -58,13 +58,25 @@ const AuthContainer: React.FC<AuthContainerProps> = ({ onAuthComplete }) => {
           }
         } else {
           // Check for specific errors
-          if (data && data.error && data.error === 'Email already exists') {
+          if (data && data.error && data.error === 'This email is already in use.') {
             setError('This email is already registered. You can log in instead.');
             // Optionally switch to login mode after a delay
             setTimeout(() => setMode('login'), 2000);
-          } else if (data && data.error && data.error === 'Username already exists') {
+          } else if (data && data.error && data.error === 'This username is already taken.') {
             setError('This username is already taken. Please choose another one.');
+          } else if (data && data.details && data.details.email) {
+            // Handle nested email validation errors from backend
+            const emailError = Array.isArray(data.details.email) ? data.details.email[0] : data.details.email;
+            
+            if (typeof emailError === 'string' && emailError.includes('already in use')) {
+              setError('This email is already registered. You can log in instead.');
+              // Optionally switch to login mode after a delay
+              setTimeout(() => setMode('login'), 2000);
+            } else {
+              setError(`Email error: ${emailError}`);
+            }
           } else {
+            console.error('Registration failed with data:', data);
             setError('Registration failed. Please try again.');
           }
         }
