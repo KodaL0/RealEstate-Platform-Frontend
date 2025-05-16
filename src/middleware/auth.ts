@@ -310,13 +310,13 @@ export async function register(username: string, email: string, password: string
       // Return a more structured error object that includes all possible fields
       return { 
         status: error.response.status,
-        error: error.response?.data?.error || "This Email Is Already In Use",
+        error: error.response?.data?.error || "Registration failed",
         details: error.response?.data?.details || error.response?.data || {},
         message: error.response?.data?.message
       };
     }
     
-    return { error: error.message || "Registration failed" };
+    return { error: error.message || "Email Already In Use" };
   }
 }
 
