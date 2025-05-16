@@ -10,6 +10,7 @@ export const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const [loading, setLoading] = useState(false);
   const [feedback, setFeedback] = useState('');
+  const [errorField, setErrorField] = useState<string | null>(null);
   const { refreshUser } = useUser();
   const navigate = useNavigate();
 
@@ -42,6 +43,7 @@ export const AuthPage: React.FC = () => {
     e.preventDefault();
     setLoading(true);
     setFeedback('');
+    setErrorField(null);
     const formData = new FormData(e.currentTarget);
     const email = formData.get('email') as string;
     const password = formData.get('password') as string;
@@ -60,6 +62,14 @@ export const AuthPage: React.FC = () => {
           }, 500);
         } else {
           setFeedback(typeof res?.error === 'string' ? res.error : 'Login failed');
+          
+          // Set error field for login if error message contains field name
+          const errorMsg = (res?.error || '').toLowerCase();
+          if (errorMsg.includes('password')) {
+            setErrorField('password');
+          } else if (errorMsg.includes('email')) {
+            setErrorField('email');
+          }
         }
       } else {
         const username = formData.get('name') as string;
@@ -70,6 +80,11 @@ export const AuthPage: React.FC = () => {
         } else {
           // Now we can simply use the error field
           setFeedback(res?.error || 'Registration failed.');
+          
+          // Set which field has an error
+          if (res?.errorField) {
+            setErrorField(res.errorField === 'username' ? 'name' : res.errorField);
+          }
         }
       }
     } catch (err) {
@@ -78,6 +93,15 @@ export const AuthPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helper function to determine input class names based on error state
+  const getInputClassName = (fieldName: string) => {
+    const baseClass = "appearance-none block w-full px-3 py-2 border rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500";
+    
+    return errorField === fieldName
+      ? `${baseClass} border-red-500 focus:border-red-500` 
+      : `${baseClass} border-gray-300 focus:border-blue-500`;
   };
 
   return (
@@ -106,11 +130,10 @@ export const AuthPage: React.FC = () => {
                     name="name"
                     type="text"
                     required
-                    className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                               placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    className={getInputClassName('name')}
                   />
                   <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                    <UserIcon className="h-5 w-5 text-gray-400" />
+                    <UserIcon className={`h-5 w-5 ${errorField === 'name' ? 'text-red-500' : 'text-gray-400'}`} />
                   </div>
                 </div>
               </div>
@@ -126,11 +149,10 @@ export const AuthPage: React.FC = () => {
                   name="email"
                   type="email"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className={getInputClassName('email')}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <Mail className="h-5 w-5 text-gray-400" />
+                  <Mail className={`h-5 w-5 ${errorField === 'email' ? 'text-red-500' : 'text-gray-400'}`} />
                 </div>
               </div>
             </div>
@@ -145,11 +167,10 @@ export const AuthPage: React.FC = () => {
                   name="password"
                   type="password"
                   required
-                  className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm
-                             placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className={getInputClassName('password')}
                 />
                 <div className="absolute inset-y-0 right-0 pr-3 flex items-center">
-                  <Lock className="h-5 w-5 text-gray-400" />
+                  <Lock className={`h-5 w-5 ${errorField === 'password' ? 'text-red-500' : 'text-gray-400'}`} />
                 </div>
               </div>
             </div>

@@ -307,15 +307,51 @@ export async function register(username: string, email: string, password: string
       console.error("Error response status:", error.response.status);
       console.error("Error response data:", JSON.stringify(error.response.data));
       
-      // Convert details to error field if needed
-      const errorMsg = error.response?.data?.error || 
-                      (error.response?.data?.details ? 
-                        Object.values(error.response.data.details).flat().join(' ') : 
-                        "Registration failed");
+              // Extract meaningful error message from response
+      let errorMsg = error.response?.data?.error || "Registration failed";
+      let errorField = null;
+      
+      // Handle validation errors in details
+      if (error.response?.data?.details) {
+        const details = error.response?.data?.details;
+        
+        // Check for password validation errors specifically
+        if (details.password && Array.isArray(details.password) && details.password.length > 0) {
+          errorMsg = details.password[0];
+          errorField = 'password';
+        } 
+        // Check for email validation errors
+        else if (details.email && Array.isArray(details.email) && details.email.length > 0) {
+          errorMsg = details.email[0];
+          errorField = 'email';
+        }
+        // Check for username validation errors  
+        else if (details.username && Array.isArray(details.username) && details.username.length > 0) {
+          errorMsg = details.username[0];
+          errorField = 'username';
+        }
+        // If no specific field error is found, join all error messages
+        else if (Object.values(details).length > 0) {
+          errorMsg = Object.values(details).flat().join(' ');
+        }
+      }
+      
+      // If error text contains keywords for specific fields, set the errorField accordingly
+      if (!errorField) {
+        const lowerMsg = error.response?.data?.error?.toLowerCase() || '';
+        if (lowerMsg.includes('password')) {
+          errorField = 'password';
+        } else if (lowerMsg.includes('email')) {
+          errorField = 'email';
+        } else if (lowerMsg.includes('username')) {
+          errorField = 'username';
+        }
+      }
       
       return { 
         status: error.response.status,
-        error: errorMsg
+        error: errorMsg,
+        errorField: errorField
       };
     }
     
