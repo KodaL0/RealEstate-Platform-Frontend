@@ -16,6 +16,7 @@ import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
 import AuthTokenProcessor from "./components/AuthTokenProcessor";
 import AboutUs from './pages/AboutUs';
+import TermsandConditions from "./pages/TermsandConditions"; 
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
