@@ -217,7 +217,7 @@ export const AuthPage: React.FC = () => {
             </div>
           )}
 
-          <div className="mt-6 text-center">
+          {/* <div className="mt-6 text-center">
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-blue-600 hover:text-blue-500"
@@ -226,7 +226,7 @@ export const AuthPage: React.FC = () => {
                 ? 'Create an account'
                 : 'Sign in to existing account'}
             </button>
-          </div>
+          </div> */}
         </div>
       </div>
     </div>
