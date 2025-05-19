@@ -1,4 +1,3 @@
-// src/pages/AuthPage.tsx
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
@@ -6,6 +5,7 @@ import { SiGoogle } from 'react-icons/si';
 
 export const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
+    // Clear storage before new login
     sessionStorage.clear();
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
@@ -14,11 +14,13 @@ export const AuthPage: React.FC = () => {
       }
     }
 
+    // Create unique session identifier
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
 
+    // Build login URL
     const loginUrl = `${backendUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
@@ -27,36 +29,35 @@ export const AuthPage: React.FC = () => {
                      `&t=${timestamp}` +
                      `&authuser=-1`;
 
+    // Open login in new tab
     window.open(loginUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center items-center space-x-2">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center px-4">
+      <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">
+        {/* Logo & Title */}
+        <div className="flex justify-center items-center space-x-3 mb-6">
           <Building2 className="h-8 w-8 text-blue-600" />
-          <span className="text-2xl font-bold text-gray-900">PROPERTPRO</span>
-        </Link>
-        <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
+          <span className="text-3xl font-bold text-gray-800">PROPERTPRO</span>
+        </div>
+
+        <h2 className="text-center text-2xl font-extrabold text-gray-900 mb-2">
           Sign in to your account
         </h2>
-      </div>
+        <p className="text-center text-gray-500 text-sm mb-6">
+          Secure sign-in with your Google account
+        </p>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
-          {/* Only Google login */}
-          <div className="mt-4">
-            <button
-              type="button"
-              onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center border border-gray-300 rounded-md py-2 text-sm
-                         hover:bg-gray-50 transition"
-            >
-              <SiGoogle className="h-5 w-5 mr-2 text-[#4285F4]" />
-              Continue with Google
-            </button>
-          </div>
-        </div>
+        <button
+          type="button"
+          onClick={handleGoogleLogin}
+          className="w-full flex items-center justify-center border border-gray-300 rounded-md py-3 text-sm font-medium
+                     text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-md hover:shadow-lg"
+        >
+          <SiGoogle className="h-5 w-5 mr-3 text-[#4285F4]" />
+          Continue with Google
+        </button>
       </div>
     </div>
   );
