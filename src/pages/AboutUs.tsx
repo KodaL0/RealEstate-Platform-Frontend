@@ -46,7 +46,7 @@ const AboutUs: React.FC = () => {
             </p>
 
             <p className="text-center font-medium text-gray-700">
-              Help us help you — and let’s shape the future of property discovery together.
+              Help us help you and let’s shape the future of property discovery together.
             </p>
           </div>
         </div>
