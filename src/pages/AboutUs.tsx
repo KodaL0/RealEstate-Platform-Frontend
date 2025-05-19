@@ -39,7 +39,7 @@ const AboutUs: React.FC = () => {
             </p>
 
             <p>
-              But we don’t want to stop there — we want to improve continuously, and that’s where you come
+              But we don’t want to stop there we want to improve continuously, and that’s where you come
               in. Tell us what features would help you most. Share your ideas. Let us know what’s missing. Our
               goal is direct communication and real collaboration with our users to build something truly useful
               together.
