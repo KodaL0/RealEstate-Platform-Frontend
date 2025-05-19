@@ -15,6 +15,7 @@ import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
 import AuthTokenProcessor from "./components/AuthTokenProcessor";
+import AboutUs from './pages/AboutUs';
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -54,6 +55,7 @@ function App() {
               <Route path="/create-listing" element={<CreateListing />} />
               <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/favourites" element={<Favourites />} />
+              <Route path="/about" element={<AboutUs />} />
               <Route path="/my-listings" element={<MyListings />} />
               <Route
                 path="/mortgage-calculator"
