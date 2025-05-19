@@ -65,11 +65,11 @@ const Navbar: React.FC = () => {
 
         {/* Centered Navigation Links */}
         <div className="hidden md:flex space-x-8">
-          <Link to="/" className={`font-medium transition-colors ${isActive("/") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"}`}>Home</Link>
-          <Link to="/buy" className={`font-medium transition-colors ${isActive("/buy") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"}`}>Buy</Link>
-          <Link to="/rent" className={`font-medium transition-colors ${isActive("/rent") ? "text-blue-600" : "text-gray-700 hover:text-blue-600"}`}>Rent</Link>
+          <Link to="/" className={`font-medium transition-colors ${isActive("/") ? "text-blue-600" : "text-white-700 hover:text-blue-600"}`}>Home</Link>
+          <Link to="/buy" className={`font-medium transition-colors ${isActive("/buy") ? "text-blue-600" : "text-white-700 hover:text-blue-600"}`}>Buy</Link>
+          <Link to="/rent" className={`font-medium transition-colors ${isActive("/rent") ? "text-blue-600" : "text-white-700 hover:text-blue-600"}`}>Rent</Link>
           <div className="relative group">
-            <button className="flex items-center font-medium text-gray-700 hover:text-blue-600 transition-colors">
+            <button className="flex items-center font-medium text-white-700 hover:text-blue-600 transition-colors">
               Services <ChevronDown className="ml-1 h-4 w-4" />
             </button>
             <div className="absolute left-0 mt-2 w-56 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-left z-50">
