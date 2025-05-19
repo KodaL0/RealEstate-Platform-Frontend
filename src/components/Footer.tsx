@@ -37,14 +37,12 @@ const Footer = () => {
               <li><Link to="/buy" className="text-gray-400 hover:text-blue-500 transition-colors">Buy</Link></li>
               <li><Link to="/rent" className="text-gray-400 hover:text-blue-500 transition-colors">Rent</Link></li>
               <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">About Us</Link></li>
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Contact</Link></li>
             </ul>
           </div>
 
           <div>
             <h3 className="text-lg font-semibold mb-6">Services</h3>
             <ul className="space-y-3">
-              <li><Link to="#" className="text-gray-400 hover:text-blue-500 transition-colors">Property Valuation</Link></li>
               <li><Link to="/mortgage-calculator" className="text-gray-400 hover:text-blue-500 transition-colors">Mortgage Calculator</Link></li>
             </ul>
           </div>
@@ -77,7 +75,6 @@ const Footer = () => {
           <div className="flex space-x-6">
             <Link to="#" className="text-gray-500 hover:text-gray-400 text-sm">Privacy Policy</Link>
             <Link to="#" className="text-gray-500 hover:text-gray-400 text-sm">Terms of Service</Link>
-            <Link to="#" className="text-gray-500 hover:text-gray-400 text-sm">Sitemap</Link>
           </div>
         </div>
       </div>
