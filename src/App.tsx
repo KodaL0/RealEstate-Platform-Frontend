@@ -56,6 +56,8 @@ function App() {
               <Route path="/edit-listing/:id" element={<CreateListing />} />
               <Route path="/favourites" element={<Favourites />} />
               <Route path="/about" element={<AboutUs />} />
+              <Route path="/terms" element={<TermsandConditions />} />
+              <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/my-listings" element={<MyListings />} />
               <Route
                 path="/mortgage-calculator"
