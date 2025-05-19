@@ -52,12 +52,12 @@ const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
   { value: 'lot', label: 'Lot' },
-  {/* value: 'condo', label: 'Condo' },
-  { value: 'townhouse', label: 'Townhouse' },
-  { value: 'villa', label: 'Villa' },
-  { value: 'studio', label: 'Studio' },
-  { value: 'duplex', label: 'Duplex' },
-  { value: 'penthouse', label: 'Penthouse' */}
+  //{ value: 'condo', label: 'Condo' },
+  //{ value: 'townhouse', label: 'Townhouse' },
+  //{ value: 'villa', label: 'Villa' },
+  //{ value: 'studio', label: 'Studio' },
+  //{ value: 'duplex', label: 'Duplex' },
+  //{ value: 'penthouse', label: 'Penthouse' }
 ];
 
 const PROPERTY_STATUS = [
