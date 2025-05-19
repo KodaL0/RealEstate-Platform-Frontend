@@ -87,7 +87,7 @@ const Navbar: React.FC = () => {
               <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 max-w-full overflow-hidden">
                 <User className="h-5 w-5 flex-shrink-0" />
                 <span className="truncate max-w-[160px]" title={user.username}>
-                  Hello, {user.username}
+                  {user.username}
                 </span>
                 <ChevronDown className="h-4 w-4 flex-shrink-0" />
               </button>
