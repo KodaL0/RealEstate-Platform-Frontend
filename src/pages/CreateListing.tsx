@@ -6,6 +6,7 @@ import toast from 'react-hot-toast';
 import {
   Home,
   DollarSign,
+  Euro,
   MapPin,
   Building2,
   Bed,
@@ -376,6 +377,9 @@ const CreateListing: React.FC = () => {
                 ? 'Update the details below to modify your listing'
                 : 'Fill in the details below to list your property'}
             </p>
+            <p className="text-blue-100 mt-2 text-sm italic">
+              Required fields: title, description, price, location, property type, property status, and at least one image
+            </p>
           </div>
 
           {/* ===== inline error ===== */}
@@ -397,7 +401,7 @@ const CreateListing: React.FC = () => {
                 {/* title */}
                 <div>
                   <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-1">
-                    Title
+                    Title <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -417,7 +421,7 @@ const CreateListing: React.FC = () => {
                     htmlFor="propertyStatus"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Listing Type
+                    Listing Type <span className="text-red-500">*</span>
                   </label>
                   <select
                     id="propertyStatus"
@@ -439,10 +443,10 @@ const CreateListing: React.FC = () => {
                 {/* price */}
                 <div>
                   <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-                    Price
+                    Price <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
-                    <DollarSign
+                    <Euro
                       className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
                       size={18}
                     />
@@ -464,7 +468,7 @@ const CreateListing: React.FC = () => {
                 {/* location */}
                 <div>
                   <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-                    Location
+                    Location <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <MapPin
@@ -497,7 +501,7 @@ const CreateListing: React.FC = () => {
                     htmlFor="propertyType"
                     className="block text-sm font-medium text-gray-700 mb-1"
                   >
-                    Property Type
+                    Property Type <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Building2
@@ -634,7 +638,7 @@ const CreateListing: React.FC = () => {
 
             {/* ――― Property Images ――― */}
             <section className="bg-gray-50 p-6 rounded-xl">
-              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images</h2>
+              <h2 className="text-2xl font-semibold text-gray-800 mb-6">Property Images <span className="text-red-500">*</span></h2>
               <div
                 {...getRootProps()}
                 className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors
@@ -715,6 +719,7 @@ const CreateListing: React.FC = () => {
                 required
                 placeholder="Provide a detailed description of the property…"
               />
+              <p className="text-sm text-red-500 mt-1">* Required</p>
             </section>
 
             {/* ――― Contact Information ――― */}
@@ -771,6 +776,7 @@ const CreateListing: React.FC = () => {
             </section>
 
             {/* ――― Virtual Tour / Video ――― */}
+            {/* 
             <section className="bg-gray-50 p-6 rounded-xl">
               <h2 className="text-2xl font-semibold text-gray-800 mb-6">Virtual Tour &amp; Video</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -804,6 +810,7 @@ const CreateListing: React.FC = () => {
                 </div>
               </div>
             </section>
+            */}
 
             {/* ――― submit ――― */}
             <div className="flex justify-end pt-6">
