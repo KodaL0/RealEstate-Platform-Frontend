@@ -12,8 +12,6 @@ const ProfilePage: React.FC = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
-  const API_URL = import.meta.env.VITE_API_URL || '/api';
-
   useEffect(() => {
     if (!user) {
       navigate('/auth');
@@ -29,20 +27,18 @@ const ProfilePage: React.FC = () => {
     setError('');
     setMessage('');
     try {
-      const response = await authFetch(`${API_URL}/users/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: newUsername }),
+      const response = await authFetch.put('/users/profile', { 
+        username: newUsername
       });
-      const data = await response.json();
-      if (response.ok) {
+      const data = response.data;
+      if (response.status === 200) {
         setMessage(data.message);
         setUser({ ...user, username: newUsername });
       } else {
         setError(data.error || 'Failed to update username.');
       }
-    } catch (err) {
-      setError('An error occurred while updating username.');
+    } catch (err: any) {
+      setError(err.response?.data?.error || 'An error occurred while updating username.');
     }
   };
 
