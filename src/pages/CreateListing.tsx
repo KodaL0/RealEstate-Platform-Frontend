@@ -378,7 +378,7 @@ const CreateListing: React.FC = () => {
                 : 'Fill in the details below to list your property'}
             </p>
             <p className="text-blue-100 mt-2 text-sm italic">
-              Required fields: title, description, price, location, property type, property status, and at least one image
+              Required fields: title, description, price, location, property type, property status, bedrooms, bathrooms, area, year built, contact phone, contact email, and at least one image
             </p>
           </div>
 
@@ -529,7 +529,7 @@ const CreateListing: React.FC = () => {
                 {/* bedrooms */}
                 <div>
                   <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                    Bedrooms
+                    Bedrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Bed
@@ -553,7 +553,7 @@ const CreateListing: React.FC = () => {
                 {/* bathrooms */}
                 <div>
                   <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                    Bathrooms
+                    Bathrooms <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <Bath
@@ -578,7 +578,7 @@ const CreateListing: React.FC = () => {
                 {/* area */}
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
-                    Living Area (sq&nbsp;m)
+                    Living Area (sq&nbsp;m) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <SquareFootage
@@ -602,7 +602,7 @@ const CreateListing: React.FC = () => {
                 {/* year built */}
                 <div>
                   <label htmlFor="yearBuilt" className="block text-sm font-medium text-gray-700 mb-1">
-                    Year Built
+                    Year Built <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="number"
@@ -729,7 +729,7 @@ const CreateListing: React.FC = () => {
                 {/* email */}
                 <div>
                   <label htmlFor="contactEmail" className="block text-sm font-medium text-gray-700 mb-1">
-                    Email
+                    Email <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="email"
@@ -746,7 +746,7 @@ const CreateListing: React.FC = () => {
                 {/* phone with drop-down */}
                 <div>
                   <label htmlFor="contactPhone" className="block text-sm font-medium text-gray-700 mb-1">
-                    Phone
+                    Phone <span className="text-red-500">*</span>
                   </label>
                   <div className="flex">
                     <select
