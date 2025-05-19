@@ -51,7 +51,7 @@ interface ListingForm {
 const PROPERTY_TYPES = [
   { value: 'house', label: 'House' },
   { value: 'apartment', label: 'Apartment' },
-  { value: 'lot', label: 'Lot' },
+  { value: 'land', label: 'Land' },
   //{ value: 'condo', label: 'Condo' },
   //{ value: 'townhouse', label: 'Townhouse' },
   //{ value: 'villa', label: 'Villa' },
