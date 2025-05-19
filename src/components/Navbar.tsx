@@ -1,6 +1,6 @@
 // src/components/Navbar.tsx
 import React, { useState, useEffect } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { Menu, X, User, ChevronDown, Building2 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { apiClient } from "../middleware/auth";
@@ -8,9 +8,8 @@ import { apiClient } from "../middleware/auth";
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, setUser } = useUser();
+  const { user } = useUser();
   const location = useLocation();
-  const navigate = useNavigate();
 
   // Shadow on scroll
   useEffect(() => {
@@ -95,9 +94,9 @@ const Navbar: React.FC = () => {
         <div className="hidden md:flex items-center space-x-4 min-w-[200px] justify-end">
           {user ? (
             <div className="relative group">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 max-w-full overflow-hidden">
+              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2">
                 <User className="h-5 w-5 flex-shrink-0" />
-                <span className="truncate">Hello, {user.username}</span>
+                <span className="max-w-[120px] truncate">{user.username}</span>
                 <ChevronDown className="h-4 w-4 flex-shrink-0" />
               </button>
               <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-right z-50">
