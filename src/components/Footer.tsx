@@ -52,7 +52,7 @@ const Footer = () => {
             <ul className="space-y-4">
               <li className="flex items-start">
                 <Phone className="h-5 w-5 text-blue-500 mr-3 mt-1" />
-                <span className="text-gray-400">+357 94007875</span>
+                <span className="text-gray-400">+357 94007875, +357 94046844</span>
               </li>
               <li className="flex items-start">
                 <Mail className="h-5 w-5 text-blue-500 mr-3 mt-1" />
@@ -61,7 +61,7 @@ const Footer = () => {
               <li className="flex items-start">
                 <Home className="h-5 w-5 text-blue-500 mr-3 mt-1" />
                 <span className="text-gray-400">
-                  Cyprus<br />
+                  Nicosia, Cyprus<br />
                 </span>
               </li>
             </ul>
