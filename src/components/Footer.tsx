@@ -73,7 +73,6 @@ const Footer = () => {
             © {new Date().getFullYear()} PROPERTPRO. All rights reserved.
           </p>
           <div className="flex space-x-6">
-            <Link to="#" className="text-gray-500 hover:text-gray-400 text-sm">Privacy Policy</Link>
             <Link to="/terms" className="text-gray-500 hover:text-gray-400 text-sm">Terms And Conditions</Link>
             <Link to="/cookies" className="text-gray-500 hover:text-gray-400 text-sm">Cookie Policy</Link>
           </div>
