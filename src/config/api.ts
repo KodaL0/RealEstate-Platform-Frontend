@@ -32,24 +32,24 @@ export const formatEndpoint = (endpoint: string): string => {
 };
 
 // Generic request methods with automatic endpoint formatting
-export const apiGet = <T = any>(endpoint: string, config?: any): Promise<any> => {
+export const apiGet = (endpoint: string, config?: any): Promise<any> => {
   return apiClient.get(formatEndpoint(endpoint), config);
 };
 
-export const apiPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<any> => {
+export const apiPost = (endpoint: string, data?: any, config?: any): Promise<any> => {
   return apiClient.post(formatEndpoint(endpoint), data, config);
 };
 
-export const apiPut = <T = any>(endpoint: string, data?: any, config?: any): Promise<any> => {
+export const apiPut = (endpoint: string, data?: any, config?: any): Promise<any> => {
   return apiClient.put(formatEndpoint(endpoint), data, config);
 };
 
-export const apiDelete = <T = any>(endpoint: string, config?: any): Promise<any> => {
+export const apiDelete = (endpoint: string, config?: any): Promise<any> => {
   return apiClient.delete(formatEndpoint(endpoint), config);
 };
 
 // For form data submissions with files
-export const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: any): Promise<any> => {
+export const apiFormPost = (endpoint: string, formData: FormData, config?: any): Promise<any> => {
   return apiClient.post(formatEndpoint(endpoint), formData, {
     ...config,
     headers: {
@@ -59,7 +59,7 @@ export const apiFormPost = <T = any>(endpoint: string, formData: FormData, confi
   });
 };
 
-export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: any): Promise<any> => {
+export const apiFormPut = (endpoint: string, formData: FormData, config?: any): Promise<any> => {
   return apiClient.put(formatEndpoint(endpoint), formData, {
     ...config,
     headers: {
