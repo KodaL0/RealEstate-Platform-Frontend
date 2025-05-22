@@ -6,8 +6,12 @@
       "dest": "https://api.propertpro.com/api/$1"
     },
     {
-      "src": "^/oauth/callback$",
-      "dest": "https://api.propertpro.com/oauth/callback"
+      "src": "^/accounts/(.*)$",
+      "dest": "https://api.propertpro.com/accounts/$1"
+    },
+    {
+      "src": "^/oauth/(.*)$",
+      "dest": "https://api.propertpro.com/oauth/$1"
     },
     {
       "handle": "filesystem"
