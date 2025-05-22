@@ -1,23 +1,16 @@
 // src/config/api.ts
-
 import axios from 'axios';
 
-// Define a minimal config type
-type RequestConfig = {
-  headers?: Record<string, string>;
-  params?: Record<string, any>;
-  withCredentials?: boolean;
-  [key: string]: any;
-};
+const API_HOST = 'https://api.propertpro.com';
+const API_BASE = `${API_HOST}/api`;
 
 // ──────── 1) Base API configuration ────────
-// Note: include the `/api` prefix here so you never get `apiapi` or drop the slash.
-const API_HOST = 'https://api.propertpro.com';
-const API_BASE   = `${API_HOST}/api`;  
+// Decide at runtime whether to proxy (dev) or call the real URL (prod)
+const baseURL = import.meta.env.PROD ? API_BASE : '/api';
 
 export const apiClient = axios.create({
-  baseURL: '/api',
-  withCredentials: true,  
+  baseURL,
+  withCredentials: true,
   headers: {
     'Accept':           'application/json',
     'Content-Type':     'application/json',
