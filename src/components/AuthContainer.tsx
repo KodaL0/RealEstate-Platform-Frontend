@@ -22,13 +22,14 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    // Use the current domain since Vercel rewrites will forward to the backend
+    // Direct API URL - bypassing Vercel rewrites temporarily
+    const apiUrl = 'https://api.propertpro.com';
     const frontendUrl = window.location.origin;
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
 
-    const loginUrl = `${frontendUrl}/accounts/google/login/` +
+    const loginUrl = `${apiUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
                      `&login_hint=_force_new_${uniqueId}` +
@@ -37,7 +38,7 @@ export const AuthPage: React.FC = () => {
                      `&authuser=-1` +
                      `&redirect_uri=${encodeURIComponent(`${frontendUrl}/oauth/callback`)}`;
 
-    console.log('Redirecting to:', loginUrl);
+    console.log('Redirecting directly to API:', loginUrl);
     window.location.href = loginUrl;
   };
 
