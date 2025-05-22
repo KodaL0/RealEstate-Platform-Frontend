@@ -171,7 +171,7 @@ apiClient.interceptors.response.use(
     const url = originalRequest.url;
 
     // Prevent infinite loop for refresh endpoint errors:
-    if (url && url.includes('/users/refresh')) {
+    if (url && url.includes('/api/users/refresh')) {
       console.error("Refresh token request itself failed. Clearing auth cookies.");
       clearAuthCookies(); // Clear tokens if refresh fails
       return Promise.reject(error);
@@ -395,7 +395,6 @@ export async function fetchUser() {
   console.log("Cookies available at fetchUser call:", document.cookie);
   
   try {
-    // Use the endpoint with /api prefix, since our API_URL is now just the domain
     const response = await apiClient.get('/api/users/get_user');
     console.log("User fetch response status:", response.status);
     console.log("User data:", response.data);

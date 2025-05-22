@@ -12,7 +12,7 @@ import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData } from "../types";
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.propertpro.com";
+const API_URL = "https://api.propertpro.com";
 
 const Buy = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -36,7 +36,7 @@ const Buy = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  /* ───────── FETCH PROPERTIES (unchanged) ───────── */
+  /* ───────── FETCH PROPERTIES ───────── */
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
@@ -54,42 +54,17 @@ const Buy = () => {
 
         const qs = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-        /* ---------- try direct URL first ---------- */
-        const DIRECT_API_URL = "https://api.propertpro.com";
-        const proxyUrl  = `${API_BASE_URL}/properties/buy${qs}`;
-        const directUrl = `${DIRECT_API_URL}/properties/buy${qs}`;
+        /* ---------- fetch properties from API ---------- */
+        const url = `${API_URL}/api/properties/buy${qs}`;
 
-        let response: Response | undefined;
-        let succeeded = false;
-
-        try {
-          response = await fetch(directUrl, {
-            method: "GET",
-            headers: { Accept: "application/json", "Content-Type": "application/json" },
-            credentials: "omit",
-            signal: AbortSignal.timeout(5000),
-          });
-          if (response.ok) succeeded = true;
-        } catch (_) {/* ignore and fall back */}
-
-        /* ---------- if direct fails, try proxy ---------- */
-        if (!succeeded) {
-          try {
-            response = await fetch(proxyUrl, {
-              method: "GET",
-              headers: { Accept: "application/json", "Content-Type": "application/json" },
-              credentials: "omit",
-            });
-          } catch (proxyErr: unknown) {
-            throw new Error(
-              `Error fetching properties via proxy: ${
-                proxyErr instanceof Error ? proxyErr.message : String(proxyErr)
-              }`
-            );
-          }
-        }
-
-        if (!response) throw new Error("No valid response from either API");
+        const response = await fetch(url, {
+          method: "GET",
+          headers: { 
+            Accept: "application/json", 
+            "Content-Type": "application/json" 
+          },
+          credentials: "include",
+        });
 
         if (!response.ok) {
           const errText = await response.text();
@@ -102,15 +77,7 @@ const Buy = () => {
           throw new Error(`Server returned non-JSON: ${text.slice(0, 100)}`);
         }
 
-        const raw = await response.text();
-        let data: any;
-        try {
-          data = JSON.parse(raw);
-        } catch (parseErr: unknown) {
-          throw new Error(`JSON parse error: ${
-            parseErr instanceof Error ? parseErr.message : String(parseErr)
-          }`);
-        }
+        const data = await response.json();
 
         /* ---------- normalize & save ---------- */
         if (Array.isArray(data)) {

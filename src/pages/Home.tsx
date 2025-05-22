@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.propertpro.com";
+const API_URL = "https://api.propertpro.com";
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 
@@ -40,7 +40,7 @@ function Home() {
       setLoading(true);
       setError(null);
       try {
-        const res = await fetch(`${API_BASE_URL}/properties/featured/?page_size=100`, {
+        const res = await fetch(`${API_URL}/api/properties/featured/?page_size=100`, {
           method: 'GET',
           credentials: 'include',
           headers: {

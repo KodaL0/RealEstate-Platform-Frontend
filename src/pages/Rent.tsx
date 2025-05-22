@@ -12,7 +12,7 @@ import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData } from "../types";
 
 const PAGE_SIZE = 9;                     // 9 cards per page
-const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.propertpro.com";
+const API_URL = "https://api.propertpro.com";
 
 const Rent = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -36,7 +36,7 @@ const Rent = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  /* ───── FETCH PROPERTIES (unchanged fetch logic) ───── */
+  /* ───── FETCH PROPERTIES ───── */
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
@@ -54,49 +54,29 @@ const Rent = () => {
 
         const query = qs.toString() ? `?${qs.toString()}` : "";
 
-        const DIRECT_API_URL = "https://api.propertpro.com";
-        const proxyUrl  = `${API_BASE_URL}/properties/rent${query}`;
-        const directUrl = `${DIRECT_API_URL}/properties/rent${query}`;
+        /* fetch properties from API */
+        const url = `${API_URL}/api/properties/rent${query}`;
 
-        let response: Response | undefined;
-        let ok = false;
+        const response = await fetch(url, {
+          method: "GET",
+          headers: { 
+            Accept: "application/json", 
+            "Content-Type": "application/json" 
+          },
+          credentials: "include",
+        });
 
-        /* try direct first */
-        try {
-          response = await fetch(directUrl, {
-            headers: { Accept: "application/json", "Content-Type": "application/json" },
-            credentials: "omit",
-            signal: AbortSignal.timeout(5000),
-          });
-          ok = response.ok;
-        } catch (_) { /* ignore */ }
-
-        /* fallback to proxy */
-        if (!ok) {
-          response = await fetch(proxyUrl, {
-            headers: { Accept: "application/json", "Content-Type": "application/json" },
-            credentials: "omit",
-          });
-          ok = response.ok;
+        if (!response.ok) {
+          throw new Error(`Error fetching properties (${response.status})`);
         }
 
-        if (!response || !ok) {
-          throw new Error(`Error fetching properties (${response?.status ?? "no response"})`);
+        const contentType = response.headers.get("content-type");
+        if (!contentType?.includes("application/json")) {
+          const text = await response.text();
+          throw new Error(`Non-JSON response: ${text.slice(0, 100)}`);
         }
 
-        const ct = response.headers.get("content-type");
-        if (!ct?.includes("application/json")) {
-          const txt = await response.text();
-          throw new Error(`Non-JSON response: ${txt.slice(0, 100)}`);
-        }
-
-        const raw = await response.text();
-        let data: any;
-        try {
-          data = JSON.parse(raw);
-        } catch (e: any) {
-          throw new Error(`JSON parse error: ${e.message}`);
-        }
+        const data = await response.json();
 
         /* normalise */
         const arr = Array.isArray(data)
