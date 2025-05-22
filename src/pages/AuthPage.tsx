@@ -26,6 +26,7 @@ export const AuthPage: React.FC = () => {
     // Build login URL through backend - this is more secure
     const loginUrl = `${backendUrl}/accounts/google/login/` +
                      `?prompt=select_account` +
+                     `&hd=propertpro.com` +
                      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
                      `&state=${state}`;
 
