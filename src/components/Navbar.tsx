@@ -40,7 +40,7 @@ const Navbar: React.FC = () => {
     }
 
     try {
-      await apiClient.post("/users/logout");
+      await apiClient.post("/api/users/logout");
       setUser(null);
       navigate("/login");
     } catch (err) {

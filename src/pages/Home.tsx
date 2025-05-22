@@ -40,7 +40,7 @@ function Home() {
       setLoading(true);
       setError(null);
       try {
-        const res  = await fetch(`${API_BASE_URL}/properties/featured/?page_size=100`);
+        const res  = await fetch(`${API_BASE_URL}/api/properties/featured/?page_size=100`);
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const arr  = Array.isArray(data.results) ? data.results : data;
