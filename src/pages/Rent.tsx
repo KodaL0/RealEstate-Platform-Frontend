@@ -13,7 +13,6 @@ import { normalizePropertyData, Property } from "../types";
 import { apiGet } from '../config/api';
 
 const PAGE_SIZE = 9;                     // 9 cards per page
-const API_URL = "https://api.propertpro.com";
 
 const Rent = () => {
   const [searchParams] = useSearchParams(); // Get search params

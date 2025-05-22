@@ -18,7 +18,6 @@ import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
 import { apiGet } from '../config/api';
 
-const API_URL = "https://api.propertpro.com";
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 

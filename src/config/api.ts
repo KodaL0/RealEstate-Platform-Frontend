@@ -20,7 +20,7 @@ export const formatEndpoint = (endpoint: string): string => {
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
   
   // Add API prefix if not already included
-  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `${API_PREFIX.replace(/^\//, '')}/${cleanEndpoint}`;
+  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
   
   // Ensure trailing slash for Django (but preserve query parameters)
   if (withPrefix.includes('?')) {
@@ -71,7 +71,9 @@ export const apiFormPut = (endpoint: string, formData: FormData, config?: any): 
 
 // Debug request interceptor
 apiClient.interceptors.request.use((config: any) => {
-  console.log(`API Request: ${config.method?.toUpperCase()} ${config.baseURL}${config.url}`);
+  // Format the URL properly for logging
+  const fullUrl = `${config.baseURL}/${config.url}`.replace(/([^:]\/)\/+/g, "$1");
+  console.log(`API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
   return config;
 });
 
