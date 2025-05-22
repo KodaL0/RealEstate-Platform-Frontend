@@ -1,19 +1,18 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      // proxy all /api/* to your real backend
+      // All /api/* calls go to your backend
       '/api': {
         target: 'https://api.propertpro.com',
         changeOrigin: true,
         secure: true,
-        rewrite: (path) => path.replace(/^\/api/, '/api'),
+        rewrite: path => path.replace(/^\/api/, '/api'),
       },
-      // if you hit your OAuth callback locally
+      // OAuth callback proxy as well
       '/oauth': {
         target: 'https://api.propertpro.com',
         changeOrigin: true,
