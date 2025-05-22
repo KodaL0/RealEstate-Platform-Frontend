@@ -1,87 +1,91 @@
-import axios from 'axios';
+import axios, { AxiosRequestConfig } from 'axios';
+import Cookies from 'js-cookie';
 
 // Base API configuration
-export const API_URL = 'https://api.propertpro.com';
-export const API_PREFIX = '/api';
+export const API_BASE = 'https://api.propertpro.com/api';
 
 // Create standardized axios instance
 export const apiClient = axios.create({
-  baseURL: API_URL,
+  baseURL: API_BASE,
   withCredentials: true,
   headers: {
     'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest'
-  }
+    'X-Requested-With': 'XMLHttpRequest',
+  },
 });
 
-// Helper to ensure proper URL formatting with API prefix and trailing slash
-export const formatEndpoint = (endpoint: string): string => {
-  // Remove leading slash if present to avoid double slashes
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-  
-  // Add API prefix if not already included
-  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
-  
-  // Ensure trailing slash for Django (but preserve query parameters)
-  if (withPrefix.includes('?')) {
-    const [path, query] = withPrefix.split('?');
-    return `${path.endsWith('/') ? path : `${path}/`}?${query}`;
+// Attach JWT from cookie to Authorization header
+apiClient.interceptors.request.use((config: AxiosRequestConfig) => {
+  const token = Cookies.get('access_token');
+  if (token && config.headers) {
+    config.headers['Authorization'] = `Bearer ${token}`;
   }
-  
-  return withPrefix.endsWith('/') ? withPrefix : `${withPrefix}/`;
+  return config;
+});
+
+// Ensure trailing slash and preserve query params
+export const formatEndpoint = (endpoint: string): string => {
+  // Ensure leading slash
+  let ep = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+
+  // Split path and query
+  const [path, query] = ep.split('?');
+  const withSlash = path.endsWith('/') ? path : `${path}/`;
+
+  return query ? `${withSlash}?${query}` : withSlash;
 };
 
-// Generic request methods with automatic endpoint formatting
-export const apiGet = (endpoint: string, config?: any): Promise<any> => {
-  return apiClient.get(formatEndpoint(endpoint), config);
-};
+// Generic request methods
+export const apiGet = <T = any>(endpoint: string, config?: AxiosRequestConfig) =>
+  apiClient.get<T>(formatEndpoint(endpoint), config);
 
-export const apiPost = (endpoint: string, data?: any, config?: any): Promise<any> => {
-  return apiClient.post(formatEndpoint(endpoint), data, config);
-};
+export const apiPost = <T = any>(endpoint: string, data?: any, config?: AxiosRequestConfig) =>
+  apiClient.post<T>(formatEndpoint(endpoint), data, config);
 
-export const apiPut = (endpoint: string, data?: any, config?: any): Promise<any> => {
-  return apiClient.put(formatEndpoint(endpoint), data, config);
-};
+export const apiPut = <T = any>(endpoint: string, data?: any, config?: AxiosRequestConfig) =>
+  apiClient.put<T>(formatEndpoint(endpoint), data, config);
 
-export const apiDelete = (endpoint: string, config?: any): Promise<any> => {
-  return apiClient.delete(formatEndpoint(endpoint), config);
-};
+export const apiDelete = <T = any>(endpoint: string, config?: AxiosRequestConfig) =>
+  apiClient.delete<T>(formatEndpoint(endpoint), config);
 
-// For form data submissions with files
-export const apiFormPost = (endpoint: string, formData: FormData, config?: any): Promise<any> => {
-  return apiClient.post(formatEndpoint(endpoint), formData, {
-    ...config,
-    headers: {
-      ...config?.headers,
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-};
+// For form-data submissions with files
+export const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: AxiosRequestConfig) =>
+  apiClient.post<T>(
+    formatEndpoint(endpoint),
+    formData,
+    {
+      ...config,
+      headers: {
+        ...config?.headers,
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
 
-export const apiFormPut = (endpoint: string, formData: FormData, config?: any): Promise<any> => {
-  return apiClient.put(formatEndpoint(endpoint), formData, {
-    ...config,
-    headers: {
-      ...config?.headers,
-      'Content-Type': 'multipart/form-data',
-    },
-  });
-};
+export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: AxiosRequestConfig) =>
+  apiClient.put<T>(
+    formatEndpoint(endpoint),
+    formData,
+    {
+      ...config,
+      headers: {
+        ...config?.headers,
+        'Content-Type': 'multipart/form-data',
+      },
+    }
+  );
 
-// Debug request interceptor
-apiClient.interceptors.request.use((config: any) => {
-  // Format the URL properly for logging
-  const fullUrl = `${config.baseURL}/${config.url}`.replace(/([^:]\/)\/+/g, "$1");
+// Debug request interceptor for logging
+apiClient.interceptors.request.use(config => {
+  const fullUrl = `${config.baseURL}${config.url}`.replace(/([^:]\/\/)\/+/, '$1');
   console.log(`API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
   return config;
 });
 
 // Handle response errors consistently
 apiClient.interceptors.response.use(
-  (response: any) => response,
-  (error: any) => {
+  response => response,
+  error => {
     console.error('API Error:', error);
     if (error.response) {
       console.error('Status:', error.response.status);
@@ -92,8 +96,6 @@ apiClient.interceptors.response.use(
 );
 
 export default {
-  API_URL,
-  API_PREFIX,
   apiClient,
   formatEndpoint,
   get: apiGet,
@@ -101,5 +103,5 @@ export default {
   put: apiPut,
   delete: apiDelete,
   formPost: apiFormPost,
-  formPut: apiFormPut
-}; 
+  formPut: apiFormPut,
+};
