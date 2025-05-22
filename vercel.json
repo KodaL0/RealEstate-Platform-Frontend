@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/accounts/google/login/:path*",
+      "destination": "https://api.propertpro.com/accounts/google/login/:path*"
+    },
+    {
       "source": "/oauth/callback",
       "destination": "https://api.propertpro.com/accounts/google/login/callback/"
     },
