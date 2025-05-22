@@ -22,14 +22,13 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    // Hardcode the backend URL to ensure it uses the custom domain
-    const backendUrl = 'https://api.propertpro.com';
+    // Use the current domain since Vercel rewrites will forward to the backend
     const frontendUrl = window.location.origin;
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
 
-    const loginUrl = `${backendUrl}/accounts/google/login/` +
+    const loginUrl = `${frontendUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
                      `&login_hint=_force_new_${uniqueId}` +
