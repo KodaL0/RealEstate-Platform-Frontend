@@ -229,9 +229,6 @@ const handleInputChange = (
     if (!formData.propertyStatus)     { setError('Please select a property status'); return false; }
     if (formData.images.length === 0 && previewImages.length === 0)
                                        { setError('Please upload at least one image'); return false; }
-    if (formData.propertyType !== 'land' && !formData.yearBuilt) {
-     setError('Please enter year built');
-     return false;
   }
     return true;
   };
