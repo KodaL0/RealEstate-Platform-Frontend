@@ -9,8 +9,12 @@
       "src": "^/oauth/callback$",
       "dest": "https://api.propertpro.com/oauth/callback"
     },
-    // serve your SPA for everything else
-    { "handle": "filesystem" },
-    { "src": "/.*", "dest": "/index.html" }
+    {
+      "handle": "filesystem"
+    },
+    {
+      "src": "/.*",
+      "dest": "/index.html"
+    }
   ]
 }
