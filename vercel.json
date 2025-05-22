@@ -1,20 +1,17 @@
 {
   "version": 2,
-  "redirects": [
+  "rewrites": [
     {
-      "source": "/accounts/google/login/:rest*",
-      "destination": "https://api.propertpro.com/accounts/google/login/:rest*",
-      "permanent": false
+      "source": "/api/:path*",
+      "destination": "https://api.propertpro.com/api/:path*"
     },
     {
-      "source": "/accounts/google/login",
-      "destination": "https://api.propertpro.com/accounts/google/login",
-      "permanent": false
+      "source": "/accounts/google/login/:path*",
+      "destination": "https://api.propertpro.com/accounts/google/login/:path*"
     },
     {
       "source": "/oauth/callback",
-      "destination": "https://api.propertpro.com/oauth/callback",
-      "permanent": false
+      "destination": "https://api.propertpro.com/oauth/callback"
     }
   ]
 }
