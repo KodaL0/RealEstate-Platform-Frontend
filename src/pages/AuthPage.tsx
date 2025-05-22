@@ -18,21 +18,19 @@ export const AuthPage: React.FC = () => {
     const state = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
     sessionStorage.setItem('oauth_state', state);
 
-    // Get client ID from environment variables
-    const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || '447376864792-hle5fodopon9c8do50ppn639f6fhbso.apps.googleusercontent.com';
-    const redirectUri = `${window.location.origin}/auth/google/callback`;
+    // Set redirect_uri to frontend callback
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const frontendUrl = window.location.origin;
+    const redirectUri = `${frontendUrl}/auth/google/callback`;
 
-    // Build Google OAuth URL directly (bypassing backend)
-    const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
-      `?client_id=${clientId}` +
-      `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-      `&response_type=code` +
-      `&scope=email%20profile` +
-      `&prompt=select_account` +
-      `&state=${state}`;
+    // Build login URL through backend - this is more secure
+    const loginUrl = `${backendUrl}/accounts/google/login/` +
+                     `?prompt=select_account` +
+                     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+                     `&state=${state}`;
 
-    // Navigate to Google's auth page directly
-    window.location.href = googleAuthUrl;
+    // Navigate in same window
+    window.location.href = loginUrl;
   };
 
   return (
