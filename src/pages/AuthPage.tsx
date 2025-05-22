@@ -22,7 +22,7 @@ export const AuthPage: React.FC = () => {
     
     // IMPORTANT: Use the exact same URL that's registered in Google Cloud Console
     // Don't use dynamic origin for production to ensure exact match
-    const redirectUri = "https://www.propertpro.com/oauth/callback";
+    const redirectUri = "https://www.propertpro.com/oauth/callback/";
     
     // Log the exact redirect URI for debugging
     console.log("Using redirect URI:", redirectUri);
