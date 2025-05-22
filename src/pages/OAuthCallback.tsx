@@ -14,7 +14,7 @@ const OAuthCallback = () => {
     const callbackUrl = `${backendUrl}/accounts/google/login/callback${queryParams}`;
     
     // Log the redirect for debugging
-    console.log(`Redirecting OAuth callback to: ${callbackUrl}`);
+    console.log(`Redirecting Google OAuth callback to backend: ${callbackUrl}`);
     
     // Redirect while preserving all parameters
     window.location.href = callbackUrl;

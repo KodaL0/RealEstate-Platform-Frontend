@@ -20,9 +20,10 @@ export const AuthPage: React.FC = () => {
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
     
-    // Build redirect URI to match Google Cloud Console configuration
+    // Build redirect URI to a frontend route (not /api) that will be handled by React
+    // This matches what's registered in Google Cloud Console
     const frontendUrl = window.location.origin;
-    const redirectUri = `${frontendUrl}/auth/callback`;
+    const redirectUri = `${frontendUrl}/oauth/callback`;
 
     // Build login URL with frontend callback
     const loginUrl = `${backendUrl}/accounts/google/login/` +

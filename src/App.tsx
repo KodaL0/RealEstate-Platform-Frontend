@@ -18,6 +18,7 @@ import AuthTokenProcessor from "./components/AuthTokenProcessor";
 import AboutUs from './pages/AboutUs';
 import TermsandConditions from "./pages/TermsandConditions"; 
 import CookiePolicy from "./pages/CookiePolicy";
+import OAuthCallback from "./pages/OAuthCallback";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -65,6 +66,7 @@ function App() {
                 path="/mortgage-calculator"
                 element={<MortgageCalculator />}
               />
+              <Route path="/oauth/callback" element={<OAuthCallback />} />
             </Routes>
           </main>
 
