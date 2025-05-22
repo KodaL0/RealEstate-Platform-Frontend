@@ -217,20 +217,22 @@ const handleInputChange = (
     }));
   };
 
-  /* validation */
+      /* validation */
   const validateForm = () => {
-    if (!formData.title.trim())       { setError('Please enter a title'); return false; }
+    if (!formData.title.trim()) { setError('Please enter a title'); return false; }
     if (!formData.description.trim()) { setError('Please enter a description'); return false; }
-    if (!formData.price || +formData.price <= 0)
-                                       { setError('Please enter a valid price'); return false; }
-    if (!formData.location.trim())
-                                       { setError('Please select a valid location'); return false; }
-    if (!formData.propertyType)       { setError('Please select a property type'); return false; }
-    if (!formData.propertyStatus)     { setError('Please select a property status'); return false; }
-    if (formData.images.length === 0 && previewImages.length === 0)
-                                       { setError('Please upload at least one image'); return false; }
+    if (!formData.price || +formData.price <= 0) { setError('Please enter a valid price'); return false; }
+    if (!formData.location.trim()) { setError('Please select a valid location'); return false; }
+    if (!formData.propertyType) { setError('Please select a property type'); return false; }
+    if (!formData.propertyStatus) { setError('Please select a property status'); return false; }
+    if (formData.images.length === 0 && previewImages.length === 0) { setError('Please upload at least one image'); return false; }
+    // Optional: skip beds/baths for land
+    if (formData.propertyType !== 'land') {
+      if (!formData.bedrooms) { setError('Please enter number of bedrooms'); return false; }
+      if (!formData.bathrooms) { setError('Please enter number of bathrooms'); return false; }
     }
     return true;
+  };
   };
 
   /* fetch for edit */
