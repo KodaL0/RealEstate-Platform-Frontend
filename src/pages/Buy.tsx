@@ -73,7 +73,7 @@ const Buy = () => {
         if (searchFilters.bedrooms)      queryParams.bedrooms     = searchFilters.bedrooms; 
         if (searchFilters.bathrooms)     queryParams.bathrooms    = searchFilters.bathrooms;
         if (searchFilters.property_type) queryParams.propertyType = searchFilters.property_type;
-        if (sortOption) queryParams.sort_by = sortOption;
+        if (sortOption) queryParams.sort = sortOption;
         
         console.log("Fetching with query params:", queryParams);
         
