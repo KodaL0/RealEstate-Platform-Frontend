@@ -1,24 +1,25 @@
+// src/pages/Buy.tsx
 import {
   useState,
   useEffect,
   useRef,
-  useLayoutEffect,          // ← NEW
+  useLayoutEffect,
 } from "react";
-import { useSearchParams } from "react-router-dom"; // Import useSearchParams
+import { useSearchParams } from "react-router-dom";
 import { MapPin } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion"; // ← NEW
+import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData, Property } from "../types";
 import api from '../config/api';
 
-const PAGE_SIZE = 9; // Show 9 property cards per page
+const PAGE_SIZE = 9;
 
 interface SearchFiltersType {
   location?: string;
   search?: string;
-  price_min?: string;
-  price_max?: string;
+  minPrice?: string;
+  maxPrice?: string;
   bedrooms?: string;
   bathrooms?: string;
   property_type?: string;
@@ -26,23 +27,21 @@ interface SearchFiltersType {
 }
 
 const Buy = () => {
-  const [searchParams] = useSearchParams(); // Get search params
-  const initialLocation = searchParams.get('location') || ''; // Get initial location
+  const [searchParams] = useSearchParams();
+  const initialLocation = searchParams.get('location') || '';
 
-  /* ───────────── state ───────────── */
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState("recommended");
+  const [totalCount, setTotalCount]      = useState(0);
+  const [totalPages, setTotalPages]      = useState(1);
+  const [currentPage, setCurrentPage]    = useState(1);
+  const [isLoading, setIsLoading]        = useState(false);
+  const [error, setError]                = useState<string | null>(null);
+  const [sortOption, setSortOption]      = useState("recommended");
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
   });
 
-  /* ───────── scroll back to top on page change ───────── */
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -52,51 +51,53 @@ const Buy = () => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  /* ───────── FETCH PROPERTIES ───────── */
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
       setError(null);
 
       try {
-        /* format query parameters */
-        let queryParams: Record<string, string> = {
-          pageSize: PAGE_SIZE.toString(), 
-          page:       currentPage.toString(),
-          sort:   sortOption,
-          
+        const queryParams: Record<string, string> = {
+          pageSize: PAGE_SIZE.toString(),
+          page:     currentPage.toString(),
+          sort:     sortOption,
         };
-        
-        if (searchFilters.minPrice)     queryParams.minPrice     = searchFilters.minPrice;
-        if (searchFilters.maxPrice)     queryParams.maxPrice     = searchFilters.maxPrice;
-        if (searchFilters.bedrooms)     queryParams.bedrooms     = searchFilters.bedrooms;
-        if (searchFilters.bathrooms)    queryParams.bathrooms    = searchFilters.bathrooms;
-        if (searchFilters.location)     queryParams.location     = searchFilters.location;
-        if (searchFilters.search)       queryParams.search       = searchFilters.search;
-        
-        console.log("Fetching with query params:", queryParams);
-        
-        /* ---------- fetch properties from API ---------- */
+        if (searchFilters.minPrice)  queryParams.minPrice  = searchFilters.minPrice;
+        if (searchFilters.maxPrice)  queryParams.maxPrice  = searchFilters.maxPrice;
+        if (searchFilters.bedrooms)  queryParams.bedrooms  = searchFilters.bedrooms;
+        if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms;
+        if (searchFilters.location)  queryParams.location  = searchFilters.location;
+        if (searchFilters.search)    queryParams.search    = searchFilters.search;
+
+        console.log("Fetching BUY with query params:", queryParams);
+
         const response = await api.properties.buy(queryParams);
-        const data = response.data;
+        const rawData = response.data;
+        console.log("BUY response.data:", rawData); // ← inspect the payload
 
-        const results  = Array.isArray(data) ? data : data.results;
+        // Defensive extraction of the array
+        const results: any[] = Array.isArray(rawData)
+          ? rawData
+          : Array.isArray(rawData.results)
+            ? rawData.results
+            : Array.isArray(rawData.data)
+              ? rawData.data
+              : [];
 
-        /* update state */
-        if (Array.isArray(results)) {
-          const normalized = results.map(normalizePropertyData);
-          // Process data
-          setAllProperties(normalized);
-          setFilteredProperties(normalized);
-          const count = typeof data.count === 'number' ? data.count : results.length;
-          setTotalPages(Math.ceil(count / PAGE_SIZE));
-          setTotalCount(count);
-        } else {
-          console.error("Invalid data structure received:", data);
-          setError('Invalid data received from server');
-        }
+        // Normalize & set state
+        const normalized = results.map(normalizePropertyData);
+        setAllProperties(normalized);
+        setFilteredProperties(normalized);
+
+        // Determine count (either from payload or fallback to length)
+        const count =
+          typeof rawData.count === 'number'
+            ? rawData.count
+            : normalized.length;
+        setTotalCount(count);
+        setTotalPages(Math.ceil(count / PAGE_SIZE));
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching BUY properties:", err);
         setError('Failed to fetch properties. Please try again.');
       } finally {
         setIsLoading(false);
@@ -106,7 +107,6 @@ const Buy = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  /* ───────── pagination helpers ───────── */
   const startIndex = (currentPage - 1) * PAGE_SIZE;
   const displayedProperties = filteredProperties.slice(
     startIndex,
@@ -121,34 +121,27 @@ const Buy = () => {
     setSortOption(e.target.value);
     setCurrentPage(1);
   };
-
   const goToPage = (p: number) => setCurrentPage(p);
   const handlePreviousPage = () => currentPage > 1 && setCurrentPage(p => p - 1);
-  const handleNextPage = () =>
-    currentPage < totalPages && setCurrentPage(p => p + 1);
+  const handleNextPage     = () => currentPage < totalPages && setCurrentPage(p => p + 1);
 
-  /* ───────── JSX ───────── */
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* Hero Section */}
-      <section className="relative py-12 bg-gradient-to-r from-blue-600 to-indigo-600 h-auto">
+      {/* Hero */}
+      <section className="relative py-12 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="container mx-auto px-4">
-          <div className="max-w-3xl">
-            <h1 className="text-3xl md:text-4xl font-bold text-white mb-3">
-              Properties for Sale
-            </h1>
-            <p className="text-lg text-white/90 mb-2">
-              Browse our exclusive collection of properties for sale
-            </p>
-            <div className="flex items-center text-white/80">
-              <MapPin className="h-5 w-5 mr-2" />
-              <span>Properties available nationwide</span>
-            </div>
+          <h1 className="text-4xl font-bold text-white mb-3">Properties for Sale</h1>
+          <p className="text-lg text-white/90 mb-2">
+            Browse our exclusive collection of properties for sale
+          </p>
+          <div className="flex items-center text-white/80">
+            <MapPin className="h-5 w-5 mr-2" />
+            <span>Properties available nationwide</span>
           </div>
         </div>
       </section>
 
-      {/* Search Filters */}
+      {/* Filters */}
       <section className="container mx-auto px-4 mt-4">
         <SearchFilters
           forSale
@@ -158,31 +151,25 @@ const Buy = () => {
         />
       </section>
 
-      {/* Properties List */}
+      {/* Listings */}
       <section className="container mx-auto px-4 py-8">
-        {/* header */}
         <div className="flex justify-between items-center mb-6">
           <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Available Properties
-            </h2>
+            <h2 className="text-2xl font-bold">Available Properties</h2>
             <p className="text-gray-600">
               {isLoading
                 ? "Loading properties..."
                 : `${filteredProperties.length} properties found`}
             </p>
           </div>
-
           <div className="flex items-center">
-            <label htmlFor="sort" className="mr-2 text-gray-700">
-              Sort by:
-            </label>
+            <label htmlFor="sort" className="mr-2">Sort by:</label>
             <select
               id="sort"
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none bg-white"
               value={sortOption}
               onChange={handleSortChange}
               disabled={isLoading}
+              className="px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500"
             >
               <option value="recommended">Recommended</option>
               <option value="price-asc">Price (Low to High)</option>
@@ -193,44 +180,36 @@ const Buy = () => {
           </div>
         </div>
 
-        {/* Error Message */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
             <p>{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg transition-colors"
+              className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg"
             >
               Try Again
             </button>
           </div>
         )}
 
-        {/* Loading Indicator / Empty */}
         {isLoading ? (
-          <div className="flex justify-center items-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500" />
+          <div className="flex justify-center py-12">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500" />
           </div>
-        ) : filteredProperties.length === 0 ? (
+        ) : displayedProperties.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-xl font-semibold text-gray-700 mb-4">
-              No properties match your search criteria
-            </h3>
-            <p className="text-gray-600 mb-6">
-              Try adjusting your filters or explore our other listings
-            </p>
+            <h3 className="text-xl font-semibold mb-4">No properties match your search criteria</h3>
             <button
               onClick={() => {
                 setSearchFilters({});
                 setSortOption("recommended");
               }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors mt-4"
+              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
             >
               Clear All Filters
             </button>
           </div>
         ) : (
-          /* ------------- animated grid ------------- */
           <AnimatePresence mode="wait">
             <motion.div
               key={currentPage}
@@ -247,20 +226,16 @@ const Buy = () => {
           </AnimatePresence>
         )}
 
-        {/* Pagination */}
-        {!isLoading && filteredProperties.length > 0 && totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <nav className="flex items-center space-x-2">
               <button
                 onClick={handlePreviousPage}
-                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
-                  currentPage === 1 ? "opacity-50 cursor-not-allowed" : ""
-                }`}
                 disabled={currentPage === 1}
+                className="px-4 py-2 border rounded-md"
               >
                 Previous
               </button>
-
               {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
@@ -268,21 +243,16 @@ const Buy = () => {
                   className={`px-4 py-2 rounded-md ${
                     currentPage === page
                       ? "bg-blue-600 text-white"
-                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
+                      : "border border-gray-300"
                   }`}
                 >
                   {page}
                 </button>
               ))}
-
               <button
                 onClick={handleNextPage}
-                className={`px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 ${
-                  currentPage === totalPages
-                    ? "opacity-50 cursor-not-allowed"
-                    : ""
-                }`}
                 disabled={currentPage === totalPages}
+                className="px-4 py-2 border rounded-md"
               >
                 Next
               </button>
