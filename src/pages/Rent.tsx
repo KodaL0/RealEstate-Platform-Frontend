@@ -72,7 +72,7 @@ const Rent = () => {
         console.log("Fetching with query params:", queryParams.toString());
         
         /* fetch properties from API */
-        const response = await apiGet(`api/properties/rent?${queryParams.toString()}`);
+        const response = await apiGet(`properties/rent?${queryParams.toString()}`);
         const data = response.data;
 
         /* update state */

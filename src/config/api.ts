@@ -1,4 +1,5 @@
-import axios, { AxiosRequestConfig } from 'axios';
+import axios from 'axios';
+import type { AxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
 // Base API configuration
@@ -14,21 +15,21 @@ export const apiClient = axios.create({
   },
 });
 
-// Helper to ensure proper URL formatting with API prefix and trailing slash
+// Helper to ensure proper URL formatting with trailing slash
 export const formatEndpoint = (endpoint: string): string => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
   
-  // Add API prefix if not already included
-  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
+  // Remove api/ prefix if present since API_BASE already includes it
+  const withoutPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint.substring(4) : cleanEndpoint;
   
   // Ensure trailing slash for Django (but preserve query parameters)
-  if (withPrefix.includes('?')) {
-    const [path, query] = withPrefix.split('?');
+  if (withoutPrefix.includes('?')) {
+    const [path, query] = withoutPrefix.split('?');
     return `${path.endsWith('/') ? path : `${path}/`}?${query}`;
   }
   
-  return withPrefix.endsWith('/') ? withPrefix : `${withPrefix}/`;
+  return withoutPrefix.endsWith('/') ? withoutPrefix : `${withoutPrefix}/`;
 };
 
 // Generic request methods
@@ -92,6 +93,7 @@ apiClient.interceptors.response.use(
 );
 
 export default {
+  API_BASE,
   apiClient,
   formatEndpoint,
   get: apiGet,

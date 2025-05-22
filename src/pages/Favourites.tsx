@@ -30,7 +30,7 @@ const Favourites: React.FC = () => {
       setError(null);
       try {
         // Fetch favourites using the correct endpoint relative to apiClient's baseURL
-        const response = await apiClient.get('/api/properties/my-favourites/');
+        const response = await apiClient.get('/properties/my-favourites/');
         // Assuming the API returns an object with a 'results' array for paginated data,
         // or just an array if not paginated. Adjust based on your actual API response structure.
         const data = response.data.results || response.data || [];

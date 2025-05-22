@@ -53,7 +53,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
 
     try {
       // Use apiClient for authenticated request
-      const response = await apiClient.post(`/api/properties/${propertyId}/favourite/`);
+      const response = await apiClient.post(`/properties/${propertyId}/favourite/`);
       console.log('Favourite toggled successfully:', response.data);
       const actualLikedState = response.data.is_favourite;
       setLiked(actualLikedState);

@@ -71,7 +71,7 @@ const Buy = () => {
         console.log("Fetching with query params:", queryParams.toString());
         
         /* ---------- fetch properties from API ---------- */
-        const response = await apiGet(`api/properties/buy?${queryParams.toString()}`);
+        const response = await apiGet(`properties/buy?${queryParams.toString()}`);
         const data = response.data;
 
         /* update state */
