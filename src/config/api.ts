@@ -16,7 +16,7 @@ const API_HOST = 'https://api.propertpro.com';
 const API_BASE   = `${API_HOST}/api`;  
 
 export const apiClient = axios.create({
-  baseURL: API_BASE,
+  baseURL: '/api',
   withCredentials: true,  
   headers: {
     'Accept':           'application/json',
