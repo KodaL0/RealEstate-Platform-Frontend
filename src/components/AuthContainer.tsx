@@ -23,6 +23,7 @@ export const AuthPage: React.FC = () => {
     }
 
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    const frontendUrl = window.location.origin;
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
@@ -33,9 +34,10 @@ export const AuthPage: React.FC = () => {
                      `&login_hint=_force_new_${uniqueId}` +
                      `&state=${uniqueId}` +
                      `&t=${timestamp}` +
-                     `&authuser=-1`;
+                     `&authuser=-1` +
+                     `&redirect_uri=${encodeURIComponent(`${frontendUrl}/oauth/callback`)}`;
 
-    window.open(loginUrl, '_blank', 'noopener,noreferrer');
+    window.open(loginUrl, '_self');
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {

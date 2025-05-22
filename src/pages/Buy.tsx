@@ -55,7 +55,7 @@ const Buy = () => {
         const qs = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
         /* ---------- try direct URL first ---------- */
-        const DIRECT_API_URL = "https://propertprodjango.onrender.com/api";
+        const DIRECT_API_URL = "https://api.propertpro.com/api";
         const proxyUrl  = `${API_BASE_URL}/properties/buy${qs}`;
         const directUrl = `${DIRECT_API_URL}/properties/buy${qs}`;
 

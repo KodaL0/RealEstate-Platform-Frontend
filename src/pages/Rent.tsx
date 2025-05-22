@@ -54,7 +54,7 @@ const Rent = () => {
 
         const query = qs.toString() ? `?${qs.toString()}` : "";
 
-        const DIRECT_API_URL = "https://propertprodjango.onrender.com/api";
+        const DIRECT_API_URL = "https://api.propertpro.com/api";
         const proxyUrl  = `${API_BASE_URL}/properties/rent${query}`;
         const directUrl = `${DIRECT_API_URL}/properties/rent${query}`;
 
