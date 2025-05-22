@@ -1,32 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/accounts/google/login/",
-      "destination": "https://api.propertpro.com/accounts/google/login/"
-    },
-    {
-      "source": "/accounts/google/login/callback/",
-      "destination": "https://api.propertpro.com/accounts/google/login/callback/"
-    },
-    {
-      "source": "/auth/google/callback",
-      "destination": "https://api.propertpro.com/accounts/google/login/callback/"
-    },
-    {
       "source": "/oauth/callback",
       "destination": "https://api.propertpro.com/accounts/google/login/callback/"
-    },
-    {
-      "source": "/api/users/auth-complete",
-      "destination": "https://api.propertpro.com/api/users/auth-complete"
-    },
-    {
-      "source": "/api/:path(.*[^/])",
-      "destination": "https://api.propertpro.com/api/:path/"
-    },
-    {
-      "source": "/api/:path*",
-      "destination": "https://api.propertpro.com/api/:path*"
     },
     {
       "source": "/((?!api|_next|static|favicon\\.ico|.*\\..*).*)",
