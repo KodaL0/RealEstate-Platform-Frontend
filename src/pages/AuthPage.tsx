@@ -22,7 +22,7 @@ export const AuthPage: React.FC = () => {
     
     // Build redirect URI to match Google Cloud Console configuration
     const frontendUrl = window.location.origin;
-    const redirectUri = `${frontendUrl}/api/auth/callback`;
+    const redirectUri = `${frontendUrl}/auth/callback`;
 
     // Build login URL with frontend callback
     const loginUrl = `${backendUrl}/accounts/google/login/` +
