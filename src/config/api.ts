@@ -64,10 +64,6 @@ export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config
 
 // ──────── 4) Logging (optional) ────────
 apiClient.interceptors.request.use(cfg => {
-  if (cfg.headers) {
-    delete cfg.headers['If-None-Match'];
-    cfg.headers['Cache-Control'] = 'no-cache';
-  }
   console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
   return cfg;
 });
