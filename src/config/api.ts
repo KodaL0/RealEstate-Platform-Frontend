@@ -1,7 +1,8 @@
-import axios from 'axios';
-import Cookies from 'js-cookie';
+// src/config/api.ts
 
-// Define types since AxiosRequestConfig import is causing issues
+import axios from 'axios';
+
+// Define a minimal config type
 type RequestConfig = {
   headers?: Record<string, string>;
   params?: Record<string, any>;
@@ -9,155 +10,116 @@ type RequestConfig = {
   [key: string]: any;
 };
 
-// Base API configuration
+// ──────── 1) Base API configuration ────────
+// Note: include the `/api` prefix here so you never get `apiapi` or drop the slash.
 const API_HOST = 'https://api.propertpro.com';
-const API_PREFIX = '/api';
+const API_BASE   = `${API_HOST}/api`;  
 
-// Create standardized axios instance
-const apiClient = axios.create({
-  baseURL: API_HOST,
-  withCredentials: true,
+export const apiClient = axios.create({
+  baseURL: API_BASE,
+  withCredentials: true,  
   headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
+    'Accept':           'application/json',
+    'Content-Type':     'application/json',
     'X-Requested-With': 'XMLHttpRequest',
   },
 });
 
-// Helper to ensure proper URL formatting with trailing slash for Django
+// ──────── 2) Simple formatter ────────
+// Takes e.g. "properties/featured" or "/properties/featured"
+// and returns "/properties/featured/"
 const formatEndpoint = (endpoint: string): string => {
-  // Remove leading slash if present
-  const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
-  
-  // Check if endpoint already includes the api prefix
-  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
-  
-  // Ensure trailing slash for Django (but preserve query parameters)
-  if (withPrefix.includes('?')) {
-    const [path, query] = withPrefix.split('?');
-    return `${path.endsWith('/') ? path : `${path}/`}?${query}`;
+  // strip any leading slash, then re-add exactly one
+  let clean = endpoint.replace(/^\/+/, '');
+  // if query string present
+  if (clean.includes('?')) {
+    const [path, query] = clean.split('?');
+    const p = path.endsWith('/') ? path : path + '/';
+    return `/${p}?${query}`;
   }
-  
-  return withPrefix.endsWith('/') ? withPrefix : `${withPrefix}/`;
+  // no query
+  return '/' + (clean.endsWith('/') ? clean : clean + '/');
 };
 
-// Request methods
-const apiGet = <T = any>(endpoint: string, config?: RequestConfig) =>
+// ──────── 3) Typed request wrappers ────────
+export const apiGet = <T = any>(endpoint: string, config?: RequestConfig) =>
   apiClient.get<T>(formatEndpoint(endpoint), config);
 
-const apiPost = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
+export const apiPost = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
   apiClient.post<T>(formatEndpoint(endpoint), data, config);
 
-const apiPut = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
+export const apiPut = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
   apiClient.put<T>(formatEndpoint(endpoint), data, config);
 
-const apiDelete = <T = any>(endpoint: string, config?: RequestConfig) =>
+export const apiDelete = <T = any>(endpoint: string, config?: RequestConfig) =>
   apiClient.delete<T>(formatEndpoint(endpoint), config);
 
-// Form data methods for file uploads
-const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
-  apiClient.post<T>(
-    formatEndpoint(endpoint),
-    formData,
-    {
-      ...config,
-      headers: {
-        ...config?.headers,
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
+export const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
+  apiClient.post<T>(formatEndpoint(endpoint), formData, {
+    ...config,
+    headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
+  });
 
-const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
-  apiClient.put<T>(
-    formatEndpoint(endpoint),
-    formData,
-    {
-      ...config,
-      headers: {
-        ...config?.headers,
-        'Content-Type': 'multipart/form-data',
-      },
-    }
-  );
+export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
+  apiClient.put<T>(formatEndpoint(endpoint), formData, {
+    ...config,
+    headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
+  });
 
-// Request interceptor for logging in development
-apiClient.interceptors.request.use(config => {
-  const url = config.url || '';
-  const fullUrl = `${config.baseURL}${url}`.replace(/([^:]\/\/)\/+/, '$1');
-  console.log(`API Request: ${config.method?.toUpperCase()} ${fullUrl}`);
-  return config;
+// ──────── 4) Logging (optional) ────────
+apiClient.interceptors.request.use(cfg => {
+  console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
+  return cfg;
 });
-
-// Response interceptor for error handling
 apiClient.interceptors.response.use(
-  response => response,
-  error => {
-    console.error('API Error:', error);
-    if (error.response) {
-      console.error('Status:', error.response.status);
-      console.error('Data:', error.response.data);
-    }
-    return Promise.reject(error);
+  res => res,
+  err => {
+    console.error('API Error', err.response?.status, err.response?.data);
+    return Promise.reject(err);
   }
 );
 
-// UPDATED PROPERTY ENDPOINTS
-// Organized API endpoints by domain
+// ──────── 5) Export organized endpoints ────────
 const api = {
-  // Generic methods
   get: apiGet,
   post: apiPost,
   put: apiPut,
   delete: apiDelete,
   formPost: apiFormPost,
   formPut: apiFormPut,
-  
-  // Authentication endpoints
+
   auth: {
-    login: (data: any) => apiPost('users/login', data),
-    register: (data: any) => apiPost('users/register', data),
-    logout: () => apiPost('users/logout'),
-    refreshToken: () => apiPost('users/refresh'),
-    getUser: () => apiGet('users/get_user'),
-    updateProfile: (data: any) => apiPut('users/profile', data),
-    socialLoginVerify: (data: any) => apiPost('users/social-login-verify', data),
-    authComplete: (data: any) => apiPost('users/auth-complete', data),
+    login:           (d: any) => apiPost('users/login', d),
+    register:        (d: any) => apiPost('users/register', d),
+    logout:          ()        => apiPost('users/logout'),
+    refreshToken:    ()        => apiPost('users/refresh'),
+    getUser:         ()        => apiGet('users/get_user'),
+    updateProfile:   (d: any)  => apiPut('users/profile', d),
+    socialVerify:    (d: any)  => apiPost('users/social-login-verify', d),
+    complete:        (d: any)  => apiPost('users/auth-complete', d),
   },
-  
-  // Property endpoints
+
   properties: {
-    list: (params?: any) => apiGet('properties', { params }),
-    getById: (id: number) => apiGet(`properties/${id}`),
-    create: (data: FormData) => apiFormPost('properties/create_property', data),
-    update: (id: number, data: FormData) => apiFormPut(`properties/${id}`, data),
-    delete: (id: number) => apiDelete(`properties/${id}`),
-    
-    // Special endpoints
-    myProperties: () => apiGet('properties/my-properties'),
-    buy: (params?: any) => apiGet('properties/buy', { params }),
-    rent: (params?: any) => apiGet('properties/rent', { params }),
-    featured: () => apiGet('properties/featured'),
-    
-    // User-specific property endpoints
-    getUserProperty: (username: string, propertyId: number) => 
-      apiGet(`properties/${username}/property/${propertyId}`),
-    getUserProperties: (username: string) => 
-      apiGet(`properties/${username}/properties`),
-    
-    // Favorites
-    myFavorites: () => apiGet('properties/my-favourites'),
-    toggleFavorite: (propertyId: number) => 
-      apiPost(`properties/${propertyId}/favourite`),
+    list:           (p?: any) => apiGet('properties', { params: p }),
+    getById:        (id: number) => apiGet(`properties/${id}`),
+    create:         (fd: FormData) => apiFormPost('properties/create_property', fd),
+    update:         (id: number, fd: FormData) => apiFormPut(`properties/${id}`, fd),
+    delete:         (id: number) => apiDelete(`properties/${id}`),
+    myProperties:   () => apiGet('properties/my-properties'),
+    buy:            (p?: any) => apiGet('properties/buy', { params: p }),
+    rent:           (p?: any) => apiGet('properties/rent', { params: p }),
+    featured:       ()        => apiGet('properties/featured'),
+    getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
+    getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
+    myFavorites:    ()        => apiGet('properties/my-favourites'),
+    toggleFavorite: (pid: number) => apiPost(`properties/${pid}/favourite`),
   },
-  
-  // Admin endpoints
+
   admin: {
-    getProperties: () => apiGet('properties/api_admin/dashboard/properties'),
-    createProperty: (data: FormData) => 
-      apiFormPost('properties/api_admin/create-property', data),
-    getUserProperties: () => apiGet('properties/api_admin/properties'),
-  }
+    getProperties: ()        => apiGet('properties/api_admin/dashboard/properties'),
+    createProperty:(fd: FormData) => apiFormPost('properties/api_admin/create-property', fd),
+    getUserProps:  ()        => apiGet('properties/api_admin/properties'),
+  },
 };
 
 export default api;
