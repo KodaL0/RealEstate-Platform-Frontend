@@ -1,21 +1,16 @@
+// vercel.json
 {
   "version": 2,
-  "rewrites": [
-    {
-      "source": "/accounts/google/login",
-      "destination": "https://api.propertpro.com/accounts/google/login"
-    },
-    {
-      "source": "/accounts/google/login/",
-      "destination": "https://api.propertpro.com/accounts/google/login"
-    },
+  "redirects": [
     {
       "source": "/accounts/google/login/:rest*",
-      "destination": "https://api.propertpro.com/accounts/google/login/:rest*"
+      "destination": "https://api.propertpro.com/accounts/google/login/:rest*",
+      "permanent": false
     },
     {
       "source": "/oauth/callback",
-      "destination": "https://api.propertpro.com/oauth/callback"
+      "destination": "https://api.propertpro.com/oauth/callback",
+      "permanent": false
     }
   ]
 }
