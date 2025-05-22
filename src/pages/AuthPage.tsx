@@ -19,17 +19,22 @@ export const AuthPage: React.FC = () => {
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
+    
+    // Build redirect URI to our frontend callback
+    const frontendUrl = window.location.origin;
+    const redirectUri = `${frontendUrl}/oauth-callback`;
 
-    // Build login URL
+    // Build login URL with frontend callback
     const loginUrl = `${backendUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
                      `&login_hint=_force_new_${uniqueId}` +
                      `&state=${uniqueId}` +
                      `&t=${timestamp}` +
-                     `&authuser=-1`;
+                     `&authuser=-1` +
+                     `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
-    // Redirect in same page instead of opening new tab
+    // Redirect in same page
     window.location.href = loginUrl;
   };
 
