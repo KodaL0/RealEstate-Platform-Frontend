@@ -42,7 +42,7 @@ const Buy = () => {
     location: initialLocation,
   });
 
-  // Scroll to top on page change
+  // Scroll-to-top on page change
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -77,8 +77,8 @@ const Buy = () => {
         const raw = response.data;
         console.log("BUY response.data:", raw);
 
-        // Extract the array safely
-        const results: any[] = Array.isArray(raw)
+        // --- Defensive extraction: always end up with an array ---
+        const resultsArr: any[] = Array.isArray(raw)
           ? raw
           : Array.isArray(raw.results)
             ? raw.results
@@ -86,13 +86,15 @@ const Buy = () => {
               ? raw.data
               : [];
 
-        // Normalize & set
-        const normalized = results.map(normalizePropertyData);
+        // Normalize & set state
+        const normalized = resultsArr.map(normalizePropertyData);
         setAllProperties(normalized);
         setFilteredProperties(normalized);
 
-        // Compute count and pages
-        const count = typeof raw.count === "number" ? raw.count : normalized.length;
+        // Compute total count/pages
+        const count = typeof raw.count === "number"
+          ? raw.count
+          : normalized.length;
         setTotalCount(count);
         setTotalPages(Math.ceil(count / PAGE_SIZE));
       } catch (err) {
@@ -108,10 +110,7 @@ const Buy = () => {
 
   // Pagination slice
   const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const displayedProperties = filteredProperties.slice(
-    startIdx,
-    startIdx + PAGE_SIZE
-  );
+  const displayed = filteredProperties.slice(startIdx, startIdx + PAGE_SIZE);
 
   // Handlers
   const handleSearch = (f: SearchFiltersType) => {
@@ -202,7 +201,7 @@ const Buy = () => {
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500" />
           </div>
-        ) : displayedProperties.length === 0 ? (
+        ) : displayed.length === 0 ? (
           <div className="text-center py-12">
             <h3 className="text-xl font-semibold mb-4">
               No properties match your search criteria
@@ -227,7 +226,7 @@ const Buy = () => {
               transition={{ duration: 0.45, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {displayedProperties.map((property) => (
+              {displayed.map(property => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </motion.div>
@@ -245,7 +244,7 @@ const Buy = () => {
               >
                 Previous
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
                 <button
                   key={p}
                   onClick={() => goToPage(p)}
