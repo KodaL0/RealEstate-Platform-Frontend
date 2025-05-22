@@ -11,7 +11,6 @@ type RequestConfig = {
 const API_HOST = 'https://api.propertpro.com';
 const API_BASE = `${API_HOST}/api`;
 
-// Use the real URL in prod, proxy in dev
 const baseURL = import.meta.env.PROD
   ? API_BASE
   : '/api';
@@ -26,7 +25,6 @@ export const apiClient = axios.create({
   },
 });
 
-// ──────── 2) Simple formatter ────────
 const formatEndpoint = (ep: string): string => {
   let clean = ep.replace(/^\/+/, '');
   if (clean.includes('?')) {
@@ -37,7 +35,6 @@ const formatEndpoint = (ep: string): string => {
   return '/' + (clean.endsWith('/') ? clean : clean + '/');
 };
 
-// ──────── 3) Typed request wrappers ────────
 export const apiGet = <T = any>(endpoint: string, config?: RequestConfig) =>
   apiClient.get<T>(formatEndpoint(endpoint), config);
 
@@ -62,7 +59,6 @@ export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config
     headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
   });
 
-// ──────── 4) Logging (optional) ────────
 apiClient.interceptors.request.use(cfg => {
   console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
   return cfg;
@@ -76,7 +72,6 @@ apiClient.interceptors.response.use(
   }
 );
 
-// ──────── 5) Export organized endpoints ────────
 const api = {
   get: apiGet,
   post: apiPost,
@@ -97,14 +92,39 @@ const api = {
   },
 
   properties: {
-    list:           (p?: any) => apiGet('properties', { params: p }),
+    list: (p?: any) =>
+      apiGet<{ results?: any[] }>('properties', { params: p })
+        .then(res => {
+          const d = res.data;
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d.results)) return d.results;
+          return [];
+        }),
+
     getById:        (id: number) => apiGet(`properties/${id}`),
     create:         (fd: FormData) => apiFormPost('properties/create_property', fd),
     update:         (id: number, fd: FormData) => apiFormPut(`properties/${id}`, fd),
     delete:         (id: number) => apiDelete(`properties/${id}`),
     myProperties:   () => apiGet('properties/my-properties'),
-    buy:            (p?: any) => apiGet('properties/buy', { params: p }),
-    rent:           (p?: any) => apiGet('properties/rent', { params: p }),
+
+    buy: (p?: any) =>
+      apiGet<{ results?: any[] }>('properties/buy', { params: p })
+        .then(res => {
+          const d = res.data;
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d.results)) return d.results;
+          return [];
+        }),
+
+    rent: (p?: any) =>
+      apiGet<{ results?: any[] }>('properties/rent', { params: p })
+        .then(res => {
+          const d = res.data;
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d.results)) return d.results;
+          return [];
+        }),
+
     featured:       ()        => apiGet('properties/featured'),
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
@@ -114,7 +134,7 @@ const api = {
 
   admin: {
     getProperties: ()        => apiGet('properties/api_admin/dashboard/properties'),
-    createProperty:(fd: FormData) => apiFormPost('properties/api_admin/create-property', fd),
+    createProperty: (fd: FormData) => apiFormPost('properties/api_admin/create-property', fd),
     getUserProps:  ()        => apiGet('properties/api_admin/properties'),
   },
 };
