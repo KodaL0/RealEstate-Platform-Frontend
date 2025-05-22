@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { apiClient, apiGet, apiFormPost, apiFormPut } from '../config/api';
+import api from '../config/api';
 import { useUser } from '../context/UserContext';
 import LocationAutocomplete from '../pages/LocationAutocomplete';
 
@@ -241,7 +241,7 @@ const handleInputChange = (
   useEffect(() => {
     if (!isEditing || !id) return;
     setLoading(true);
-    apiGet(`properties/${username}/property/${id}`)
+    api.properties.getUserProperty(username, Number(id))
       .then(res => {
         const d = res.data;
         const imgs = d.images || [];
@@ -293,12 +293,13 @@ const handleInputChange = (
           videoUrl: d.video_url || '',
           images: [],
         });
+        setLoading(false);
       })
       .catch(err => {
         console.error(err);
         setError('Failed to load property data. Please try again.');
-      })
-      .finally(() => setLoading(false));
+        setLoading(false);
+      });
   }, [isEditing, id, username]);
 
   /* submit */
@@ -354,13 +355,12 @@ const handleInputChange = (
       }
 
       /* endpoint */
-      const endpoint = isEditing
-        ? `properties/${username}/property/${id}/edit`
-        : 'properties/create_property';
-      
-      // Use the new API utility functions that handle URL formatting
-      const apiMethod = isEditing ? apiFormPut : apiFormPost;
-      const res = await apiMethod(endpoint, fd);
+      let res;
+      if (isEditing) {
+        res = await api.formPut(`properties/${username}/property/${id}/edit`, fd);
+      } else {
+        res = await api.properties.create(fd);
+      }
 
       if (res.status >= 200 && res.status < 300) {
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
