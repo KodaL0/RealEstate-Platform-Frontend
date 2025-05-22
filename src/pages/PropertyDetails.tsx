@@ -107,8 +107,7 @@ const PropertyDetails: React.FC = () => {
     const fetchProperty = async () => {
       setLoading(true);
       try {
-        // Try fetching directly using the detail endpoint first
-        const response = await apiGet(`properties/${numericId}/`);
+        const response = await apiGet(`api/properties/${numericId}/`);
         const mapped = mapPropertyData(response.data);
         setProperty(mapped);
         if (!mapped.latitude && mapped.location) {

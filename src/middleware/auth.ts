@@ -35,7 +35,7 @@ export function clearAuthCookies() {
 export async function login(email: string, password: string) {
   try {
     console.log("Attempting login with email:", email);
-    const response = await apiPost('users/login', { email, password });
+    const response = await apiPost('api/users/login', { email, password });
     console.log("Login successful, received response:", response.status);
     // Backend's /users/login endpoint is expected to set access_token and refresh_token cookies.
     return { status: response.status, ...response.data };
@@ -68,7 +68,7 @@ export async function login(email: string, password: string) {
  */
 export async function register(username: string, email: string, password1: string, password2: string) {
   try {
-    const response = await apiPost('users/register', { 
+    const response = await apiPost('api/users/register', { 
       username, email, password1, password2 
     });
     return { status: response.status, ...response.data };
@@ -97,7 +97,7 @@ export async function logout() {
   try {
     // Important: Call backend logout first. It might do session invalidation or token blacklisting.
     // Debug the full URL that will be used
-    const logoutUrl = 'users/logout/'; // Ensure trailing slash is consistent with Django
+    const logoutUrl = 'api/users/logout/'; // Ensure trailing slash is consistent with Django
     console.log(`Attempting to call logout at: ${API_URL}/${logoutUrl}`);
     
     await apiPost(logoutUrl); 
@@ -120,7 +120,7 @@ export async function logout() {
  */
 export async function fetchUser() {
   try {
-    const response = await apiGet('users/get_user');
+    const response = await apiGet('api/users/get_user');
     return { 
       user: response.data,
       authenticated: true
@@ -163,8 +163,7 @@ apiClient.interceptors.response.use(
       
       try {
         console.log("Attempting to refresh token with refresh_token from cookie...");
-        const refreshResponse = await axios.post( 
-          `${API_URL}/api/users/refresh/`,
+        const refreshResponse = await apiPost('api/users/refresh', 
           { refresh: currentRefreshToken }, // Send refresh token in body
           { withCredentials: true } // Important for backend to read session/CSRF if needed, and set new cookies
         );

@@ -69,8 +69,10 @@ const Rent = () => {
         
         queryParams.set('page_size', PAGE_SIZE.toString());
         
+        console.log("Fetching with query params:", queryParams.toString());
+        
         /* fetch properties from API */
-        const response = await apiGet(`properties/rent?${queryParams.toString()}`);
+        const response = await apiGet(`api/properties/rent?${queryParams.toString()}`);
         const data = response.data;
 
         /* update state */

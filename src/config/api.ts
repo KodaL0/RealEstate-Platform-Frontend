@@ -15,21 +15,21 @@ export const apiClient = axios.create({
   }
 });
 
-// Helper to ensure proper URL formatting with API prefix and trailing slash
+// Helper to ensure proper URL formatting with trailing slash for Django
 export const formatEndpoint = (endpoint: string): string => {
   // Remove leading slash if present to avoid double slashes
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
   
-  // Add API prefix if not already included
-  const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
+  // Use the endpoint as is, no extra api/ prefixing
+  // The backend routes already include the /api/ prefix in their URL structure
   
   // Ensure trailing slash for Django (but preserve query parameters)
-  if (withPrefix.includes('?')) {
-    const [path, query] = withPrefix.split('?');
+  if (cleanEndpoint.includes('?')) {
+    const [path, query] = cleanEndpoint.split('?');
     return `${path.endsWith('/') ? path : `${path}/`}?${query}`;
   }
   
-  return withPrefix.endsWith('/') ? withPrefix : `${withPrefix}/`;
+  return cleanEndpoint.endsWith('/') ? cleanEndpoint : `${cleanEndpoint}/`;
 };
 
 // Generic request methods with automatic endpoint formatting

@@ -241,7 +241,7 @@ const handleInputChange = (
   useEffect(() => {
     if (!isEditing || !id) return;
     setLoading(true);
-    apiGet(`properties/${username}/property/${id}`)
+    apiGet(`api/properties/${username}/property/${id}`)
       .then(res => {
         const d = res.data;
         const imgs = d.images || [];
@@ -355,8 +355,8 @@ const handleInputChange = (
 
       /* endpoint */
       const endpoint = isEditing
-        ? `properties/${username}/property/${id}/edit`
-        : 'properties/create_property';
+        ? `api/properties/${username}/property/${id}/edit`
+        : 'api/properties/create_property';
       
       // Use the new API utility functions that handle URL formatting
       const apiMethod = isEditing ? apiFormPut : apiFormPost;

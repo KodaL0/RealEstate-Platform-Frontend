@@ -64,7 +64,7 @@ function MyListings() {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await apiClient.get<Property[]>('/api/properties/my-properties');
+        const { data } = await apiClient.get<Property[]>('/api/properties/my-properties/');
         setProperties(data.map(p => ({ ...p, price: Number(p.price) || 0 })));
         setError(null);
       } catch (err: any) {
