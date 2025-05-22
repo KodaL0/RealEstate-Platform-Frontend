@@ -41,6 +41,7 @@ const GoogleCallback: React.FC = () => {
 
       try {
         // Send the code to our backend for token exchange
+        // Our backend will use this code to get tokens from Google
         const response = await fetch('/api/users/social-login-verify/', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -48,7 +49,7 @@ const GoogleCallback: React.FC = () => {
           body: JSON.stringify({
             code,
             state,
-            redirect_uri: 'https://www.propertpro.com/auth/google/callback',
+            redirect_uri: window.location.origin + '/auth/google/callback',
             provider: 'google'
           })
         });
