@@ -18,6 +18,7 @@ import AuthTokenProcessor from "./components/AuthTokenProcessor";
 import AboutUs from './pages/AboutUs';
 import TermsandConditions from "./pages/TermsandConditions"; 
 import CookiePolicy from "./pages/CookiePolicy";
+import GoogleCallback from "./pages/GoogleCallback";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -61,6 +62,7 @@ function App() {
               <Route path="/terms" element={<TermsandConditions />} />
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/my-listings" element={<MyListings />} />
+              <Route path="/auth/google/callback" element={<GoogleCallback />} />
               <Route
                 path="/mortgage-calculator"
                 element={<MortgageCalculator />}

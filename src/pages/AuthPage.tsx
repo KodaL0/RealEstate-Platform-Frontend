@@ -14,23 +14,25 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    // Create unique session identifier
+    // Generate state for CSRF protection
+    const state = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    sessionStorage.setItem('oauth_state', state);
+
+    // Set redirect_uri to frontend callback
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    const uniqueId = Math.random().toString(36).substring(2, 15) +
-                     Math.random().toString(36).substring(2, 15);
-    const timestamp = new Date().getTime();
+    const frontendUrl = window.location.origin;
+    const redirectUri = `${frontendUrl}/auth/google/callback`;
 
     // Build login URL
     const loginUrl = `${backendUrl}/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
-                     `&login_hint=_force_new_${uniqueId}` +
-                     `&state=${uniqueId}` +
-                     `&t=${timestamp}` +
+                     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+                     `&state=${state}` +
                      `&authuser=-1`;
 
-    // Open login in new tab
-    window.open(loginUrl, '_blank', 'noopener,noreferrer');
+    // Navigate in same window instead of opening a new tab
+    window.location.href = loginUrl;
   };
 
   return (
