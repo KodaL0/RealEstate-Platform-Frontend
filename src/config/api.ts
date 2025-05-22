@@ -10,7 +10,8 @@ export const apiClient = axios.create({
   withCredentials: true,
   headers: {
     'Accept': 'application/json',
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest'
   }
 });
 

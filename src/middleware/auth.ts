@@ -10,9 +10,9 @@ export function setAuthCookies(accessToken: string, refreshToken: string) {
   console.log('[setAuthCookies] Received accessToken:', accessToken.substring(0, 10) + '...');
   console.log('[setAuthCookies] Received refreshToken:', refreshToken.substring(0, 10) + '...');
   
-  // Set cookies with expiration
-  document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`; // 1 day
-  document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`; // 7 days
+  // Set cookies with proper cross-domain attributes
+  document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=None; Secure`; // 1 day
+  document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=None; Secure`; // 7 days
   
   console.log('[setAuthCookies] Auth cookies set');
   console.log('[setAuthCookies] Current cookies:', document.cookie);
@@ -22,10 +22,10 @@ export function setAuthCookies(accessToken: string, refreshToken: string) {
  * Clear auth cookies (to be used on logout/session expiry)
  */
 export function clearAuthCookies() {
-  // Clear auth-related cookies
-  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+  // Clear auth-related cookies with proper cross-domain attributes
+  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   console.log("Auth cookies cleared");
 }
 
