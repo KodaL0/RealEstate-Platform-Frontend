@@ -17,6 +17,14 @@
       "destination": "https://api.propertpro.com/users/:path*"
     },
     {
+      "source": "/api/properties/:path*",
+      "destination": "https://api.propertpro.com/properties/:path*"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://api.propertpro.com/:path*"
+    },
+    {
       "source": "/((?!api|_next|static|favicon\\.ico|.*\\..*).*)",
       "destination": "/index.html"
     }
@@ -30,6 +38,14 @@
         { "key": "Access-Control-Allow-Methods", "value": "GET,OPTIONS,PATCH,DELETE,POST,PUT" },
         { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" },
         { "key": "Cache-Control", "value": "public, max-age=60, s-maxage=120" }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Access-Control-Allow-Origin", "value": "*" },
+        { "key": "Access-Control-Allow-Methods", "value": "GET, HEAD, POST, PUT, PATCH, DELETE, OPTIONS" },
+        { "key": "Access-Control-Allow-Headers", "value": "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization" }
       ]
     }
   ],
