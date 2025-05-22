@@ -62,6 +62,7 @@ const Buy = () => {
         /* format query parameters */
         let queryParams: Record<string, string> = {
           page_size: PAGE_SIZE.toString()
+          page:       currentPage.toString()
         };
         
         if (searchFilters.search) queryParams.search = searchFilters.search;
