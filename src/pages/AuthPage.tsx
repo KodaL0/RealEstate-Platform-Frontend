@@ -14,25 +14,23 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    // Generate state for CSRF protection
-    const state = crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
-    sessionStorage.setItem('oauth_state', state);
-
-    // Set redirect_uri to frontend callback
+    // Create unique session identifier
     const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    const frontendUrl = window.location.origin;
-    const redirectUri = `${frontendUrl}/auth/google/callback`;
+    const uniqueId = Math.random().toString(36).substring(2, 15) +
+                     Math.random().toString(36).substring(2, 15);
+    const timestamp = new Date().getTime();
 
-    // Build login URL through backend but pass relevant parameters
-    // to improve branding and domain display
+    // Build login URL
     const loginUrl = `${backendUrl}/accounts/google/login/` +
-                     `?prompt=select_account` +
-                     `&hosted_domain=propertpro.com` + // Add hosted domain (appears in title)
-                     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-                     `&state=${state}`;
+                     `?prompt=select_account consent` +
+                     `&include_granted_scopes=false` +
+                     `&login_hint=_force_new_${uniqueId}` +
+                     `&state=${uniqueId}` +
+                     `&t=${timestamp}` +
+                     `&authuser=-1`;
 
-    // Navigate in same window
-    window.location.href = loginUrl;
+    // Open login in new tab
+    window.open(loginUrl, '_blank', 'noopener,noreferrer');
   };
 
   return (
