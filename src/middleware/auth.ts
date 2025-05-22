@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { apiClient, apiPost, apiGet, API_URL } from '../config/api';
+import { apiClient, apiPost, apiGet } from '../config/api';
 
 // Functions to manage auth tokens and cookies
 
