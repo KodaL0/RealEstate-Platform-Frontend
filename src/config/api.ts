@@ -1,12 +1,20 @@
 // src/config/api.ts
 import axios from 'axios';
 
+type RequestConfig = {
+  headers?: Record<string,string>;
+  params?: Record<string,any>;
+  withCredentials?: boolean;
+  [k:string]: any;
+};
+
 const API_HOST = 'https://api.propertpro.com';
 const API_BASE = `${API_HOST}/api`;
 
-// ──────── 1) Base API configuration ────────
-// Decide at runtime whether to proxy (dev) or call the real URL (prod)
-const baseURL = import.meta.env.PROD ? API_BASE : '/api';
+// Use the real URL in prod, proxy in dev
+const baseURL = import.meta.env.PROD
+  ? API_BASE
+  : '/api';
 
 export const apiClient = axios.create({
   baseURL,
@@ -19,18 +27,13 @@ export const apiClient = axios.create({
 });
 
 // ──────── 2) Simple formatter ────────
-// Takes e.g. "properties/featured" or "/properties/featured"
-// and returns "/properties/featured/"
-const formatEndpoint = (endpoint: string): string => {
-  // strip any leading slash, then re-add exactly one
-  let clean = endpoint.replace(/^\/+/, '');
-  // if query string present
+const formatEndpoint = (ep: string): string => {
+  let clean = ep.replace(/^\/+/, '');
   if (clean.includes('?')) {
     const [path, query] = clean.split('?');
     const p = path.endsWith('/') ? path : path + '/';
     return `/${p}?${query}`;
   }
-  // no query
   return '/' + (clean.endsWith('/') ? clean : clean + '/');
 };
 
@@ -61,9 +64,14 @@ export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config
 
 // ──────── 4) Logging (optional) ────────
 apiClient.interceptors.request.use(cfg => {
+  if (cfg.headers) {
+    delete cfg.headers['If-None-Match'];
+    cfg.headers['Cache-Control'] = 'no-cache';
+  }
   console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
   return cfg;
 });
+
 apiClient.interceptors.response.use(
   res => res,
   err => {
