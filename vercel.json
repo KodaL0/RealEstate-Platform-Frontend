@@ -1,10 +1,12 @@
 {
   "rewrites": [
-    { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "routes": [
-    { "src": "/accounts/google/login/(.*)", "dest": "https://api.propertpro.com/accounts/google/login/$1" },
-    { "src": "/oauth/callback", "dest": "https://api.propertpro.com/oauth/callback" },
-    { "src": "/accounts/(.*)", "dest": "https://api.propertpro.com/accounts/$1" }
+    {
+      "source": "/accounts/google/login/:rest*",
+      "destination": "https://api.propertpro.com/accounts/google/login/:rest*"
+    },
+    {
+      "source": "/oauth/callback",
+      "destination": "https://api.propertpro.com/oauth/callback"
+    }
   ]
 }
