@@ -10,9 +10,20 @@ import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData, Property } from "../types";
-import { apiGet } from '../config/api';
+import api from '../config/api';
 
 const PAGE_SIZE = 9;                     // 9 cards per page
+
+// Add interface
+interface SearchFiltersType {
+  location?: string;
+  search?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  propertyType?: string;
+}
 
 const Rent = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -27,7 +38,7 @@ const Rent = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [searchFilters, setSearchFilters] = useState({
+  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     minPrice: "",
     maxPrice: "",
     bedrooms: "",
@@ -55,24 +66,24 @@ const Rent = () => {
 
       try {
         /* format query parameters */
-        let queryParams = new URLSearchParams();
+        let queryParams: Record<string, string> = {
+          page_size: PAGE_SIZE.toString()
+        };
         
-        if (searchFilters.search) queryParams.set('search', searchFilters.search);
-        if (currentPage !== 1) queryParams.set('page', currentPage.toString());
-        if (searchFilters.maxPrice) queryParams.set('price_max', searchFilters.maxPrice.toString());
-        if (searchFilters.minPrice) queryParams.set('price_min', searchFilters.minPrice.toString());
-        if (searchFilters.bedrooms) queryParams.set('bedrooms', searchFilters.bedrooms.toString());
-        if (searchFilters.bathrooms) queryParams.set('bathrooms', searchFilters.bathrooms.toString());
-        if (searchFilters.propertyType) queryParams.set('property_type', searchFilters.propertyType);
-        if (sortOption) queryParams.set('sort_by', sortOption);
-        if (sortOption === "price-asc" || sortOption === "price-desc") queryParams.set('order', sortOption === "price-asc" ? "asc" : "desc");
+        if (searchFilters.search) queryParams.search = searchFilters.search;
+        if (currentPage !== 1) queryParams.page = currentPage.toString();
+        if (searchFilters.maxPrice) queryParams.price_max = searchFilters.maxPrice.toString();
+        if (searchFilters.minPrice) queryParams.price_min = searchFilters.minPrice.toString();
+        if (searchFilters.bedrooms) queryParams.bedrooms = searchFilters.bedrooms.toString();
+        if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms.toString();
+        if (searchFilters.propertyType) queryParams.property_type = searchFilters.propertyType;
+        if (sortOption) queryParams.sort_by = sortOption;
+        if (sortOption === "price-asc" || sortOption === "price-desc") queryParams.order = sortOption === "price-asc" ? "asc" : "desc";
         
-        queryParams.set('page_size', PAGE_SIZE.toString());
-        
-        console.log("Fetching with query params:", queryParams.toString());
+        console.log("Fetching with query params:", queryParams);
         
         /* fetch properties from API */
-        const response = await apiGet(`properties/rent?${queryParams.toString()}`);
+        const response = await api.properties.rent(queryParams);
         const data = response.data;
 
         /* update state */

@@ -16,7 +16,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import { apiGet } from '../config/api';
+import api from '../config/api';
 
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
@@ -39,7 +39,7 @@ function Home() {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        const res = await apiGet('properties/featured/?page_size=100');
+        const res = await api.properties.featured();
         setFeatured(res.data.results || []);
       } catch (err) {
         console.error('Error fetching featured properties:', err);

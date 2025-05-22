@@ -9,10 +9,21 @@ import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
-import { normalizePropertyData } from "../types";
-import { apiGet } from '../config/api';
+import { normalizePropertyData, Property } from "../types";
+import api from '../config/api';
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
+
+interface SearchFiltersType {
+  location?: string;
+  search?: string;
+  price_min?: string;
+  price_max?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  property_type?: string;
+  order?: string;
+}
 
 const Buy = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -27,12 +38,7 @@ const Buy = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
-    minPrice: "",
-    maxPrice: "",
-    bedrooms: "",
-    bathrooms: "",
-    propertyType: "",
+  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
   });
 
@@ -54,24 +60,24 @@ const Buy = () => {
 
       try {
         /* format query parameters */
-        let queryParams = new URLSearchParams();
+        let queryParams: Record<string, string> = {
+          page_size: PAGE_SIZE.toString()
+        };
         
-        if (searchFilters.search) queryParams.set('search', searchFilters.search);
-        if (currentPage !== 1) queryParams.set('page', currentPage.toString());
-        if (searchFilters.price_max) queryParams.set('price_max', searchFilters.price_max.toString());
-        if (searchFilters.price_min) queryParams.set('price_min', searchFilters.price_min.toString());
-        if (searchFilters.bedrooms) queryParams.set('bedrooms', searchFilters.bedrooms.toString());
-        if (searchFilters.bathrooms) queryParams.set('bathrooms', searchFilters.bathrooms.toString());
-        if (searchFilters.property_type) queryParams.set('property_type', searchFilters.property_type);
-        if (sortOption) queryParams.set('sort_by', sortOption);
-        if (searchFilters.order) queryParams.set('order', searchFilters.order);
+        if (searchFilters.search) queryParams.search = searchFilters.search;
+        if (currentPage !== 1) queryParams.page = currentPage.toString();
+        if (searchFilters.price_max) queryParams.price_max = searchFilters.price_max.toString();
+        if (searchFilters.price_min) queryParams.price_min = searchFilters.price_min.toString();
+        if (searchFilters.bedrooms) queryParams.bedrooms = searchFilters.bedrooms.toString();
+        if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms.toString();
+        if (searchFilters.property_type) queryParams.property_type = searchFilters.property_type;
+        if (sortOption) queryParams.sort_by = sortOption;
+        if (searchFilters.order) queryParams.order = searchFilters.order;
         
-        queryParams.set('page_size', PAGE_SIZE.toString());
-        
-        console.log("Fetching with query params:", queryParams.toString());
+        console.log("Fetching with query params:", queryParams);
         
         /* ---------- fetch properties from API ---------- */
-        const response = await apiGet(`properties/buy?${queryParams.toString()}`);
+        const response = await api.properties.buy(queryParams);
         const data = response.data;
 
         /* update state */

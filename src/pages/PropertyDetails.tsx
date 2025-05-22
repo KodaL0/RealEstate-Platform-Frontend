@@ -9,7 +9,7 @@ import {
   X, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiGet } from '../config/api';
+import api from '../config/api';
 import { useUser } from '../context/UserContext';
 import { Property, PropertyImage } from '../types';
 import MapView from '../components/MapView';
@@ -107,7 +107,7 @@ const PropertyDetails: React.FC = () => {
     const fetchProperty = async () => {
       setLoading(true);
       try {
-        const response = await apiGet(`properties/${numericId}/`);
+        const response = await api.properties.getById(numericId);
         const mapped = mapPropertyData(response.data);
         setProperty(mapped);
         if (!mapped.latitude && mapped.location) {
