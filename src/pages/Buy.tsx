@@ -61,21 +61,19 @@ const Buy = () => {
       try {
         /* format query parameters */
         let queryParams: Record<string, string> = {
-          page_size: PAGE_SIZE.toString(),
+          pageSize: PAGE_SIZE.toString(), 
           page:       currentPage.toString(),
-          sort_by:   sortOption
+          sort:   sortOption
           
         };
         
-        if (searchFilters.search) queryParams.search = searchFilters.search;
-        if (currentPage !== 1) queryParams.page = currentPage.toString();
-        if (searchFilters.price_max) queryParams.price_max = searchFilters.price_max.toString();
-        if (searchFilters.price_min) queryParams.price_min = searchFilters.price_min.toString();
-        if (searchFilters.bedrooms) queryParams.bedrooms = searchFilters.bedrooms.toString();
-        if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms.toString();
-        if (searchFilters.property_type) queryParams.property_type = searchFilters.property_type;
+        if (searchFilters.search)        queryParams.search       = searchFilters.search;
+        if (searchFilters.price_max)     queryParams.maxPrice     = searchFilters.price_max;
+        if (searchFilters.price_min)     queryParams.minPrice     = searchFilters.price_min; 
+        if (searchFilters.bedrooms)      queryParams.bedrooms     = searchFilters.bedrooms; 
+        if (searchFilters.bathrooms)     queryParams.bathrooms    = searchFilters.bathrooms;
+        if (searchFilters.property_type) queryParams.propertyType = searchFilters.property_type;
         if (sortOption) queryParams.sort_by = sortOption;
-        if (searchFilters.order) queryParams.order = searchFilters.order;
         
         console.log("Fetching with query params:", queryParams);
         
