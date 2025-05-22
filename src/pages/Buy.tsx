@@ -80,13 +80,17 @@ const Buy = () => {
         const response = await api.properties.buy(queryParams);
         const data = response.data;
 
+        const results  = Array.isArray(data) ? data : data.results;
+
         /* update state */
-        if (data && Array.isArray(data.results)) {
+        if (Array.isArray(results)) {
+          const normalized = results.map(normalizePropertyData);
           // Process data
-          setAllProperties(data.results.map(normalizePropertyData));
-          setFilteredProperties(data.results.map(normalizePropertyData));
-          setTotalPages(Math.ceil(data.count / PAGE_SIZE));
-          setTotalCount(data.count);
+          setAllProperties(normalized);
+          setFilteredProperties(normalized);
+          const count = typeof data.count === 'number' ? data.count : results.length;
+          setTotalPages(Math.ceil(count / PAGE_SIZE));
+          setTotalCount(count);
         } else {
           console.error("Invalid data structure received:", data);
           setError('Invalid data received from server');
