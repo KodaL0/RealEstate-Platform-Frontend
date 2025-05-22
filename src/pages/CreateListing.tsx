@@ -229,7 +229,7 @@ const handleInputChange = (
     if (!formData.propertyStatus)     { setError('Please select a property status'); return false; }
     if (formData.images.length === 0 && previewImages.length === 0)
                                        { setError('Please upload at least one image'); return false; }
-  }
+    }
     return true;
   };
 
