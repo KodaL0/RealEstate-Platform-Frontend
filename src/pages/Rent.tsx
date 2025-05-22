@@ -12,7 +12,7 @@ import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData } from "../types";
 
 const PAGE_SIZE = 9;                     // 9 cards per page
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.propertpro.com";
 
 const Rent = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -54,7 +54,7 @@ const Rent = () => {
 
         const query = qs.toString() ? `?${qs.toString()}` : "";
 
-        const DIRECT_API_URL = "https://api.propertpro.com/api";
+        const DIRECT_API_URL = "https://api.propertpro.com";
         const proxyUrl  = `${API_BASE_URL}/properties/rent${query}`;
         const directUrl = `${DIRECT_API_URL}/properties/rent${query}`;
 

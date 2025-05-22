@@ -218,7 +218,7 @@ apiClient.interceptors.response.use(
       try {
         console.log("Attempting to refresh token with refresh_token from cookie...");
         const refreshResponse = await axios.post( // Use a new axios instance or the global one for refresh
-          `${API_URL}/users/refresh`,
+          `${API_URL}/api/users/refresh`,
           { refresh: currentRefreshToken }, // Send refresh token in body
           { withCredentials: true } // Important for backend to read session/CSRF if needed, and set new cookies
         );
@@ -258,7 +258,7 @@ apiClient.interceptors.response.use(
 export async function login(email: string, password: string) {
   try {
     console.log("Attempting login with email:", email);
-    const response = await apiClient.post('/users/login', { email, password });
+    const response = await apiClient.post('/api/users/login', { email, password });
     console.log("Login successful, received response:", response.status);
     // Backend's /users/login endpoint is expected to set access_token and refresh_token cookies.
     // No explicit client-side cookie setting needed here after login.
@@ -293,7 +293,7 @@ export async function login(email: string, password: string) {
  */
 export async function register(username: string, email: string, password: string) {
   try {
-    const response = await apiClient.post('/users/register', { username, email, password });
+    const response = await apiClient.post('/api/users/register', { username, email, password });
     // Assuming backend sets cookies on successful registration too, or returns tokens
     // If tokens are returned in body, and we need to set them as JS-accessible cookies:
     // if (response.data.access_token && response.data.refresh_token) {
@@ -368,7 +368,7 @@ export async function register(username: string, email: string, password: string
 export async function logout() {
   try {
     // Important: Call backend logout first. It might do session invalidation or token blacklisting.
-    await apiClient.post('/users/logout'); 
+    await apiClient.post('/api/users/logout'); 
     console.log("Logout API call successful.");
   } catch (error: any) {
     // Log the error but proceed to clear client-side tokens anyway
@@ -395,8 +395,8 @@ export async function fetchUser() {
   console.log("Cookies available at fetchUser call:", document.cookie);
   
   try {
-    // Use the endpoint without /api prefix, since our API_URL already includes the base URL
-    const response = await apiClient.get('/users/get_user');
+    // Use the endpoint with /api prefix, since our API_URL is now just the domain
+    const response = await apiClient.get('/api/users/get_user');
     console.log("User fetch response status:", response.status);
     console.log("User data:", response.data);
     return response.data;
@@ -414,7 +414,7 @@ export async function fetchUser() {
  */
 export async function getProtectedData() {
   try {
-    const response = await apiClient.get('/protected/');
+    const response = await apiClient.get('/api/protected/');
     return response.data;
   } catch (error: any) {
     console.error("Protected Data Error:", error);
@@ -427,7 +427,7 @@ export async function getProtectedData() {
  */
 export async function createProperty(propertyData: FormData) {
   try {
-    const response = await apiClient.post('/properties/create_property', propertyData, {
+    const response = await apiClient.post('/api/properties/create_property', propertyData, {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -444,7 +444,7 @@ export async function createProperty(propertyData: FormData) {
  */
 export async function getProperties() {
   try {
-    const response = await apiClient.get('/properties/');
+    const response = await apiClient.get('/api/properties/');
     return response.data;
   } catch (error: any) {
     console.error("Get Properties Error:", error);

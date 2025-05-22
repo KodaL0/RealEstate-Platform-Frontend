@@ -64,7 +64,7 @@ function MyListings() {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await apiClient.get<Property[]>('/properties/my-properties');
+        const { data } = await apiClient.get<Property[]>('/api/properties/my-properties');
         setProperties(data.map(p => ({ ...p, price: Number(p.price) || 0 })));
         setError(null);
       } catch (err: any) {
@@ -83,7 +83,7 @@ function MyListings() {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Publish this listing?')) return;
     try {
-      await apiClient.patch(`/properties/${username}/property/${id}/publish/`);
+      await apiClient.patch(`/api/properties/${username}/property/${id}/publish/`);
       setProperties(ps => ps.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p)));
     } catch (err: any) {
       console.error(err);
@@ -94,7 +94,7 @@ function MyListings() {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Remove this listing?')) return;
     try {
-      await apiClient.delete(`/properties/${username}/property/${id}/delete/`);
+      await apiClient.delete(`/api/properties/${username}/property/${id}/delete/`);
       setProperties(ps => ps.filter(p => p.id !== id));
       setPage(p => Math.min(p, Math.max(1, Math.ceil((properties.length - 1) / PER_PAGE))));
     } catch (err: any) {

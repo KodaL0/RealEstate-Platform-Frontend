@@ -12,7 +12,7 @@ import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData } from "../types";
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
-const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "https://api.propertpro.com";
 
 const Buy = () => {
   const [searchParams] = useSearchParams(); // Get search params
@@ -55,7 +55,7 @@ const Buy = () => {
         const qs = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
         /* ---------- try direct URL first ---------- */
-        const DIRECT_API_URL = "https://api.propertpro.com/api";
+        const DIRECT_API_URL = "https://api.propertpro.com";
         const proxyUrl  = `${API_BASE_URL}/properties/buy${qs}`;
         const directUrl = `${DIRECT_API_URL}/properties/buy${qs}`;
 
