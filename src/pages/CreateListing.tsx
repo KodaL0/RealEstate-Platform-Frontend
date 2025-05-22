@@ -176,12 +176,26 @@ const CreateListing: React.FC = () => {
   };
 
   /* generic inputs */
-  const handleInputChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
-  ) => {
-    const { name, value } = e.target;
-    setFormData(p => ({ ...p, [name]: value }));
-  };
+const handleInputChange = (
+  e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+) => {
+  const { name, value } = e.target;
+  setFormData(prev => {
+    let updated = { ...prev, [name]: value };
+
+    // When user picks “land”, force bedrooms/bathrooms to 0 and clear yearBuilt
+    if (name === 'propertyType' && value === 'land') {
+      updated = {
+        ...updated,
+        bedrooms: '0',
+        bathrooms: '0',
+        yearBuilt: '',
+      };
+    }
+
+    return updated;
+  });
+};
 
   const handleCheckboxChange = (id: string) => {
     setFormData(p => ({
@@ -204,6 +218,10 @@ const CreateListing: React.FC = () => {
     if (!formData.propertyStatus)     { setError('Please select a property status'); return false; }
     if (formData.images.length === 0 && previewImages.length === 0)
                                        { setError('Please upload at least one image'); return false; }
+    if (formData.propertyType !== 'land' && !formData.yearBuilt) {
+     setError('Please enter year built');
+     return false;
+  }
     return true;
   };
 
@@ -542,7 +560,8 @@ const CreateListing: React.FC = () => {
                       name="bedrooms"
                       value={formData.bedrooms}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={formData.propertyType === 'land'}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                       required
                       min="0"
                       placeholder="Number of bedrooms"
@@ -566,7 +585,8 @@ const CreateListing: React.FC = () => {
                       name="bathrooms"
                       value={formData.bathrooms}
                       onChange={handleInputChange}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      disabled={formData.propertyType === 'land'}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                       required
                       min="0"
                       step="0.5"
@@ -610,7 +630,8 @@ const CreateListing: React.FC = () => {
                     name="yearBuilt"
                     value={formData.yearBuilt}
                     onChange={handleInputChange}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    disabled={formData.propertyType === 'land'}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100"
                     min="1800"
                     max={new Date().getFullYear()}
                     placeholder="Year of construction"
