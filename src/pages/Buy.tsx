@@ -1,5 +1,4 @@
 // src/pages/Buy.tsx
-
 import {
   useState,
   useEffect,
@@ -31,9 +30,7 @@ const Buy = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
 
-  const [allProperties, setAllProperties] = useState<Property[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [totalCount, setTotalCount] = useState(0);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
@@ -72,15 +69,13 @@ const Buy = () => {
         if (searchFilters.search)    qp.search    = searchFilters.search;
 
         console.log("Fetching BUY with query params:", qp);
-        const results = await api.properties.buy(qp);
-        console.log("BUY raw array length:", results.length);
 
-        const normalized = results.map(normalizePropertyData);
-        setAllProperties(normalized);
-        setFilteredProperties(normalized);
+        // **buy() now returns a Promise<any[]>**
+        const resultsArr = await api.properties.buy(qp);
+        console.log("BUY array length:", resultsArr.length);
 
-        // totalCount still comes from server if you need it—fetch separately or embed in helper
-        setTotalCount(normalized.length);
+        const normalized = resultsArr.map(normalizePropertyData);
+        setProperties(normalized);
         setTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
@@ -94,7 +89,7 @@ const Buy = () => {
   }, [sortOption, searchFilters, currentPage]);
 
   const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const displayed = filteredProperties.slice(startIdx, startIdx + PAGE_SIZE);
+  const displayed = properties.slice(startIdx, startIdx + PAGE_SIZE);
 
   const handleSearch = (f: SearchFiltersType) => {
     setSearchFilters(f);
@@ -138,13 +133,14 @@ const Buy = () => {
 
       {/* Listings */}
       <section className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Available Properties</h2>
             <p className="text-gray-600">
               {isLoading
                 ? "Loading properties..."
-                : `${filteredProperties.length} properties found`}
+                : `${properties.length} properties found`}
             </p>
           </div>
           <div className="flex items-center">
