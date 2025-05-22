@@ -11,7 +11,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData, Property } from "../types";
-import api from '../config/api';
+import api from "../config/api";
 
 const PAGE_SIZE = 9;
 
@@ -28,20 +28,21 @@ interface SearchFiltersType {
 
 const Buy = () => {
   const [searchParams] = useSearchParams();
-  const initialLocation = searchParams.get('location') || '';
+  const initialLocation = searchParams.get("location") || "";
 
   const [allProperties, setAllProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
-  const [totalCount, setTotalCount]      = useState(0);
-  const [totalPages, setTotalPages]      = useState(1);
-  const [currentPage, setCurrentPage]    = useState(1);
-  const [isLoading, setIsLoading]        = useState(false);
-  const [error, setError]                = useState<string | null>(null);
-  const [sortOption, setSortOption]      = useState("recommended");
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState("recommended");
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
   });
 
+  // Scroll to top on page change
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -57,48 +58,46 @@ const Buy = () => {
       setError(null);
 
       try {
-        const queryParams: Record<string, string> = {
+        // Build query params
+        const qp: Record<string, string> = {
           pageSize: PAGE_SIZE.toString(),
-          page:     currentPage.toString(),
-          sort:     sortOption,
+          page: currentPage.toString(),
+          sort: sortOption,
         };
-        if (searchFilters.minPrice)  queryParams.minPrice  = searchFilters.minPrice;
-        if (searchFilters.maxPrice)  queryParams.maxPrice  = searchFilters.maxPrice;
-        if (searchFilters.bedrooms)  queryParams.bedrooms  = searchFilters.bedrooms;
-        if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms;
-        if (searchFilters.location)  queryParams.location  = searchFilters.location;
-        if (searchFilters.search)    queryParams.search    = searchFilters.search;
+        if (searchFilters.minPrice)  qp.minPrice  = searchFilters.minPrice;
+        if (searchFilters.maxPrice)  qp.maxPrice  = searchFilters.maxPrice;
+        if (searchFilters.bedrooms)  qp.bedrooms  = searchFilters.bedrooms;
+        if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
+        if (searchFilters.location)  qp.location  = searchFilters.location;
+        if (searchFilters.search)    qp.search    = searchFilters.search;
 
-        console.log("Fetching BUY with query params:", queryParams);
+        console.log("Fetching BUY with query params:", qp);
 
-        const response = await api.properties.buy(queryParams);
-        const rawData = response.data;
-        console.log("BUY response.data:", rawData); // ← inspect the payload
+        const response = await api.properties.buy(qp);
+        const raw = response.data;
+        console.log("BUY response.data:", raw);
 
-        // Defensive extraction of the array
-        const results: any[] = Array.isArray(rawData)
-          ? rawData
-          : Array.isArray(rawData.results)
-            ? rawData.results
-            : Array.isArray(rawData.data)
-              ? rawData.data
+        // Extract the array safely
+        const results: any[] = Array.isArray(raw)
+          ? raw
+          : Array.isArray(raw.results)
+            ? raw.results
+            : Array.isArray(raw.data)
+              ? raw.data
               : [];
 
-        // Normalize & set state
+        // Normalize & set
         const normalized = results.map(normalizePropertyData);
         setAllProperties(normalized);
         setFilteredProperties(normalized);
 
-        // Determine count (either from payload or fallback to length)
-        const count =
-          typeof rawData.count === 'number'
-            ? rawData.count
-            : normalized.length;
+        // Compute count and pages
+        const count = typeof raw.count === "number" ? raw.count : normalized.length;
         setTotalCount(count);
         setTotalPages(Math.ceil(count / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
-        setError('Failed to fetch properties. Please try again.');
+        setError("Failed to fetch properties. Please try again.");
       } finally {
         setIsLoading(false);
       }
@@ -107,13 +106,15 @@ const Buy = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  const startIndex = (currentPage - 1) * PAGE_SIZE;
+  // Pagination slice
+  const startIdx = (currentPage - 1) * PAGE_SIZE;
   const displayedProperties = filteredProperties.slice(
-    startIndex,
-    startIndex + PAGE_SIZE
+    startIdx,
+    startIdx + PAGE_SIZE
   );
 
-  const handleSearch = (f: any) => {
+  // Handlers
+  const handleSearch = (f: SearchFiltersType) => {
     setSearchFilters(f);
     setCurrentPage(1);
   };
@@ -122,15 +123,17 @@ const Buy = () => {
     setCurrentPage(1);
   };
   const goToPage = (p: number) => setCurrentPage(p);
-  const handlePreviousPage = () => currentPage > 1 && setCurrentPage(p => p - 1);
-  const handleNextPage     = () => currentPage < totalPages && setCurrentPage(p => p + 1);
+  const handlePrev = () => currentPage > 1 && setCurrentPage(p => p - 1);
+  const handleNext = () => currentPage < totalPages && setCurrentPage(p => p + 1);
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
       {/* Hero */}
-      <section className="relative py-12 bg-gradient-to-r from-blue-600 to-indigo-600">
+      <section className="py-12 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text-white mb-3">Properties for Sale</h1>
+          <h1 className="text-4xl font-bold text-white mb-3">
+            Properties for Sale
+          </h1>
           <p className="text-lg text-white/90 mb-2">
             Browse our exclusive collection of properties for sale
           </p>
@@ -153,6 +156,7 @@ const Buy = () => {
 
       {/* Listings */}
       <section className="container mx-auto px-4 py-8">
+        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Available Properties</h2>
@@ -180,6 +184,7 @@ const Buy = () => {
           </div>
         </div>
 
+        {/* Error */}
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
             <p>{error}</p>
@@ -192,13 +197,16 @@ const Buy = () => {
           </div>
         )}
 
+        {/* Loading / Empty / Grid */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500" />
           </div>
         ) : displayedProperties.length === 0 ? (
           <div className="text-center py-12">
-            <h3 className="text-xl font-semibold mb-4">No properties match your search criteria</h3>
+            <h3 className="text-xl font-semibold mb-4">
+              No properties match your search criteria
+            </h3>
             <button
               onClick={() => {
                 setSearchFilters({});
@@ -219,38 +227,39 @@ const Buy = () => {
               transition={{ duration: 0.45, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {displayedProperties.map(property => (
+              {displayedProperties.map((property) => (
                 <PropertyCard key={property.id} property={property} />
               ))}
             </motion.div>
           </AnimatePresence>
         )}
 
-        {totalPages > 1 && (
+        {/* Pagination */}
+        {!isLoading && totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <nav className="flex items-center space-x-2">
               <button
-                onClick={handlePreviousPage}
+                onClick={handlePrev}
                 disabled={currentPage === 1}
                 className="px-4 py-2 border rounded-md"
               >
                 Previous
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button
-                  key={page}
-                  onClick={() => goToPage(page)}
+                  key={p}
+                  onClick={() => goToPage(p)}
                   className={`px-4 py-2 rounded-md ${
-                    currentPage === page
+                    currentPage === p
                       ? "bg-blue-600 text-white"
                       : "border border-gray-300"
                   }`}
                 >
-                  {page}
+                  {p}
                 </button>
               ))}
               <button
-                onClick={handleNextPage}
+                onClick={handleNext}
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 border rounded-md"
               >
