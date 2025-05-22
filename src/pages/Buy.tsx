@@ -61,7 +61,7 @@ const Buy = () => {
       try {
         /* format query parameters */
         let queryParams: Record<string, string> = {
-          page_size: PAGE_SIZE.toString()
+          page_size: PAGE_SIZE.toString(),
           page:       currentPage.toString()
         };
         
