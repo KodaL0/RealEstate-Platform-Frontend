@@ -9,7 +9,7 @@ import {
   X, ArrowLeft, ArrowRight,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiClient } from '../middleware/auth';
+import { apiGet } from '../config/api';
 import { useUser } from '../context/UserContext';
 import { Property, PropertyImage } from '../types';
 import MapView from '../components/MapView';
@@ -100,6 +100,7 @@ const PropertyDetails: React.FC = () => {
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
   const [thumbPage, setThumbPage] = useState(0);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!numericId || userLoading) return;
@@ -107,8 +108,7 @@ const PropertyDetails: React.FC = () => {
       setLoading(true);
       try {
         // Try fetching directly using the detail endpoint first
-        // Assuming apiClient handles authentication and base URL
-        const response = await apiClient.get(`/api/properties/${numericId}/`);
+        const response = await apiGet(`properties/${numericId}/`);
         const mapped = mapPropertyData(response.data);
         setProperty(mapped);
         if (!mapped.latitude && mapped.location) {
@@ -117,15 +117,15 @@ const PropertyDetails: React.FC = () => {
         }
       } catch (error) {
         console.error("Failed to fetch property details:", error);
-        // Optional: Add fallback logic (like scanning lists) if detail endpoint fails
-        setProperty(null); // Set to null on error
+        // Optional: Add fallback logic or error state here
+        setError('Failed to fetch property details. Please try again later.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchProperty();
-  }, [numericId, userLoading]); // Depend on numericId and userLoading
+  }, [numericId, userLoading]);
 
   const totalImages = property?.images.length ?? 0;
   const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);

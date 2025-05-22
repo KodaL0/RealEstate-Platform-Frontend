@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData } from "../types";
+import { apiGet } from '../config/api';
 
 const PAGE_SIZE = 9; // Show 9 property cards per page
 const API_URL = "https://api.propertpro.com";
@@ -18,13 +19,23 @@ const Buy = () => {
   const [searchParams] = useSearchParams(); // Get search params
   const initialLocation = searchParams.get('location') || ''; // Get initial location
 
-  const [allProperties, setAllProperties] = useState<any[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
-  const [sortOption, setSortOption] = useState("recommended");
+  /* ───────────── state ───────────── */
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchFilters, setSearchFilters] = useState<any>({ location: initialLocation });
+  const [sortOption, setSortOption] = useState("recommended");
+  const [searchFilters, setSearchFilters] = useState<SearchFilters>({
+    minPrice: "",
+    maxPrice: "",
+    bedrooms: "",
+    bathrooms: "",
+    propertyType: "",
+    location: initialLocation,
+  });
 
   /* ───────── scroll back to top on page change ───────── */
   const first = useRef(true);
@@ -41,69 +52,47 @@ const Buy = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        /* ---------- build query string ---------- */
-        const queryParams = new URLSearchParams();
-        if (sortOption !== "recommended") queryParams.append("sort", sortOption);
-        if (searchFilters.minPrice)   queryParams.append("minPrice",   searchFilters.minPrice);
-        if (searchFilters.maxPrice)   queryParams.append("maxPrice",   searchFilters.maxPrice);
-        if (searchFilters.bedrooms)   queryParams.append("bedrooms",   searchFilters.bedrooms);
-        if (searchFilters.bathrooms)  queryParams.append("bathrooms",  searchFilters.bathrooms);
-        if (searchFilters.propertyType) queryParams.append("propertyType", searchFilters.propertyType);
-        if (searchFilters.location)   queryParams.append("location",   searchFilters.location);
-
-        const qs = queryParams.toString() ? `?${queryParams.toString()}` : "";
-
+        /* format query parameters */
+        let queryParams = new URLSearchParams();
+        
+        if (searchFilters.search) queryParams.set('search', searchFilters.search);
+        if (currentPage !== 1) queryParams.set('page', currentPage.toString());
+        if (searchFilters.price_max) queryParams.set('price_max', searchFilters.price_max.toString());
+        if (searchFilters.price_min) queryParams.set('price_min', searchFilters.price_min.toString());
+        if (searchFilters.bedrooms) queryParams.set('bedrooms', searchFilters.bedrooms.toString());
+        if (searchFilters.bathrooms) queryParams.set('bathrooms', searchFilters.bathrooms.toString());
+        if (searchFilters.property_type) queryParams.set('property_type', searchFilters.property_type);
+        if (sortOption) queryParams.set('sort_by', sortOption);
+        if (searchFilters.order) queryParams.set('order', searchFilters.order);
+        
+        queryParams.set('page_size', PAGE_SIZE.toString());
+        
         /* ---------- fetch properties from API ---------- */
-        const url = `${API_URL}/api/properties/buy/${qs ? `?${qs}` : ''}`;
+        const response = await apiGet(`properties/buy?${queryParams.toString()}`);
+        const data = response.data;
 
-        const response = await fetch(url, {
-          method: "GET",
-          headers: { 
-            Accept: "application/json", 
-            "Content-Type": "application/json" 
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          const errText = await response.text();
-          throw new Error(`Error ${response.status}: ${errText.slice(0, 100)}`);
-        }
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-          const text = await response.text();
-          throw new Error(`Server returned non-JSON: ${text.slice(0, 100)}`);
-        }
-
-        const data = await response.json();
-
-        /* ---------- normalize & save ---------- */
-        if (Array.isArray(data)) {
-          const normalized = normalizePropertyData(data);
-          setAllProperties(normalized);
-          setFilteredProperties(normalized);
-        } else if (data.results && Array.isArray(data.results)) {
-          const normalized = normalizePropertyData(data.results);
-          setAllProperties(normalized);
-          setFilteredProperties(normalized);
+        /* update state */
+        if (data && Array.isArray(data.results)) {
+          // Process data
+          setAllProperties(data.results.map(normalizePropertyData));
+          setFilteredProperties(data.results.map(normalizePropertyData));
+          setTotalPages(Math.ceil(data.count / PAGE_SIZE));
+          setTotalCount(data.count);
         } else {
-          setAllProperties([]);
-          setFilteredProperties([]);
+          setError('Invalid data received from server');
         }
       } catch (err) {
-        console.error("Error fetching properties:", err);
-        setError("Failed to load properties. Please try again.");
-        setAllProperties([]);
-        setFilteredProperties([]);
+        console.error(err);
+        setError('Failed to fetch properties. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProperties();
-  }, [sortOption, searchFilters]);
+  }, [sortOption, searchFilters, currentPage]);
 
   /* ───────── pagination helpers ───────── */
   const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -111,7 +100,6 @@ const Buy = () => {
     startIndex,
     startIndex + PAGE_SIZE
   );
-  const totalPages = Math.ceil(filteredProperties.length / PAGE_SIZE);
 
   const handleSearch = (f: any) => {
     setSearchFilters(f);

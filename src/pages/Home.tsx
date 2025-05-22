@@ -16,6 +16,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
+import { apiGet } from '../config/api';
 
 const API_URL = "https://api.propertpro.com";
 const PAGE_SIZE   = 12;   // cards per page
@@ -36,34 +37,20 @@ function Home() {
 
   /* ───────────── fetch featured properties ───────────── */
   useEffect(() => {
-    (async () => {
+    const getFeatured = async () => {
       setLoading(true);
-      setError(null);
       try {
-        const res = await fetch(`${API_URL}/api/properties/featured/?page_size=100`, {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Accept': 'application/json',
-            'Content-Type': 'application/json'
-          }
-        });
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const arr  = Array.isArray(data.results) ? data.results : data;
-
-        setFeatured(
-          arr.map((p: Property) => ({
-            ...p,
-            price: typeof p.price === "string" ? +p.price : p.price,
-          }))
-        );
+        const res = await apiGet('properties/featured/?page_size=100');
+        setFeatured(res.data.results || []);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
+        console.error('Error fetching featured properties:', err);
+        setError('Failed to load featured properties. Please try again later.');
       } finally {
         setLoading(false);
       }
-    })();
+    };
+
+    getFeatured();
   }, []);
 
   /* ───────────── pagination helpers ───────────── */

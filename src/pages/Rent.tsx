@@ -9,7 +9,8 @@ import { MapPin } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion"; // ← NEW
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
-import { normalizePropertyData } from "../types";
+import { normalizePropertyData, Property } from "../types";
+import { apiGet } from '../config/api';
 
 const PAGE_SIZE = 9;                     // 9 cards per page
 const API_URL = "https://api.propertpro.com";
@@ -18,13 +19,24 @@ const Rent = () => {
   const [searchParams] = useSearchParams(); // Get search params
   const initialLocation = searchParams.get('location') || ''; // Get initial location
 
-  const [allProperties, setAllProperties] = useState<any[]>([]);
-  const [filteredProperties, setFilteredProperties] = useState<any[]>([]);
-  const [sortOption, setSortOption] = useState("recommended");
+  /* ───────────── state ───────────── */
+  const [allProperties, setAllProperties] = useState<Property[]>([]);
+  const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchFilters, setSearchFilters] = useState<any>({ location: initialLocation });
+  const [sortOption, setSortOption] = useState("recommended");
+  const [searchFilters, setSearchFilters] = useState({
+    minPrice: "",
+    maxPrice: "",
+    bedrooms: "",
+    bathrooms: "",
+    propertyType: "",
+    location: initialLocation,
+    search: ""
+  });
 
   /* ───── scroll back to top when page changes ───── */
   const first = useRef(true);
@@ -41,65 +53,47 @@ const Rent = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       setError(null);
+
       try {
-        /* build query params */
-        const qs = new URLSearchParams();
-        if (sortOption !== "recommended") qs.append("sort", sortOption);
-        if (searchFilters.minPrice)   qs.append("minPrice",   searchFilters.minPrice);
-        if (searchFilters.maxPrice)   qs.append("maxPrice",   searchFilters.maxPrice);
-        if (searchFilters.bedrooms)   qs.append("bedrooms",   searchFilters.bedrooms);
-        if (searchFilters.bathrooms)  qs.append("bathrooms",  searchFilters.bathrooms);
-        if (searchFilters.propertyType) qs.append("propertyType", searchFilters.propertyType);
-        if (searchFilters.location)   qs.append("location",   searchFilters.location);
-
-        const query = qs.toString() ? `?${qs.toString()}` : "";
-
+        /* format query parameters */
+        let queryParams = new URLSearchParams();
+        
+        if (searchFilters.search) queryParams.set('search', searchFilters.search);
+        if (currentPage !== 1) queryParams.set('page', currentPage.toString());
+        if (searchFilters.maxPrice) queryParams.set('price_max', searchFilters.maxPrice.toString());
+        if (searchFilters.minPrice) queryParams.set('price_min', searchFilters.minPrice.toString());
+        if (searchFilters.bedrooms) queryParams.set('bedrooms', searchFilters.bedrooms.toString());
+        if (searchFilters.bathrooms) queryParams.set('bathrooms', searchFilters.bathrooms.toString());
+        if (searchFilters.propertyType) queryParams.set('property_type', searchFilters.propertyType);
+        if (sortOption) queryParams.set('sort_by', sortOption);
+        if (sortOption === "price-asc" || sortOption === "price-desc") queryParams.set('order', sortOption === "price-asc" ? "asc" : "desc");
+        
+        queryParams.set('page_size', PAGE_SIZE.toString());
+        
         /* fetch properties from API */
-        const url = `${API_URL}/api/properties/rent/${query ? `?${query}` : ''}`;
+        const response = await apiGet(`properties/rent?${queryParams.toString()}`);
+        const data = response.data;
 
-        const response = await fetch(url, {
-          method: "GET",
-          headers: { 
-            Accept: "application/json", 
-            "Content-Type": "application/json" 
-          },
-          credentials: "include",
-        });
-
-        if (!response.ok) {
-          throw new Error(`Error fetching properties (${response.status})`);
+        /* update state */
+        if (data && Array.isArray(data.results)) {
+          // Process data
+          setAllProperties(data.results.map(normalizePropertyData));
+          setFilteredProperties(data.results.map(normalizePropertyData));
+          setTotalPages(Math.ceil(data.count / PAGE_SIZE));
+          setTotalCount(data.count);
+        } else {
+          setError('Invalid data received from server');
         }
-
-        const contentType = response.headers.get("content-type");
-        if (!contentType?.includes("application/json")) {
-          const text = await response.text();
-          throw new Error(`Non-JSON response: ${text.slice(0, 100)}`);
-        }
-
-        const data = await response.json();
-
-        /* normalise */
-        const arr = Array.isArray(data)
-          ? data
-          : data.results && Array.isArray(data.results)
-          ? data.results
-          : [];
-
-        const normal = normalizePropertyData(arr);
-        setAllProperties(normal);
-        setFilteredProperties(normal);
       } catch (err) {
-        console.error("Error fetching properties:", err);
-        setError("Failed to load properties. Please try again.");
-        setAllProperties([]);
-        setFilteredProperties([]);
+        console.error(err);
+        setError('Failed to fetch properties. Please try again.');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProperties();
-  }, [sortOption, searchFilters]);
+  }, [sortOption, searchFilters, currentPage]);
 
   /* ───── pagination helpers ───── */
   const startIndex = (currentPage - 1) * PAGE_SIZE;
@@ -107,7 +101,6 @@ const Rent = () => {
     startIndex,
     startIndex + PAGE_SIZE
   );
-  const totalPages = Math.ceil(filteredProperties.length / PAGE_SIZE);
 
   const handleSearch = (filters: any) => {
     setSearchFilters(filters);

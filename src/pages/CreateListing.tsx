@@ -17,7 +17,7 @@ import {
   Loader2,
 } from 'lucide-react';
 
-import { apiClient } from '../middleware/auth';
+import { apiClient, apiGet, apiFormPost, apiFormPut } from '../config/api';
 import { useUser } from '../context/UserContext';
 import LocationAutocomplete from '../pages/LocationAutocomplete';
 
@@ -241,8 +241,7 @@ const handleInputChange = (
   useEffect(() => {
     if (!isEditing || !id) return;
     setLoading(true);
-    apiClient
-      .get(`/properties/${username}/property/${id}/`)
+    apiGet(`properties/${username}/property/${id}`)
       .then(res => {
         const d = res.data;
         const imgs = d.images || [];
@@ -355,14 +354,13 @@ const handleInputChange = (
       }
 
       /* endpoint */
-      const url = isEditing
-        ? `/properties/${username}/property/${id}/edit/`
-        : '/properties/create_property/';
-      const method = isEditing ? 'put' : 'post';
-
-      const res = await apiClient[method](url, fd, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+      const endpoint = isEditing
+        ? `properties/${username}/property/${id}/edit`
+        : 'properties/create_property';
+      
+      // Use the new API utility functions that handle URL formatting
+      const apiMethod = isEditing ? apiFormPut : apiFormPost;
+      const res = await apiMethod(endpoint, fd);
 
       if (res.status >= 200 && res.status < 300) {
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
