@@ -25,6 +25,38 @@ export const apiClient = axios.create({
   },
 });
 
+// ─── Add this interceptor *before* your existing ones ───
+// It reads the access_token cookie and, if present, sets the Authorization header.
+apiClient.interceptors.request.use(cfg => {
+  // extract access_token from document.cookie
+  const token = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('access_token='))
+    ?.split('=')[1];
+
+  if (token) {
+    cfg.headers = {
+      ...cfg.headers,
+      Authorization: `Bearer ${token}`,
+    };
+  }
+
+  // then continue to your existing logging
+  console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
+  return cfg;
+});
+
+// remove the old standalone logging interceptor if present
+// apiClient.interceptors.request.clear();
+
+apiClient.interceptors.response.use(
+  res => res,
+  err => {
+    console.error('API Error', err.response?.status, err.response?.data);
+    return Promise.reject(err);
+  }
+);
+
 const formatEndpoint = (ep: string): string => {
   let clean = ep.replace(/^\/+/, '');
   if (clean.includes('?')) {
@@ -58,19 +90,6 @@ export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config
     ...config,
     headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
   });
-
-apiClient.interceptors.request.use(cfg => {
-  console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
-  return cfg;
-});
-
-apiClient.interceptors.response.use(
-  res => res,
-  err => {
-    console.error('API Error', err.response?.status, err.response?.data);
-    return Promise.reject(err);
-  }
-);
 
 const api = {
   get: apiGet,
