@@ -20,10 +20,12 @@ export const AuthPage: React.FC = () => {
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
     
-    // Build redirect URI to a frontend route (not /api) that will be handled by React
-    // This matches what's registered in Google Cloud Console
-    const frontendUrl = window.location.origin;
-    const redirectUri = `${frontendUrl}/oauth/callback`;
+    // IMPORTANT: Use the exact same URL that's registered in Google Cloud Console
+    // Don't use dynamic origin for production to ensure exact match
+    const redirectUri = "https://www.propertpro.com/oauth/callback";
+    
+    // Log the exact redirect URI for debugging
+    console.log("Using redirect URI:", redirectUri);
 
     // Build login URL with frontend callback
     const loginUrl = `${backendUrl}/accounts/google/login/` +
@@ -35,6 +37,9 @@ export const AuthPage: React.FC = () => {
                      `&authuser=-1` +
                      `&redirect_uri=${encodeURIComponent(redirectUri)}`;
 
+    // Log the full login URL for debugging
+    console.log("Login URL:", loginUrl);
+    
     // Redirect in same page
     window.location.href = loginUrl;
   };
