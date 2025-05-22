@@ -29,8 +29,8 @@ export const AuthPage: React.FC = () => {
                      `&t=${timestamp}` +
                      `&authuser=-1`;
 
-    // Open login in new tab
-    window.open(loginUrl, '_blank', 'noopener,noreferrer');
+    // Redirect in same page instead of opening new tab
+    window.location.href = loginUrl;
   };
 
   return (
