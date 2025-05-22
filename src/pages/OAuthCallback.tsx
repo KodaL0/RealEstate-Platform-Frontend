@@ -1,31 +1,52 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 const OAuthCallback = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const [isRedirecting, setIsRedirecting] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   useEffect(() => {
-    // Get all query parameters from the URL
-    const queryParams = location.search; // Already includes the ? at the beginning
+    // Extract tokens from URL if they're present
+    const searchParams = new URLSearchParams(location.search);
+    const accessToken = searchParams.get('access_token');
+    const refreshToken = searchParams.get('refresh_token');
+    const authSuccess = searchParams.get('auth_success');
+    const userEmail = searchParams.get('user_email');
     
-    // Forward to backend with all parameters intact (including state)
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
-    const callbackUrl = `${backendUrl}/accounts/google/login/callback${queryParams}`;
+    // If we already have tokens (from backend redirect), store them and navigate home
+    if (accessToken && refreshToken && authSuccess === 'true') {
+      console.log("Auth success: Received tokens from backend");
+      
+      // Store tokens in localStorage
+      localStorage.setItem('accessToken', accessToken);
+      localStorage.setItem('refreshToken', refreshToken);
+      if (userEmail) {
+        localStorage.setItem('userEmail', userEmail);
+      }
+      
+      // Navigate to home page after successful login
+      navigate('/', { replace: true });
+      return;
+    }
     
-    // Log the redirect for debugging
-    console.log(`Redirecting Google OAuth callback to backend: ${callbackUrl}`);
+    // Otherwise, this is the initial OAuth callback from Google
+    // Forward the callback to our backend through the Vercel rewrite
+    console.log("Handling Google OAuth callback");
     
-    // Redirect while preserving all parameters
-    window.location.href = callbackUrl;
+    // Simply redirect to the same path, Vercel will rewrite it to the backend
+    // No need for backend URL since our Vercel config handles the redirect
+    window.location.href = `/accounts/google/login/callback${location.search}`;
     
     // Safety timeout in case redirect fails
     const timeout = setTimeout(() => {
       setIsRedirecting(false);
+      setError("Redirect timeout. Authentication process took too long.");
     }, 5000);
     
     return () => clearTimeout(timeout);
-  }, [location]);
+  }, [location, navigate]);
   
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center px-4">
@@ -40,8 +61,8 @@ const OAuthCallback = () => {
           </>
         ) : (
           <>
-            <h2 className="text-xl font-semibold text-red-600 mb-4">Authentication Redirect Failed</h2>
-            <p className="text-gray-600 mb-4">We were unable to complete the authentication process.</p>
+            <h2 className="text-xl font-semibold text-red-600 mb-4">Authentication Failed</h2>
+            <p className="text-gray-600 mb-4">{error || "We were unable to complete the authentication process."}</p>
             <a 
               href="/" 
               className="inline-block px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"

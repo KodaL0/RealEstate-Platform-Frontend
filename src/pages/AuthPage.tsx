@@ -15,20 +15,20 @@ export const AuthPage: React.FC = () => {
     }
 
     // Create unique session identifier
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
     const timestamp = new Date().getTime();
     
     // IMPORTANT: Use the exact same URL that's registered in Google Cloud Console
     // Don't use dynamic origin for production to ensure exact match
-    const redirectUri = "https://www.propertpro.com/oauth/callback/";
+    const redirectUri = "https://www.propertpro.com/oauth/callback";
     
     // Log the exact redirect URI for debugging
     console.log("Using redirect URI:", redirectUri);
 
-    // Build login URL with frontend callback
-    const loginUrl = `${backendUrl}/accounts/google/login/` +
+    // Use frontend URL for Google login - will be rewritten to backend by Vercel
+    // No need to include backend URL now - it's handled by Vercel rewrites
+    const loginUrl = `/accounts/google/login/` +
                      `?prompt=select_account consent` +
                      `&include_granted_scopes=false` +
                      `&login_hint=_force_new_${uniqueId}` +
