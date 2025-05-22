@@ -2,12 +2,20 @@
   "version": 2,
   "rewrites": [
     {
-      "source": "/accounts/google/:path*",
-      "destination": "https://api.propertpro.com/accounts/google/:path*"
+      "source": "/accounts/google/login",
+      "destination": "https://api.propertpro.com/accounts/google/login"
     },
     {
-      "source": "/oauth/:path*",
-      "destination": "https://api.propertpro.com/oauth/:path*"
+      "source": "/accounts/google/login/",
+      "destination": "https://api.propertpro.com/accounts/google/login"
+    },
+    {
+      "source": "/accounts/google/login/:rest*",
+      "destination": "https://api.propertpro.com/accounts/google/login/:rest*"
+    },
+    {
+      "source": "/oauth/callback",
+      "destination": "https://api.propertpro.com/oauth/callback"
     }
   ]
 }
