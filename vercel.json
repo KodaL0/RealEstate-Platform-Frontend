@@ -7,6 +7,11 @@
       "permanent": false
     },
     {
+      "source": "/accounts/google/login",
+      "destination": "https://api.propertpro.com/accounts/google/login",
+      "permanent": false
+    },
+    {
       "source": "/oauth/callback",
       "destination": "https://api.propertpro.com/oauth/callback",
       "permanent": false
