@@ -1,5 +1,16 @@
 import axios from 'axios';
-import { apiClient, apiPost, apiGet, API_BASE } from '../config/api';
+import api from '../config/api';
+
+// Get the axios instance for interceptors
+const apiClient = axios.create({
+  baseURL: 'https://api.propertpro.com',
+  withCredentials: true,
+  headers: {
+    'Accept': 'application/json',
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  },
+});
 
 // Functions to manage auth tokens and cookies
 
@@ -35,7 +46,7 @@ export function clearAuthCookies() {
 export async function login(email: string, password: string) {
   try {
     console.log("Attempting login with email:", email);
-    const response = await apiPost('users/login', { email, password });
+    const response = await api.auth.login({ email, password });
     console.log("Login successful, received response:", response.status);
     // Backend's /users/login endpoint is expected to set access_token and refresh_token cookies.
     return { status: response.status, ...response.data };
@@ -68,7 +79,7 @@ export async function login(email: string, password: string) {
  */
 export async function register(username: string, email: string, password1: string, password2: string) {
   try {
-    const response = await apiPost('users/register', { 
+    const response = await api.auth.register({ 
       username, email, password1, password2 
     });
     return { status: response.status, ...response.data };
@@ -97,10 +108,9 @@ export async function logout() {
   try {
     // Important: Call backend logout first. It might do session invalidation or token blacklisting.
     // Debug the full URL that will be used
-    const logoutUrl = 'users/logout/'; // Ensure trailing slash is consistent with Django
-    console.log(`Attempting to call logout at: ${API_BASE}/${logoutUrl}`);
+    console.log(`Attempting to call logout endpoint`);
     
-    await apiPost(logoutUrl); 
+    await api.auth.logout(); 
     console.log("Logout API call successful.");
   } catch (error: any) {
     // Enhanced error logging for debugging
@@ -120,7 +130,7 @@ export async function logout() {
  */
 export async function fetchUser() {
   try {
-    const response = await apiGet('users/get_user');
+    const response = await api.auth.getUser();
     return { 
       user: response.data,
       authenticated: true
@@ -133,8 +143,8 @@ export async function fetchUser() {
 
 // Add a request interceptor to handle token refreshing
 apiClient.interceptors.response.use(
-  response => response,
-  async error => {
+  (response) => response,
+  async (error) => {
     const originalRequest = error.config;
     const url = originalRequest?.url || '';
 
@@ -163,10 +173,7 @@ apiClient.interceptors.response.use(
       
       try {
         console.log("Attempting to refresh token with refresh_token from cookie...");
-        const refreshResponse = await apiPost('users/refresh', 
-          { refresh: currentRefreshToken }, // Send refresh token in body
-          { withCredentials: true } // Important for backend to read session/CSRF if needed, and set new cookies
-        );
+        const refreshResponse = await api.auth.refreshToken();
         console.log("Token refresh successful");
         
         // The backend should set the new access_token cookie via Set-Cookie header
