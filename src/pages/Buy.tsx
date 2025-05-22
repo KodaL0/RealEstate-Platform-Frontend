@@ -63,16 +63,16 @@ const Buy = () => {
         let queryParams: Record<string, string> = {
           pageSize: PAGE_SIZE.toString(), 
           page:       currentPage.toString(),
-          sort:   sortOption
+          sort:   sortOption,
           
         };
         
-        if (searchFilters.search)        queryParams.search       = searchFilters.search;
-        if (searchFilters.price_max)     queryParams.maxPrice     = searchFilters.price_max;
-        if (searchFilters.price_min)     queryParams.minPrice     = searchFilters.price_min; 
-        if (searchFilters.bedrooms)      queryParams.bedrooms     = searchFilters.bedrooms; 
-        if (searchFilters.bathrooms)     queryParams.bathrooms    = searchFilters.bathrooms;
-        if (searchFilters.property_type) queryParams.propertyType = searchFilters.property_type;
+        if (searchFilters.minPrice)     queryParams.minPrice     = searchFilters.minPrice;
+        if (searchFilters.maxPrice)     queryParams.maxPrice     = searchFilters.maxPrice;
+        if (searchFilters.bedrooms)     queryParams.bedrooms     = searchFilters.bedrooms;
+        if (searchFilters.bathrooms)    queryParams.bathrooms    = searchFilters.bathrooms;
+        if (searchFilters.location)     queryParams.location     = searchFilters.location;
+        if (searchFilters.search)       queryParams.search       = searchFilters.search;
         
         console.log("Fetching with query params:", queryParams);
         
