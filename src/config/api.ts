@@ -11,7 +11,7 @@ type RequestConfig = {
 
 // Base API configuration
 const API_HOST = 'https://api.propertpro.com';
-const API_PREFIX = '';
+const API_PREFIX = '/';
 
 // Create standardized axios instance
 const apiClient = axios.create({
