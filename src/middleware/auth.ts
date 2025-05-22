@@ -4,6 +4,21 @@ import { apiClient, apiPost, apiGet, API_URL } from '../config/api';
 // Functions to manage auth tokens and cookies
 
 /**
+ * Set auth cookies (used by AuthTokenProcessor when receiving tokens from OAuth)
+ */
+export function setAuthCookies(accessToken: string, refreshToken: string) {
+  console.log('[setAuthCookies] Received accessToken:', accessToken.substring(0, 10) + '...');
+  console.log('[setAuthCookies] Received refreshToken:', refreshToken.substring(0, 10) + '...');
+  
+  // Set cookies with expiration
+  document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=Lax`; // 1 day
+  document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax`; // 7 days
+  
+  console.log('[setAuthCookies] Auth cookies set');
+  console.log('[setAuthCookies] Current cookies:', document.cookie);
+}
+
+/**
  * Clear auth cookies (to be used on logout/session expiry)
  */
 export function clearAuthCookies() {
