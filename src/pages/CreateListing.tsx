@@ -183,19 +183,30 @@ const handleInputChange = (
   setFormData(prev => {
     let updated = { ...prev, [name]: value };
 
-    // When user picks “land”, force bedrooms/bathrooms to 0 and clear yearBuilt
-    if (name === 'propertyType' && value === 'land') {
-      updated = {
-        ...updated,
-        bedrooms: '0',
-        bathrooms: '0',
-        yearBuilt: '',
-      };
+    if (name === 'propertyType') {
+      if (value === 'land') {
+        // when switching *to* Land
+        updated = {
+          ...updated,
+          bedrooms: '0',
+          bathrooms: '0',
+          yearBuilt: '',
+        };
+      } else {
+        // when switching *off* Land, clear those forced zeros
+        updated = {
+          ...updated,
+          bedrooms: '',
+          bathrooms: '',
+          yearBuilt: '',
+        };
+      }
     }
 
     return updated;
   });
 };
+
 
   const handleCheckboxChange = (id: string) => {
     setFormData(p => ({
