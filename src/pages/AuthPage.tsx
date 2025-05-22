@@ -19,25 +19,20 @@ export const AuthPage: React.FC = () => {
     sessionStorage.setItem('oauth_state', state);
 
     // Set redirect_uri to frontend callback
+    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
     const frontendUrl = window.location.origin;
     const redirectUri = `${frontendUrl}/auth/google/callback`;
 
-    // Get client ID from Google Console (the one you already configured)
-    // This is public information that appears in the page source anyway when Google SDK is loaded
-    const clientId = '447376864792-hle5fodopon9c8do50ppn639f6fhbso.apps.googleusercontent.com';
+    // Build login URL through backend but pass relevant parameters
+    // to improve branding and domain display
+    const loginUrl = `${backendUrl}/accounts/google/login/` +
+                     `?prompt=select_account` +
+                     `&hosted_domain=propertpro.com` + // Add hosted domain (appears in title)
+                     `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+                     `&state=${state}`;
 
-    // Build the Google OAuth URL directly
-    // This ensures Google shows your domain in the consent screen
-    const googleAuthUrl = 'https://accounts.google.com/o/oauth2/v2/auth' +
-                         `?client_id=${clientId}` +
-                         `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-                         `&response_type=code` +
-                         `&scope=email%20profile` +
-                         `&prompt=select_account` +
-                         `&state=${state}`;
-
-    // Navigate to Google directly
-    window.location.href = googleAuthUrl;
+    // Navigate in same window
+    window.location.href = loginUrl;
   };
 
   return (
