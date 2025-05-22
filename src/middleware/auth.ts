@@ -2,7 +2,8 @@ import axios from 'axios';
 // Attempt to import types directly, hoping the module resolution works
 import { AxiosInstance, AxiosRequestConfig, AxiosError, AxiosResponse } from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || "/api";
+// Update API_URL to use the custom domain without /api suffix
+const API_URL = 'https://api.propertpro.com';
 
 // Extend AxiosRequestConfig to include a custom _retryCount flag for token refresh
 interface CustomAxiosRequestConfig extends AxiosRequestConfig {

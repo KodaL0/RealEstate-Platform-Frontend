@@ -5,6 +5,10 @@
       "destination": "https://api.propertpro.com/accounts/google/login/callback/"
     },
     {
+      "source": "/api/users/:path*",
+      "destination": "https://api.propertpro.com/users/:path*"
+    },
+    {
       "source": "/((?!api|_next|static|favicon\\.ico|.*\\..*).*)",
       "destination": "/index.html"
     }
