@@ -3,7 +3,7 @@ import type { AxiosRequestConfig } from 'axios';
 import Cookies from 'js-cookie';
 
 // Base API configuration
-export const API_BASE = 'https://api.propertpro.com/api';
+export const API_BASE = 'https://api.propertpro.com/api/';
 
 // Create standardized axios instance
 export const apiClient = axios.create({
