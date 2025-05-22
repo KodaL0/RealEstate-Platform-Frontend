@@ -88,6 +88,7 @@ const Buy = () => {
           setTotalPages(Math.ceil(data.count / PAGE_SIZE));
           setTotalCount(data.count);
         } else {
+          console.error("Invalid data structure received:", data);
           setError('Invalid data received from server');
         }
       } catch (err) {

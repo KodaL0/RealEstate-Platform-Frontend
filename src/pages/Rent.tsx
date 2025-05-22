@@ -72,11 +72,14 @@ const Rent = () => {
         
         if (searchFilters.search) queryParams.search = searchFilters.search;
         if (currentPage !== 1) queryParams.page = currentPage.toString();
+        
+        // Convert parameter names to match backend expectations
         if (searchFilters.maxPrice) queryParams.price_max = searchFilters.maxPrice.toString();
         if (searchFilters.minPrice) queryParams.price_min = searchFilters.minPrice.toString();
         if (searchFilters.bedrooms) queryParams.bedrooms = searchFilters.bedrooms.toString();
         if (searchFilters.bathrooms) queryParams.bathrooms = searchFilters.bathrooms.toString();
         if (searchFilters.propertyType) queryParams.property_type = searchFilters.propertyType;
+        
         if (sortOption) queryParams.sort_by = sortOption;
         if (sortOption === "price-asc" || sortOption === "price-desc") queryParams.order = sortOption === "price-asc" ? "asc" : "desc";
         
@@ -94,6 +97,7 @@ const Rent = () => {
           setTotalPages(Math.ceil(data.count / PAGE_SIZE));
           setTotalCount(data.count);
         } else {
+          console.error("Invalid data structure received:", data);
           setError('Invalid data received from server');
         }
       } catch (err) {

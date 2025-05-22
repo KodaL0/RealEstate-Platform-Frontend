@@ -11,7 +11,7 @@ type RequestConfig = {
 
 // Base API configuration
 const API_HOST = 'https://api.propertpro.com';
-const API_PREFIX = '/';
+const API_PREFIX = '/api';
 
 // Create standardized axios instance
 const apiClient = axios.create({
@@ -29,7 +29,7 @@ const formatEndpoint = (endpoint: string): string => {
   // Remove leading slash if present
   const cleanEndpoint = endpoint.startsWith('/') ? endpoint.substring(1) : endpoint;
   
-  // Add API prefix if not already included
+  // Check if endpoint already includes the api prefix
   const withPrefix = cleanEndpoint.startsWith('api/') ? cleanEndpoint : `api/${cleanEndpoint}`;
   
   // Ensure trailing slash for Django (but preserve query parameters)
@@ -102,6 +102,7 @@ apiClient.interceptors.response.use(
   }
 );
 
+// UPDATED PROPERTY ENDPOINTS
 // Organized API endpoints by domain
 const api = {
   // Generic methods
