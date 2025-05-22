@@ -395,6 +395,7 @@ export async function fetchUser() {
   console.log("Cookies available at fetchUser call:", document.cookie);
   
   try {
+    // Use the endpoint without /api prefix, since our API_URL already includes the base URL
     const response = await apiClient.get('/users/get_user');
     console.log("User fetch response status:", response.status);
     console.log("User data:", response.data);
