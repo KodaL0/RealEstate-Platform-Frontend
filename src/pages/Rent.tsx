@@ -55,7 +55,7 @@ const Rent = () => {
         const query = qs.toString() ? `?${qs.toString()}` : "";
 
         /* fetch properties from API */
-        const url = `${API_URL}/api/properties/rent${query}`;
+        const url = `${API_URL}/api/properties/rent/${query ? `?${query}` : ''}`;
 
         const response = await fetch(url, {
           method: "GET",

@@ -55,7 +55,7 @@ const Buy = () => {
         const qs = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
         /* ---------- fetch properties from API ---------- */
-        const url = `${API_URL}/api/properties/buy${qs}`;
+        const url = `${API_URL}/api/properties/buy/${qs ? `?${qs}` : ''}`;
 
         const response = await fetch(url, {
           method: "GET",
