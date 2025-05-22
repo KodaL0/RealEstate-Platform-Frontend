@@ -22,7 +22,8 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    const backendUrl = import.meta.env.VITE_BACKEND_URL || 'http://localhost:8000';
+    // Hardcode the backend URL to ensure it uses the custom domain
+    const backendUrl = 'https://api.propertpro.com';
     const frontendUrl = window.location.origin;
     const uniqueId = Math.random().toString(36).substring(2, 15) +
                      Math.random().toString(36).substring(2, 15);
@@ -37,7 +38,8 @@ export const AuthPage: React.FC = () => {
                      `&authuser=-1` +
                      `&redirect_uri=${encodeURIComponent(`${frontendUrl}/oauth/callback`)}`;
 
-    window.open(loginUrl, '_self');
+    console.log('Redirecting to:', loginUrl);
+    window.location.href = loginUrl;
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
