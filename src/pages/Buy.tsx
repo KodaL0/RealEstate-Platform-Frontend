@@ -1,4 +1,5 @@
 // src/pages/Buy.tsx
+
 import {
   useState,
   useEffect,
@@ -42,7 +43,7 @@ const Buy = () => {
     location: initialLocation,
   });
 
-  // Scroll-to-top on page change
+  // scroll to top on page change
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -58,7 +59,6 @@ const Buy = () => {
       setError(null);
 
       try {
-        // Build query params
         const qp: Record<string, string> = {
           pageSize: PAGE_SIZE.toString(),
           page: currentPage.toString(),
@@ -72,31 +72,16 @@ const Buy = () => {
         if (searchFilters.search)    qp.search    = searchFilters.search;
 
         console.log("Fetching BUY with query params:", qp);
+        const results = await api.properties.buy(qp);
+        console.log("BUY raw array length:", results.length);
 
-        const response = await api.properties.buy(qp);
-        const raw = response.data;
-        console.log("BUY response.data:", raw);
-
-        // --- Defensive extraction: always end up with an array ---
-        const resultsArr: any[] = Array.isArray(raw)
-          ? raw
-          : Array.isArray(raw.results)
-            ? raw.results
-            : Array.isArray(raw.data)
-              ? raw.data
-              : [];
-
-        // Normalize & set state
-        const normalized = resultsArr.map(normalizePropertyData);
+        const normalized = results.map(normalizePropertyData);
         setAllProperties(normalized);
         setFilteredProperties(normalized);
 
-        // Compute total count/pages
-        const count = typeof raw.count === "number"
-          ? raw.count
-          : normalized.length;
-        setTotalCount(count);
-        setTotalPages(Math.ceil(count / PAGE_SIZE));
+        // totalCount still comes from server if you need it—fetch separately or embed in helper
+        setTotalCount(normalized.length);
+        setTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
         setError("Failed to fetch properties. Please try again.");
@@ -108,11 +93,9 @@ const Buy = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  // Pagination slice
   const startIdx = (currentPage - 1) * PAGE_SIZE;
   const displayed = filteredProperties.slice(startIdx, startIdx + PAGE_SIZE);
 
-  // Handlers
   const handleSearch = (f: SearchFiltersType) => {
     setSearchFilters(f);
     setCurrentPage(1);
@@ -122,8 +105,8 @@ const Buy = () => {
     setCurrentPage(1);
   };
   const goToPage = (p: number) => setCurrentPage(p);
-  const handlePrev = () => currentPage > 1 && setCurrentPage(p => p - 1);
-  const handleNext = () => currentPage < totalPages && setCurrentPage(p => p + 1);
+  const prev = () => currentPage > 1 && setCurrentPage(p => p - 1);
+  const next = () => currentPage < totalPages && setCurrentPage(p => p + 1);
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
@@ -155,7 +138,6 @@ const Buy = () => {
 
       {/* Listings */}
       <section className="container mx-auto px-4 py-8">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div>
             <h2 className="text-2xl font-bold">Available Properties</h2>
@@ -166,7 +148,9 @@ const Buy = () => {
             </p>
           </div>
           <div className="flex items-center">
-            <label htmlFor="sort" className="mr-2">Sort by:</label>
+            <label htmlFor="sort" className="mr-2">
+              Sort by:
+            </label>
             <select
               id="sort"
               value={sortOption}
@@ -183,9 +167,8 @@ const Buy = () => {
           </div>
         </div>
 
-        {/* Error */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
+          <div className="bg-red-50 border-red-200 text-red-800 rounded-lg p-4 mb-6">
             <p>{error}</p>
             <button
               onClick={() => window.location.reload()}
@@ -196,7 +179,6 @@ const Buy = () => {
           </div>
         )}
 
-        {/* Loading / Empty / Grid */}
         {isLoading ? (
           <div className="flex justify-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500" />
@@ -226,25 +208,24 @@ const Buy = () => {
               transition={{ duration: 0.45, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {displayed.map(property => (
-                <PropertyCard key={property.id} property={property} />
+              {displayed.map((p) => (
+                <PropertyCard key={p.id} property={p} />
               ))}
             </motion.div>
           </AnimatePresence>
         )}
 
-        {/* Pagination */}
-        {!isLoading && totalPages > 1 && (
+        {totalPages > 1 && (
           <div className="mt-12 flex justify-center">
             <nav className="flex items-center space-x-2">
               <button
-                onClick={handlePrev}
+                onClick={prev}
                 disabled={currentPage === 1}
                 className="px-4 py-2 border rounded-md"
               >
                 Previous
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
                 <button
                   key={p}
                   onClick={() => goToPage(p)}
@@ -258,7 +239,7 @@ const Buy = () => {
                 </button>
               ))}
               <button
-                onClick={handleNext}
+                onClick={next}
                 disabled={currentPage === totalPages}
                 className="px-4 py-2 border rounded-md"
               >
