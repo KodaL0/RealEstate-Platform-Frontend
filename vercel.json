@@ -1,13 +1,16 @@
 {
   "version": 2,
-  "rewrites": [
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "https://api.propertpro.com/api/:path*"
+      "src": "^/api/(.*)$",
+      "dest": "https://api.propertpro.com/api/$1"
     },
     {
-      "source": "/oauth/callback",
-      "destination": "https://api.propertpro.com/oauth/callback"
-    }
+      "src": "^/oauth/callback$",
+      "dest": "https://api.propertpro.com/oauth/callback"
+    },
+    // serve your SPA for everything else
+    { "handle": "filesystem" },
+    { "src": "/.*", "dest": "/index.html" }
   ]
 }
