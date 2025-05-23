@@ -158,7 +158,14 @@ const api = {
     featured:       ()        => apiGet('properties/featured'),
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
-    myFavorites:    ()        => apiGet('properties/my-favourites'),
+    myFavorites:    () => 
+      apiGet('properties/my-favourites')
+        .then(res => {
+          const d = res.data;
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d.results)) return d.results;
+          return [];
+        }),
     toggleFavorite: (pid: number) => apiPost(`properties/${pid}/favourite`),
   },
 
