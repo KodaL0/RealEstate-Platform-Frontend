@@ -164,6 +164,7 @@ const api = {
 
     featured:       ()        => apiGet('properties/featured'),
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
+    getUserProperty: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
     myFavorites:    () => 
       apiGet('properties/my-favourites')
