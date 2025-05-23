@@ -1,20 +1,26 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+// src/components/AdvancedMapView.tsx
+import React, { useState, useEffect, useRef, KeyboardEvent } from 'react';
+import { MapContainer, TileLayer, Marker, Popup, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// ─── Import the marker icon assets ─────────────────────────────────────────────
+// ─── Custom Marker Icon ─────────────────────────────────────────────────────────
 import iconUrl from 'leaflet/dist/images/marker-icon.png';
 import iconRetinaUrl from 'leaflet/dist/images/marker-icon-2x.png';
 import shadowUrl from 'leaflet/dist/images/marker-shadow.png';
 
-// ─── Patch Leaflet’s default icon settings ─────────────────────────────────────
 delete (L.Icon.Default.prototype as any)._getIconUrl;
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl,
-  iconUrl,
-  shadowUrl,
-});
+L.Icon.Default.mergeOptions({ iconRetinaUrl, iconUrl, shadowUrl });
+
+// ─── Debounce Hook ──────────────────────────────────────────────────────────────
+function useDebounce<T>(value: T, delay: number): T {
+  const [debounced, setDebounced] = useState(value);
+  useEffect(() => {
+    const handle = window.setTimeout(() => setDebounced(value), delay);
+    return () => window.clearTimeout(handle);
+  }, [value, delay]);
+  return debounced;
+}
 
 interface Suggestion {
   display_name: string;
@@ -22,138 +28,152 @@ interface Suggestion {
   lon: string;
 }
 
-interface MapViewProps {
-  // optional: your email to pass to Nominatim
+interface AdvancedMapViewProps {
   email?: string;
+  maxSuggestions?: number;
 }
 
-const MapView: React.FC<MapViewProps> = ({ email }) => {
-  const [lat, setLat] = useState<number>(35.1856);
-  const [lng, setLng] = useState<number>(33.3823);
-  const [address, setAddress] = useState<string>('Loading address…');
-  const [query, setQuery] = useState<string>('');
-  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
-  const [showDropdown, setShowDropdown] = useState<boolean>(false);
-  const debounceRef = useRef<number>();
-
-  // Fetch address for current lat/lng
+// ─── Map Panner ─────────────────────────────────────────────────────────────────
+const PanTo: React.FC<{ lat: number; lng: number }> = ({ lat, lng }) => {
+  const map = useMap();
   useEffect(() => {
-    async function fetchAddress() {
-      const params = new URLSearchParams({
-        format: 'json',
-        lat: lat.toString(),
-        lon: lng.toString(),
-        addressdetails: '1',
-        ...(email ? { email } : {}),
-      });
+    map.setView([lat, lng], 15, { animate: true });
+  }, [lat, lng, map]);
+  return null;
+};
+
+const AdvancedMapView: React.FC<AdvancedMapViewProps> = ({ email, maxSuggestions = 7 }) => {
+  const [query, setQuery] = useState('');
+  const debouncedQuery = useDebounce(query, 250);
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [showDropdown, setShowDropdown] = useState(false);
+  const [lat, setLat] = useState(35.1856);
+  const [lng, setLng] = useState(33.3823);
+  const [address, setAddress] = useState('Loading address…');
+
+  // Cyprus bounding box & strict mode
+  const CY_VIEWBOX = { left: 32.3, top: 35.7, right: 34.6, bottom: 34.4 };
+
+  // Reverse-geocode current coords
+  useEffect(() => {
+    (async () => {
+      const params = new URLSearchParams({ format: 'json', lat: lat.toString(), lon: lng.toString(), addressdetails: '1', ...(email ? { email } : {}) });
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`);
         const data = await res.json();
-        setAddress(data.error ? 'Address not found' : data.display_name || 'Address not found');
-      } catch (err) {
-        console.error('Reverse geocoding failed', err);
+        setAddress(data.display_name || 'Address not found');
+      } catch {
         setAddress('Address not found');
       }
-    }
-    fetchAddress();
+    })();
   }, [lat, lng, email]);
 
-  // Fetch suggestions for query
+  // Forward-geocode suggestions
   useEffect(() => {
-    if (!query) {
-      setSuggestions([]);
-      return;
-    }
-
-    window.clearTimeout(debounceRef.current);
-    // debounce
-    debounceRef.current = window.setTimeout(async () => {
+    if (!debouncedQuery.trim()) { setSuggestions([]); return; }
+    (async () => {
       const params = new URLSearchParams({
         format: 'json',
-        q: query,
+        q: debouncedQuery,
         addressdetails: '1',
-        limit: '5',
-        countrycodes: 'cy',      // restrict to Cyprus
+        limit: maxSuggestions.toString(),
+        countrycodes: 'cy',
+        viewbox: `${CY_VIEWBOX.left},${CY_VIEWBOX.top},${CY_VIEWBOX.right},${CY_VIEWBOX.bottom}`,
+        bounded: '1',
         ...(email ? { email } : {}),
       });
-
       try {
         const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
         const results: Suggestion[] = await res.json();
         setSuggestions(results);
         setShowDropdown(true);
-      } catch (err) {
-        console.error('Forward geocoding failed', err);
+        setActiveIndex(-1);
+      } catch {
         setSuggestions([]);
         setShowDropdown(false);
       }
-    }, 300); // 300ms debounce
+    })();
+  }, [debouncedQuery, maxSuggestions, email]);
 
-    // cleanup
-    return () => window.clearTimeout(debounceRef.current);
-  }, [query, email]);
+  // Keyboard navigation
+  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (!showDropdown || !suggestions.length) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setActiveIndex(i => Math.min(i + 1, suggestions.length - 1));
+    }
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setActiveIndex(i => Math.max(i - 1, 0));
+    }
+    if (e.key === 'Enter' && activeIndex >= 0) {
+      e.preventDefault();
+      select(suggestions[activeIndex]);
+    }
+    if (e.key === 'Escape') {
+      setShowDropdown(false);
+    }
+  };
 
-  const handleSelect = (item: Suggestion) => {
-    setLat(parseFloat(item.lat));
-    setLng(parseFloat(item.lon));
+  const highlight = (text: string) => {
+    const regex = new RegExp(`(${debouncedQuery.replace(/[-\\/\\^$*+?.()|[\]{}]/g, '\\$&')})`, 'gi');
+    return text.split(regex).map((part, i) =>
+      regex.test(part)
+        ? <mark key={i}>{part}</mark>
+        : <span key={i}>{part}</span>
+    );
+  };
+
+  const select = (item: Suggestion) => {
+    const latN = parseFloat(item.lat), lonN = parseFloat(item.lon);
+    setLat(latN);
+    setLng(lonN);
     setQuery(item.display_name);
     setShowDropdown(false);
   };
 
   return (
-    <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
-      <div style={{ position: 'relative', marginBottom: 8 }}>
+    <div className="w-full max-w-lg mx-auto">
+      <div className="relative">
         <input
-          type="text"
-          placeholder="Type an address in Cyprus…"
+          className="w-full p-3 border rounded shadow-sm focus:outline-none focus:ring"
+          placeholder="Search an address in Cyprus..."
           value={query}
           onChange={e => setQuery(e.target.value)}
-          onFocus={() => query && setShowDropdown(true)}
-          style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+          onFocus={() => suggestions.length && setShowDropdown(true)}
+          onKeyDown={onKeyDown}
         />
-        {showDropdown && suggestions.length > 0 && (
-          <ul style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            background: '#fff',
-            border: '1px solid #ccc',
-            margin: 0,
-            padding: 0,
-            listStyle: 'none',
-            maxHeight: 200,
-            overflowY: 'auto',
-            zIndex: 1000,
-          }}>
-            {suggestions.map((item, idx) => (
-              <li key={idx}
-                onClick={() => handleSelect(item)}
-                style={{ padding: '8px', cursor: 'pointer' }}
-              >
-                {item.display_name}
-              </li>
-            ))}
+        {showDropdown && (
+          <ul className="absolute z-20 w-full bg-white border rounded mt-1 max-h-60 overflow-y-auto shadow-lg">
+            {suggestions.length ? (
+              suggestions.map((s, i) => (
+                <li
+                  key={s.lat + '-' + s.lon}
+                  className={`p-2 cursor-pointer hover:bg-gray-100 ${i === activeIndex ? 'bg-gray-200' : ''}`}
+                  onMouseEnter={() => setActiveIndex(i)}
+                  onClick={() => select(s)}
+                >{highlight(s.display_name)}</li>
+              ))
+            ) : (
+              <li className="p-2 text-gray-500">No results found</li>
+            )}
           </ul>
         )}
       </div>
 
-      <MapContainer
-        center={[lat, lng]}
-        zoom={15}
-        scrollWheelZoom={false}
-        style={{ height: '400px', width: '100%' }}
-      >
+      <MapContainer center={[lat, lng]} zoom={15} scrollWheelZoom={false} className="h-96 w-full rounded-lg mt-4">
         <TileLayer
           attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <PanTo lat={lat} lng={lng} />
         <Marker position={[lat, lng] as [number, number]}>
-          <Popup>{address}</Popup>
+          <Popup className="text-sm">{address}</Popup>
         </Marker>
       </MapContainer>
     </div>
   );
 };
 
-export default MapView;
+export default AdvancedMapView;
