@@ -42,9 +42,13 @@ const OAuthCallback = () => {
     // Forward the callback to our backend through the Vercel rewrite
     console.log("Handling Google OAuth callback");
     
-    // Simply redirect to the same path, Vercel will rewrite it to the backend
-    // No need for backend URL since our Vercel config handles the redirect
-    window.location.href = `/accounts/google/login/callback${location.search}`;
+    // Ensure the callback URL is properly formatted
+    // The search string already includes the leading "?" character
+    const callbackUrl = `/accounts/google/login/callback${location.search}`;
+    console.log("Redirecting to backend callback:", callbackUrl);
+    
+    // Redirect to backend
+    window.location.href = callbackUrl;
     
     // Safety timeout in case redirect fails
     const timeout = setTimeout(() => {

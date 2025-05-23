@@ -14,30 +14,11 @@ export const AuthPage: React.FC = () => {
       }
     }
 
-    // Create unique session identifier
-    const uniqueId = Math.random().toString(36).substring(2, 15) +
-                     Math.random().toString(36).substring(2, 15);
-    const timestamp = new Date().getTime();
+    // Use the simple login URL with process=login parameter
+    // This is the URL that worked in the successful flow
+    const loginUrl = `/accounts/google/login/?process=login`;
     
-    // IMPORTANT: Use the exact same URL that's registered in Google Cloud Console
-    // Don't use dynamic origin for production to ensure exact match
-    const redirectUri = "https://www.propertpro.com/oauth/callback";
-    
-    // Log the exact redirect URI for debugging
-    console.log("Using redirect URI:", redirectUri);
-
-    // Use frontend URL for Google login - will be rewritten to backend by Vercel
-    // No need to include backend URL now - it's handled by Vercel rewrites
-    const loginUrl = `/accounts/google/login/` +
-                     `?prompt=select_account consent` +
-                     `&include_granted_scopes=false` +
-                     `&login_hint=_force_new_${uniqueId}` +
-                     `&state=${uniqueId}` +
-                     `&t=${timestamp}` +
-                     `&authuser=-1` +
-                     `&redirect_uri=${encodeURIComponent(redirectUri)}`;
-
-    // Log the full login URL for debugging
+    // Log the login URL for debugging
     console.log("Login URL:", loginUrl);
     
     // Redirect in same page
