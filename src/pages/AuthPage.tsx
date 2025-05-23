@@ -1,56 +1,123 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
-import { SiGoogle } from 'react-icons/si';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Typography, TextField, Button, Paper, Box, Container, Link as MuiLink, CircularProgress, Alert } from '@mui/material';
+import { useUser } from '../context/UserContext';
 
 export const AuthPage: React.FC = () => {
-  const handleGoogleLogin = () => {
-    // Clear storage before new login
-    sessionStorage.clear();
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
-        localStorage.removeItem(key);
-      }
-    }
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const { login } = useUser();
 
-    // Use the simple login URL with process=login parameter
-    // This is the URL that worked in the successful flow
+  const handleLocalLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setError('');
+
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        navigate('/');
+      } else {
+        setError(result.message || 'Login failed. Please try again.');
+      }
+    } catch (err) {
+      setError('An error occurred. Please try again later.');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = () => {
+    // Clear any existing auth state before starting new OAuth flow
+    // This prevents issues with stale tokens or session state
+    sessionStorage.clear();
+    localStorage.removeItem('userInfo');
+    
+    // Clear any cookies that might interfere with the auth flow
+    // by setting expiration to past date
+    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+    document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+
+    // Use the correct backend endpoint to start the OAuth flow
+    // This endpoint will handle redirecting to Google and back
     const loginUrl = `/accounts/google/login/?process=login`;
+    console.log("Starting Google OAuth flow:", loginUrl);
     
-    // Log the login URL for debugging
-    console.log("Login URL:", loginUrl);
-    
-    // Redirect in same page
+    // Redirect in the same window
     window.location.href = loginUrl;
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center px-4">
-      <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">
-        {/* Logo & Title */}
-        <div className="flex justify-center items-center space-x-3 mb-6">
-          <Building2 className="h-8 w-8 text-blue-600" />
-          <span className="text-3xl font-bold text-gray-800">PROPERTPRO</span>
-        </div>
-
-        <h2 className="text-center text-2xl font-extrabold text-gray-900 mb-2">
-          Sign in to your account
-        </h2>
-        <p className="text-center text-gray-500 text-sm mb-6">
-          Secure sign-in with your Google account
-        </p>
-
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full flex items-center justify-center border border-gray-300 rounded-md py-3 text-sm font-medium
-                     text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-md hover:shadow-lg"
-        >
-          <SiGoogle className="h-5 w-5 mr-3 text-[#4285F4]" />
-          Continue with Google
-        </button>
-      </div>
-    </div>
+    <Container maxWidth="sm">
+      <Paper elevation={3} sx={{ p: 4, mt: 8 }}>
+        <Typography variant="h4" align="center" gutterBottom>
+          Sign In
+        </Typography>
+        
+        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+        
+        <Box component="form" onSubmit={handleLocalLogin} noValidate sx={{ mt: 1 }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="email"
+            label="Email Address"
+            name="email"
+            autoComplete="email"
+            autoFocus
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          
+          <Button
+            type="submit"
+            fullWidth
+            variant="contained"
+            sx={{ mt: 3, mb: 2 }}
+            disabled={isLoading}
+          >
+            {isLoading ? <CircularProgress size={24} /> : 'Sign In'}
+          </Button>
+          
+          <Button
+            fullWidth
+            variant="outlined"
+            sx={{ mt: 1, mb: 2 }}
+            onClick={handleGoogleLogin}
+            disabled={isLoading}
+          >
+            Sign in with Google
+          </Button>
+          
+          <Box mt={2} textAlign="center">
+            <MuiLink 
+              component="button" 
+              variant="body2" 
+              onClick={() => navigate('/signup')}
+            >
+              Don't have an account? Sign Up
+            </MuiLink>
+          </Box>
+        </Box>
+      </Paper>
+    </Container>
   );
 };
