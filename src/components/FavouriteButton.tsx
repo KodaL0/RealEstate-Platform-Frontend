@@ -9,6 +9,7 @@ interface FavouriteButtonProps {
   defaultLiked?: boolean;
   onToggle?: (liked: boolean) => void; // Keep onToggle for immediate UI feedback if needed
   onUnlikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful unlike
+  onLikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful like
 }
 
 const FavouriteButton: React.FC<FavouriteButtonProps> = ({
@@ -16,6 +17,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
   defaultLiked = false,
   onToggle,
   onUnlikeSuccess, // Destructure the new prop
+  onLikeSuccess, // Destructure the new prop
 }) => {
   const [liked, setLiked] = useState(defaultLiked);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
@@ -55,11 +57,15 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       // Use the correct API client that includes the /api/ prefix
       const response = await api.properties.toggleFavorite(propertyId);
       console.log('Favourite toggled successfully:', response);
-      const actualLikedState = response.is_favourite;
+      const actualLikedState = response.data.is_favourite;
       setLiked(actualLikedState);
 
-      // If the action resulted in unliking, call the success callback
-      if (previousLikedState === true && actualLikedState === false) {
+      // Call appropriate callback based on the action
+      if (previousLikedState === false && actualLikedState === true) {
+        // Property was liked
+        onLikeSuccess?.(propertyId);
+      } else if (previousLikedState === true && actualLikedState === false) {
+        // Property was unliked
         onUnlikeSuccess?.(propertyId);
       }
 
@@ -72,7 +78,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [liked, isLoading, propertyId, onToggle, onUnlikeSuccess, user]); // Add onUnlikeSuccess to dependencies
+  }, [liked, isLoading, propertyId, onToggle, onUnlikeSuccess, onLikeSuccess, user]); // Add onLikeSuccess to dependencies
 
   // Update local state if defaultLiked prop changes (e.g., after initial data load)
   React.useEffect(() => {
