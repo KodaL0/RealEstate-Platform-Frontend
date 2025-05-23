@@ -1,5 +1,4 @@
-// src/components/MapView.tsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
@@ -17,17 +16,27 @@ L.Icon.Default.mergeOptions({
   shadowUrl,
 });
 
+interface Suggestion {
+  display_name: string;
+  lat: string;
+  lon: string;
+}
+
 interface MapViewProps {
-  lat: number;
-  lng: number;
   // optional: your email to pass to Nominatim
   email?: string;
 }
 
-const MapView: React.FC<MapViewProps> = ({ lat, lng, email }) => {
-  const position: [number, number] = [lat, lng];
+const MapView: React.FC<MapViewProps> = ({ email }) => {
+  const [lat, setLat] = useState<number>(35.1856);
+  const [lng, setLng] = useState<number>(33.3823);
   const [address, setAddress] = useState<string>('Loading address…');
+  const [query, setQuery] = useState<string>('');
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [showDropdown, setShowDropdown] = useState<boolean>(false);
+  const debounceRef = useRef<number>();
 
+  // Fetch address for current lat/lng
   useEffect(() => {
     async function fetchAddress() {
       const params = new URLSearchParams({
@@ -49,21 +58,101 @@ const MapView: React.FC<MapViewProps> = ({ lat, lng, email }) => {
     fetchAddress();
   }, [lat, lng, email]);
 
+  // Fetch suggestions for query
+  useEffect(() => {
+    if (!query) {
+      setSuggestions([]);
+      return;
+    }
+
+    window.clearTimeout(debounceRef.current);
+    // debounce
+    debounceRef.current = window.setTimeout(async () => {
+      const params = new URLSearchParams({
+        format: 'json',
+        q: query,
+        addressdetails: '1',
+        limit: '5',
+        countrycodes: 'cy',      // restrict to Cyprus
+        ...(email ? { email } : {}),
+      });
+
+      try {
+        const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
+        const results: Suggestion[] = await res.json();
+        setSuggestions(results);
+        setShowDropdown(true);
+      } catch (err) {
+        console.error('Forward geocoding failed', err);
+        setSuggestions([]);
+        setShowDropdown(false);
+      }
+    }, 300); // 300ms debounce
+
+    // cleanup
+    return () => window.clearTimeout(debounceRef.current);
+  }, [query, email]);
+
+  const handleSelect = (item: Suggestion) => {
+    setLat(parseFloat(item.lat));
+    setLng(parseFloat(item.lon));
+    setQuery(item.display_name);
+    setShowDropdown(false);
+  };
+
   return (
-    <MapContainer
-      center={position}
-      zoom={13}
-      scrollWheelZoom={false}
-      style={{ height: '400px', width: '100%' }}
-    >
-      <TileLayer
-        attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-      />
-      <Marker position={position}>
-        <Popup>{address}</Popup>
-      </Marker>
-    </MapContainer>
+    <div style={{ width: '100%', maxWidth: 600, margin: '0 auto' }}>
+      <div style={{ position: 'relative', marginBottom: 8 }}>
+        <input
+          type="text"
+          placeholder="Type an address in Cyprus…"
+          value={query}
+          onChange={e => setQuery(e.target.value)}
+          onFocus={() => query && setShowDropdown(true)}
+          style={{ width: '100%', padding: '8px', boxSizing: 'border-box' }}
+        />
+        {showDropdown && suggestions.length > 0 && (
+          <ul style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            background: '#fff',
+            border: '1px solid #ccc',
+            margin: 0,
+            padding: 0,
+            listStyle: 'none',
+            maxHeight: 200,
+            overflowY: 'auto',
+            zIndex: 1000,
+          }}>
+            {suggestions.map((item, idx) => (
+              <li key={idx}
+                onClick={() => handleSelect(item)}
+                style={{ padding: '8px', cursor: 'pointer' }}
+              >
+                {item.display_name}
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+
+      <MapContainer
+        center={[lat, lng]}
+        zoom={15}
+        scrollWheelZoom={false}
+        style={{ height: '400px', width: '100%' }}
+      >
+        <TileLayer
+          attribution='&copy; <a href="https://openstreetmap.org">OpenStreetMap</a> contributors'
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        />
+        <Marker position={[lat, lng] as [number, number]}>
+          <Popup>{address}</Popup>
+        </Marker>
+      </MapContainer>
+    </div>
   );
 };
 
