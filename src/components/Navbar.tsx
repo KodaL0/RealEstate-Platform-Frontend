@@ -11,6 +11,10 @@ const Navbar: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Debug logging
+  console.log("Navbar render - user:", user);
+  console.log("Navbar render - user?.username:", user?.username);
+
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 10);
     window.addEventListener("scroll", handleScroll);
