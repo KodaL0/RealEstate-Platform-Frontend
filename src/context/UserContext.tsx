@@ -38,8 +38,12 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       
       // Handle different response structures
       if (data) {
-        if (data.user) {
-          // Backend returns {status: 200, user: {...}}
+        if (data.user && data.user.user) {
+          // Nested structure: {user: {status: 200, user: {...}}}
+          console.log("Setting user from data.user.user", data.user.user);
+          setUser(data.user.user);
+        } else if (data.user && (data.user.id || data.user.email)) {
+          // Direct user in data.user: {user: {id, email, username}}
           console.log("Setting user from data.user", data.user);
           setUser(data.user);
         } else if (data.status && data.status === 200 && data.data && data.data.user) {
