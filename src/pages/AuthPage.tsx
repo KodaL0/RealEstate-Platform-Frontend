@@ -4,11 +4,8 @@ import { SiGoogle } from 'react-icons/si';
 
 export const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
-    const params = new URLSearchParams({
-      process: 'login',               // ← force fresh login
-      next:    '/oauth/callback',      // ← tell allauth where to redirect after
-    });
-    const loginUrl = `/accounts/google/login/?${params.toString()}`;
+    // Simple OAuth flow - let the backend handle all the complexity
+    const loginUrl = '/accounts/google/login/';
     console.log("Starting Google OAuth flow:", loginUrl);
     window.location.href = loginUrl;
   };

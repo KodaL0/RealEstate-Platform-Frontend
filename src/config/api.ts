@@ -106,8 +106,6 @@ const api = {
     refreshToken:    ()        => apiPost('users/refresh'),
     getUser:         ()        => apiGet('users/get_user'),
     updateProfile:   (d: any)  => apiPut('users/profile', d),
-    socialVerify:    (d: any)  => apiPost('users/social-login-verify', d),
-    complete:        (d: any)  => apiPost('users/auth-complete', d),
   },
 
   properties: {
