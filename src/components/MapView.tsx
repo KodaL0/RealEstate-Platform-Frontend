@@ -71,4 +71,4 @@ const AdvancedMapView: React.FC<AdvancedMapViewProps> = ({ lat, lng, email }) =>
   );
 };
 
-export default MapView;
+export default AdvancedMapView;
