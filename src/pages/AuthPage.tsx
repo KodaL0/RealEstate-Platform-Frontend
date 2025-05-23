@@ -4,8 +4,8 @@ import { SiGoogle } from 'react-icons/si';
 
 export const AuthPage: React.FC = () => {
   const handleGoogleLogin = () => {
-    // Simple OAuth flow - let the backend handle all the complexity
-    const loginUrl = '/accounts/google/login/';
+    // Fix: Use absolute URL to backend domain for OAuth initiation
+    const loginUrl = 'https://api.propertpro.com/accounts/google/login/';
     console.log("Starting Google OAuth flow:", loginUrl);
     window.location.href = loginUrl;
   };
