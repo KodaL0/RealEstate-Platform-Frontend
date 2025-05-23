@@ -1,16 +1,14 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
 import { Building2 } from 'lucide-react';
 import { SiGoogle } from 'react-icons/si';
-import { useUser } from '../context/UserContext';
 
 export const AuthPage: React.FC = () => {
-  const navigate = useNavigate();
-
   const handleGoogleLogin = () => {
-    // Simply redirect to the backend login endpoint without any cookie manipulation
-    // The backend will handle all the OAuth flow, cookies, and redirect back
-    const loginUrl = `/accounts/google/login/?process=login`;
+    const params = new URLSearchParams({
+      process: 'login',               // ← force fresh login
+      next:    '/oauth/callback',      // ← tell allauth where to redirect after
+    });
+    const loginUrl = `/accounts/google/login/?${params.toString()}`;
     console.log("Starting Google OAuth flow:", loginUrl);
     window.location.href = loginUrl;
   };
@@ -18,7 +16,6 @@ export const AuthPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center px-4">
       <div className="bg-white shadow-2xl rounded-2xl p-10 w-full max-w-md">
-        {/* Logo & Title */}
         <div className="flex justify-center items-center space-x-3 mb-6">
           <Building2 className="h-8 w-8 text-blue-600" />
           <span className="text-3xl font-bold text-gray-800">PROPERTPRO</span>
