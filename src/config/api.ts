@@ -135,7 +135,14 @@ const api = {
     create:         (fd: FormData) => apiFormPost('properties/create_property', fd),
     update:         (id: number, fd: FormData) => apiFormPut(`properties/${id}`, fd),
     delete:         (id: number) => apiDelete(`properties/${id}`),
-    myProperties:   () => apiGet('properties/my-properties'),
+    myProperties:   () => 
+      apiGet('properties/my-properties')
+        .then(res => {
+          const d = res.data;
+          if (Array.isArray(d)) return d;
+          if (Array.isArray(d.results)) return d.results;
+          return [];
+        }),
 
     buy: (p?: any) =>
       apiGet<{ results?: any[] }>('properties/buy', { params: p })
