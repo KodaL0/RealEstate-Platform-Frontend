@@ -1,7 +1,7 @@
 // src/pages/Favourites.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
-import { apiClient } from '../middleware/auth';
+import api from '../config/api'; // Use the main API client
 import { Property } from '../types';
 import PropertyCard from '../components/PropertyCard';
 import { Link } from 'react-router-dom'; // Import Link for login prompt
@@ -29,12 +29,9 @@ const Favourites: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Fetch favourites using the correct endpoint relative to apiClient's baseURL
-        const response = await apiClient.get('/properties/my-favourites/');
-        // Assuming the API returns an object with a 'results' array for paginated data,
-        // or just an array if not paginated. Adjust based on your actual API response structure.
-        const data = response.data.results || response.data || [];
-        setFavourites(data);
+        // Use the correct API client that includes the /api/ prefix
+        const data = await api.properties.myFavorites();
+        setFavourites(data || []);
       } catch (err) {
         console.error("Failed to fetch favourites:", err);
         setError("Failed to load your favourites. Please try again later.");

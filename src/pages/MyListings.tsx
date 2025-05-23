@@ -2,7 +2,7 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Home, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiClient } from '../middleware/auth';
+import api from '../config/api';
 import { useUser } from '../context/UserContext';
 
 /* ───────────── helper ───────────── */
@@ -64,8 +64,8 @@ function MyListings() {
     (async () => {
       setLoading(true);
       try {
-        const { data } = await apiClient.get<Property[]>('/properties/my-properties/');
-        setProperties(data.map(p => ({ ...p, price: Number(p.price) || 0 })));
+        const data = await api.properties.myProperties();
+        setProperties((Array.isArray(data) ? data : []).map(p => ({ ...p, price: Number(p.price) || 0 })));
         setError(null);
       } catch (err: any) {
         console.error(err);
@@ -83,7 +83,7 @@ function MyListings() {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Publish this listing?')) return;
     try {
-      await apiClient.patch(`/properties/${username}/property/${id}/publish/`);
+      await api.put(`properties/${username}/property/${id}/publish`);
       setProperties(ps => ps.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p)));
     } catch (err: any) {
       console.error(err);
@@ -94,7 +94,7 @@ function MyListings() {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Remove this listing?')) return;
     try {
-      await apiClient.delete(`/properties/${username}/property/${id}/delete/`);
+      await api.delete(`properties/${username}/property/${id}/delete`);
       setProperties(ps => ps.filter(p => p.id !== id));
       setPage(p => Math.min(p, Math.max(1, Math.ceil((properties.length - 1) / PER_PAGE))));
     } catch (err: any) {
