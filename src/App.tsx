@@ -1,5 +1,5 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Home from "./pages/Home";
@@ -34,73 +34,9 @@ function RouteChangeTracker() {
   return null;
 }
 
-function isInWebView() {
-  const userAgent = navigator.userAgent || navigator.vendor;
-  // Common webview patterns (add more as needed)
-  return (
-    /FBAN|FBAV|Instagram|LinkedInApp|Line|Twitter|Snapchat|WebView/i.test(userAgent)
-  );
-}
-
 function App() {
-  const [showWebViewWarning, setShowWebViewWarning] = useState(false);
-
-  useEffect(() => {
-    if (isInWebView()) {
-      setShowWebViewWarning(true);
-    }
-  }, []);
-
-  const openInBrowser = () => {
-    // Try to open in default browser using a universal link
-    window.location.href = window.location.href;
-  };
-
   return (
     <UserProvider>
-      {showWebViewWarning && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <div style={{
-            background: '#fff',
-            padding: 24,
-            borderRadius: 8,
-            maxWidth: 350,
-            textAlign: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            <h2 style={{marginBottom: 12}}>Open in Browser Required</h2>
-            <p style={{marginBottom: 20}}>
-              Google sign-in is not supported in this browser. For your security, please open this page in your device's main browser (e.g., Chrome or Safari) to log in with Google. This is required by Google to protect your account.
-            </p>
-            <button
-              onClick={openInBrowser}
-              style={{
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                padding: '10px 20px',
-                fontSize: 16,
-                cursor: 'pointer',
-              }}
-            >
-              Open in Default Browser
-            </button>
-          </div>
-        </div>
-      )}
       <Router>
         {/* Track route changes for GA */}
         <RouteChangeTracker />
