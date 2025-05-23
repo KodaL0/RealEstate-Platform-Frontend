@@ -2,11 +2,8 @@ import React, { useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 /**
- * Component to handle OAuth callbacks from providers like Google
- * This component is responsible for:
- * 1. Receiving the OAuth callback from providers
- * 2. Forwarding the callback to our backend
- * 3. Handling any error states during the OAuth flow
+ * Simplified OAuth callback handler
+ * Now only needs to check for auth_success parameter since cookies are set by backend
  */
 const OAuthCallback: React.FC = () => {
   const navigate = useNavigate();
@@ -15,36 +12,39 @@ const OAuthCallback: React.FC = () => {
   useEffect(() => {
     const handleCallback = () => {
       try {
-        // Check if this is already a success callback from our backend
-        if (location.search.includes('auth_success=true')) {
-          console.log('Auth success detected, redirecting to home');
-          // If authentication was successful, redirect to home
+        const queryParams = new URLSearchParams(location.search);
+        const authSuccess = queryParams.get('auth_success');
+        const error = queryParams.get('error');
+
+        if (error) {
+          console.error(`OAuth error: ${error}`);
+          navigate('/login?error=' + error, { replace: true });
+          return;
+        }
+
+        if (authSuccess === 'true') {
+          console.log('OAuth success detected, cookies should be set by backend');
+          
+          // Clean the URL and redirect to home
           navigate('/', { replace: true });
           return;
         }
 
-        // Otherwise, this is the initial OAuth callback from Google
-        // We need to forward it to the backend
-        console.log("Handling OAuth callback, forwarding to backend");
-        
-        // Simply forward the callback to our backend
-        const callbackUrl = `/accounts/google/login/callback${location.search}`;
-        console.log("Redirecting to:", callbackUrl);
-        
-        // Redirect to the backend callback URL
+        // If neither success nor error, this might be the initial OAuth callback from Google
+        // Forward it to the backend
+        console.log("Forwarding OAuth callback to backend");
+        const callbackUrl = `https://api.propertpro.com/accounts/google/login/callback${location.search}`;
         window.location.href = callbackUrl;
+        
       } catch (error) {
         console.error('Error in OAuth callback:', error);
-        // If there's an error, redirect to login page
-        navigate('/login', { replace: true });
+        navigate('/login?error=callback_error', { replace: true });
       }
     };
 
-    // Handle the callback immediately when component mounts
     handleCallback();
   }, [location, navigate]);
 
-  // Show a simple loading spinner
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">

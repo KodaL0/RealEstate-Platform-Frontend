@@ -15,48 +15,17 @@ const apiClient = axios.create({
 // Functions to manage auth tokens and cookies
 
 /**
- * Set auth cookies (used by AuthTokenProcessor when receiving tokens from OAuth)
- */
-export function setAuthCookies(accessToken: string, refreshToken: string) {
-  console.log('[setAuthCookies] Received accessToken:', accessToken.substring(0, 10) + '...');
-  console.log('[setAuthCookies] Received refreshToken:', refreshToken.substring(0, 10) + '...');
-  
-  // Set cookies with proper cross-domain attributes
-  document.cookie = `access_token=${accessToken}; path=/; max-age=${60 * 60 * 24}; SameSite=None; Secure`; // 1 day
-  document.cookie = `refresh_token=${refreshToken}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=None; Secure`; // 7 days
-  
-  console.log('[setAuthCookies] Auth cookies set');
-  console.log('[setAuthCookies] Current cookies:', document.cookie);
-}
-
-/**
  * Clear auth cookies (to be used on logout/session expiry)
  */
 export function clearAuthCookies() {
   // Clear auth-related cookies with proper cross-domain attributes
-  // Try both with and without domain specification to ensure all cookies are cleared
   
   // Clear cookies without domain specification
   document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   
-  // Clear cookies with domain specification
-  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
-  
-  // Also try with www subdomain
-  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
-  
-  // And with api subdomain
-  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
-  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
-  
-  console.log("Auth cookies cleared from all possible domains");
+  console.log("Auth cookies cleared");
 }
 
 /**
