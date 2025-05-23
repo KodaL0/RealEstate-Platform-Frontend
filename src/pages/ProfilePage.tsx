@@ -27,7 +27,7 @@ const ProfilePage: React.FC = () => {
     setError('');
     setMessage('');
     try {
-      const response = await authFetch.put('/users/profile', { 
+      const response = await authFetch.put('/api/users/profile', { 
         username: newUsername
       });
       const data = response.data;
