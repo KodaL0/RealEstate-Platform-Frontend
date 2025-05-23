@@ -27,6 +27,7 @@ interface Property {
   created_at: string;
   updated_at: string;
   property_status: string;
+  is_published: boolean;
 }
 
 function MyListings() {
@@ -84,12 +85,25 @@ function MyListings() {
     if (!window.confirm('Publish this listing?')) return;
     try {
       await api.put(`properties/${username}/property/${id}/publish`);
-      setProperties(ps => ps.map(p => (p.id === id ? { ...p, property_status: 'for_sale' } : p)));
+      setProperties(ps => ps.map(p => (p.id === id ? { ...p, is_published: true } : p)));
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.error || 'Failed to publish listing.');
     }
   };
+  
+  const handleUnpublish = async (id: number) => {
+    if (!username) return alert('User info unavailable');
+    if (!window.confirm('Unpublish this listing? It will no longer be visible to the public.')) return;
+    try {
+      await api.put(`properties/${username}/property/${id}/unpublish`);
+      setProperties(ps => ps.map(p => (p.id === id ? { ...p, is_published: false } : p)));
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.response?.data?.error || 'Failed to unpublish listing.');
+    }
+  };
+  
   const handleRemove = async (id: number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Remove this listing?')) return;
@@ -210,6 +224,18 @@ function MyListings() {
                             ? 'For Rent'
                             : 'Draft'}
                         </span>
+                        <span
+                          className={`
+                            px-3 py-1 rounded-full text-xs font-semibold
+                            ${
+                              p.is_published
+                                ? 'bg-green-500 text-white'
+                                : 'bg-red-500 text-white'
+                            }
+                          `}
+                        >
+                          {p.is_published ? 'Published' : 'Unpublished'}
+                        </span>
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
                           {p.property_type}
                         </span>
@@ -285,15 +311,27 @@ function MyListings() {
                             >
                               Remove
                             </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handlePublish(p.id);
-                              }}
-                              className="ml-4 text-green-600 hover:text-green-700 font-medium"
-                            >
-                              Publish
-                            </button>
+                            {p.is_published ? (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handleUnpublish(p.id);
+                                }}
+                                className="ml-4 text-orange-600 hover:text-orange-700 font-medium"
+                              >
+                                Unpublish
+                              </button>
+                            ) : (
+                              <button
+                                onClick={e => {
+                                  e.stopPropagation();
+                                  handlePublish(p.id);
+                                }}
+                                className="ml-4 text-green-600 hover:text-green-700 font-medium"
+                              >
+                                Publish
+                              </button>
+                            )}
                           </div>
                           <span className="text-sm text-gray-500">
                             Listed {new Date(p.created_at).toLocaleDateString()}
