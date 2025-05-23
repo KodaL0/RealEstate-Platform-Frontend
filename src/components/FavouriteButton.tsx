@@ -1,7 +1,7 @@
 // src/components/FavouriteButton.tsx
 import React, { useState, MouseEvent, useCallback } from 'react';
 import { Heart } from 'lucide-react';
-import { apiClient } from '../middleware/auth'; // Import apiClient
+import api from '../config/api'; // Use the main API client
 import { useUser } from '../context/UserContext'; // Import useUser
 
 interface FavouriteButtonProps {
@@ -49,13 +49,13 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     // Optimistic UI update (proceed only if confirmed or if liking)
     setLiked(nextLikedState);
     setIsLoading(true);
-    onToggle?.(nextLikedState); // Notify parent immediately if needed
+    onToggle?.(nextLikedState);
 
     try {
-      // Use apiClient for authenticated request
-      const response = await apiClient.post(`/properties/${propertyId}/favourite/`);
-      console.log('Favourite toggled successfully:', response.data);
-      const actualLikedState = response.data.is_favourite;
+      // Use the correct API client that includes the /api/ prefix
+      const response = await api.properties.toggleFavorite(propertyId);
+      console.log('Favourite toggled successfully:', response);
+      const actualLikedState = response.is_favourite;
       setLiked(actualLikedState);
 
       // If the action resulted in unliking, call the success callback
