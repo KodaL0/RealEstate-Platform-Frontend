@@ -34,10 +34,29 @@ export function setAuthCookies(accessToken: string, refreshToken: string) {
  */
 export function clearAuthCookies() {
   // Clear auth-related cookies with proper cross-domain attributes
+  // Try both with and without domain specification to ensure all cookies are cleared
+  
+  // Clear cookies without domain specification
   document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
   document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-  console.log("Auth cookies cleared");
+  
+  // Clear cookies with domain specification
+  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=.propertpro.com; SameSite=None; Secure';
+  
+  // Also try with www subdomain
+  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=www.propertpro.com; SameSite=None; Secure';
+  
+  // And with api subdomain
+  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
+  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=api.propertpro.com; SameSite=None; Secure';
+  
+  console.log("Auth cookies cleared from all possible domains");
 }
 
 /**

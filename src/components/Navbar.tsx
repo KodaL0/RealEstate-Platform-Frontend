@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Menu, X, User, ChevronDown, Building2 } from "lucide-react";
 import { useUser } from "../context/UserContext";
-import { apiClient } from "../middleware/auth";
+import { logout } from "../middleware/auth";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -27,22 +27,20 @@ const Navbar: React.FC = () => {
   const handleLogout = async () => {
     try {
       sessionStorage.clear();
-      localStorage.removeItem('googleOneTap');
-      localStorage.removeItem('googleToken');
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (key && (key.toLowerCase().includes('google') || key.toLowerCase().includes('oauth') || key.toLowerCase().includes('token'))) {
           localStorage.removeItem(key);
         }
       }
-    } catch (e) {
-      console.error("Error clearing storage:", e);
-    }
 
-    try {
-      await apiClient.post("/api/users/logout");
+      await logout();
+      
       setUser(null);
+      
       navigate("/login");
+      
+      console.log("Logout completed successfully");
     } catch (err) {
       console.error("Logout error:", err);
     }
