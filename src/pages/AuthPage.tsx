@@ -8,23 +8,10 @@ export const AuthPage: React.FC = () => {
   const navigate = useNavigate();
 
   const handleGoogleLogin = () => {
-    // Clear any existing auth state before starting new OAuth flow
-    // This prevents issues with stale tokens or session state
-    sessionStorage.clear();
-    localStorage.removeItem('userInfo');
-    
-    // Clear any cookies that might interfere with the auth flow
-    // by setting expiration to past date
-    document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-    document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-    document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-
-    // Use the correct backend endpoint to start the OAuth flow
-    // This endpoint will handle redirecting to Google and back
+    // Simply redirect to the backend login endpoint without any cookie manipulation
+    // The backend will handle all the OAuth flow, cookies, and redirect back
     const loginUrl = `/accounts/google/login/?process=login`;
     console.log("Starting Google OAuth flow:", loginUrl);
-    
-    // Redirect in the same window
     window.location.href = loginUrl;
   };
 
