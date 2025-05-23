@@ -15,13 +15,13 @@ const Footer = () => {
               Providing exceptional real estate services with a focus on properties and personalized client experiences.
             </p>
             <div className="flex space-x-4">
-              <a href="https://www.instagram.com/propertpro" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://www.instagram.com/propertpro" className="text-gray-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="text-gray-400 hover:text-white transition-colors">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="https://www.linkedin.com/company/propertpro" className="text-gray-400 hover:text-white transition-colors">
+              <a href="https://www.linkedin.com/company/propertpro" className="text-gray-400 hover:text-white transition-colors" target="_blank" rel="noopener noreferrer">
                 <Linkedin className="h-5 w-5" />
               </a>
             </div>
