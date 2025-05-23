@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { CircularProgress, Box, Typography } from '@mui/material';
 import { useUser } from '../context/UserContext';
 
 /**
@@ -64,36 +63,39 @@ const OAuthCallback: React.FC = () => {
   }, [location, navigate, fetchCurrentUser]);
 
   return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: '60vh',
-      }}
-    >
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
       {status === 'processing' && (
-        <>
-          <CircularProgress size={60} />
-          <Typography variant="h6" sx={{ mt: 3 }}>
-            Completing authentication...
-          </Typography>
-        </>
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-800">Completing Authentication</h2>
+          <p className="text-gray-600 mt-2">Please wait while we complete your login...</p>
+        </div>
       )}
       
       {status === 'success' && (
-        <Typography variant="h6" color="success.main">
-          Authentication successful! Redirecting...
-        </Typography>
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md text-center">
+          <div className="bg-green-100 text-green-800 p-4 rounded-lg mb-4">
+            <h2 className="text-xl font-semibold">Authentication Successful!</h2>
+            <p>Redirecting you to the homepage...</p>
+          </div>
+        </div>
       )}
       
       {status === 'error' && (
-        <Typography variant="h6" color="error">
-          {errorMessage}
-        </Typography>
+        <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+          <div className="bg-red-100 text-red-800 p-4 rounded-lg mb-4">
+            <h2 className="text-xl font-semibold">Authentication Error</h2>
+            <p>{errorMessage}</p>
+          </div>
+          <button 
+            onClick={() => navigate('/login')}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
+          >
+            Return to Login
+          </button>
+        </div>
       )}
-    </Box>
+    </div>
   );
 };
 
