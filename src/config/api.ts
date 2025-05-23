@@ -41,6 +41,19 @@ apiClient.interceptors.request.use(cfg => {
     };
   }
 
+  // Also extract CSRF token if available
+  const csrfToken = document.cookie
+    .split('; ')
+    .find(row => row.startsWith('csrftoken='))
+    ?.split('=')[1];
+
+  if (csrfToken) {
+    cfg.headers = {
+      ...cfg.headers,
+      'X-CSRFToken': csrfToken,
+    };
+  }
+
   // then continue to your existing logging
   console.log(`→ ${cfg.method?.toUpperCase()} ${cfg.baseURL}${cfg.url}`);
   return cfg;
