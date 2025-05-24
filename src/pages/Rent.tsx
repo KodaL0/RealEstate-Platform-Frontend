@@ -79,16 +79,19 @@ const Rent = () => {
 
         console.log("Fetching RENT with query params:", qp);
 
-        // rent() now returns Promise<PropertyObject[]>
-        const resultsArr = await api.properties.rent(qp);
-        console.log("RENT raw array length:", resultsArr.length);
+        // rent() now returns pagination data with results
+        const paginatedData = await api.properties.rent(qp);
+        console.log("RENT pagination data:", paginatedData);
 
-        // Guard and normalize
-        const safeArr = Array.isArray(resultsArr) ? resultsArr : [];
-        const normalized = safeArr.map(normalizePropertyData);
-
+        // Extract results array and normalize
+        const resultsArr = paginatedData.results || [];
+        const normalized = resultsArr.map(normalizePropertyData);
+        
         setProperties(normalized);
-        setTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
+        
+        // Calculate total pages from the total count returned by API
+        const totalCount = paginatedData.count || 0;
+        setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching RENT properties:", err);
         setError("Failed to fetch properties. Please try again.");
@@ -100,8 +103,9 @@ const Rent = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const displayed = properties.slice(startIdx, startIdx + PAGE_SIZE);
+  // With server-side pagination, we no longer need to slice the properties array
+  // Each API response already contains the correct page of properties
+  const displayed = properties;
 
   const handleSearch = (filters: SearchFiltersType) => {
     setSearchFilters(filters);

@@ -154,12 +154,16 @@ const api = {
         }),
 
     rent: (p?: any) =>
-      apiGet<{ results?: any[] }>('properties/rent', { params: p })
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('properties/rent', { params: p })
         .then(res => {
           const d = res.data;
-          if (Array.isArray(d)) return d;
-          if (Array.isArray(d.results)) return d.results;
-          return [];
+          // Return both the results and pagination metadata
+          return {
+            results: Array.isArray(d.results) ? d.results : [],
+            count: d.count || 0,
+            next: d.next,
+            previous: d.previous
+          };
         }),
 
     featured:       ()        => apiGet('properties/featured'),
