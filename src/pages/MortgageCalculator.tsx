@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 
 const MortgageCalculator: React.FC = () => {
-  const [propertyPrice, setPropertyPrice] = useState<number>(300000);
-  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
-  const [loanTermYears, setLoanTermYears] = useState<number>(30);
-  const [interestRate, setInterestRate] = useState<number>(4.25);
+  const [propertyPrice, setPropertyPrice] = useState<number>(0);
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(0);
+  const [loanTermYears, setLoanTermYears] = useState<number>(1);
+  const [interestRate, setInterestRate] = useState<number>(0);
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
   const [totalPayment, setTotalPayment] = useState<number | null>(null);
   const [totalInterestPaid, setTotalInterestPaid] = useState<number | null>(null);
 
   useEffect(() => {
     calculateMortgage();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [propertyPrice, downPaymentPercent, loanTermYears, interestRate]);
 
   const calculateMortgage = () => {
@@ -65,7 +64,6 @@ const MortgageCalculator: React.FC = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen pt-20 pb-12 flex items-center justify-center">
-      {/* pt-20 pushes the calculator below the fixed/relative nav */}
       <div className="container mx-auto px-4 max-w-lg w-full">
         <div className="bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-200">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-6 text-center">Mortgage Calculator</h1>
@@ -80,15 +78,18 @@ const MortgageCalculator: React.FC = () => {
                   type="number"
                   id="propertyPrice"
                   value={propertyPrice}
-                  onChange={(e) => setPropertyPrice(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full h-11 pl-7 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setPropertyPrice(isNaN(val) ? 0 : Math.max(0, val));
+                  }}
+                  className="w-full h-11 pl-7 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., 300000"
                   min="0"
                 />
               </div>
             </div>
 
-            {/* Down Payment Percentage with Slider */}
+            {/* Down Payment */}
             <div>
               <label htmlFor="downPayment" className="block text-sm font-semibold text-gray-600 mb-1.5">Down Payment (%)</label>
               <div className="relative">
@@ -96,8 +97,11 @@ const MortgageCalculator: React.FC = () => {
                   type="number"
                   id="downPayment"
                   value={downPaymentPercent}
-                  onChange={(e) => setDownPaymentPercent(Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)))}
-                  className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setDownPaymentPercent(isNaN(val) ? 0 : Math.max(0, Math.min(100, val)));
+                  }}
+                  className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., 20"
                   step="0.1"
                   min="0"
@@ -105,7 +109,6 @@ const MortgageCalculator: React.FC = () => {
                 />
                 <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">%</span>
               </div>
-              {/* Slider for Down Payment */}
               <input
                 type="range"
                 min="0"
@@ -121,24 +124,26 @@ const MortgageCalculator: React.FC = () => {
               </div>
             </div>
 
-            {/* Loan Term with Slider */}
+            {/* Loan Term */}
             <div>
               <label htmlFor="loanTerm" className="block text-sm font-semibold text-gray-600 mb-1.5">Loan Term (Years)</label>
               <input
                 type="number"
                 id="loanTerm"
                 value={loanTermYears}
-                onChange={(e) => setLoanTermYears(Math.max(1, parseInt(e.target.value) || 1))}
-                className="w-full h-11 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  setLoanTermYears(isNaN(val) ? 1 : Math.max(1, val));
+                }}
+                className="w-full h-11 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="e.g., 30"
                 min="1"
               />
-              {/* Slider for Loan Term */}
               <div className="flex items-center space-x-3 mt-2">
                 <input
                   type="range"
                   min="1"
-                  max="40" // Example max term
+                  max="40"
                   step="1"
                   value={loanTermYears}
                   onChange={(e) => setLoanTermYears(parseInt(e.target.value))}
@@ -148,7 +153,7 @@ const MortgageCalculator: React.FC = () => {
               </div>
             </div>
 
-            {/* Interest Rate (Editable) */}
+            {/* Interest Rate */}
             <div>
               <label htmlFor="interestRate" className="block text-sm font-semibold text-gray-600 mb-1.5">Annual Interest Rate (%)</label>
               <div className="relative">
@@ -156,8 +161,11 @@ const MortgageCalculator: React.FC = () => {
                   type="number"
                   id="interestRate"
                   value={interestRate}
-                  onChange={(e) => setInterestRate(Math.max(0, parseFloat(e.target.value) || 0))}
-                  className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition duration-150 ease-in-out"
+                  onChange={(e) => {
+                    const val = parseFloat(e.target.value);
+                    setInterestRate(isNaN(val) ? 0 : Math.max(0, val));
+                  }}
+                  className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="e.g., 4.25"
                   step="0.01"
                   min="0"
@@ -166,7 +174,7 @@ const MortgageCalculator: React.FC = () => {
               </div>
             </div>
 
-            {/* Result Display */}
+            {/* Results */}
             <div className="pt-5 mt-3 border-t border-gray-200 space-y-3">
               <div>
                 <h2 className="text-base font-semibold text-gray-800 mb-1 text-center">Estimated Monthly Payment</h2>
@@ -179,19 +187,27 @@ const MortgageCalculator: React.FC = () => {
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Payment</h3>
-                  <p className="text-lg font-medium text-gray-700">
-                    {formatCurrency(totalPayment)}
-                  </p>
+                  <p className="text-lg font-medium text-gray-700">{formatCurrency(totalPayment)}</p>
                 </div>
                 <div>
                   <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Interest Paid</h3>
-                  <p className="text-lg font-medium text-gray-700">
-                    {formatCurrency(totalInterestPaid)}
-                  </p>
+                  <p className="text-lg font-medium text-gray-700">{formatCurrency(totalInterestPaid)}</p>
                 </div>
               </div>
 
               <p className="text-xs text-gray-500 text-center pt-2">(Estimates do not include taxes, insurance, or HOA fees.)</p>
+
+              <button
+                onClick={() => {
+                  setPropertyPrice(0);
+                  setDownPaymentPercent(0);
+                  setLoanTermYears(1);
+                  setInterestRate(0);
+                }}
+                className="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition"
+              >
+                Reset Calculator
+              </button>
             </div>
           </div>
         </div>
