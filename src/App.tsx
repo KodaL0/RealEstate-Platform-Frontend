@@ -54,6 +54,11 @@ function LoginWebViewWarning() {
     }
   }, [location.pathname]);
 
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText("www.propertpro.com");
+    alert("URL copied to clipboard!");
+  };
+
   if (!showWarning) {
     return null;
   }
@@ -85,6 +90,31 @@ function LoginWebViewWarning() {
           You are using an embedded browser (LinkedIn). Google sign-in may not work correctly in this environment. 
           We've removed the redirect to default browser for testing purposes.
         </p>
+        <p style={{marginBottom: 20}}>
+          Please copy the URL below and paste it into your default browser:
+        </p>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: 20
+        }}>
+          <span style={{marginRight: 10}}>www.propertpro.com</span>
+          <button
+            onClick={copyToClipboard}
+            style={{
+              background: '#2563eb',
+              color: '#fff',
+              border: 'none',
+              borderRadius: 4,
+              padding: '5px 10px',
+              fontSize: 14,
+              cursor: 'pointer',
+            }}
+          >
+            Copy URL
+          </button>
+        </div>
         <button
           onClick={() => setShowWarning(false)}
           style={{
