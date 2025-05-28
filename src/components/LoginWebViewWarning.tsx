@@ -21,7 +21,7 @@ const LoginWebViewWarning = () => {
   useEffect(() => {
     if (!isInWebView()) return;
 
-    const alreadyRedirected = new URL(location.href).searchParams.get("r") === "ext";
+    const alreadyRedirected = new URLSearchParams(location.search).get("r") === "ext";
     if (alreadyRedirected) return; // stop loops
 
     let extURL = TARGET_URL;
@@ -90,10 +90,10 @@ const LoginWebViewWarning = () => {
           Embedded Browser Notice
         </h2>
         <p style={{ marginBottom: 20, fontSize: "1em", color: "#555" }}>
-          You’re inside an in-app browser. Google Sign-in rarely works here.
+          You're inside an in-app browser. Google Sign-in rarely works here.
         </p>
         <p style={{ marginBottom: 20, fontSize: "1em", color: "#555" }}>
-          Copy the link or tap&nbsp;“Open in Browser”.
+          Copy the link or tap "Open in Browser".
         </p>
 
         <div
