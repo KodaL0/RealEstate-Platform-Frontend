@@ -1,14 +1,20 @@
-// src/components/RequireAuth.tsx
-import { useContext } from "react";
-import { Navigate, useLocation, Outlet } from "react-router-dom";
-import { UserContext } from "../context/UserContext";
+import { ReactElement } from "react";
+import { Navigate, useLocation } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
-export function RequireAuth({ children }: { children: JSX.Element }) {
-  const { user } = useContext(UserContext);
+export function RequireAuth({ children }: { children: ReactElement }) {
+  const { user, isLoading } = useUser();
   const location = useLocation();
 
+  if (isLoading) {
+    // or return a spinner/loading indicator
+    return <div>Checking authentication…</div>;
+  }
+
   if (!user) {
+    // Redirect unauthenticated users to /login, preserving their intended path
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
+
   return children;
 }
