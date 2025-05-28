@@ -54,10 +54,6 @@ function LoginWebViewWarning() {
     }
   }, [location.pathname]);
 
-  const openInBrowser = () => {
-    window.location.href = window.location.href; // Attempts to open in default browser
-  };
-
   if (!showWarning) {
     return null;
   }
@@ -84,12 +80,13 @@ function LoginWebViewWarning() {
         textAlign: 'center',
         boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
       }}>
-        <h2 style={{marginBottom: 12}}>Open in Browser Required</h2>
+        <h2 style={{marginBottom: 12}}>Embedded Browser Notice</h2>
         <p style={{marginBottom: 20}}>
-          Google sign-in is not supported in this browser. For your security, please open this page in your device's main browser (e.g., Chrome or Safari) to log in with Google. This is required by Google to protect your account.
+          You are using an embedded browser (LinkedIn). Google sign-in may not work correctly in this environment. 
+          We've removed the redirect to default browser for testing purposes.
         </p>
         <button
-          onClick={openInBrowser}
+          onClick={() => setShowWarning(false)}
           style={{
             background: '#2563eb',
             color: '#fff',
@@ -100,7 +97,7 @@ function LoginWebViewWarning() {
             cursor: 'pointer',
           }}
         >
-          Open in Default Browser
+          Continue Anyway
         </button>
       </div>
     </div>
