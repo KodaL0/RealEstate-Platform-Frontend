@@ -2,7 +2,7 @@
 import { useLocation } from "react-router-dom";
 import { useEffect, useMemo, useState } from "react";
 
-const TARGET_URL = "https://www.propertpro.com/login";
+const TARGET_URL = "https://www.propertpro.com";
 
 /* ---------- helpers ---------- */
 const isInWebView = (): boolean => {
