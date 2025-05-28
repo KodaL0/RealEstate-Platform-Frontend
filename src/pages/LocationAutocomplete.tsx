@@ -1,3 +1,4 @@
+// LocationAutocomplete.tsx
 import React, { useState, useEffect, useRef } from 'react';
 
 interface Suggestion {
@@ -24,7 +25,9 @@ export default function LocationAutocomplete({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN!;
+
+  // <- use VITE_ var via import.meta.env
+  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
 
   useEffect(() => {
     if (value.length < 3) {
@@ -34,29 +37,29 @@ export default function LocationAutocomplete({
     }
     const tid = setTimeout(async () => {
       const q = encodeURIComponent(value);
-      const url = [
-        `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json`,
-        `?autocomplete=true`,
-        `&limit=5`,
-        `&country=cy`,
-        `&types=address,place`,
-        `&access_token=${MAPBOX_TOKEN}`
-      ].join('');
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json`
+                + `?autocomplete=true`
+                + `&limit=5`
+                + `&country=cy`
+                + `&types=address,place`
+                + `&access_token=${MAPBOX_TOKEN}`;
 
-      try {
-        const res = await fetch(url);
-        const { features } = await res.json();
-        const js: Suggestion[] = features.map((f: any) => ({
-          display_name: f.place_name,
-          lat: f.center[1],
-          lon: f.center[0]
-        }));
-        setSuggestions(js);
-        setOpen(js.length > 0);
-      } catch {
+      const res = await fetch(url);
+      if (!res.ok) {
+        console.error('Mapbox error', res.status);
         setSuggestions([]);
         setOpen(false);
+        return;
       }
+
+      const { features } = await res.json();
+      const js = features.map((f: any) => ({
+        display_name: f.place_name,
+        lat: f.center[1],
+        lon: f.center[0]
+      }));
+      setSuggestions(js);
+      setOpen(js.length > 0);
     }, 300);
 
     return () => clearTimeout(tid);
