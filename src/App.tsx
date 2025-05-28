@@ -1,5 +1,3 @@
-// src/App.tsx
-
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -7,6 +5,8 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import LoginWebViewWarning from "./components/LoginWebViewWarning";
+import { UserProvider } from "./context/UserContext";
+import { RequireAuth } from "./components/RequireAuth";
 
 import Home from "./pages/Home";
 import Buy from "./pages/Buy";
@@ -23,24 +23,17 @@ import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
 
-import { UserProvider } from "./context/UserContext";
-import { RequireAuth } from "./components/RequireAuth";
-
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
-
   useEffect(() => {
     if (typeof window.gtag === "function") {
-      window.gtag("event", "page_view", {
-        page_path: pathname + search,
-      });
+      window.gtag("event", "page_view", { page_path: pathname + search });
     }
   }, [pathname, search]);
-
   return null;
 }
 
-function App() {
+export default function App() {
   return (
     <UserProvider>
       <Router>
@@ -53,7 +46,7 @@ function App() {
 
           <main className="flex-grow">
             <Routes>
-              {/* Public routes */}
+              {/* Public */}
               <Route path="/" element={<Home />} />
               <Route path="/buy" element={<Buy />} />
               <Route path="/rent" element={<Rent />} />
@@ -65,7 +58,7 @@ function App() {
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
 
-              {/* Protected routes */}
+              {/* Protected */}
               <Route
                 path="/profile"
                 element={
@@ -115,5 +108,3 @@ function App() {
     </UserProvider>
   );
 }
-
-export default App;
