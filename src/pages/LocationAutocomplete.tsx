@@ -26,22 +26,41 @@ export default function LocationAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Fetch suggestions 300ms after user stops typing
-  useEffect(() => {
-    if (!value) {
-      setSuggestions([]);
-      return;
-    }
-    const tid = setTimeout(async () => {
-      const q = encodeURIComponent(value);
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${q}&format=json&addressdetails=1&limit=5`
-      );
-      const js: Suggestion[] = await res.json();
-      setSuggestions(js);
-      setOpen(true);
-    }, 300);
-    return () => clearTimeout(tid);
-  }, [value]);
+useEffect(() => {
+  if (!value) {
+    setSuggestions([]);
+    return;
+  }
+  const tid = setTimeout(async () => {
+    const q = encodeURIComponent(value);
+    // Photon endpoint, restricted to Cyprus (CY), English results, max 5
+    const url =
+      `https://photon.komoot.io/api/` +
+      `?q=${q}` +
+      `&limit=5` +
+      `&lang=en` +
+      `&osm_tag:country=CY`;
+    const res = await fetch(url);
+    const json = await res.json();
+    // Map Photon’s features → your Suggestion[]
+    const js: Suggestion[] = json.features.map((f: any) => ({
+      display_name: [
+        f.properties.name,
+        f.properties.street,
+        f.properties.city,
+        f.properties.state,
+        f.properties.country
+      ]
+        .filter(Boolean)
+        .join(', '),
+      lat: String(f.geometry.coordinates[1]),
+      lon: String(f.geometry.coordinates[0])
+    }));
+    setSuggestions(js);
+    setOpen(true);
+  }, 300);
+  return () => clearTimeout(tid);
+}, [value]);
 
   // Close dropdown on outside click
   useEffect(() => {
