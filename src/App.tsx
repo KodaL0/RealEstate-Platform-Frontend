@@ -81,16 +81,16 @@ function LoginWebViewWarning() {
         background: '#fff',
         padding: 24,
         borderRadius: 8,
-        maxWidth: 350,
+        maxWidth: 400,
         textAlign: 'center',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+        boxShadow: '0 4px 12px rgba(0,0,0,0.3)'
       }}>
-        <h2 style={{marginBottom: 12}}>Embedded Browser Notice</h2>
-        <p style={{marginBottom: 20}}>
+        <h2 style={{marginBottom: 16, fontSize: '1.5em', color: '#333'}}>Embedded Browser Notice</h2>
+        <p style={{marginBottom: 20, fontSize: '1em', color: '#555'}}>
           You are using an embedded browser (LinkedIn). Google sign-in may not work correctly in this environment. 
           We've removed the redirect to default browser for testing purposes.
         </p>
-        <p style={{marginBottom: 20}}>
+        <p style={{marginBottom: 20, fontSize: '1em', color: '#555'}}>
           Please copy the URL below and paste it into your default browser:
         </p>
         <div style={{
@@ -99,7 +99,7 @@ function LoginWebViewWarning() {
           justifyContent: 'center',
           marginBottom: 20
         }}>
-          <span style={{marginRight: 10}}>www.propertpro.com</span>
+          <span style={{marginRight: 10, fontSize: '1em', color: '#333'}}>www.propertpro.com</span>
           <button
             onClick={copyToClipboard}
             style={{
@@ -107,10 +107,13 @@ function LoginWebViewWarning() {
               color: '#fff',
               border: 'none',
               borderRadius: 4,
-              padding: '5px 10px',
-              fontSize: 14,
+              padding: '8px 16px',
+              fontSize: '1em',
               cursor: 'pointer',
+              transition: 'background 0.3s',
             }}
+            onMouseOver={(e) => e.currentTarget.style.background = '#1e4bb8'}
+            onMouseOut={(e) => e.currentTarget.style.background = '#2563eb'}
           >
             Copy URL
           </button>
@@ -123,9 +126,12 @@ function LoginWebViewWarning() {
             border: 'none',
             borderRadius: 4,
             padding: '10px 20px',
-            fontSize: 16,
+            fontSize: '1em',
             cursor: 'pointer',
+            transition: 'background 0.3s',
           }}
+          onMouseOver={(e) => e.currentTarget.style.background = '#1e4bb8'}
+          onMouseOut={(e) => e.currentTarget.style.background = '#2563eb'}
         >
           Continue Anyway
         </button>
