@@ -2,8 +2,8 @@ import React, { useState, useEffect, useRef } from 'react';
 
 interface Suggestion {
   display_name: string;
-  lat: string;
-  lon: string;
+  lat: number;
+  lon: number;
 }
 
 interface Props {
@@ -24,60 +24,44 @@ export default function LocationAutocomplete({
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const MAPBOX_TOKEN = process.env.REACT_APP_MAPBOX_TOKEN!;
 
-  // Fetch suggestions 300ms after user stops typing
-useEffect(() => {
-  if (value.length < 3) {
-    setSuggestions([]);
-    return;
-  }
-
-  const tid = setTimeout(async () => {
-    const q = encodeURIComponent(value);
-    // bbox covering Cyprus: [west lon, south lat, east lon, north lat]
-    const cyBbox = '32.27,34.55,34.97,35.67';
-    const url = [
-      `https://photon.komoot.io/api/`,
-      `?q=${q}`,
-      `&limit=5`,
-      `&lang=en`,
-      `&bbox=${cyBbox}`
-    ].join('');
-
-    try {
-      const res = await fetch(url);
-      const { features } = await res.json();
-
-      const js: Suggestion[] = features.map((f: any) => {
-        const p = f.properties;
-        // build display name from whatever parts are present
-        const parts = [
-          p.housenumber,
-          p.street,
-          p.city,
-          p.country
-        ].filter(Boolean);
-        return {
-          display_name: parts.join(', '),
-          lat: String(f.geometry.coordinates[1]),
-          lon: String(f.geometry.coordinates[0])
-        };
-      });
-
-      setSuggestions(js);
-      setOpen(js.length > 0);
-    } catch (err) {
-      console.error(err);
+  useEffect(() => {
+    if (value.length < 3) {
       setSuggestions([]);
       setOpen(false);
+      return;
     }
-  }, 300);
+    const tid = setTimeout(async () => {
+      const q = encodeURIComponent(value);
+      const url = [
+        `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json`,
+        `?autocomplete=true`,
+        `&limit=5`,
+        `&country=cy`,
+        `&types=address,place`,
+        `&access_token=${MAPBOX_TOKEN}`
+      ].join('');
 
-  return () => clearTimeout(tid);
-}, [value]);
+      try {
+        const res = await fetch(url);
+        const { features } = await res.json();
+        const js: Suggestion[] = features.map((f: any) => ({
+          display_name: f.place_name,
+          lat: f.center[1],
+          lon: f.center[0]
+        }));
+        setSuggestions(js);
+        setOpen(js.length > 0);
+      } catch {
+        setSuggestions([]);
+        setOpen(false);
+      }
+    }, 300);
 
+    return () => clearTimeout(tid);
+  }, [value, MAPBOX_TOKEN]);
 
-  // Close dropdown on outside click
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
       if (!containerRef.current?.contains(e.target as Node)) {
@@ -93,16 +77,16 @@ useEffect(() => {
       <input
         type="text"
         className={`
-          w-full
-          ${inputClassName}
+          w-full ${inputClassName}
           pr-3 py-2 border border-gray-300 rounded-lg
           focus:ring-2 focus:ring-blue-500 focus:border-transparent
         `}
         placeholder={placeholder}
         value={value}
-        onChange={(e) => onChange(e.target.value)}
+        onChange={e => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
       />
+
       {open && suggestions.length > 0 && (
         <ul className="absolute z-10 bg-white border border-gray-200 rounded-lg w-full mt-1 max-h-60 overflow-auto shadow-lg">
           {suggestions.map((s, i) => (
@@ -110,7 +94,7 @@ useEffect(() => {
               key={i}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
               onClick={() => {
-                onSelect(s.display_name, +s.lat, +s.lon);
+                onSelect(s.display_name, s.lat, s.lon);
                 setOpen(false);
               }}
             >
