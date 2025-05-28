@@ -12,7 +12,7 @@ import Home from "./pages/Home";
 import Buy from "./pages/Buy";
 import Rent from "./pages/Rent";
 import PropertyDetails from "./pages/PropertyDetails";
-import AuthPage from "./pages/AuthPage";
+import { AuthPage } from "./pages/AuthPage";
 import OAuthCallback from "./pages/OAuthCallback";
 import ProfilePage from "./pages/ProfilePage";
 import Favourites from "./pages/Favourites";
@@ -108,6 +108,4 @@ export default function App() {
     </UserProvider>
   );
 }
-
-export default App;
 
