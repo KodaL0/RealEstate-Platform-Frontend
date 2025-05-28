@@ -86,7 +86,7 @@ const Rent = () => {
         // Extract results array and normalize
         const resultsArr = paginatedData.results || [];
         const normalized = resultsArr.map(normalizePropertyData);
-        
+
         setProperties(normalized);
         
         // Calculate total pages from the total count returned by API

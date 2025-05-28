@@ -15,7 +15,7 @@ import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
 import ScrollToTop from "./components/ScrollToTop";
 import AboutUs from './pages/AboutUs';
-import TermsandConditions from "./pages/TermsandConditions"; 
+import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
 import OAuthCallback from "./pages/OAuthCallback";
 
@@ -42,69 +42,79 @@ function isInWebView() {
   );
 }
 
-function App() {
-  const [showWebViewWarning, setShowWebViewWarning] = useState(false);
+function LoginWebViewWarning() {
+  const location = useLocation();
+  const [showWarning, setShowWarning] = useState(false);
 
   useEffect(() => {
-    if (isInWebView()) {
-      setShowWebViewWarning(true);
+    if (location.pathname === "/login" && isInWebView()) {
+      setShowWarning(true);
+    } else {
+      setShowWarning(false);
     }
-  }, []);
+  }, [location.pathname]);
 
   const openInBrowser = () => {
-    // Try to open in default browser using a universal link
-    window.location.href = window.location.href;
+    window.location.href = window.location.href; // Attempts to open in default browser
   };
 
+  if (!showWarning) {
+    return null;
+  }
+
+  return (
+    <div style={{
+      position: 'fixed',
+      top: 0,
+      left: 0,
+      width: '100vw',
+      height: '100vh',
+      background: 'rgba(0,0,0,0.7)',
+      zIndex: 9999,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+    }}>
+      <div style={{
+        background: '#fff',
+        padding: 24,
+        borderRadius: 8,
+        maxWidth: 350,
+        textAlign: 'center',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+      }}>
+        <h2 style={{marginBottom: 12}}>Open in Browser Required</h2>
+        <p style={{marginBottom: 20}}>
+          Google sign-in is not supported in this browser. For your security, please open this page in your device's main browser (e.g., Chrome or Safari) to log in with Google. This is required by Google to protect your account.
+        </p>
+        <button
+          onClick={openInBrowser}
+          style={{
+            background: '#2563eb',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 4,
+            padding: '10px 20px',
+            fontSize: 16,
+            cursor: 'pointer',
+          }}
+        >
+          Open in Default Browser
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function App() {
   return (
     <UserProvider>
-      {showWebViewWarning && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          width: '100vw',
-          height: '100vh',
-          background: 'rgba(0,0,0,0.7)',
-          zIndex: 9999,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <div style={{
-            background: '#fff',
-            padding: 24,
-            borderRadius: 8,
-            maxWidth: 350,
-            textAlign: 'center',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}>
-            <h2 style={{marginBottom: 12}}>Open in Browser Required</h2>
-            <p style={{marginBottom: 20}}>
-              Google sign-in is not supported in this browser. For your security, please open this page in your device's main browser (e.g., Chrome or Safari) to log in with Google. This is required by Google to protect your account.
-            </p>
-            <button
-              onClick={openInBrowser}
-              style={{
-                background: '#2563eb',
-                color: '#fff',
-                border: 'none',
-                borderRadius: 4,
-                padding: '10px 20px',
-                fontSize: 16,
-                cursor: 'pointer',
-              }}
-            >
-              Open in Default Browser
-            </button>
-          </div>
-        </div>
-      )}
       <Router>
         {/* Track route changes for GA */}
         <RouteChangeTracker />
         <ScrollToTop />
+        <LoginWebViewWarning />
 
         <div className="min-h-screen flex flex-col">
           <Navbar />
