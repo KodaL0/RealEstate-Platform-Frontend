@@ -27,40 +27,55 @@ export default function LocationAutocomplete({
 
   // Fetch suggestions 300ms after user stops typing
 useEffect(() => {
-  if (!value) {
+  if (value.length < 3) {
     setSuggestions([]);
     return;
   }
+
   const tid = setTimeout(async () => {
     const q = encodeURIComponent(value);
-    // Photon endpoint, restricted to Cyprus (CY), English results, max 5
-    const url =
-      `https://photon.komoot.io/api/` +
-      `?q=${q}` +
-      `&limit=5` +
-      `&lang=en` +
-      `&osm_tag:country=CY`;
-    const res = await fetch(url);
-    const json = await res.json();
-    // Map Photon’s features → your Suggestion[]
-    const js: Suggestion[] = json.features.map((f: any) => ({
-      display_name: [
-        f.properties.name,
-        f.properties.street,
-        f.properties.city,
-        f.properties.state,
-        f.properties.country
-      ]
-        .filter(Boolean)
-        .join(', '),
-      lat: String(f.geometry.coordinates[1]),
-      lon: String(f.geometry.coordinates[0])
-    }));
-    setSuggestions(js);
-    setOpen(true);
+    // bbox covering Cyprus: [west lon, south lat, east lon, north lat]
+    const cyBbox = '32.27,34.55,34.97,35.67';
+    const url = [
+      `https://photon.komoot.io/api/`,
+      `?q=${q}`,
+      `&limit=5`,
+      `&lang=en`,
+      `&bbox=${cyBbox}`
+    ].join('');
+
+    try {
+      const res = await fetch(url);
+      const { features } = await res.json();
+
+      const js: Suggestion[] = features.map((f: any) => {
+        const p = f.properties;
+        // build display name from whatever parts are present
+        const parts = [
+          p.housenumber,
+          p.street,
+          p.city,
+          p.country
+        ].filter(Boolean);
+        return {
+          display_name: parts.join(', '),
+          lat: String(f.geometry.coordinates[1]),
+          lon: String(f.geometry.coordinates[0])
+        };
+      });
+
+      setSuggestions(js);
+      setOpen(js.length > 0);
+    } catch (err) {
+      console.error(err);
+      setSuggestions([]);
+      setOpen(false);
+    }
   }, 300);
+
   return () => clearTimeout(tid);
 }, [value]);
+
 
   // Close dropdown on outside click
   useEffect(() => {
