@@ -169,6 +169,14 @@ const PropertyDetails: React.FC = () => {
     );
   }
 
+  const formatOrdinal = (n: string | number): string => {
+    const num = Number(n);
+    if (isNaN(num)) return String(n);
+    const suffix = ['th', 'st', 'nd', 'rd'];
+    const v = num % 100;
+    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+  };
+    
   const toUrl = (img: { image: string }) => img.image;
   const unpublishedBanner = !property.is_published && (
     <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
@@ -355,7 +363,7 @@ const PropertyDetails: React.FC = () => {
                   {property.lot_size && (
                     <div className="flex items-center text-gray-700">
                       <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{property.lot_size} sqm lot</span>
+                      <span>{parseInt(property.lot_size)} sqm lot</span>
                     </div>
                   )} 
                   {property.floor_level && (
@@ -367,7 +375,7 @@ const PropertyDetails: React.FC = () => {
                   {property.available_from && (
                     <div className="flex items-center text-gray-700">
                       <CalendarDays className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>Available {property.available_from}</span>
+                      <span>{formatOrdinal(property.floor_level)} floor</span>
                     </div>
                   )}
                 </div>
