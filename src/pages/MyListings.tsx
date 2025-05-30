@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Plus } from 'lucide-react';
+import { Home, Plus, Bed, Bath, Square } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
