@@ -6,7 +6,7 @@ import {
   Share2, CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
-  X, ArrowLeft, ArrowRight,
+  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
@@ -352,6 +352,24 @@ const PropertyDetails: React.FC = () => {
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />  
                     <span>{property.year_built ? `Built in ${property.year_built}` : 'Year built n/a'}</span>
                   </div>
+                  {property.lot_size && (
+                    <div className="flex items-center text-gray-700">
+                      <Ruler className="h-5 w-5 mr-2 text-gray-500" />
+                      <span>{property.lot_size} sqm lot</span>
+                    </div>
+                  )} 
+                  {property.floor_level && (
+                    <div className="flex items-center text-gray-700">
+                      <Layers className="h-5 w-5 mr-2 text-gray-500" />
+                      <span>{property.floor_level}</span>
+                    </div>
+                  )}
+                  {property.available_from && (
+                    <div className="flex items-center text-gray-700">
+                      <CalendarDays className="h-5 w-5 mr-2 text-gray-500" />
+                      <span>Available {property.available_from}</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Description */}
