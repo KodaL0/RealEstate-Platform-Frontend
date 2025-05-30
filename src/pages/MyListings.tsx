@@ -285,9 +285,26 @@ function MyListings() {
 
                         {/* Stats */}
                         <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                          <span>{beds} {beds === 1 ? 'bed' : 'Beds'}</span>
-                          <span>{baths} {baths === 1 ? 'bath' : 'Baths'}</span>
-                          <span>{area} m²</span>
+                          {beds !== undefined && beds !== null && beds !== '' && (
+                            <div className="flex items-center">
+                              <Bed className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{beds} {beds === 1 ? 'Bed' : 'Beds'}</span>
+                            </div>
+                          )}
+                          
+                          {baths !== undefined && baths !== null && baths !== '' && (
+                            <div className="flex items-center">
+                              <Bath className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{baths} {baths === 1 ? 'Bath' : 'Baths'}</span>
+                            </div>
+                          )}
+
+                          {area !== undefined && area !== null && area !== '' && (
+                            <div className="flex items-center">
+                              <Square className="h-4 w-4 mr-2 text-gray-500" />
+                              <span>{area} m²</span>
+                            </div>
+                          )}
                         </div>
 
                         {/* Actions & Date */}
