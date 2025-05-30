@@ -170,7 +170,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </div>
           <div className="flex items-center text-gray-700">
             <Square className="h-5 w-5 mr-2 text-gray-500" />
-            <span>{areaDisp} sq&nbsp;m</span>
+            <span>{areaDisp} m²</span>
           </div>
         </div>
       </div>
