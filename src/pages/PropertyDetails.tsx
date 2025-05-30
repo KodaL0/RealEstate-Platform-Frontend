@@ -369,13 +369,13 @@ const PropertyDetails: React.FC = () => {
                   {property.floor_level && (
                     <div className="flex items-center text-gray-700">
                       <Layers className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{property.floor_level}</span>
+                      <span>{formatOrdinal(property.floor_level)} floor</span>
                     </div>
                   )}
                   {property.available_from && (
                     <div className="flex items-center text-gray-700">
                       <CalendarDays className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{formatOrdinal(property.floor_level)} floor</span>
+                      <span>Available {property.available_from}</span>
                     </div>
                   )}
                 </div>
