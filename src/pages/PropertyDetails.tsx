@@ -354,7 +354,7 @@ const PropertyDetails: React.FC = () => {
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.area.toLocaleString()} sqm</span>
+                    <span>{property.area.toLocaleString()} m²</span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Calendar className="h-5 w-5 mr-2 text-gray-500" />  
@@ -363,7 +363,7 @@ const PropertyDetails: React.FC = () => {
                   {property.lot_size && (
                     <div className="flex items-center text-gray-700">
                       <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{parseInt(property.lot_size)} sqm lot</span>
+                      <span>{parseInt(property.lot_size)} m² lot</span>
                     </div>
                   )} 
                   {property.floor_level && (
