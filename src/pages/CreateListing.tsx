@@ -3,6 +3,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
+import { DayPicker } from 'react-day-picker';
+import 'react-day-picker/dist/style.css';
+
 import {
   Home,
   DollarSign,
@@ -141,6 +144,9 @@ const CreateListing: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
 
+  // New state for date picker
+  const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(undefined);
+
   // new: hold selected coords
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
 
@@ -237,70 +243,76 @@ const handleInputChange = (
     return true;
   };
 
-  /* fetch for edit */
-  useEffect(() => {
-    if (!isEditing || !id) return;
-    setLoading(true);
-    api.properties.getUserProperty(username, Number(id))
-      .then(res => {
-        const d = res.data;
-        const imgs = d.images || [];
-        setPreviewImages(imgs.map((i: any) => i.image));
-        setExistingImageIds(imgs.map((i: any) => i.id || i.image));
-        const primary = imgs.find((i: any) => i.is_primary);
-        setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+useEffect(() => {
+  if (!isEditing || !id) return;
+  setLoading(true);
+  api.properties.getUserProperty(username, Number(id))
+    .then(res => {
+      const d = res.data;
+      const imgs = d.images || [];
+      setPreviewImages(imgs.map((i: any) => i.image));
+      setExistingImageIds(imgs.map((i: any) => i.id || i.image));
+      const primary = imgs.find((i: any) => i.is_primary);
+      setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
-        let propertyStatus = d.property_status || '';
-        if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
-        if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+      let propertyStatus = d.property_status || '';
+      if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+      if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
 
-        /* split phone to code + local part */
-        let phone = d.contact_phone || '';
-        let cc = countryCode;
-        const m = phone.match(/^\+[\d]{1,4}/);
-        if (m) {
-          cc = m[0];
-          phone = phone.replace(cc, '').trim();
-        }
-        setCountryCode(cc);
+      /* split phone to code + local part */
+      let phone = d.contact_phone || '';
+      let cc = countryCode;
+      const m = phone.match(/^\+[\d]{1,4}/);
+      if (m) {
+        cc = m[0];
+        phone = phone.replace(cc, '').trim();
+      }
+      setCountryCode(cc);
 
-        setFormData({
-          ...DEFAULT_FORM_STATE,
-          title: d.title || '',
-          description: d.description || '',
-          price: d.price?.toString() || '',
-          location: d.location || '',
-          propertyType: d.property_type || '',
-          bedrooms: d.bedrooms?.toString() || '',
-          bathrooms: d.bathrooms?.toString() || '',
-          area: d.area?.toString() || '',
-          amenities: (d.amenities || []).map((lab: string) => {
-            const match = AMENITIES.find(a => a.label.toLowerCase() === lab.toLowerCase());
-            return match ? match.id : lab;
-          }),
-          yearBuilt: d.year_built?.toString() || '',
-          parkingSpaces: d.parking_spaces?.toString() || '',
-          lotSize: d.lot_size?.toString() || '',
-          propertyStatus,
-          energyRating: d.energy_rating || '',
-          constructionMaterial: d.construction_material || '',
-          floorLevel: d.floor_level?.toString() || '',
-          totalFloors: d.total_floors?.toString() || '',
-          availableFrom: d.available_from || '',
-          contactPhone: phone,
-          contactEmail: d.contact_email || '',
-          virtualTourUrl: d.virtual_tour_url || '',
-          videoUrl: d.video_url || '',
-          images: [],
-        });
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('Failed to load property data. Please try again.');
-        setLoading(false);
+      setFormData({
+        ...DEFAULT_FORM_STATE,
+        title: d.title || '',
+        description: d.description || '',
+        price: d.price?.toString() || '',
+        location: d.location || '',
+        propertyType: d.property_type || '',
+        bedrooms: d.bedrooms?.toString() || '',
+        bathrooms: d.bathrooms?.toString() || '',
+        area: d.area?.toString() || '',
+        amenities: (d.amenities || []).map((lab: string) => {
+          const match = AMENITIES.find(a => a.label.toLowerCase() === lab.toLowerCase());
+          return match ? match.id : lab;
+        }),
+        yearBuilt: d.year_built?.toString() || '',
+        parkingSpaces: d.parking_spaces?.toString() || '',
+        lotSize: d.lot_size?.toString() || '',
+        propertyStatus,
+        energyRating: d.energy_rating || '',
+        constructionMaterial: d.construction_material || '',
+        floorLevel: d.floor_level?.toString() || '',
+        totalFloors: d.total_floors?.toString() || '',
+        availableFrom: d.available_from || '',
+        contactPhone: phone,
+        contactEmail: d.contact_email || '',
+        virtualTourUrl: d.virtual_tour_url || '',
+        videoUrl: d.video_url || '',
+        images: [],
       });
-  }, [isEditing, id, username]);
+
+      // ⬇️ Set the calendar selection for DayPicker
+      if (d.available_from) {
+        setAvailableFromDate(new Date(d.available_from));
+      }
+
+      setLoading(false);
+    })
+    .catch(err => {
+      console.error(err);
+      setError('Failed to load property data. Please try again.');
+      setLoading(false);
+    });
+}, [isEditing, id, username]);
+
 
   /* submit */
   const handleSubmit = async (e: React.FormEvent) => {
@@ -666,6 +678,25 @@ const handleInputChange = (
                   />
                 </div>
               </div>
+
+              {/* available from using DayPicker */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Available From <span className="text-red-500">*</span>
+                  </label>
+                <div className="bg-white border border-gray-300 rounded-lg p-2">
+                  <DayPicker
+                    mode="single"selected={availableFromDate}
+                    onSelect={setAvailableFromDate}
+                    disabled={{ before: new Date() }} // optional: disable past dates
+                  />
+                </div>
+                <p className="text-sm text-gray-500 mt-1">
+                  {availableFromDate
+                    ? `Selected: ${availableFromDate.toDateString()}`
+                    : 'Please select a date'}
+                  </p>
+                </div>
             </section>
 
             {/* ――― Property Images ――― */}
