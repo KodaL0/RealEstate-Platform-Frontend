@@ -691,6 +691,7 @@ useEffect(() => {
                 <input
                   type="number"
                   id="floorLevel"
+                  name="floorLevel" // ← this is critical
                   value={formData.floorLevel}
                   onChange={handleInputChange}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
