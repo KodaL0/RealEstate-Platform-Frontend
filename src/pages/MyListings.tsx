@@ -285,8 +285,8 @@ function MyListings() {
 
                         {/* Stats */}
                         <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                          <span>{beds} {beds === 1 ? 'bed' : 'beds'}</span>
-                          <span>{baths} {baths === 1 ? 'bath' : 'baths'}</span>
+                          <span>{beds} {beds === 1 ? 'bed' : 'Beds'}</span>
+                          <span>{baths} {baths === 1 ? 'bath' : 'Baths'}</span>
                           <span>{area} m²</span>
                         </div>
 
