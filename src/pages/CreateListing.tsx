@@ -682,18 +682,38 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* available from using DayPicker */}
+              {/* floor level */}
               <div>
+                <label htmlFor="floorLevel" className="block text-sm font-medium text-gray-700 mb-1">
+                  Floor Level
+                </label>
+                <input
+                  type="number"
+                  id="floorLevel"
+                  value={formData.floorLevel}
+                  onChange={handleInputChange}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  min="0"
+                  placeholder="e.g., 2"
+                />
+              </div>
+              
+              {/* available from using DayPicker */}
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Available From <span className="text-red-500">*</span>
                   </label>
                 <button
                   type="button"
                   onClick={() => setShowCalendar(prev => !prev)}
-                  className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left"
                 >
-                  {availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : 'Select date'}
-                  <CalendarIcon className="ml-2 h-4 w-4 text-gray-500" />
+                  <div className="flex items-center justify-between">
+                    <span>
+                      {availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : 'Select date'}
+                    </span>
+                    <CalendarIcon className="ml-2 h-4 w-4 text-gray-500" />
+                  </div>
                 </button>
 
                 {showCalendar && (
