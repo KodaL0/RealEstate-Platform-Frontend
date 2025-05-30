@@ -3,6 +3,9 @@ import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
+
+import { CalendarIcon } from 'lucide-react';
+import { format } from 'date-fns';
 import { DayPicker } from 'react-day-picker';
 import 'react-day-picker/dist/style.css';
 
@@ -144,8 +147,8 @@ const CreateListing: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
 
-  // New state for date picker
   const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(undefined);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   // new: hold selected coords
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
@@ -684,18 +687,28 @@ useEffect(() => {
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Available From <span className="text-red-500">*</span>
                   </label>
-                <div className="bg-white border border-gray-300 rounded-lg p-2">
-                  <DayPicker
-                    mode="single"selected={availableFromDate}
-                    onSelect={setAvailableFromDate}
-                    disabled={{ before: new Date() }} // optional: disable past dates
-                  />
-                </div>
-                <p className="text-sm text-gray-500 mt-1">
-                  {availableFromDate
-                    ? `Selected: ${availableFromDate.toDateString()}`
-                    : 'Please select a date'}
-                  </p>
+                <button
+                  type="button"
+                  onClick={() => setShowCalendar(prev => !prev)}
+                  className="w-full flex items-center justify-between px-4 py-2 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                >
+                  {availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : 'Select date'}
+                  <CalendarIcon className="ml-2 h-4 w-4 text-gray-500" />
+                </button>
+
+                {showCalendar && (
+                  <div className="absolute z-50 mt-2 bg-white border border-gray-300 rounded-lg shadow-md">
+                    <DayPicker
+                      mode="single"
+                      selected={availableFromDate}
+                      onSelect={(date) => {
+                        setAvailableFromDate(date);
+                        setShowCalendar(false);
+                      }}
+                      disabled={{ before: new Date() }}
+                    />
+                  </div>
+                 )}
                 </div>
             </section>
 
