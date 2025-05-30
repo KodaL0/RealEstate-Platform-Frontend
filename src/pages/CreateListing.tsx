@@ -684,7 +684,7 @@ useEffect(() => {
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6"> 
               {/* floor level */}
-              <div>
+              <div className="mt-4">
                 <label htmlFor="floorLevel" className="block text-sm font-medium text-gray-700 mb-1">
                   Floor Level
                 </label>
@@ -700,7 +700,7 @@ useEffect(() => {
               </div>
               
               {/* available from using DayPicker */}
-              <div className="relative">
+              <div className="relative mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Available From <span className="text-red-500">*</span>
                   </label>
