@@ -624,7 +624,7 @@ useEffect(() => {
                 {/* area */}
                 <div>
                   <label htmlFor="area" className="block text-sm font-medium text-gray-700 mb-1">
-                    Living Area (sq&nbsp;m) <span className="text-red-500">*</span>
+                    Living Area (m²) <span className="text-red-500">*</span>
                   </label>
                   <div className="relative">
                     <SquareFootage
@@ -667,7 +667,7 @@ useEffect(() => {
                 {/* lot size */}
                 <div>
                   <label htmlFor="lotSize" className="block text-sm font-medium text-gray-700 mb-1">
-                    Lot Size (sq&nbsp;m)
+                    Lot Size (m²)
                   </label>
                   <input
                     type="number"
