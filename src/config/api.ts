@@ -166,7 +166,18 @@ const api = {
           };
         }),
 
-    featured:       ()        => apiGet('properties/featured'),
+    featured: (p?: { page?: number, page_size?: number }) =>
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('properties/featured', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
+            results: Array.isArray(d.results) ? d.results : [],
+            count: d.count || 0,
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProperty: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),

@@ -27,6 +27,7 @@ function Home() {
   const [loading,  setLoading]  = useState(true);
   const [error,    setError]    = useState<string | null>(null);
   const [page,     setPage]     = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
   /* ref to scroll back to the section top */
@@ -39,8 +40,12 @@ function Home() {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        const res = await api.properties.featured();
-        setFeatured(res.data.results || []);
+        const res = await api.properties.featured({
+          page,
+          page_size: PAGE_SIZE
+        });
+        setFeatured(res.results || []);
+        setTotalCount(res.count || 0);
       } catch (err) {
         console.error('Error fetching featured properties:', err);
         setError('Failed to load featured properties. Please try again later.');
@@ -50,11 +55,10 @@ function Home() {
     };
 
     getFeatured();
-  }, []);
+  }, [page]);
 
   /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
-  const paginated  = featured.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   const jumpToPage = (p: number) => {
     setPage(p);
@@ -169,8 +173,8 @@ function Home() {
                   transition={{ duration: 0.45, ease: "easeOut" }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
-                  {paginated.length ? (
-                    paginated.map((prop) => (
+                  {featured.length ? (
+                    featured.map((prop) => (
                       <PropertyCard key={prop.id} property={prop} />
                     ))
                   ) : (
