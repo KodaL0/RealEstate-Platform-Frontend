@@ -14,17 +14,18 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import api from '../config/api';
+import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
-  const [featured, setFeatured] = useState<Property[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [page,     setPage]     = useState(1);
+  const [featured,   setFeatured]   = useState<Property[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [page,       setPage]       = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
   /* ref for the “Featured Properties” section */
@@ -36,8 +37,9 @@ function Home() {
       setLoading(true);
       try {
         const res = await api.properties.featured();
-        // API returns an object with data.results = Property[]
-        setFeatured(res.data.results || []);
+        // api.properties.featured() returns { results: Property[], count: number }
+        setFeatured(res.results || []);
+        setTotalCount(res.count || 0);
       } catch (err) {
         console.error("Error fetching featured properties:", err);
         setError("Failed to load featured properties. Please try again later.");
