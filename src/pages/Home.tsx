@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -14,35 +14,30 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import api from "../config/api";
+import api from '../config/api';
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust if your navbar is taller/shorter
+const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
-  const [featured,   setFeatured]   = useState<Property[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [page,       setPage]       = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
+  const [featured, setFeatured] = useState<Property[]>([]);
+  const [loading,  setLoading]  = useState(true);
+  const [error,    setError]    = useState<string | null>(null);
+  const [page,     setPage]     = useState(1);
   const [searchTerm, setSearchTerm] = useState("");
 
   /* ref for the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-  /* ───────────── fetch one “page” of featured properties ───────────── */
+  /* ───────────── fetch all featured properties at once ───────────── */
   useEffect(() => {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        const res = await api.properties.featured({
-          page,
-          page_size: PAGE_SIZE,
-        });
-        // assume: res.data.results is an array of Property, and res.data.count is total
+        const res = await api.properties.featured();
+        // API returns an object with data.results = Property[]
         setFeatured(res.data.results || []);
-        setTotalCount(res.data.count || 0);
       } catch (err) {
         console.error("Error fetching featured properties:", err);
         setError("Failed to load featured properties. Please try again later.");
@@ -52,13 +47,19 @@ function Home() {
     };
 
     getFeatured();
-  }, [page]);
+  }, []);
 
-  /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  /* ───────────── client-side pagination ───────────── */
+  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
+  const paginated = featured.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  const jumpToPage = (p: number) => {
-    // 1) Immediately scroll to the Featured section (before changing page)
+  /* ───────────── scroll to Featured section on page change ───────────── */
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
     if (featuredTopRef.current) {
       const offset =
         featuredTopRef.current.getBoundingClientRect().top +
@@ -66,7 +67,9 @@ function Home() {
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
-    // 2) Now update the page state (so the new data loads)
+  }, [page]);
+
+  const jumpToPage = (p: number) => {
     setPage(p);
   };
 
@@ -110,13 +113,13 @@ function Home() {
                 </div>
                 <div className="flex space-x-4">
                   <Link
-                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
+                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Buy
                   </Link>
                   <Link
-                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
+                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Rent
@@ -171,8 +174,8 @@ function Home() {
                   transition={{ duration: 0.45, ease: "easeOut" }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
-                  {featured.length ? (
-                    featured.map((prop) => (
+                  {paginated.length ? (
+                    paginated.map((prop) => (
                       <PropertyCard key={prop.id} property={prop} />
                     ))
                   ) : (
@@ -193,11 +196,12 @@ function Home() {
                       <button
                         key={n}
                         onClick={() => jumpToPage(n)}
-                        className={`h-10 w-10 rounded-full border transition-all ${
-                          active
-                            ? "bg-blue-600 text-white border-blue-600"
-                            : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-                        }`}
+                        className={`h-10 w-10 rounded-full border transition-all
+                          ${
+                            active
+                              ? "bg-blue-600 text-white border-blue-600"
+                              : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                          }`}
                       >
                         {n}
                       </button>
