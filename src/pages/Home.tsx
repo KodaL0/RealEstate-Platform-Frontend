@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -14,10 +14,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import api from '../config/api';
+import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
+const NAV_HEIGHT  = 80;   // px – adjust if your navbar is taller/shorter
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -28,7 +28,7 @@ function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* ref for the “Featured Properties” container */
+  /* ref for the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
   /* ───────────── fetch one “page” of featured properties ───────────── */
@@ -36,11 +36,13 @@ function Home() {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        // ask the backend for exactly PAGE_SIZE items on page `page`
-        const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
-        // assume response: { results: Property[], count: number }
-        setFeatured(res.results || []);
-        setTotalCount(res.count || 0);
+        const res = await api.properties.featured({
+          page,
+          page_size: PAGE_SIZE,
+        });
+        // assume: res.data.results is an array of Property, and res.data.count is total
+        setFeatured(res.data.results || []);
+        setTotalCount(res.data.count || 0);
       } catch (err) {
         console.error("Error fetching featured properties:", err);
         setError("Failed to load featured properties. Please try again later.");
@@ -52,13 +54,11 @@ function Home() {
     getFeatured();
   }, [page]);
 
-  /* ───────────── scroll to Featured section on page change ───────────── */
-  const first = useRef(true);
-  useLayoutEffect(() => {
-    if (first.current) {
-      first.current = false;
-      return;
-    }
+  /* ───────────── pagination helpers ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+
+  const jumpToPage = (p: number) => {
+    // 1) Immediately scroll to the Featured section (before changing page)
     if (featuredTopRef.current) {
       const offset =
         featuredTopRef.current.getBoundingClientRect().top +
@@ -66,11 +66,7 @@ function Home() {
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
-  }, [page]);
-
-  /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const jumpToPage = (p: number) => {
+    // 2) Now update the page state (so the new data loads)
     setPage(p);
   };
 
