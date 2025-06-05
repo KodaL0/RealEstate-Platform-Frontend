@@ -8,9 +8,6 @@ import {
   Home as HomeIcon,
   Briefcase,
   Award,
-  Mail,
-  Phone,
-  MapPin,
   ChevronRight,
   Loader2,
 } from "lucide-react";
@@ -20,18 +17,18 @@ import { Property } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
+const NAV_HEIGHT  = 80;   // px – height of your fixed navbar
 
 function Home() {
   /* ───────────── state ───────────── */
-  const [featured, setFeatured] = useState<Property[]>([]);
-  const [loading,   setLoading]  = useState(true);
-  const [error,     setError]    = useState<string | null>(null);
-  const [page,      setPage]     = useState(1);
+  const [featured,   setFeatured]   = useState<Property[]>([]);
+  const [loading,    setLoading]    = useState(true);
+  const [error,      setError]      = useState<string | null>(null);
+  const [page,       setPage]       = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* ref to scroll back to the “Featured Properties” section */
+  /* ref for the “Featured Properties” container */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
   /* ───────────── fetch one “page” of featured properties ───────────── */
@@ -39,12 +36,12 @@ function Home() {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        // Ask the backend for exactly `page_size = PAGE_SIZE` items on page `page`
+        // ask the backend for exactly PAGE_SIZE items on page `page`
         const res = await api.properties.featured({
           page,
           page_size: PAGE_SIZE,
         });
-        // We assume the response shape is: { results: Property[], count: number }
+        // assume response: { results: Property[], count: number }
         setFeatured(res.results || []);
         setTotalCount(res.count || 0);
       } catch (err) {
@@ -60,15 +57,21 @@ function Home() {
 
   /* ───────────── pagination helpers ───────────── */
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const jumpToPage = (p: number) => {
-    // Scroll to the top of the featured section immediately, before updating page
+
+  const jumpToPage = (newPage: number) => {
+    // 1) Immediately scroll the Featured section into view:
     if (featuredTopRef.current) {
-      window.scrollTo({
-        top: featuredTopRef.current.offsetTop - NAV_HEIGHT,
-        behavior: "smooth",
-      });
+      // block: "start" scrolls so that the top of the ref element 
+      // aligns near the top of the viewport. We can adjust by NAV_HEIGHT:
+      const offset =
+        featuredTopRef.current.getBoundingClientRect().top +
+        window.scrollY -
+        NAV_HEIGHT;
+      window.scrollTo({ top: offset, behavior: "smooth" });
     }
-    setPage(p);
+
+    // 2) Then switch to that page number:
+    setPage(newPage);
   };
 
   /* ───────────── JSX ───────────── */
@@ -111,13 +114,13 @@ function Home() {
                 </div>
                 <div className="flex space-x-4">
                   <Link
-                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
                     className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Buy
                   </Link>
                   <Link
-                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
                     className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Rent
@@ -194,12 +197,11 @@ function Home() {
                       <button
                         key={n}
                         onClick={() => jumpToPage(n)}
-                        className={`h-10 w-10 rounded-full border transition-all
-                          ${
-                            active
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-                          }`}
+                        className={`h-10 w-10 rounded-full border transition-all ${
+                          active
+                            ? "bg-blue-600 text-white border-blue-600"
+                            : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                        }`}
                       >
                         {n}
                       </button>
@@ -229,7 +231,9 @@ function Home() {
                 <HomeIcon className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Premium Properties</h3>
-              <p className="text-gray-600">Access to exclusive listings and luxury properties not available elsewhere.</p>
+              <p className="text-gray-600">
+                Access to exclusive listings and luxury properties not available elsewhere.
+              </p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -237,15 +241,19 @@ function Home() {
                 <Building className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Guidance</h3>
-              <p className="text-gray-600">Our team of experienced agents provides personalized advice and support.</p>
+              <p className="text-gray-600">
+                Our team of experienced agents provides personalized advice and support.
+              </p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
+              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
                 <Briefcase className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Investment Insights</h3>
-              <p className="text-gray-600">Strategic investment advice to maximize your property portfolio returns.</p>
+              <p className="text-gray-600">
+                Strategic investment advice to maximize your property portfolio returns.
+              </p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -253,7 +261,9 @@ function Home() {
                 <Award className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Concierge Service</h3>
-              <p className="text-gray-600">White-glove service from property search to closing and beyond.</p>
+              <p className="text-gray-600">
+                White-glove service from property search to closing and beyond.
+              </p>
             </div>
           </div>
         </div>
