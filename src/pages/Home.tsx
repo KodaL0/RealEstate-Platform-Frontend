@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -17,7 +17,7 @@ import { Property } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – height of your fixed navbar
+const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -37,10 +37,7 @@ function Home() {
       setLoading(true);
       try {
         // ask the backend for exactly PAGE_SIZE items on page `page`
-        const res = await api.properties.featured({
-          page,
-          page_size: PAGE_SIZE,
-        });
+        const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
         // assume response: { results: Property[], count: number }
         setFeatured(res.results || []);
         setTotalCount(res.count || 0);
@@ -55,23 +52,26 @@ function Home() {
     getFeatured();
   }, [page]);
 
-  /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  const jumpToPage = (newPage: number) => {
-    // 1) Immediately scroll the Featured section into view:
+  /* ───────────── scroll to Featured section on page change ───────────── */
+  const first = useRef(true);
+  useLayoutEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
     if (featuredTopRef.current) {
-      // block: "start" scrolls so that the top of the ref element 
-      // aligns near the top of the viewport. We can adjust by NAV_HEIGHT:
       const offset =
         featuredTopRef.current.getBoundingClientRect().top +
         window.scrollY -
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
+  }, [page]);
 
-    // 2) Then switch to that page number:
-    setPage(newPage);
+  /* ───────────── pagination helpers ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const jumpToPage = (p: number) => {
+    setPage(p);
   };
 
   /* ───────────── JSX ───────────── */
@@ -137,10 +137,15 @@ function Home() {
         <div ref={featuredTopRef} className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
-              <span className="inline-block text-blue-600 font-medium mb-2">Exclusive Listings</span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Featured Properties</h2>
+              <span className="inline-block text-blue-600 font-medium mb-2">
+                Exclusive Listings
+              </span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+                Featured Properties
+              </h2>
               <p className="text-gray-600 mt-2 max-w-2xl">
-                Explore our hand-picked selection of premium properties in the most desirable locations
+                Explore our hand-picked selection of premium properties in the most desirable
+                locations
               </p>
             </div>
             <Link
@@ -218,10 +223,15 @@ function Home() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="inline-block text-blue-600 font-medium mb-2">Our Advantages</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose PROPERTPRO</h2>
+            <span className="inline-block text-blue-600 font-medium mb-2">
+              Our Advantages
+            </span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
+              Why Choose PROPERTPRO
+            </h2>
             <p className="text-gray-600">
-              We provide an exceptional real estate experience with personalized service and unmatched expertise.
+              We provide an exceptional real estate experience with personalized service
+              and unmatched expertise.
             </p>
           </div>
 
