@@ -14,7 +14,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import api from "../config/api";
+import api from '../config/api';
 
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
@@ -137,15 +137,10 @@ function Home() {
         <div ref={featuredTopRef} className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
-              <span className="inline-block text-blue-600 font-medium mb-2">
-                Exclusive Listings
-              </span>
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-                Featured Properties
-              </h2>
+              <span className="inline-block text-blue-600 font-medium mb-2">Exclusive Listings</span>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Featured Properties</h2>
               <p className="text-gray-600 mt-2 max-w-2xl">
-                Explore our hand-picked selection of premium properties in the most desirable
-                locations
+                Explore our hand-picked selection of premium properties in the most desirable locations
               </p>
             </div>
             <Link
@@ -223,15 +218,10 @@ function Home() {
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="inline-block text-blue-600 font-medium mb-2">
-              Our Advantages
-            </span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Why Choose PROPERTPRO
-            </h2>
+            <span className="inline-block text-blue-600 font-medium mb-2">Our Advantages</span>
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose PROPERTPRO</h2>
             <p className="text-gray-600">
-              We provide an exceptional real estate experience with personalized service
-              and unmatched expertise.
+              We provide an exceptional real estate experience with personalized service and unmatched expertise.
             </p>
           </div>
 
@@ -241,9 +231,7 @@ function Home() {
                 <HomeIcon className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Premium Properties</h3>
-              <p className="text-gray-600">
-                Access to exclusive listings and luxury properties not available elsewhere.
-              </p>
+              <p className="text-gray-600">Access to exclusive listings and luxury properties not available elsewhere.</p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -251,9 +239,7 @@ function Home() {
                 <Building className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Guidance</h3>
-              <p className="text-gray-600">
-                Our team of experienced agents provides personalized advice and support.
-              </p>
+              <p className="text-gray-600">Our team of experienced agents provides personalized advice and support.</p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -261,9 +247,7 @@ function Home() {
                 <Briefcase className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Investment Insights</h3>
-              <p className="text-gray-600">
-                Strategic investment advice to maximize your property portfolio returns.
-              </p>
+              <p className="text-gray-600">Strategic investment advice to maximize your property portfolio returns.</p>
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
@@ -271,9 +255,7 @@ function Home() {
                 <Award className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Concierge Service</h3>
-              <p className="text-gray-600">
-                White-glove service from property search to closing and beyond.
-              </p>
+              <p className="text-gray-600">White-glove service from property search to closing and beyond.</p>
             </div>
           </div>
         </div>
