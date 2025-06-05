@@ -58,19 +58,16 @@ function Home() {
     getFeatured();
   }, [page]);
 
-  /* ───────────── scroll into view *after* the new page’s content has loaded ───────────── */
-  useEffect(() => {
-    if (!loading && featuredTopRef.current) {
+  /* ───────────── pagination helpers ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const jumpToPage = (p: number) => {
+    // Scroll to the top of the featured section immediately, before updating page
+    if (featuredTopRef.current) {
       window.scrollTo({
         top: featuredTopRef.current.offsetTop - NAV_HEIGHT,
         behavior: "smooth",
       });
     }
-  }, [page, loading]);
-
-  /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-  const jumpToPage = (p: number) => {
     setPage(p);
   };
 
@@ -244,7 +241,7 @@ function Home() {
             </div>
 
             <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
+            <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
                 <Briefcase className="h-8 w-8 text-blue-600" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-3">Investment Insights</h3>
