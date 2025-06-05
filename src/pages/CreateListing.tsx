@@ -296,9 +296,14 @@ useEffect(() => {
         images: [],
       });
 
-      // ⬇️ Set the calendar selection for DayPicker
+      // Update both states for available_from
       if (d.available_from) {
-        setAvailableFromDate(new Date(d.available_from));
+        const date = new Date(d.available_from);
+        setAvailableFromDate(date);
+        setFormData(prev => ({
+          ...prev,
+          availableFrom: format(date, 'yyyy-MM-dd')
+        }));
       }
 
       setLoading(false);
@@ -698,7 +703,7 @@ useEffect(() => {
               <div className="relative mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Available From <span className="text-red-500">*</span>
-                  </label>
+                </label>
                 <button
                   type="button"
                   onClick={() => setShowCalendar(prev => !prev)}
@@ -719,14 +724,18 @@ useEffect(() => {
                       selected={availableFromDate}
                       onSelect={(date) => {
                         setAvailableFromDate(date);
+                        setFormData(prev => ({
+                          ...prev,
+                          availableFrom: date ? format(date, 'yyyy-MM-dd') : ''
+                        }));
                         setShowCalendar(false);
                       }}
                       disabled={{ before: new Date() }}
                     />
                   </div>
-                 )}
-                </div>
+                )}
               </div>
+            </div>
             </section>
 
             {/* ――― Property Images ――― */}
