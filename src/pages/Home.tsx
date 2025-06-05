@@ -39,7 +39,7 @@ function Home() {
     const getFeatured = async () => {
       setLoading(true);
       try {
-        const res = await api.properties.featured({ page_size: 1000 });
+        const res = await api.properties.featured();
         setFeatured(res.data.results || []);
       } catch (err) {
         console.error('Error fetching featured properties:', err);
