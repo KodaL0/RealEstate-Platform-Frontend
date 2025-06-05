@@ -1,3 +1,4 @@
+// src/pages/Home.tsx
 import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -16,7 +17,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
-import api from '../config/api';
+import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
 const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
@@ -24,31 +25,31 @@ const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 function Home() {
   /* ───────────── state ───────────── */
   const [featured, setFeatured] = useState<Property[]>([]);
-  const [loading,  setLoading]  = useState(true);
-  const [error,    setError]    = useState<string | null>(null);
-  const [page,     setPage]     = useState(1);
+  const [loading,   setLoading]  = useState(true);
+  const [error,     setError]    = useState<string | null>(null);
+  const [page,      setPage]     = useState(1);
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* ref to scroll back to the section top */
+  /* ref to scroll back to the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-
-
-  /* ───────────── fetch featured properties ───────────── */
+  /* ───────────── fetch one “page” of featured properties ───────────── */
   useEffect(() => {
     const getFeatured = async () => {
       setLoading(true);
       try {
+        // Ask the backend for exactly `page_size = PAGE_SIZE` items on page `page`
         const res = await api.properties.featured({
           page,
-          page_size: PAGE_SIZE
+          page_size: PAGE_SIZE,
         });
+        // We assume the response shape is: { results: Property[], count: number }
         setFeatured(res.results || []);
         setTotalCount(res.count || 0);
       } catch (err) {
-        console.error('Error fetching featured properties:', err);
-        setError('Failed to load featured properties. Please try again later.');
+        console.error("Error fetching featured properties:", err);
+        setError("Failed to load featured properties. Please try again later.");
       } finally {
         setLoading(false);
       }
@@ -57,17 +58,20 @@ function Home() {
     getFeatured();
   }, [page]);
 
-  /* ───────────── pagination helpers ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
-
-  const jumpToPage = (p: number) => {
-    setPage(p);
-    if (featuredTopRef.current) {
+  /* ───────────── scroll into view *after* the new page’s content has loaded ───────────── */
+  useEffect(() => {
+    if (!loading && featuredTopRef.current) {
       window.scrollTo({
         top: featuredTopRef.current.offsetTop - NAV_HEIGHT,
         behavior: "smooth",
       });
     }
+  }, [page, loading]);
+
+  /* ───────────── pagination helpers ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  const jumpToPage = (p: number) => {
+    setPage(p);
   };
 
   /* ───────────── JSX ───────────── */
@@ -127,8 +131,6 @@ function Home() {
           </div>
         </div>
       </section>
-
-      {/* ───────────── Stats Section ───────────── */}
 
       {/* ───────────── Featured Properties ───────────── */}
       <section className="py-20 bg-gray-50">
@@ -260,88 +262,8 @@ function Home() {
         </div>
       </section>
 
-      {/* ───────────── Feedback Form Section ───────────── */}
-      {/* <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="flex flex-col md:flex-row">
-              {/* contact details */}
-      {/* <div className="md:w-1/2 bg-gradient-to-br from-blue-600 to-indigo-700 p-8 md:p-12 text-white">
-                <h2 className="text-2xl md:text-3xl font-bold mb-4">We Value Your Feedback</h2>
-                <p className="mb-6 text-white/90">
-                  Your opinions help us improve our services and provide a better experience for all our clients.
-                </p>
-
-                <div className="mb-6">
-                  <div className="flex items-center mb-3">
-                    <Phone className="h-5 w-5 mr-3 text-blue-300" />
-                    <span>+1&nbsp;(800)&nbsp;123-4567</span>
-                  </div>
-                  <div className="flex items-center mb-3">
-                    <Mail className="h-5 w-5 mr-3 text-blue-300" />
-                    <span>support@propertpro.com</span>
-                  </div>
-                  <div className="flex items-center">
-                    <MapPin className="h-5 w-5 mr-3 text-blue-300" />
-                    <span>Cyprus</span>
-                  </div>
-                </div>
-              </div> */}
-
-              {/* form */}
-      {/*  <div className="md:w-1/2 p-8 md:p-12">
-                <form className="space-y-4">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Name
-                    </label>
-                    <input
-                      type="text"
-                      id="name"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="John Doe"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                      Email Address
-                    </label>
-                    <input
-                      type="email"
-                      id="email"
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="john@example.com"
-                    />
-                  </div>
-
-                  <div>
-                    <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
-                      Your Message
-                    </label>
-                    <textarea
-                      id="message"
-                      rows={4}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                      placeholder="Share your feedback or ask a question..."
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white py-3 px-6 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg"
-                  >
-                    Send Message
-                  </button>
-                </form>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* ───────────── CTA Section ───────────── */}
-    <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
+      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
 
         <div className="container mx-auto px-4 text-center relative z-10">
