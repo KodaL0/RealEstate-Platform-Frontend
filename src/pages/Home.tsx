@@ -34,18 +34,19 @@ function Home() {
   /* ref for the “Featured Properties” section (for scrolling) */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-  /* ───────────── server‐side pagination fetch ───────────── */
-  // We keep old data visible until new data arrives, to avoid collapse-flicker.
+  /* ───────────── fetch one page of featured properties ───────────── */
   useEffect(() => {
     let canceled = false;
+
     const getFeaturedPage = async () => {
       setLoading(true);
       setError(null);
       try {
+        // SERVER-SIDE PAGINATION: ask for exactly 12 items on this page
         const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
         if (canceled) return;
-        setFeatured(res.results || []);
-        setTotalCount(res.count || 0);
+        setFeatured(res.results || []);       // exactly the current page’s items
+        setTotalCount(res.count || 0);        // total number of featured items in DB
       } catch (err) {
         if (canceled) return;
         console.error("Error fetching featured properties:", err);
@@ -54,13 +55,14 @@ function Home() {
         if (!canceled) setLoading(false);
       }
     };
+
     getFeaturedPage();
     return () => {
       canceled = true;
     };
   }, [page]);
 
-  /* ───────────── total pages from server count ───────────── */
+  /* ───────────── compute total pages from server count ───────────── */
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   /* ───────────── scroll to Featured section after new page loads ───────────── */
@@ -69,7 +71,7 @@ function Home() {
       firstScroll.current = false;
       return;
     }
-    // wait until loading is false (new items rendered)
+    // wait until loading is false (so new items are rendered)
     if (loading) return;
     if (featuredTopRef.current) {
       const offset =
@@ -163,13 +165,14 @@ function Home() {
             </Link>
           </div>
 
+          {/* Show error if any */}
           {error && (
             <div className="text-center text-red-600 bg-red-100 p-4 rounded-lg mb-8">
               Could not load featured properties:&nbsp;{error}
             </div>
           )}
 
-          {/* Always render the grid (use AnimatePresence for page transitions) */}
+          {/* Animate the grid as a whole, keyed by `page` */}
           <AnimatePresence mode="wait">
             <motion.div
               key={page}
@@ -180,25 +183,26 @@ function Home() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {featured.length
-                ? featured
-                    .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
-                    .map((prop) => <PropertyCard key={prop.id} property={prop} />)
+                ? /* ==== HERE ====> drop the `.slice(...)` and just map `featured` directly */
+                  featured.map((prop) => (
+                    <PropertyCard key={prop.id} property={prop} />
+                  ))
                 : !loading && (
-                    <p className="col-span-full text-center text-gray-500">
-                      No featured properties available at the moment.
-                    </p>
-                  )}
+                  <p className="col-span-full text-center text-gray-500">
+                    No featured properties available at the moment.
+                  </p>
+                )}
             </motion.div>
           </AnimatePresence>
 
-          {/* Show spinner on top of the existing grid while loading */}
+          {/* spinner overlay while loading next page */}
           {loading && (
             <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-70">
               <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
             </div>
           )}
 
-          {/* pagination */}
+          {/* pagination buttons */}
           {!error && totalPages > 1 && (
             <div className="flex justify-center mt-12 space-x-2">
               {Array.from({ length: totalPages }).map((_, i) => {
