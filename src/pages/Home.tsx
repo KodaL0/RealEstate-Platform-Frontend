@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -17,7 +17,7 @@ import { Property } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
+const NAV_HEIGHT  = 80;   // px – adjust to your fixed‐navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -25,24 +25,23 @@ function Home() {
   const [loading,    setLoading]    = useState(true);
   const [error,      setError]      = useState<string | null>(null);
   const [page,       setPage]       = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
   /* ref for the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-  /* track first render so we don’t scroll immediately */
+  /* track whether we’ve scrolled on first render */
   const firstScroll = useRef(true);
 
-  /* ───────────── fetch one page of featured properties ───────────── */
+  /* ───────────── fetch all featured properties at once ───────────── */
   useEffect(() => {
-    const getFeaturedPage = async () => {
+    const getAllFeatured = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
+        const res = await api.properties.featured(); 
+        // res.results is an array of ALL featured Property objects
         setFeatured(res.results || []);
-        setTotalCount(res.count || 0);
       } catch (err) {
         console.error("Error fetching featured properties:", err);
         setError("Failed to load featured properties. Please try again later.");
@@ -50,20 +49,17 @@ function Home() {
         setLoading(false);
       }
     };
-    getFeaturedPage();
-  }, [page]);
+    getAllFeatured();
+  }, []);
 
-  /* ───────────── compute total pages from server’s count ───────────── */
-  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
+  /* ───────────── client‐side pagination ───────────── */
+  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
+  const paginated = featured.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
-  /* ───────────── scroll to Featured section after new page loads ───────────── */
-  useEffect(() => {
+  /* ───────────── scroll to “Featured” on page change ───────────── */
+  useLayoutEffect(() => {
     if (firstScroll.current) {
       firstScroll.current = false;
-      return;
-    }
-    if (loading) {
-      // don’t scroll while loading spinner is visible
       return;
     }
     if (featuredTopRef.current) {
@@ -73,7 +69,7 @@ function Home() {
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
-  }, [page, loading]);
+  }, [page]);
 
   const jumpToPage = (p: number) => {
     setPage(p);
@@ -180,8 +176,8 @@ function Home() {
                   transition={{ duration: 0.45, ease: "easeOut" }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
-                  {featured.length ? (
-                    featured.map((prop) => (
+                  {paginated.length ? (
+                    paginated.map((prop) => (
                       <PropertyCard key={prop.id} property={prop} />
                     ))
                   ) : (
