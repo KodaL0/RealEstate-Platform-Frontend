@@ -1,5 +1,5 @@
 // src/pages/Home.tsx
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link } from "react-router-dom";
 import {
   Search,
@@ -17,7 +17,7 @@ import { Property } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed‐navbar height
+const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -31,6 +31,9 @@ function Home() {
   /* ref for the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
+  /* track first render so we don’t scroll immediately */
+  const firstScroll = useRef(true);
+
   /* ───────────── fetch one page of featured properties ───────────── */
   useEffect(() => {
     const getFeaturedPage = async () => {
@@ -38,7 +41,6 @@ function Home() {
       setError(null);
       try {
         const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
-        console.log(`Fetched featured page ${page} (got ${res.results.length} / ${res.count})`);
         setFeatured(res.results || []);
         setTotalCount(res.count || 0);
       } catch (err) {
@@ -48,18 +50,20 @@ function Home() {
         setLoading(false);
       }
     };
-
     getFeaturedPage();
   }, [page]);
 
   /* ───────────── compute total pages from server’s count ───────────── */
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  /* ───────────── scroll to Featured section on page change ───────────── */
-  const first = useRef(true);
-  useLayoutEffect(() => {
-    if (first.current) {
-      first.current = false;
+  /* ───────────── scroll to Featured section after new page loads ───────────── */
+  useEffect(() => {
+    if (firstScroll.current) {
+      firstScroll.current = false;
+      return;
+    }
+    if (loading) {
+      // don’t scroll while loading spinner is visible
       return;
     }
     if (featuredTopRef.current) {
@@ -69,7 +73,7 @@ function Home() {
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
-  }, [page]);
+  }, [page, loading]);
 
   const jumpToPage = (p: number) => {
     setPage(p);
