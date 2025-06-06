@@ -42,7 +42,7 @@ function Home() {
       setLoading(true);
       setError(null);
       try {
-        // SERVER-SIDE PAGINATION: ask for exactly 12 items on this page
+        // SERVER-SIDE PAGINATION: ask for exactly PAGE_SIZE items on this page
         const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
         if (canceled) return;
         setFeatured(res.results || []);       // exactly the current page’s items
@@ -65,14 +65,17 @@ function Home() {
   /* ───────────── compute total pages from server count ───────────── */
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  /* ───────────── scroll to Featured section after new page loads ───────────── */
+  /* ───────────── scroll to Featured section ONLY when page > 1 ───────────── */
   useLayoutEffect(() => {
-    if (firstScroll.current) {
+    // If this is initial load (page === 1) or we just mounted, do nothing.
+    if (page === 1 || firstScroll.current) {
       firstScroll.current = false;
       return;
     }
-    // wait until loading is false (so new items are rendered)
+
+    // Don’t scroll while the new page is still loading
     if (loading) return;
+
     if (featuredTopRef.current) {
       const offset =
         featuredTopRef.current.getBoundingClientRect().top +
@@ -183,7 +186,7 @@ function Home() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {featured.length
-                ? /* ==== HERE ====> drop the `.slice(...)` and just map `featured` directly */
+                ? /* We no longer slice here, because `featured` is exactly page N’s items */
                   featured.map((prop) => (
                     <PropertyCard key={prop.id} property={prop} />
                   ))
@@ -280,8 +283,12 @@ function Home() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
 
         <div className="container mx-auto px-4 text-center relative z-10">
-          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">Take The Next Step</span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Find Your Perfect Property?</h2>
+          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
+            Take The Next Step
+          </span>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
+            Ready to Find Your Perfect Property?
+          </h2>
           <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
             Whether you're looking to buy, rent, or invest, our team is here to help you every step of the way.
           </p>
