@@ -31,13 +31,14 @@ function Home() {
   /* ref for the “Featured Properties” section */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
-  /* ───────────── fetch all featured properties at once ───────────── */
+  /* ───────────── fetch one page of featured properties ───────────── */
   useEffect(() => {
-    const getFeatured = async () => {
+    const getFeaturedPage = async () => {
       setLoading(true);
+      setError(null);
       try {
-        const res = await api.properties.featured();
-        // api.properties.featured() returns { results: Property[], count: number }
+        const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
+        console.log(`Fetched featured page ${page} (got ${res.results.length} / ${res.count})`);
         setFeatured(res.results || []);
         setTotalCount(res.count || 0);
       } catch (err) {
@@ -48,12 +49,11 @@ function Home() {
       }
     };
 
-    getFeatured();
-  }, []);
+    getFeaturedPage();
+  }, [page]);
 
-  /* ───────────── client-side pagination ───────────── */
-  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
-  const paginated = featured.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  /* ───────────── client-side pagination (metadata only) ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   /* ───────────── scroll to Featured section on page change ───────────── */
   const first = useRef(true);
@@ -176,8 +176,8 @@ function Home() {
                   transition={{ duration: 0.45, ease: "easeOut" }}
                   className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                 >
-                  {paginated.length ? (
-                    paginated.map((prop) => (
+                  {featured.length ? (
+                    featured.map((prop) => (
                       <PropertyCard key={prop.id} property={prop} />
                     ))
                   ) : (
