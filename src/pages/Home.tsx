@@ -16,52 +16,61 @@ import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
 import api from "../config/api";
 
-const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed‐navbar height
+const PAGE_SIZE = 12;   // cards per page
+const NAV_HEIGHT = 80;  // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
-  const [featured,   setFeatured]   = useState<Property[]>([]);
-  const [loading,    setLoading]    = useState(true);
-  const [error,      setError]      = useState<string | null>(null);
-  const [page,       setPage]       = useState(1);
+  const [featured, setFeatured] = useState<Property[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [page, setPage] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* ref for the “Featured Properties” section */
-  const featuredTopRef = useRef<HTMLDivElement | null>(null);
-
-  /* track whether we’ve scrolled on first render */
+  /* track if it’s the first render (to skip auto-scroll) */
   const firstScroll = useRef(true);
 
-  /* ───────────── fetch all featured properties at once ───────────── */
+  /* ref for the “Featured Properties” section (for scrolling) */
+  const featuredTopRef = useRef<HTMLDivElement | null>(null);
+
+  /* ───────────── server‐side pagination fetch ───────────── */
+  // We keep old data visible until new data arrives, to avoid collapse-flicker.
   useEffect(() => {
-    const getAllFeatured = async () => {
+    let canceled = false;
+    const getFeaturedPage = async () => {
       setLoading(true);
       setError(null);
       try {
-        const res = await api.properties.featured(); 
-        // res.results is an array of ALL featured Property objects
+        const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
+        if (canceled) return;
         setFeatured(res.results || []);
+        setTotalCount(res.count || 0);
       } catch (err) {
+        if (canceled) return;
         console.error("Error fetching featured properties:", err);
         setError("Failed to load featured properties. Please try again later.");
       } finally {
-        setLoading(false);
+        if (!canceled) setLoading(false);
       }
     };
-    getAllFeatured();
-  }, []);
+    getFeaturedPage();
+    return () => {
+      canceled = true;
+    };
+  }, [page]);
 
-  /* ───────────── client‐side pagination ───────────── */
-  const totalPages = Math.max(1, Math.ceil(featured.length / PAGE_SIZE));
-  const paginated = featured.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  /* ───────────── total pages from server count ───────────── */
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
-  /* ───────────── scroll to “Featured” on page change ───────────── */
+  /* ───────────── scroll to Featured section after new page loads ───────────── */
   useLayoutEffect(() => {
     if (firstScroll.current) {
       firstScroll.current = false;
       return;
     }
+    // wait until loading is false (new items rendered)
+    if (loading) return;
     if (featuredTopRef.current) {
       const offset =
         featuredTopRef.current.getBoundingClientRect().top +
@@ -69,9 +78,10 @@ function Home() {
         NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
-  }, [page]);
+  }, [page, loading]);
 
   const jumpToPage = (p: number) => {
+    if (p === page) return;
     setPage(p);
   };
 
@@ -153,65 +163,63 @@ function Home() {
             </Link>
           </div>
 
-          {loading && (
-            <div className="flex justify-center items-center h-64">
-              <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
-            </div>
-          )}
           {error && (
-            <div className="text-center text-red-600 bg-red-100 p-4 rounded-lg">
+            <div className="text-center text-red-600 bg-red-100 p-4 rounded-lg mb-8">
               Could not load featured properties:&nbsp;{error}
             </div>
           )}
 
-          {!loading && !error && (
-            <>
-              {/* animated grid */}
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={page}
-                  initial={{ x: 200, opacity: 0 }}
-                  animate={{ x: 0, opacity: 1 }}
-                  exit={{ x: -200, opacity: 0 }}
-                  transition={{ duration: 0.45, ease: "easeOut" }}
-                  className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
-                >
-                  {paginated.length ? (
-                    paginated.map((prop) => (
-                      <PropertyCard key={prop.id} property={prop} />
-                    ))
-                  ) : (
+          {/* Always render the grid (use AnimatePresence for page transitions) */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={page}
+              initial={{ x: 200, opacity: 0 }}
+              animate={{ x: 0, opacity: 1 }}
+              exit={{ x: -200, opacity: 0 }}
+              transition={{ duration: 0.45, ease: "easeOut" }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {featured.length
+                ? featured
+                    .slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+                    .map((prop) => <PropertyCard key={prop.id} property={prop} />)
+                : !loading && (
                     <p className="col-span-full text-center text-gray-500">
                       No featured properties available at the moment.
                     </p>
                   )}
-                </motion.div>
-              </AnimatePresence>
+            </motion.div>
+          </AnimatePresence>
 
-              {/* pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-12 space-x-2">
-                  {Array.from({ length: totalPages }).map((_, i) => {
-                    const n = i + 1;
-                    const active = n === page;
-                    return (
-                      <button
-                        key={n}
-                        onClick={() => jumpToPage(n)}
-                        className={`h-10 w-10 rounded-full border transition-all
-                          ${
-                            active
-                              ? "bg-blue-600 text-white border-blue-600"
-                              : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
-                          }`}
-                      >
-                        {n}
-                      </button>
-                    );
-                  })}
-                </div>
-              )}
-            </>
+          {/* Show spinner on top of the existing grid while loading */}
+          {loading && (
+            <div className="absolute inset-0 flex justify-center items-center bg-white bg-opacity-70">
+              <Loader2 className="h-12 w-12 animate-spin text-blue-600" />
+            </div>
+          )}
+
+          {/* pagination */}
+          {!error && totalPages > 1 && (
+            <div className="flex justify-center mt-12 space-x-2">
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const n = i + 1;
+                const active = n === page;
+                return (
+                  <button
+                    key={n}
+                    onClick={() => jumpToPage(n)}
+                    className={`h-10 w-10 rounded-full border transition-all
+                      ${
+                        active
+                          ? "bg-blue-600 text-white border-blue-600"
+                          : "bg-white text-gray-700 hover:bg-gray-100 border-gray-300"
+                      }`}
+                  >
+                    {n}
+                  </button>
+                );
+              })}
+            </div>
           )}
         </div>
       </section>
@@ -268,15 +276,10 @@ function Home() {
         <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
 
         <div className="container mx-auto px-4 text-center relative z-10">
-          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
-            Take The Next Step
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            Ready to Find Your Perfect Property?
-          </h2>
+          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">Take The Next Step</span>
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Find Your Perfect Property?</h2>
           <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you're looking to buy, rent, or invest, our team is here to
-            help you every step of the way.
+            Whether you're looking to buy, rent, or invest, our team is here to help you every step of the way.
           </p>
 
           {/* single CTA button */}
