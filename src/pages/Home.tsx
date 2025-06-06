@@ -17,7 +17,7 @@ import { Property } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE   = 12;   // cards per page
-const NAV_HEIGHT  = 80;   // px – adjust to your fixed-navbar height
+const NAV_HEIGHT  = 80;   // px – adjust to your fixed‐navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -52,7 +52,7 @@ function Home() {
     getFeaturedPage();
   }, [page]);
 
-  /* ───────────── client-side pagination (metadata only) ───────────── */
+  /* ───────────── compute total pages from server’s count ───────────── */
   const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
 
   /* ───────────── scroll to Featured section on page change ───────────── */
