@@ -14,6 +14,7 @@ import { useUser } from '../context/UserContext';
 import { Property, PropertyImage } from '../types';
 import MapView from '../components/MapView';
 import FavouriteButton from '../components/FavouriteButton';
+import ChatButton from "../components/ChatButton";
 
 /* ───────────────── helpers ───────────────── */
 
@@ -507,6 +508,13 @@ const PropertyDetails: React.FC = () => {
                         </p>
                       </div>
                     )}
+
+                    {/* Chat button */}
+                    <ChatButton
+                      sellerId={property.owner.id}
+                      propertyId={property.id}
+                      title={property.title}
+                    />
                   </div>
                 ) : (
                   <p className="text-gray-600">Contact details not provided.</p>
