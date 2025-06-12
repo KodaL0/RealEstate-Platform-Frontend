@@ -39,9 +39,9 @@ export default function ThreadList() {
   };
 
   return (
-    <div className="w-72 pt-[64px] h-[calc(100vh-64px)] bg-white">
-      <div className="h-full border-r overflow-y-auto">
-        <div className="px-4 py-4 border-b flex items-center gap-2">
+    <div className="w-72 pt-[64px] h-[calc(100vh-64px)] bg-transparent">
+      <div className="h-full border-r border-gray-200 overflow-y-auto">
+        <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-2 bg-white">
           <img src="/logo.svg" alt="Logo" className="h-6" />
           <span className="text-blue-600 font-bold text-lg">PROPERTPRO</span>
         </div>
@@ -57,7 +57,7 @@ export default function ThreadList() {
               <Link
                 to={`/chat/${t.id}`}
                 key={t.id}
-                className={`block px-4 py-3 hover:bg-gray-50 border-b ${t.id === activeId ? "bg-gray-100" : ""}`}
+                className={`block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 ${t.id === activeId ? "bg-gray-100" : ""}`}
               >
                 <p className="font-medium truncate text-gray-800">
                   {t.property_title || `Property #${t.property}`}
