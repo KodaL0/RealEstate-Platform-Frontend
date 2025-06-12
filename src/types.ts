@@ -91,6 +91,8 @@ export interface Thread {
   user1: number;
   user2: number;
   property: number;
+  property_title: string;
+  other_username: string;
   unread_count: number;
   updated_at: string;
 }
