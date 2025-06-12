@@ -24,6 +24,7 @@ import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
 import ChatPage from "./pages/ChatPage";
 import ChatThread from "./pages/ChatThread";
+import ChatContainer from './pages/ChatContainer';
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
