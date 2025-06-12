@@ -35,9 +35,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       .find((c) => c.trim().startsWith("access_token="))
       ?.split("=")[1];
     if (!token) return;
-    ws.current = new WebSocket(
-      `${import.meta.env.VITE_API_WS}/ws/chat/?token=${token}`
-    );
+    const baseWs =
+      (import.meta.env.VITE_API_WS as string | undefined) ||
+      window.location.origin.replace(/^http/, "ws");
+
+    try {
+      ws.current = new WebSocket(`${baseWs}/ws/chat/?token=${token}`);
+      // eslint-disable-next-line no-console
+      console.log("WS connecting to", ws.current.url);
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.error("WebSocket creation failed", err);
+      return;
+    }
 
     ws.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
