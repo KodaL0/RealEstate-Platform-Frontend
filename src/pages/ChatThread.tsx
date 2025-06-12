@@ -2,7 +2,7 @@ import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useChat } from "../context/ChatContext";
 import { Message } from "../types";
-import axios from "axios";
+import { apiClient } from "../config/api";
 import { useUser } from "../context/UserContext";
 
 export default function ChatThread() {
@@ -19,7 +19,7 @@ export default function ChatThread() {
       setLocalMsgs(messages[id]);
       return;
     }
-    axios.get<Message[]>(`/api/chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
+    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
   }, [id, messages]);
 
   const handleSend = () => {

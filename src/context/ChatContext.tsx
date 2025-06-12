@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Thread, Message } from "../types";
-import axios from "axios";
+import { apiClient } from "../config/api";
 
 interface ChatContextValue {
   threads: Thread[];
@@ -62,7 +62,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // initial fetch threads
   useEffect(() => {
-    axios.get<Thread[]>("/api/chat/").then((res) => setThreads(res.data));
+    apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
     openSocket();
   }, []);
 
@@ -75,7 +75,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       (t) => t.property === propertyId && (t.user1 === sellerId || t.user2 === sellerId)
     );
     if (existing) return existing.id;
-    const res = await axios.post<Thread>("/api/chat/", {
+    const res = await apiClient.post<Thread>("chat/", {
       recipient_id: sellerId,
       property_id: propertyId,
       title,
