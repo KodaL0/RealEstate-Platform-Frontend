@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState, useRef } from "react";
 import { useChat } from "../context/ChatContext";
-import { Message, Thread } from "../types";
+import { Message } from "../types";
 import { apiClient } from "../config/api";
 import { useUser } from "../context/UserContext";
 import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User } from "lucide-react";
@@ -15,7 +15,6 @@ export default function ChatThread() {
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // fetch once if not in context
   useEffect(() => {
     if (!id) return;
     if (messages[id]) {
@@ -25,7 +24,6 @@ export default function ChatThread() {
     apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
   }, [id, messages]);
 
-  // Update when new messages arrive via context
   useEffect(() => {
     if (id && messages[id]) {
       setLocalMsgs(messages[id]);
@@ -36,7 +34,6 @@ export default function ChatThread() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [localMsgs]);
 
-  // Determine recipient & property using thread or first message
   const thread = threads.find((t) => t.id === id);
 
   const recipientId: number | null = thread
@@ -55,7 +52,6 @@ export default function ChatThread() {
 
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
-
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
   };
@@ -77,176 +73,111 @@ export default function ChatThread() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    if (date.toDateString() === today.toDateString()) {
-      return "Today";
-    } else if (date.toDateString() === yesterday.toDateString()) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString();
-    }
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString();
   };
 
-  // Group messages by date
   const groupedMessages = localMsgs.reduce((groups: { [key: string]: Message[] }, message) => {
     const date = formatDate(message.timestamp || new Date().toISOString());
-    if (!groups[date]) {
-      groups[date] = [];
-    }
+    if (!groups[date]) groups[date] = [];
     groups[date].push(message);
     return groups;
   }, {});
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
+    <div className="pt-[64px] h-[calc(100vh-64px)] flex flex-col bg-gray-50">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between shadow-sm">
-        <div className="flex items-center space-x-4">
-          <button className="lg:hidden text-gray-600 hover:text-gray-800 transition-colors">
-            <ArrowLeft size={20} />
+      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <button className="lg:hidden text-gray-600">
+            <ArrowLeft size={18} />
           </button>
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-              <User size={20} className="text-white" />
-            </div>
-            <div>
-              <h2 className="font-semibold text-gray-900">Property Inquiry</h2>
-              <p className="text-sm text-gray-500">Property ID: {propertyId}</p>
-            </div>
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <User size={16} className="text-white" />
+          </div>
+          <div>
+            <h2 className="font-medium text-sm text-gray-800">Property Inquiry</h2>
+            <p className="text-xs text-gray-500">Property ID: {propertyId}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-            <Phone size={18} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-            <Video size={18} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors">
-            <Info size={18} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-colors">
-            <MoreVertical size={18} />
-          </button>
+        <div className="flex items-center space-x-1">
+          <Phone size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <Video size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <Info size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <MoreVertical size={16} className="text-gray-600 hover:text-gray-800 cursor-pointer" />
         </div>
       </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      {/* Messages */}
+      <div className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
-            {/* Date Separator */}
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
-                {date}
-              </div>
+            <div className="flex justify-center mb-2">
+              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{date}</span>
             </div>
-
-            {/* Messages for this date */}
-            <div className="space-y-3">
-              {dateMessages.reverse().map((message, index) => {
-                const isOwnMessage = message.sender === user?.id;
-                const showAvatar = index === 0 || dateMessages[index - 1]?.sender !== message.sender;
-                
-                return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'} items-end space-x-2`}
-                  >
-                    {!isOwnMessage && (
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 ${showAvatar ? 'visible' : 'invisible'}`}>
-                        <div className="w-full h-full bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
-                          <User size={16} className="text-white" />
-                        </div>
-                      </div>
-                    )}
-                    
-                    <div className={`max-w-xs lg:max-w-md ${isOwnMessage ? 'order-1' : 'order-2'}`}>
-                      <div
-                        className={`px-4 py-2 rounded-2xl shadow-sm ${
-                          isOwnMessage
-                            ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white'
-                            : 'bg-white text-gray-900 border border-gray-200'
-                        }`}
-                      >
-                        <p className="text-sm leading-relaxed">{message.content}</p>
-                      </div>
-                      <div className={`mt-1 text-xs text-gray-500 ${isOwnMessage ? 'text-right' : 'text-left'}`}>
-                        {formatTime(message.timestamp || new Date().toISOString())}
-                      </div>
+            {dateMessages.reverse().map((message, index) => {
+              const isOwn = message.sender === user?.id;
+              return (
+                <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-xs px-3 py-2 rounded-xl shadow-sm ${isOwn ? "bg-blue-600 text-white" : "bg-white border"}`}>
+                    {message.content}
+                    <div className="text-[10px] text-gray-400 mt-1 text-right">
+                      {formatTime(message.timestamp || new Date().toISOString())}
                     </div>
-
-                    {isOwnMessage && (
-                      <div className={`w-8 h-8 rounded-full flex-shrink-0 ${showAvatar ? 'visible' : 'invisible'}`}>
-                        <div className="w-full h-full bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
-                          <User size={16} className="text-white" />
-                        </div>
-                      </div>
-                    )}
                   </div>
-                );
-              })}
-            </div>
+                </div>
+              );
+            })}
           </div>
         ))}
-
-        {/* Typing Indicator */}
         {isTyping && (
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-gray-400 to-gray-500 rounded-full flex items-center justify-center">
-              <User size={16} className="text-white" />
+            <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+              <User size={12} className="text-white" />
             </div>
-            <div className="bg-white border border-gray-200 rounded-2xl px-4 py-2 shadow-sm">
-              <div className="flex space-x-1">
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-                <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-              </div>
+            <div className="flex space-x-1">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-200" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-400" />
             </div>
           </div>
         )}
-        
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
-      <div className="bg-white border-t border-gray-200 px-6 py-4">
-        <div className="flex items-end space-x-3">
-          <div className="flex-1 relative">
-            <textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyPress={handleKeyPress}
-              className="w-full bg-gray-50 border border-gray-200 rounded-2xl px-4 py-3 text-sm placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none max-h-32 transition-all"
-              placeholder="Type your message..."
-              rows={1}
-              style={{ 
-                minHeight: '44px',
-                height: Math.min(Math.max(44, input.split('\n').length * 20 + 24), 128) + 'px'
-              }}
-            />
-          </div>
+      {/* Input */}
+      <div className="bg-white border-t px-4 py-2">
+        <div className="flex items-center space-x-2">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={1}
+            placeholder="Type your message..."
+            style={{
+              minHeight: "36px",
+              height: Math.min(Math.max(36, input.split("\n").length * 18 + 18), 120) + "px",
+            }}
+          />
           <button
             onClick={handleSend}
             disabled={!input.trim() || !recipientId || !propertyId}
-            className={`p-3 rounded-full transition-all transform hover:scale-105 active:scale-95 ${
+            className={`p-2 rounded-full ${
               input.trim() && recipientId && propertyId
-                ? 'bg-gradient-to-r from-blue-500 to-blue-600 text-white shadow-lg hover:shadow-xl'
-                : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            <Send size={18} />
+            <Send size={16} />
           </button>
         </div>
-        
-        {/* Quick Actions */}
-        <div className="flex items-center justify-between mt-3 text-xs text-gray-500">
-          <div className="flex items-center space-x-4">
-            <span>Press Enter to send, Shift + Enter for new line</span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-            <span>Online</span>
-          </div>
+        <div className="text-[10px] text-gray-400 mt-1 flex justify-between">
+          <span>Enter to send • Shift + Enter = newline</span>
+          <span className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div> Online
+          </span>
         </div>
       </div>
     </div>
