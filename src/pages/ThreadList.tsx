@@ -12,6 +12,42 @@ export default function ThreadList() {
   const [filteredThreads, setFilteredThreads] = useState(threads);
   const [searchTerm, setSearchTerm] = useState("");
 
+  // State to hold navbar height in px
+  const [navHeight, setNavHeight] = useState(0);
+
+  // Measure navbar height on mount and on resize
+  useEffect(() => {
+    const measureNav = () => {
+      const navEl = document.querySelector("nav");
+      if (navEl) {
+        const rect = navEl.getBoundingClientRect();
+        setNavHeight(rect.height);
+      }
+    };
+    measureNav();
+
+    if (window.ResizeObserver) {
+      const navEl = document.querySelector("nav");
+      if (navEl) {
+        const ro = new ResizeObserver(entries => {
+          for (let entry of entries) {
+            setNavHeight(entry.contentRect.height);
+          }
+        });
+        ro.observe(navEl);
+        return () => {
+          ro.unobserve(navEl);
+        };
+      }
+    }
+    // If ResizeObserver not supported, you could also listen to window resize:
+    const onResize = () => measureNav();
+    window.addEventListener("resize", onResize);
+    return () => {
+      window.removeEventListener("resize", onResize);
+    };
+  }, []);
+
   useEffect(() => {
     let filtered = threads;
     if (searchTerm) {
@@ -56,11 +92,18 @@ export default function ThreadList() {
 
   const totalUnread = threads.reduce((sum, thread) => sum + thread.unread_count, 0);
 
+  // Inline style to offset below navbar and set height to viewport minus navbar
+  const containerStyle: React.CSSProperties = {
+    paddingTop: navHeight,
+    height: `calc(100vh - ${navHeight}px)`,
+  };
+
   return (
-    <div className="h-full flex flex-col bg-white">
+    <div style={containerStyle} className="flex flex-col bg-white">
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
         <div className="p-4 flex items-center justify-between">
+          {/* Only “Messages” label + icon + new button; no logo */}
           <div className="flex items-center space-x-2 whitespace-nowrap">
             <MessageCircle size={20} className="text-blue-600" />
             <span className="text-lg font-semibold text-gray-900">Messages</span>
@@ -114,9 +157,11 @@ export default function ThreadList() {
                   }`}
                 >
                   <div className="p-4 flex items-start space-x-3">
+                    {/* Avatar */}
                     <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                       <User size={20} className="text-white" />
                     </div>
+                    {/* Content */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
                         <h3 className="font-semibold text-gray-900 truncate text-sm">
@@ -142,6 +187,7 @@ export default function ThreadList() {
                           </span>
                         )}
                       </div>
+                      {/* Last Message Preview */}
                       {lastMessage ? (
                         <div className="flex items-center space-x-1 mb-2">
                           <span className="text-xs text-gray-500">
@@ -154,6 +200,7 @@ export default function ThreadList() {
                       ) : (
                         <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
                       )}
+                      {/* Property Location */}
                       {thread.property_address && (
                         <div className="flex items-center space-x-1 text-xs text-gray-400">
                           <MapPin size={10} />
