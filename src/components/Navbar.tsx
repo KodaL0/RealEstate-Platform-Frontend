@@ -91,7 +91,7 @@ const Navbar: React.FC = () => {
           {user ? (
             <>
               <Link to="/chat" className="relative mr-4">
-                <MessageCircle className="h-6 w-6 text-gray-700 hover:text-blue-600" />
+                <MessageCircle className="h-6 w-6 text-white-700 hover:text-blue-600" />
                 {unreadTotal > 0 && (
                   <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
                     {unreadTotal}
