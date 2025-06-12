@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import ThreadList from "./ThreadList";
 import ChatThread from "./ChatThread";
 import { MessageCircle } from "lucide-react";
-import Footer from "./components/Footer";
+import Footer from "../components/Footer";
 
 export default function ChatContainer() {
   return (
