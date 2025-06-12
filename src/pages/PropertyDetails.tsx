@@ -6,7 +6,7 @@ import {
   Share2, CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
-  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator, 
+  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
@@ -25,7 +25,7 @@ async function geocodeAddress(address: string) {
   throw new Error('geocoding failed');
 }
 
-const normaliseImages = (imgs: any[] = []) =>
+const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
 
 const mapPropertyData = (raw: any): Property => ({
@@ -59,6 +59,9 @@ const mapPropertyData = (raw: any): Property => ({
   updated_at: raw?.updated_at ?? '',
   images: normaliseImages(raw?.images),
   is_favourite: raw?.is_favourite ?? false,
+  // If your API returns latitude/longitude, you can map here:
+  // latitude: raw?.latitude != null ? +raw.latitude : undefined,
+  // longitude: raw?.longitude != null ? +raw.longitude : undefined,
 });
 
 const amenityIcons: Record<string, JSX.Element> = {
@@ -96,7 +99,7 @@ const PropertyDetails: React.FC = () => {
   const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
-  const [activeImage, setActiveImage] = useState(0);
+  const [activeImage, setActiveImage] = useState<number>(0);
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
@@ -105,26 +108,52 @@ const PropertyDetails: React.FC = () => {
 
   useEffect(() => {
     if (!numericId || userLoading) return;
+    let isMounted = true;
     const fetchProperty = async () => {
       setLoading(true);
       try {
         const response = await api.properties.getById(numericId);
         const mapped = mapPropertyData(response.data);
+        if (!isMounted) return;
         setProperty(mapped);
-        if (!mapped.latitude && mapped.location) {
-          try { setCoords(await geocodeAddress(mapped.location)); }
-          catch (e) { console.error('geocode fail', e); }
+
+        // Example: if API returns latitude/longitude, use them; otherwise, you may geocode here:
+        // if (mapped.latitude != null && mapped.longitude != null) {
+        //   setCoords({ lat: mapped.latitude, lng: mapped.longitude });
+        // } else if (mapped.location) {
+        //   try {
+        //     const result = await geocodeAddress(mapped.location);
+        //     if (isMounted) setCoords(result);
+        //   } catch (e) {
+        //     console.error('geocode fail', e);
+        //   }
+        // }
+        // For now, if you rely on client-side geocoding:
+        if (mapped.location) {
+          try {
+            const result = await geocodeAddress(mapped.location);
+            if (isMounted) setCoords(result);
+          } catch (e) {
+            console.error('geocode fail', e);
+          }
         }
-      } catch (error) {
-        console.error("Failed to fetch property details:", error);
-        // Optional: Add fallback logic or error state here
+        // Initialize activeImage only if images exist:
+        if (mapped.images.length > 0) {
+          setActiveImage(0);
+          setLightboxIdx(0);
+        }
+      } catch (err) {
+        console.error("Failed to fetch property details:", err);
+        if (!isMounted) return;
         setError('Failed to fetch property details. Please try again later.');
       } finally {
-        setLoading(false);
+        if (isMounted) setLoading(false);
       }
     };
-
     fetchProperty();
+    return () => {
+      isMounted = false;
+    };
   }, [numericId, userLoading]);
 
   const totalImages = property?.images.length ?? 0;
@@ -133,10 +162,19 @@ const PropertyDetails: React.FC = () => {
   const endIdx = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
   const visibleThumbs = property?.images.slice(startIdx, endIdx) ?? [];
 
-  const openLightbox = (idx: number) => { setLightboxIdx(idx); setLightboxOpen(true); };
+  const openLightbox = (idx: number) => {
+    if (totalImages > 0) {
+      setLightboxIdx(idx);
+      setLightboxOpen(true);
+    }
+  };
   const closeLightbox = () => setLightboxOpen(false);
-  const prevImg = useCallback(() => setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1)), [totalImages]);
-  const nextImg = useCallback(() => setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1)), [totalImages]);
+  const prevImg = useCallback(() => {
+    setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1));
+  }, [totalImages]);
+  const nextImg = useCallback(() => {
+    setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1));
+  }, [totalImages]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -170,14 +208,24 @@ const PropertyDetails: React.FC = () => {
     );
   }
 
+  // Improved ordinal formatting
   const formatOrdinal = (n: string | number): string => {
     const num = Number(n);
     if (isNaN(num)) return String(n);
-    const suffix = ['th', 'st', 'nd', 'rd'];
-    const v = num % 100;
-    return num + (suffix[(v - 20) % 10] || suffix[v] || suffix[0]);
+    const absNum = Math.abs(num);
+    const tens = absNum % 100;
+    if (tens >= 11 && tens <= 13) {
+      return `${num}th`;
+    }
+    const unit = absNum % 10;
+    switch (unit) {
+      case 1: return `${num}st`;
+      case 2: return `${num}nd`;
+      case 3: return `${num}rd`;
+      default: return `${num}th`;
+    }
   };
-    
+
   const toUrl = (img: { image: string }) => img.image;
   const unpublishedBanner = !property.is_published && (
     <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
@@ -190,7 +238,7 @@ const PropertyDetails: React.FC = () => {
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
       {/* Lightbox Overlay */}
-      {lightboxOpen && (
+      {lightboxOpen && totalImages > 0 && (
         <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
           <button
             onClick={closeLightbox}
@@ -200,17 +248,23 @@ const PropertyDetails: React.FC = () => {
           </button>
           {totalImages > 1 && (
             <>
-              <button onClick={prevImg} className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
+              <button
+                onClick={prevImg}
+                className="absolute left-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
                 <ArrowLeft className="w-10 h-10" />
               </button>
-              <button onClick={nextImg} className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300">
+              <button
+                onClick={nextImg}
+                className="absolute right-6 top-1/2 -translate-y-1/2 text-white hover:text-gray-300"
+              >
                 <ArrowRight className="w-10 h-10" />
               </button>
             </>
           )}
           <img
             src={toUrl(property.images[lightboxIdx])}
-            alt=""
+            alt={property.title || 'Property image'}
             className="max-h-[80vh] max-w-[90vw] object-contain rounded-lg shadow-2xl"
           />
         </div>
@@ -224,49 +278,55 @@ const PropertyDetails: React.FC = () => {
           <div className="flex flex-col lg:flex-row">
             {/* Main Hero Image */}
             <div className="lg:w-2/3">
-              <div
-                className="relative h-96 lg:h-[500px] cursor-zoom-in"
-                onClick={() => openLightbox(activeImage)}
-              >
-                <img
-                  src={toUrl(property.images[activeImage])}
-                  className="w-full h-full object-cover"
-                  alt=""
-                />
-                {/* Status Badges */}
-                <div className="absolute top-4 left-4 flex gap-2 z-30">
-                  <span
-                    className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      property.property_status === 'for_sale'
-                        ? 'bg-emerald-500 text-white'
-                        : 'bg-blue-500 text-white'
-                    }`}
-                  >
-                    {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-                    {property.property_type}
-                  </span>
-                </div>
-                {/* Favourite & Share */}
-                <div className="absolute top-4 right-4 flex flex-col items-center gap-2 z-30">
-                  <FavouriteButton
-                    propertyId={numericId}
-                    defaultLiked={!!property?.is_favourite}
+              {totalImages > 0 ? (
+                <div
+                  className="relative h-96 lg:h-[500px] cursor-zoom-in"
+                  onClick={() => openLightbox(activeImage)}
+                >
+                  <img
+                    src={toUrl(property.images[activeImage])}
+                    className="w-full h-full object-cover"
+                    alt={property.title || 'Property image'}
                   />
-                  {/*
-                  <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
-                    <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
-                  </button>
-                  */}
+                  {/* Status Badges */}
+                  <div className="absolute top-4 left-4 flex gap-2 z-30">
+                    <span
+                      className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        property.property_status === 'for_sale'
+                          ? 'bg-emerald-500 text-white'
+                          : 'bg-blue-500 text-white'
+                      }`}
+                    >
+                      {property.property_status === 'for_sale' ? 'For Sale' : 'For Rent'}
+                    </span>
+                    <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
+                      {property.property_type}
+                    </span>
+                  </div>
+                  {/* Favourite & Share */}
+                  <div className="absolute top-4 right-4 flex flex-col items-center gap-2 z-30">
+                    <FavouriteButton
+                      propertyId={numericId}
+                      defaultLiked={!!property?.is_favourite}
+                    />
+                    {/*
+                    <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
+                      <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
+                    </button>
+                    */}
+                  </div>
                 </div>
-              </div>
+              ) : (
+                <div className="relative h-96 lg:h-[500px] bg-gray-200 flex items-center justify-center">
+                  <span className="text-gray-500">No images available</span>
+                </div>
+              )}
             </div>
 
             {/* Thumbnail Carousel */}
             <div className="lg:w-1/3 lg:h-[500px] bg-gray-50">
               <div className="relative h-auto lg:h-full">
-                {thumbPage > 0 && (
+                {thumbPage > 0 && totalImages > THUMBS_PER_PAGE && (
                   <button
                     onClick={() => setThumbPage(p => p - 1)}
                     className="absolute left-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
@@ -274,7 +334,7 @@ const PropertyDetails: React.FC = () => {
                     <ArrowLeft className="w-6 h-6 text-gray-600" />
                   </button>
                 )}
-                {thumbPage < lastThumbPage && (
+                {thumbPage < lastThumbPage && totalImages > THUMBS_PER_PAGE && (
                   <button
                     onClick={() => setThumbPage(p => p + 1)}
                     className="absolute right-2 top-1/2 -translate-y-1/2 bg-white shadow-lg rounded-full p-1 hover:bg-gray-50 z-10"
@@ -307,14 +367,16 @@ const PropertyDetails: React.FC = () => {
                               openLightbox(realIdx);
                             }}
                             className="absolute inset-0 w-full h-full object-cover cursor-pointer transition-transform hover:scale-105"
-                            alt=""
+                            alt={`Thumbnail ${realIdx + 1}`}
                           />
                         </div>
                       );
                     })}
-                    {Array(THUMBS_PER_PAGE - visibleThumbs.length).fill(0).map((_, idx) => (
-                      <div key={idx}className="aspect-square w-full bg-gray-100 rounded-xl" />
-                    ))}
+                    {Array(THUMBS_PER_PAGE - visibleThumbs.length)
+                      .fill(0)
+                      .map((_, idx) => (
+                        <div key={idx} className="aspect-square w-full bg-gray-100 rounded-xl" />
+                      ))}
                   </motion.div>
                 </AnimatePresence>
               </div>
@@ -339,54 +401,61 @@ const PropertyDetails: React.FC = () => {
                     </div>
                   </div>
                   {/* Price */}
-                 <div className="flex flex-col items-start space-y-2">
-                  <p className="text-3xl font-bold text-blue-600">
-                    €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
-                  </p>
-                  {/* Calculate Mortgage button */}
-                  <button
-                    onClick={() => {
-                      if (property.price && property.price > 0) {
-                        // Adjust the route or query param to match your existing calculator route
-                        navigate(`/mortgage-calculator?price=${property.price}`);
-                      }
-                    }}
-                    disabled={!property.price || property.price <= 0}
-                    className={`mt-3 sm:mt-0 inline-flex items-center px-4 py-2 
-                    ${property.price && property.price > 0
-                      ? 'bg-emerald-600 hover:bg-emerald-700'
-                      : 'bg-gray-300 cursor-not-allowed'}
-                    text-white text-sm font-medium rounded-lg shadow-sm transition`}
-                  >
-                    <Calculator className="w-5 h-5 mr-2" />
-                    Calculate Mortgage
-                  </button>
+                  <div className="flex flex-col items-start space-y-2">
+                    <p className="text-3xl font-bold text-blue-600">
+                      €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
+                    </p>
+                    <button
+                      onClick={() => {
+                        if (property.price && property.price > 0) {
+                          navigate(`/mortgage-calculator?price=${property.price}`);
+                        }
+                      }}
+                      disabled={!property.price || property.price <= 0}
+                      className={`mt-3 sm:mt-0 inline-flex items-center px-4 py-2 ${
+                        property.price && property.price > 0
+                          ? 'bg-emerald-600 hover:bg-emerald-700'
+                          : 'bg-gray-300 cursor-not-allowed'
+                      } text-white text-sm font-medium rounded-lg shadow-sm transition`}
+                    >
+                      <Calculator className="w-5 h-5 mr-2" />
+                      Calculate Mortgage
+                    </button>
+                  </div>
                 </div>
 
                 {/* Basic Stats */}
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}</span>
+                    <span>
+                      {property.bedrooms} {property.bedrooms === 1 ? 'Bed' : 'Beds'}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Bath className="h-5 w-5 mr-2 text-gray-500" />
-                    <span>{property.bathrooms} {property.bathrooms === 1 ? 'Bath' : 'Baths'}</span>
+                    <span>
+                      {property.bathrooms} {property.bathrooms === 1 ? 'Bath' : 'Baths'}
+                    </span>
                   </div>
                   <div className="flex items-center text-gray-700">
                     <Square className="h-5 w-5 mr-2 text-gray-500" />
                     <span>{property.area.toLocaleString()} m²</span>
                   </div>
                   <div className="flex items-center text-gray-700">
-                    <Calendar className="h-5 w-5 mr-2 text-gray-500" />  
-                    <span>{property.year_built ? `Built in ${property.year_built}` : 'Year built n/a'}</span>
+                    <Calendar className="h-5 w-5 mr-2 text-gray-500" />
+                    <span>
+                      {property.year_built
+                        ? `Built in ${property.year_built}`
+                        : 'Year built n/a'}
+                    </span>
                   </div>
                   {property.lot_size && (
                     <div className="flex items-center text-gray-700">
                       <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{parseInt(property.lot_size)} m² lot</span>
+                      <span>{parseInt(property.lot_size, 10)} m² lot</span>
                     </div>
-                  )} 
+                  )}
                   {property.floor_level && (
                     <div className="flex items-center text-gray-700">
                       <Layers className="h-5 w-5 mr-2 text-gray-500" />
@@ -470,11 +539,12 @@ const PropertyDetails: React.FC = () => {
                 ) : (
                   <p className="text-gray-600">Contact details not provided.</p>
                 )}
-            </div>  {/* closes sidebar */}
-          </div>  {/* closes flex wrapper around left+sidebar */}
-        </section>  {/* closes Details / Description / Amenities / Map section */}
-      </div>  {/* closes container <div className="container mx-auto px-4 py-8"> */}
-    </div>  {/* closes root <div className="pt-20 bg-gray-50 min-h-screen"> */}
+              </div>
+            </div>
+          </div> {/* closes flex wrapper around left+sidebar */}
+        </section> {/* closes Details / Description / Amenities / Map section */}
+      </div> {/* closes container */}
+    </div> {/* closes root */}
   );
 };
 
