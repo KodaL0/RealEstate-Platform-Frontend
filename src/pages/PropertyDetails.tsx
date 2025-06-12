@@ -379,9 +379,10 @@ const PropertyDetails: React.FC = () => {
                     <p className="text-3xl font-bold text-blue-600">
                       €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                     </p>
+                    
                     {property.property_status === 'for_sale' && (
-                    <button
-                      onClick={() => {
+                     <button
+                       onClick={() => {
                         if (property.price && property.price > 0) {
                           navigate(`/mortgage-calculator?price=${property.price}`);
                         }
@@ -395,9 +396,10 @@ const PropertyDetails: React.FC = () => {
                     >
                       <Calculator className="w-5 h-5 mr-2" />
                       Calculate Mortgage
-                    </button>
-                  )}
-                </div>
+                     </button>
+                   )}
+                 </div>
+               </div>
 
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
                   <div className="flex items-center text-gray-700">
