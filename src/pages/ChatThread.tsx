@@ -1,13 +1,13 @@
 import { useParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useChat } from "../context/ChatContext";
-import { Message } from "../types";
+import { Message, Thread } from "../types";
 import { apiClient } from "../config/api";
 import { useUser } from "../context/UserContext";
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage } = useChat();
+  const { messages, sendMessage, threads } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -23,9 +23,25 @@ export default function ChatThread() {
   }, [id, messages]);
 
   const handleSend = () => {
-    if (!input.trim() || !id || !localMsgs.length || !user) return;
-    const recipientId = localMsgs[0].sender === user.id ? localMsgs[0].recipient : localMsgs[0].sender;
-    const propertyId = localMsgs[0].property_id;
+    if (!input.trim() || !id || !user) return;
+
+    // Determine recipient & property from existing msg or thread metadata
+    let recipientId: number | null = null;
+    let propertyId: number | null = null;
+
+    if (localMsgs.length) {
+      recipientId = localMsgs[0].sender === user.id ? localMsgs[0].recipient : localMsgs[0].sender;
+      propertyId = localMsgs[0].property_id;
+    } else {
+      const thread: Thread | undefined = threads.find((t) => t.id === id);
+      if (thread) {
+        recipientId = thread.user1 === user.id ? thread.user2 : thread.user1;
+        propertyId = thread.property;
+      }
+    }
+
+    if (!recipientId || !propertyId) return;
+
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
   };
