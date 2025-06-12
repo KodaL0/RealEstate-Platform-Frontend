@@ -1,3 +1,4 @@
+// src/pages/ThreadList.tsx
 import { Link, useParams } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
@@ -59,29 +60,17 @@ export default function ThreadList() {
     <div className="h-full flex flex-col bg-white">
       {/* Sticky Header */}
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
-        <div className="p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                <MessageCircle size={20} className="text-white" />
-              </div>
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">Messages</h1>
-                <p className="text-sm text-gray-500">
-                  {threads.length} conversation{threads.length !== 1 ? 's' : ''}
-                  {totalUnread > 0 && (
-                    <span className="ml-2 text-blue-600 font-medium">
-                      • {totalUnread} unread
-                    </span>
-                  )}
-                </p>
-              </div>
-            </div>
-            <button className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
-              <Plus size={18} />
-            </button>
+        <div className="p-4 flex items-center justify-between">
+          <div className="flex items-center space-x-2 whitespace-nowrap">
+            <MessageCircle size={20} className="text-blue-600" />
+            <span className="text-lg font-semibold text-gray-900">Messages</span>
           </div>
-          {/* Search Bar */}
+          <button className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition duration-200">
+            <Plus size={18} />
+          </button>
+        </div>
+        {/* Search Bar */}
+        <div className="px-4 pb-2">
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
@@ -89,7 +78,7 @@ export default function ThreadList() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
             />
           </div>
         </div>
@@ -99,15 +88,13 @@ export default function ThreadList() {
       <div className="flex-1 overflow-y-auto">
         {filteredThreads.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-              <MessageCircle size={32} className="text-gray-400" />
-            </div>
+            <MessageCircle size={32} className="text-gray-400 mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">
               {searchTerm ? 'No matching conversations' : 'No conversations yet'}
             </h3>
             <p className="text-sm text-gray-500 max-w-xs">
               {searchTerm 
-                ? 'Try adjusting your search terms to find what you\'re looking for.'
+                ? 'Try adjusting your search terms.'
                 : 'Start chatting about properties to see your conversations here.'
               }
             </p>
@@ -126,59 +113,53 @@ export default function ThreadList() {
                     isActive ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                   }`}
                 >
-                  <div className="p-4">
-                    <div className="flex items-start space-x-3">
-                      {/* Avatar */}
-                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                        <User size={20} className="text-white" />
+                  <div className="p-4 flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User size={20} className="text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between mb-1">
+                        <h3 className="font-semibold text-gray-900 truncate text-sm">
+                          {thread.property_title || `Property #${thread.property}`}
+                        </h3>
+                        {lastMessage && (
+                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                            {formatTime(
+                              lastMessage.timestamp ||
+                              thread.updated_at ||
+                              new Date().toISOString()
+                            )}
+                          </span>
+                        )}
                       </div>
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                          <h3 className="font-semibold text-gray-900 truncate text-sm">
-                            {thread.property_title || `Property #${thread.property}`}
-                          </h3>
-                          {lastMessage && (
-                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                              {formatTime(
-                                lastMessage.timestamp ||
-                                thread.updated_at ||
-                                new Date().toISOString()
-                              )}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="text-sm text-gray-600 truncate">
-                            {thread.other_username || 'Unknown User'}
+                      <div className="flex items-center justify-between mb-2">
+                        <p className="text-sm text-gray-600 truncate">
+                          {thread.other_username || 'Unknown User'}
+                        </p>
+                        {thread.unread_count > 0 && (
+                          <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[18px] text-center">
+                            {thread.unread_count > 99 ? '99+' : thread.unread_count}
+                          </span>
+                        )}
+                      </div>
+                      {lastMessage ? (
+                        <div className="flex items-center space-x-1 mb-2">
+                          <span className="text-xs text-gray-500">
+                            {isOwnMessage ? 'You: ' : ''}
+                          </span>
+                          <p className="text-xs text-gray-600 truncate flex-1">
+                            {lastMessage.content}
                           </p>
-                          {thread.unread_count > 0 && (
-                            <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[18px] text-center">
-                              {thread.unread_count > 99 ? '99+' : thread.unread_count}
-                            </span>
-                          )}
                         </div>
-                        {/* Last Message Preview */}
-                        {lastMessage ? (
-                          <div className="flex items-center space-x-1 mb-2">
-                            <span className="text-xs text-gray-500">
-                              {isOwnMessage ? 'You: ' : ''}
-                            </span>
-                            <p className="text-xs text-gray-600 truncate flex-1">
-                              {lastMessage.content}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
-                        )}
-                        {/* Property Location */}
-                        {thread.property_address && (
-                          <div className="flex items-center space-x-1 text-xs text-gray-400">
-                            <MapPin size={10} />
-                            <span className="truncate">{thread.property_address}</span>
-                          </div>
-                        )}
-                      </div>
+                      ) : (
+                        <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
+                      )}
+                      {thread.property_address && (
+                        <div className="flex items-center space-x-1 text-xs text-gray-400">
+                          <MapPin size={10} />
+                          <span className="truncate">{thread.property_address}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Link>
