@@ -17,6 +17,7 @@ export default function ChatThread() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
+  // Load messages for thread
   useEffect(() => {
     if (!id) return;
     if (messages[id]) {
@@ -32,6 +33,7 @@ export default function ChatThread() {
     }
   }, [messages, id]);
 
+  // Auto-scroll when new messages arrive, but only if near bottom
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -94,9 +96,10 @@ export default function ChatThread() {
 
   return (
     <div className="flex flex-col flex-1 bg-gray-50">
-      {/* Header: same padding as sidebar header */}
+      {/* Header */}
       <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
         <div className="flex items-center space-x-3">
+          {/* Back button for mobile */}
           <button className="lg:hidden text-gray-600">
             <ArrowLeft size={18} />
           </button>
@@ -116,7 +119,7 @@ export default function ChatThread() {
         </div>
       </div>
 
-      {/* Messages area */}
+      {/* Messages area: scroll internally */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
