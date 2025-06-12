@@ -360,7 +360,6 @@ const PropertyDetails: React.FC = () => {
                     <Calculator className="w-5 h-5 mr-2" />
                     Calculate Mortgage
                   </button>
-                 </div>
                 </div>
 
                 {/* Basic Stats */}
