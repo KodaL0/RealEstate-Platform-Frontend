@@ -71,7 +71,7 @@ export default function ChatInbox() {
 
   return (
     <div className="pt-[64px] min-h-[calc(100vh-64px)] bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-6">
+      <div className="max-w-4xl mx-auto px-4 pt-4 pb-6">
         <div className="mb-6">
           <div className="flex items-center justify-between mb-4">
             <div>
