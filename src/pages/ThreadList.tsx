@@ -39,20 +39,21 @@ export default function ThreadList() {
   };
 
   return (
-    <div className="w-72 mt-[64px] h-[calc(100vh-64px)] bg-white">
-      <div className="h-full border-r border-gray-200 overflow-y-auto">
-        <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-2 bg-white">
-          <img src="/logo.svg" alt="Logo" className="h-6" />
-          <span className="text-blue-600 font-bold text-lg">PROPERTPRO</span>
-        </div>
+    // Fixed sidebar container: fixed position, full height from below navbar to bottom
+    <div className="fixed top-[64px] left-0 bottom-0 w-72 bg-white border-r border-gray-200 z-10 flex flex-col">
+      {/* Header inside sidebar: sticky so it remains visible when threads scroll */}
+      <div className="sticky top-0 bg-white px-4 py-4 border-b border-gray-200 flex items-center gap-2 z-20">
+        <img src="/logo.svg" alt="Logo" className="h-6" />
+        <span className="text-blue-600 font-bold text-lg">PROPERTPRO</span>
+      </div>
 
+      {/* Scrollable thread list */}
+      <div className="overflow-y-auto flex-1">
         <h2 className="px-4 pt-3 pb-2 text-sm font-medium text-gray-600">Your Conversations</h2>
-
         <div className="space-y-1">
           {filteredThreads.map((t) => {
             const lastMessage = getLastMessage(t.id);
-            const isOwnMessage = lastMessage?.sender === user?.id;
-
+            // ...
             return (
               <Link
                 to={`/chat/${t.id}`}
