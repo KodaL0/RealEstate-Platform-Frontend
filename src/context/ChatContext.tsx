@@ -30,17 +30,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   // helper to lazy-open websocket
   const openSocket = () => {
     if (ws.current && ws.current.readyState === WebSocket.OPEN) return;
-    const token = document.cookie
-      .split(";")
-      .find((c) => c.trim().startsWith("access_token="))
-      ?.split("=")[1];
-    if (!token) return;
     const baseWs =
       (import.meta.env.VITE_API_WS as string | undefined) ||
       window.location.origin.replace(/^http/, "ws");
 
     try {
-      ws.current = new WebSocket(`${baseWs}/ws/chat/?token=${token}`);
+      ws.current = new WebSocket(`${baseWs}/ws/chat/`);
       // eslint-disable-next-line no-console
       console.log("WS connecting to", ws.current.url);
     } catch (err) {
