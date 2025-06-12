@@ -1,4 +1,3 @@
-// src/pages/Home.tsx
 import { useState, useEffect, useRef, useLayoutEffect } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -28,12 +27,12 @@ function Home() {
   const [totalCount, setTotalCount] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
 
-  /* track if it’s the first render (to skip auto-scroll) */
+  /* track if it's the first render (to skip auto-scroll) */
   const firstScroll = useRef(true);
-  /* track if it’s the initial data load (to suppress initial spinner) */
+  /* track if it's the initial data load (to suppress initial spinner) */
   const firstLoad = useRef(true);
 
-  /* ref for the “Featured Properties” section (for scrolling) */
+  /* ref for the "Featured Properties" section (for scrolling) */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
   /* ───────────── fetch one page of featured properties ───────────── */
@@ -50,7 +49,7 @@ function Home() {
         // SERVER-SIDE PAGINATION: ask for exactly PAGE_SIZE items on this page
         const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
         if (canceled) return;
-        setFeatured(res.results || []);       // exactly the current page’s items
+        setFeatured(res.results || []);       // exactly the current page's items
         setTotalCount(res.count || 0);        // total number of featured items in DB
       } catch (err) {
         if (canceled) return;
@@ -80,7 +79,7 @@ function Home() {
       firstScroll.current = false;
       return;
     }
-    // Don’t scroll while the new page is still loading
+    // Don't scroll while the new page is still loading
     if (loading) return;
     if (featuredTopRef.current) {
       const offset =
@@ -100,7 +99,7 @@ function Home() {
   return (
     <div className="bg-white">
       {/* ───────────── Hero Section ───────────── */}
-      <section className="relative h-screen">
+      <section className="relative h-[70vh] md:h-[75vh]">
         <div
           className="absolute inset-0 bg-cover bg-center animate-in fade-in duration-1000"
           style={{
@@ -108,19 +107,21 @@ function Home() {
               "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80')",
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/40" />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
+          {/* Bottom fade to hint at content below */}
+          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent" />
         </div>
 
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
           <div className="max-w-3xl">
-            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 leading-tight animate-in slide-in-from-left duration-700 delay-200">
+            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight animate-in slide-in-from-left duration-700 delay-200">
               Find Your <span className="text-blue-400">Dream Home</span>
             </h1>
-            <p className="text-xl text-white/90 mb-8 animate-in slide-in-from-left duration-700 delay-300">
+            <p className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 animate-in slide-in-from-left duration-700 delay-300">
               Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
             </p>
 
-            <div className="bg-white/95 backdrop-blur-md p-5 rounded-xl shadow-2xl animate-in slide-in-from-left duration-700 delay-400">
+            <div className="bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-xl shadow-2xl animate-in slide-in-from-left duration-700 delay-400">
               <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
                 <div className="flex-grow">
                   <div className="relative">
@@ -155,7 +156,7 @@ function Home() {
       </section>
 
       {/* ───────────── Featured Properties ───────────── */}
-      <section className="py-20 bg-gray-50">
+      <section className="py-16 md:py-20 bg-gray-50">
         <div ref={featuredTopRef} className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
@@ -192,7 +193,7 @@ function Home() {
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {featured.length
-                ? /* We no longer slice here; `featured` is exactly page N’s items */
+                ? /* We no longer slice here; `featured` is exactly page N's items */
                   featured.map((prop) => (
                     <PropertyCard key={prop.id} property={prop} />
                   ))
