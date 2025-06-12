@@ -22,7 +22,7 @@ import MortgageCalculator from "./pages/MortgageCalculator";
 import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
-import ChatInbox from "./pages/ChatInbox";
+import ChatPage from "./pages/ChatPage";
 import ChatThread from "./pages/ChatThread";
 
 function RouteChangeTracker() {
@@ -105,18 +105,13 @@ export default function App() {
                 path="/chat"
                 element={
                   <RequireAuth>
-                    <ChatInbox />
+                    <ChatPage />
                   </RequireAuth>
                 }
-              />
-              <Route
-                path="/chat/:id"
-                element={
-                  <RequireAuth>
-                    <ChatThread />
-                  </RequireAuth>
-                }
-              />
+              >
+                <Route index element={<p className="p-8">Select a conversation</p>} />
+                <Route path=":id" element={<ChatThread />} />
+              </Route>
             </Routes>
           </main>
 
