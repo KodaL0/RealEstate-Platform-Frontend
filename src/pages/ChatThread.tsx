@@ -1,196 +1,192 @@
-// src/pages/ThreadList.tsx
-import { Link, useParams } from "react-router-dom";
+// src/pages/ChatThread.tsx
+import { useParams } from "react-router-dom";
+import { useEffect, useState, useRef } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { useEffect, useState } from "react";
-import { MessageCircle, User, MapPin, Search, Plus } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } from "lucide-react";
+import { Message } from "../types";
+import { apiClient } from "../config/api";
 
-export default function ThreadList() {
-  const { threads, messages } = useChat();
+export default function ChatThread() {
+  const { id } = useParams<{ id: string }>();
+  const { messages, sendMessage, threads } = useChat();
   const { user } = useUser();
-  const { id: activeId } = useParams<{ id: string }>();
-  const [filteredThreads, setFilteredThreads] = useState(threads);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [input, setInput] = useState("");
+  const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
+  const [isTyping, setIsTyping] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    let filtered = threads;
-    if (searchTerm) {
-      filtered = filtered.filter(thread =>
-        thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        thread.property_address?.toLowerCase().includes(searchTerm.toLowerCase())
-      );
+    if (!id) return;
+    if (messages[id]) {
+      setLocalMsgs(messages[id]);
+      return;
     }
-    filtered = filtered.sort((a, b) => {
-      const aLast = getLastMessage(a.id);
-      const bLast = getLastMessage(b.id);
-      const aTime = aLast?.timestamp || a.updated_at || '0';
-      const bTime = bLast?.timestamp || b.updated_at || '0';
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
-    });
-    setFilteredThreads(filtered);
-  }, [threads, searchTerm, messages]);
+    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
+  }, [id, messages]);
 
-  const getLastMessage = (threadId: string) => {
-    const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0
-      ? threadMessages[threadMessages.length - 1]
-      : null;
+  useEffect(() => {
+    if (id && messages[id]) {
+      setLocalMsgs(messages[id]);
+    }
+  }, [messages, id]);
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    if (isNearBottom) {
+      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [localMsgs]);
+
+  const thread = threads.find((t) => t.id === id);
+
+  const recipientId: number | null = thread
+    ? thread.user1 === user?.id
+      ? thread.user2
+      : thread.user1
+    : localMsgs[0]
+    ? localMsgs[0].sender === user?.id
+      ? localMsgs[0].recipient
+      : localMsgs[0].sender
+    : null;
+
+  const propertyId: number | null = thread
+    ? thread.property
+    : localMsgs[0]?.property_id ?? null;
+
+  const handleSend = () => {
+    if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
+    sendMessage(id, recipientId, propertyId, input.trim());
+    setInput("");
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
   };
 
   const formatTime = (timestamp: string) => {
-    const date = new Date(timestamp);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-    if (diffInHours < 1) {
-      const minutes = Math.floor(diffInHours * 60);
-      return minutes <= 1 ? "Just now" : `${minutes}m ago`;
-    } else if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}h ago`;
-    } else if (diffInHours < 48) {
-      return "Yesterday";
-    } else {
-      return date.toLocaleDateString([], { month: "short", day: "numeric" });
-    }
+    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
-  const totalUnread = threads.reduce((sum, thread) => sum + thread.unread_count, 0);
+  const formatDate = (timestamp: string) => {
+    const date = new Date(timestamp);
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) return "Today";
+    if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
+    return date.toLocaleDateString();
+  };
+
+  const groupedMessages = localMsgs.reduce((groups: { [key: string]: Message[] }, message) => {
+    const date = formatDate(message.timestamp || new Date().toISOString());
+    if (!groups[date]) groups[date] = [];
+    groups[date].push(message);
+    return groups;
+  }, {});
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Sticky Header: match ChatThread header padding (px-4 py-2) */}
-      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
-        <div className="px-4 py-2 flex items-center justify-between">
-          {/* “Messages” label + icon */}
-          <div className="flex items-center space-x-2 whitespace-nowrap">
-            <MessageCircle size={20} className="text-blue-600" />
-            <span className="text-lg font-semibold text-gray-900">Messages</span>
-          </div>
-          <button className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition duration-200">
-            <Plus size={18} />
+    <div className="flex flex-col flex-1 bg-gray-50">
+      {/* Header: same padding as sidebar header */}
+      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <button className="lg:hidden text-gray-600">
+            <ArrowLeft size={18} />
           </button>
-        </div>
-        {/* Search Bar: also use px-4, py-2 spacing */}
-        <div className="px-4 py-2">
-          <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
+          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+            <UserIcon size={16} className="text-white" />
           </div>
+          <div>
+            <h2 className="font-medium text-sm text-gray-800">Property Inquiry</h2>
+            <p className="text-xs text-gray-500">Property ID: {propertyId}</p>
+          </div>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Phone size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <Video size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <Info size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
+          <MoreVertical size={16} className="text-gray-600 hover:text-gray-800 cursor-pointer" />
         </div>
       </div>
 
-      {/* Scrollable Thread List */}
-      <div className="flex-1 overflow-y-auto">
-        {filteredThreads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <MessageCircle size={32} className="text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No matching conversations' : 'No conversations yet'}
-            </h3>
-            <p className="text-sm text-gray-500 max-w-xs">
-              {searchTerm 
-                ? 'Try adjusting your search terms.'
-                : 'Start chatting about properties to see your conversations here.'
-              }
-            </p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-100">
-            {filteredThreads.map((thread) => {
-              const lastMessage = getLastMessage(thread.id);
-              const isOwnMessage = lastMessage?.sender === user?.id;
-              const isActive = thread.id === activeId;
+      {/* Messages area */}
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
+        {Object.entries(groupedMessages).map(([date, dateMessages]) => (
+          <div key={date}>
+            <div className="flex justify-center mb-2">
+              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{date}</span>
+            </div>
+            {dateMessages.slice().reverse().map((message) => {
+              const isOwn = message.sender === user?.id;
               return (
-                <Link
-                  to={`/chat/${thread.id}`}
-                  key={thread.id}
-                  className={`block hover:bg-gray-50 transition-colors ${
-                    isActive ? 'bg-blue-50 border-r-2 border-blue-500' : ''
-                  }`}
-                >
-                  <div className="px-4 py-3 flex items-start space-x-3">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User size={20} className="text-white" />
-                    </div>
-                    {/* Content */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate text-sm">
-                          {thread.property_title || `Property #${thread.property}`}
-                        </h3>
-                        {lastMessage && (
-                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                            {formatTime(
-                              lastMessage.timestamp ||
-                              thread.updated_at ||
-                              new Date().toISOString()
-                            )}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600 truncate">
-                          {thread.other_username || 'Unknown User'}
-                        </p>
-                        {thread.unread_count > 0 && (
-                          <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[18px] text-center">
-                            {thread.unread_count > 99 ? '99+' : thread.unread_count}
-                          </span>
-                        )}
-                      </div>
-                      {/* Last Message Preview */}
-                      {lastMessage ? (
-                        <div className="flex items-center space-x-1 mb-2">
-                          <span className="text-xs text-gray-500">
-                            {isOwnMessage ? 'You: ' : ''}
-                          </span>
-                          <p className="text-xs text-gray-600 truncate flex-1">
-                            {lastMessage.content}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
-                      )}
-                      {/* Property Location */}
-                      {thread.property_address && (
-                        <div className="flex items-center space-x-1 text-xs text-gray-400">
-                          <MapPin size={10} />
-                          <span className="truncate">{thread.property_address}</span>
-                        </div>
-                      )}
+                <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
+                  <div className={`max-w-xs px-3 py-2 rounded-xl shadow-sm ${isOwn ? "bg-blue-600 text-white" : "bg-white border"}`}>
+                    {message.content}
+                    <div className="text-[10px] text-gray-400 mt-1 text-right">
+                      {formatTime(message.timestamp || new Date().toISOString())}
                     </div>
                   </div>
-                </Link>
+                </div>
               );
             })}
           </div>
-        )}
-      </div>
-
-      {/* Footer Stats */}
-      {threads.length > 0 && (
-        <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-2">
-          <div className="grid grid-cols-2 gap-4 text-center">
-            <div>
-              <div className="text-lg font-bold text-gray-900">{threads.length}</div>
-              <div className="text-xs text-gray-600">Total Chats</div>
+        ))}
+        {isTyping && (
+          <div className="flex items-center space-x-2">
+            <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+              <UserIcon size={12} className="text-white" />
             </div>
-            <div>
-              <div className="text-lg font-bold text-gray-900">
-                {new Set(threads.map(t => t.property)).size}
-              </div>
-              <div className="text-xs text-gray-600">Properties</div>
+            <div className="flex space-x-1">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-200" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-400" />
             </div>
           </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Input */}
+      <div className="bg-white border-t px-4 py-2">
+        <div className="flex items-center space-x-2">
+          <textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            rows={1}
+            placeholder="Type your message..."
+            style={{
+              minHeight: "36px",
+              height: Math.min(Math.max(36, input.split("\n").length * 18 + 18), 120) + "px",
+            }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || !recipientId || !propertyId}
+            className={`p-2 rounded-full ${
+              input.trim() && recipientId && propertyId
+                ? "bg-blue-600 text-white hover:bg-blue-700"
+                : "bg-gray-200 text-gray-400 cursor-not-allowed"
+            }`}
+          >
+            <Send size={16} />
+          </button>
         </div>
-      )}
+        <div className="text-[10px] text-gray-400 mt-1 flex justify-between">
+          <span>Enter to send • Shift + Enter = newline</span>
+          <span className="flex items-center gap-1">
+            <div className="w-2 h-2 bg-green-500 rounded-full"></div> Online
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
