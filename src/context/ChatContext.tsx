@@ -109,12 +109,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       content,
     });
 
+    if (!ws.current) return;
+
     const sendNow = () => ws.current?.send(payload);
 
-    if (ws.current?.readyState === WebSocket.OPEN) {
+    if (ws.current.readyState === WebSocket.OPEN) {
       sendNow();
     } else {
-      ws.current!.addEventListener("open", sendNow, { once: true });
+      ws.current.addEventListener("open", sendNow, { once: true });
     }
 
     // optimistic local update
