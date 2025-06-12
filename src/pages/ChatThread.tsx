@@ -29,25 +29,25 @@ export default function ChatThread() {
     }
   }, [messages, id]);
 
+  // Determine recipient & property using thread or first message
+  const thread = threads.find((t) => t.id === id);
+
+  const recipientId: number | null = thread
+    ? thread.user1 === user?.id
+      ? thread.user2
+      : thread.user1
+    : localMsgs[0]
+    ? localMsgs[0].sender === user?.id
+      ? localMsgs[0].recipient
+      : localMsgs[0].sender
+    : null;
+
+  const propertyId: number | null = thread
+    ? thread.property
+    : localMsgs[0]?.property_id ?? null;
+
   const handleSend = () => {
-    if (!input.trim() || !id || !user) return;
-
-    // Determine recipient & property from existing msg or thread metadata
-    let recipientId: number | null = null;
-    let propertyId: number | null = null;
-
-    if (localMsgs.length) {
-      recipientId = localMsgs[0].sender === user.id ? localMsgs[0].recipient : localMsgs[0].sender;
-      propertyId = localMsgs[0].property_id;
-    } else {
-      const thread: Thread | undefined = threads.find((t) => t.id === id);
-      if (thread) {
-        recipientId = thread.user1 === user.id ? thread.user2 : thread.user1;
-        propertyId = thread.property;
-      }
-    }
-
-    if (!recipientId || !propertyId) return;
+    if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
 
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
@@ -78,7 +78,15 @@ export default function ChatThread() {
             }
           }}
         />
-        <button onClick={handleSend} className="bg-blue-600 text-white px-4 rounded-lg">
+        <button
+          onClick={handleSend}
+          disabled={!input.trim() || !recipientId || !propertyId}
+          className={`px-4 rounded-lg ${
+            input.trim() && recipientId && propertyId
+              ? "bg-blue-600 text-white"
+              : "bg-gray-300 text-gray-500 cursor-not-allowed"
+          }`}
+        >
           Send
         </button>
       </div>
