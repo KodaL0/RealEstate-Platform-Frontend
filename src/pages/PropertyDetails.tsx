@@ -339,7 +339,7 @@ const PropertyDetails: React.FC = () => {
                     </div>
                   </div>
                   {/* Price */}
-                <div className="flex flex-col items-start space-y-2">
+                 <div className="flex flex-col items-start space-y-2">
                   <p className="text-3xl font-bold text-blue-600">
                     €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                   </p>
@@ -470,12 +470,11 @@ const PropertyDetails: React.FC = () => {
                 ) : (
                   <p className="text-gray-600">Contact details not provided.</p>
                 )}
-              </div>
-            </div>
-          </div>
-        </section>
-      </div>
-    </div>
+            </div>  {/* closes sidebar */}
+          </div>  {/* closes flex wrapper around left+sidebar */}
+        </section>  {/* closes Details / Description / Amenities / Map section */}
+      </div>  {/* closes container <div className="container mx-auto px-4 py-8"> */}
+    </div>  {/* closes root <div className="pt-20 bg-gray-50 min-h-screen"> */}
   );
 };
 
