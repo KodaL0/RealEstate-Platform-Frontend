@@ -5,7 +5,9 @@ import { MessageCircle } from "lucide-react";
 
 export default function ChatContainer() {
   return (
-    <div className="flex h-screen bg-gray-50">
+    // Add mt-16 (64px) so this sits below a fixed/sticky navbar of height 16 (4rem = 64px).
+    // Also set height to remaining viewport: h-[calc(100vh-4rem)] so it fits below navbar.
+    <div className="flex mt-16 h-[calc(100vh-4rem)] bg-gray-50">
       {/* Sidebar - Thread List */}
       <div className="w-80 border-r border-gray-200 bg-white hidden lg:block">
         <ThreadList />
