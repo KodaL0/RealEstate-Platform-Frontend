@@ -1,46 +1,38 @@
 import { Link, useParams } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { useEffect, useState, useRef } from "react";
-import { Clock, MapPin } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Clock, MapPin, MessageCircle, User, Search, Plus } from "lucide-react";
 
 export default function ThreadList() {
   const { threads, messages } = useChat();
   const { user } = useUser();
   const { id: activeId } = useParams<{ id: string }>();
   const [filteredThreads, setFilteredThreads] = useState(threads);
-
-  // State to hold navbar height in px
-  const [navHeight, setNavHeight] = useState(0);
-  // Static sidebar width in px (e.g. 18rem = 18 * 16 = 288px). Adjust if your Tailwind w-72 differs.
-  const SIDEBAR_WIDTH_PX = 288;
+  const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    setFilteredThreads(threads);
-  }, [threads]);
-
-  // Measure navbar height and listen for changes
-  useEffect(() => {
-    const navEl = document.querySelector("nav");
-    if (!navEl) return;
-    // Initial measurement
-    setNavHeight(navEl.getBoundingClientRect().height);
-
-    // If navbar might resize (e.g. responsive), observe it:
-    let ro: ResizeObserver | null = null;
-    if (window.ResizeObserver) {
-      ro = new ResizeObserver((entries) => {
-        for (let entry of entries) {
-          setNavHeight(entry.contentRect.height);
-        }
-      });
-      ro.observe(navEl);
+    let filtered = threads;
+    
+    if (searchTerm) {
+      filtered = filtered.filter(thread => 
+        thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        thread.property_address?.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
-    // Clean up
-    return () => {
-      if (ro && navEl) ro.unobserve(navEl);
-    };
-  }, []);
+    
+    // Sort by most recent activity
+    filtered = filtered.sort((a, b) => {
+      const aLastMsg = getLastMessage(a.id);
+      const bLastMsg = getLastMessage(b.id);
+      const aTime = aLastMsg?.timestamp || a.updated_at || '0';
+      const bTime = bLastMsg?.timestamp || b.updated_at || '0';
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
+
+    setFilteredThreads(filtered);
+  }, [threads, searchTerm, messages]);
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
@@ -66,99 +58,164 @@ export default function ThreadList() {
     }
   };
 
-  // Inline style for fixed sidebar
-  const sidebarStyle: React.CSSProperties = {
-    position: "fixed",
-    top: navHeight,       // push it below the navbar
-    bottom: 0,
-    left: 0,
-    width: SIDEBAR_WIDTH_PX,
-    backgroundColor: "white",
-    borderRight: "1px solid #E5E7EB", // border-gray-200
-    overflow: "hidden",
-    zIndex: 10,
-    display: "flex",
-    flexDirection: "column",
-  };
+  const totalUnread = threads.reduce((sum, thread) => sum + thread.unread_count, 0);
 
   return (
-    <div style={sidebarStyle}>
-      {/* Sidebar header */}
-      <div
-        style={{
-          position: "sticky",
-          top: 0,
-          backgroundColor: "white",
-          borderBottom: "1px solid #E5E7EB",
-          zIndex: 20,
-          padding: "1rem",
-          display: "flex",
-          alignItems: "center",
-          gap: "0.5rem",
-        }}
-      >
-        <img src="/logo.svg" alt="Logo" className="h-6" />
-        <span className="text-blue-600 font-bold text-lg">PROPERTPRO</span>
-      </div>
-
-      {/* Scrollable list */}
-      <div
-        style={{
-          overflowY: "auto",
-          flex: 1,
-        }}
-      >
-        <h2 className="px-4 pt-3 pb-2 text-sm font-medium text-gray-600">
-          Your Conversations
-        </h2>
-        <div className="space-y-1">
-          {filteredThreads.map((t) => {
-            const lastMessage = getLastMessage(t.id);
-            return (
-              <Link
-                to={`/chat/${t.id}`}
-                key={t.id}
-                className={`block px-4 py-3 hover:bg-gray-50 border-b border-gray-100 ${
-                  t.id === activeId ? "bg-gray-100" : ""
-                }`}
-              >
-                <p className="font-medium truncate text-gray-800">
-                  {t.property_title || `Property #${t.property}`}
+    <div className="h-full flex flex-col bg-white">
+      {/* Header */}
+      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+        <div className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                <MessageCircle size={20} className="text-white" />
+              </div>
+              <div>
+                <h1 className="text-xl font-bold text-gray-900">Messages</h1>
+                <p className="text-sm text-gray-500">
+                  {threads.length} conversation{threads.length !== 1 ? 's' : ''}
+                  {totalUnread > 0 && (
+                    <span className="ml-2 text-blue-600 font-medium">
+                      • {totalUnread} unread
+                    </span>
+                  )}
                 </p>
-                <p className="text-sm text-gray-500 truncate">
-                  {t.other_username}
-                </p>
+              </div>
+            </div>
+            <button className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-sm hover:shadow-md transform hover:scale-105">
+              <Plus size={18} />
+            </button>
+          </div>
 
-                {lastMessage && (
-                  <div className="flex justify-between text-xs text-gray-400 mt-1">
-                    <div className="flex items-center gap-1">
-                      <Clock size={12} />
-                      <span>
-                        {formatTime(
-                          lastMessage.timestamp ||
-                            t.updated_at ||
-                            new Date().toISOString()
-                        )}
-                      </span>
-                    </div>
-                    {t.unread_count > 0 && (
-                      <span className="text-xs text-blue-600 font-medium">
-                        {t.unread_count > 99 ? "99+" : t.unread_count} unread
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {t.property_address && (
-                  <div className="flex items-center gap-1 text-xs text-gray-400 mt-1">
-                    <MapPin size={12} /> {t.property_address}
-                  </div>
-                )}
-              </Link>
-            );
-          })}
+          {/* Search Bar */}
+          <div className="relative">
+            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search conversations..."
+              className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all text-sm"
+            />
+          </div>
         </div>
       </div>
+
+      {/* Conversations List */}
+      <div className="flex-1 overflow-y-auto">
+        {filteredThreads.length === 0 ? (
+          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+              <MessageCircle size={32} className="text-gray-400" />
+            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? 'No matching conversations' : 'No conversations yet'}
+            </h3>
+            <p className="text-sm text-gray-500 max-w-xs">
+              {searchTerm 
+                ? 'Try adjusting your search terms to find what you\'re looking for.'
+                : 'Start chatting about properties to see your conversations here.'
+              }
+            </p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredThreads.map((thread) => {
+              const lastMessage = getLastMessage(thread.id);
+              const isOwnMessage = lastMessage?.sender === user?.id;
+              const isActive = thread.id === activeId;
+              
+              return (
+                <Link
+                  to={`/chat/${thread.id}`}
+                  key={thread.id}
+                  className={`block hover:bg-gray-50 transition-colors ${
+                    isActive ? 'bg-blue-50 border-r-2 border-blue-500' : ''
+                  }`}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start space-x-3">
+                      {/* Avatar */}
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <User size={20} className="text-white" />
+                      </div>
+
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          <h3 className="font-semibold text-gray-900 truncate text-sm">
+                            {thread.property_title || `Property #${thread.property}`}
+                          </h3>
+                          {lastMessage && (
+                            <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
+                              {formatTime(
+                                lastMessage.timestamp ||
+                                thread.updated_at ||
+                                new Date().toISOString()
+                              )}
+                            </span>
+                          )}
+                        </div>
+
+                        <div className="flex items-center justify-between mb-2">
+                          <p className="text-sm text-gray-600 truncate">
+                            {thread.other_username || 'Unknown User'}
+                          </p>
+                          {thread.unread_count > 0 && (
+                            <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[18px] text-center">
+                              {thread.unread_count > 99 ? '99+' : thread.unread_count}
+                            </span>
+                          )}
+                        </div>
+
+                        {/* Last Message Preview */}
+                        {lastMessage ? (
+                          <div className="flex items-center space-x-1 mb-2">
+                            <span className="text-xs text-gray-500">
+                              {isOwnMessage ? 'You: ' : ''}
+                            </span>
+                            <p className="text-xs text-gray-600 truncate flex-1">
+                              {lastMessage.content}
+                            </p>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
+                        )}
+
+                        {/* Property Location */}
+                        {thread.property_address && (
+                          <div className="flex items-center space-x-1 text-xs text-gray-400">
+                            <MapPin size={10} />
+                            <span className="truncate">{thread.property_address}</span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Footer Stats */}
+      {threads.length > 0 && (
+        <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 p-4">
+          <div className="grid grid-cols-2 gap-4 text-center">
+            <div>
+              <div className="text-lg font-bold text-gray-900">{threads.length}</div>
+              <div className="text-xs text-gray-600">Total Chats</div>
+            </div>
+            <div>
+              <div className="text-lg font-bold text-gray-900">
+                {new Set(threads.map(t => t.property)).size}
+              </div>
+              <div className="text-xs text-gray-600">Properties</div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
