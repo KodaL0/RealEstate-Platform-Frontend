@@ -22,6 +22,13 @@ export default function ChatThread() {
     apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
   }, [id, messages]);
 
+  // Update when new messages arrive via context
+  useEffect(() => {
+    if (id && messages[id]) {
+      setLocalMsgs(messages[id]);
+    }
+  }, [messages, id]);
+
   const handleSend = () => {
     if (!input.trim() || !id || !user) return;
 
@@ -64,6 +71,12 @@ export default function ChatThread() {
           onChange={(e) => setInput(e.target.value)}
           className="flex-1 border rounded-lg px-3 py-2"
           placeholder="Type a message…"
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+              e.preventDefault();
+              handleSend();
+            }
+          }}
         />
         <button onClick={handleSend} className="bg-blue-600 text-white px-4 rounded-lg">
           Send
