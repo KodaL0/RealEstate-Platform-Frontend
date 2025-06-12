@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
-import { RequireAuth } from "./RequireAuth";
+import { useUser } from "../context/UserContext";
 
 interface Props {
   sellerId: number;
@@ -10,20 +10,23 @@ interface Props {
 
 const ChatButton: React.FC<Props> = ({ sellerId, propertyId, title }) => {
   const { getOrCreateThread } = useChat();
+  const { user } = useUser();
   const navigate = useNavigate();
 
+  const handleClick = async () => {
+    if (!user) {
+      navigate("/login", { state: { from: location.pathname } });
+      return;
+    }
+
+    const threadId = await getOrCreateThread(sellerId, propertyId, title);
+    navigate(`/chat/${threadId}`);
+  };
+
   return (
-    <RequireAuth>
-      <button
-        className="btn btn-primary"
-        onClick={async () => {
-          const threadId = await getOrCreateThread(sellerId, propertyId, title);
-          navigate(`/chat/${threadId}`);
-        }}
-      >
-        Chat with seller
-      </button>
-    </RequireAuth>
+    <button className="btn btn-primary" onClick={handleClick}>
+      Chat with seller
+    </button>
   );
 };
 
