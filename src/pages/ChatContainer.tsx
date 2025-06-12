@@ -1,16 +1,19 @@
+// src/pages/ChatContainer.tsx
 import { Routes, Route } from "react-router-dom";
 import ThreadList from "./ThreadList";
 import ChatThread from "./ChatThread";
 import { MessageCircle } from "lucide-react";
-import Footer from "../components/Footer";
+import Footer from "../components/Footer"; // make sure this path is correct
 
 export default function ChatContainer() {
   return (
-    // flex-col to stack content area and footer vertically, pt-16 to push below navbar,
-    // h-screen so the whole layout fits viewport, bg-gray-50 for background.
+    // flex-col stacks content area and footer.
+    // pt-16 pushes everything below a navbar of height h-16 (4rem = 64px).
+    // h-screen makes the container 100vh tall; the inner flex areas will size accordingly.
     <div className="flex flex-col h-screen pt-16 bg-gray-50">
       
       {/* Content area: sidebar + main chat */}
+      {/* flex-1 + overflow-hidden ensures this area fills remaining height and children manage scrolling */}
       <div className="flex flex-1 overflow-hidden">
         {/* Sidebar - Thread List (hidden on smaller screens) */}
         <aside className="w-80 border-r border-gray-200 bg-white hidden lg:block">
@@ -26,7 +29,7 @@ export default function ChatContainer() {
         </main>
       </div>
 
-      {/* Footer: sits at bottom of viewport or below content */}
+      {/* Footer: appears at bottom of viewport if content short, or after scrolling if content tall */}
       <footer className="border-t border-gray-200 bg-white">
         <Footer />
       </footer>
@@ -36,6 +39,7 @@ export default function ChatContainer() {
 
 function ChatEmptyState() {
   return (
+    // flex-1 ensures this fills the available main area if no chat selected
     <div className="flex-1 flex items-center justify-center bg-gray-50">
       <div className="text-center">
         <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg">
