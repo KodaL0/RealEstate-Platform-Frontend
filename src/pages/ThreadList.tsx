@@ -13,24 +13,20 @@ export default function ThreadList() {
 
   useEffect(() => {
     let filtered = threads;
-    
     if (searchTerm) {
-      filtered = filtered.filter(thread => 
+      filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.property_address?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
-    // Sort by most recent activity
     filtered = filtered.sort((a, b) => {
-      const aLastMsg = getLastMessage(a.id);
-      const bLastMsg = getLastMessage(b.id);
-      const aTime = aLastMsg?.timestamp || a.updated_at || '0';
-      const bTime = bLastMsg?.timestamp || b.updated_at || '0';
+      const aLast = getLastMessage(a.id);
+      const bLast = getLastMessage(b.id);
+      const aTime = aLast?.timestamp || a.updated_at || '0';
+      const bTime = bLast?.timestamp || b.updated_at || '0';
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
-
     setFilteredThreads(filtered);
   }, [threads, searchTerm, messages]);
 
@@ -45,7 +41,6 @@ export default function ThreadList() {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
     if (diffInHours < 1) {
       const minutes = Math.floor(diffInHours * 60);
       return minutes <= 1 ? "Just now" : `${minutes}m ago`;
@@ -62,8 +57,8 @@ export default function ThreadList() {
 
   return (
     <div className="h-full flex flex-col bg-white">
-      {/* Header */}
-      <div className="flex-shrink-0 border-b border-gray-200 bg-white">
+      {/* Sticky Header */}
+      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center space-x-3">
@@ -86,7 +81,6 @@ export default function ThreadList() {
               <Plus size={18} />
             </button>
           </div>
-
           {/* Search Bar */}
           <div className="relative">
             <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -101,7 +95,7 @@ export default function ThreadList() {
         </div>
       </div>
 
-      {/* Conversations List */}
+      {/* Scrollable List */}
       <div className="flex-1 overflow-y-auto">
         {filteredThreads.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full p-8 text-center">
@@ -124,7 +118,6 @@ export default function ThreadList() {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
               const isActive = thread.id === activeId;
-              
               return (
                 <Link
                   to={`/chat/${thread.id}`}
@@ -139,7 +132,6 @@ export default function ThreadList() {
                       <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
                         <User size={20} className="text-white" />
                       </div>
-
                       {/* Content */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
@@ -156,7 +148,6 @@ export default function ThreadList() {
                             </span>
                           )}
                         </div>
-
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm text-gray-600 truncate">
                             {thread.other_username || 'Unknown User'}
@@ -167,7 +158,6 @@ export default function ThreadList() {
                             </span>
                           )}
                         </div>
-
                         {/* Last Message Preview */}
                         {lastMessage ? (
                           <div className="flex items-center space-x-1 mb-2">
@@ -181,7 +171,6 @@ export default function ThreadList() {
                         ) : (
                           <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
                         )}
-
                         {/* Property Location */}
                         {thread.property_address && (
                           <div className="flex items-center space-x-1 text-xs text-gray-400">
