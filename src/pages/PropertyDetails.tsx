@@ -379,6 +379,7 @@ const PropertyDetails: React.FC = () => {
                     <p className="text-3xl font-bold text-blue-600">
                       €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                     </p>
+                    {property.property_status === 'for_sale' && (
                     <button
                       onClick={() => {
                         if (property.price && property.price > 0) {
