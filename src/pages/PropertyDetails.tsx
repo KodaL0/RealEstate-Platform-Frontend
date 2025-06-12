@@ -396,7 +396,7 @@ const PropertyDetails: React.FC = () => {
                       <Calculator className="w-5 h-5 mr-2" />
                       Calculate Mortgage
                     </button>
-                  </div>
+                  )}
                 </div>
 
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
