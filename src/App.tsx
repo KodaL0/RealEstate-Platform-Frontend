@@ -22,6 +22,8 @@ import MortgageCalculator from "./pages/MortgageCalculator";
 import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
+import ChatInbox from "./pages/ChatInbox";
+import ChatThread from "./pages/ChatThread";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -96,6 +98,22 @@ export default function App() {
                 element={
                   <RequireAuth>
                     <MyListings />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/chat"
+                element={
+                  <RequireAuth>
+                    <ChatInbox />
+                  </RequireAuth>
+                }
+              />
+              <Route
+                path="/chat/:id"
+                element={
+                  <RequireAuth>
+                    <ChatThread />
                   </RequireAuth>
                 }
               />
