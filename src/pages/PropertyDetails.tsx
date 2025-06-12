@@ -59,7 +59,7 @@ const mapPropertyData = (raw: any): Property => ({
   updated_at: raw?.updated_at ?? '',
   images: normaliseImages(raw?.images),
   is_favourite: raw?.is_favourite ?? false,
-  // If your API returns latitude/longitude, you can map here:
+  // Add latitude/longitude if API returns them:
   // latitude: raw?.latitude != null ? +raw.latitude : undefined,
   // longitude: raw?.longitude != null ? +raw.longitude : undefined,
 });
@@ -116,28 +116,17 @@ const PropertyDetails: React.FC = () => {
         const mapped = mapPropertyData(response.data);
         if (!isMounted) return;
         setProperty(mapped);
-
-        // Example: if API returns latitude/longitude, use them; otherwise, you may geocode here:
-        // if (mapped.latitude != null && mapped.longitude != null) {
-        //   setCoords({ lat: mapped.latitude, lng: mapped.longitude });
-        // } else if (mapped.location) {
-        //   try {
-        //     const result = await geocodeAddress(mapped.location);
-        //     if (isMounted) setCoords(result);
-        //   } catch (e) {
-        //     console.error('geocode fail', e);
-        //   }
-        // }
-        // For now, if you rely on client-side geocoding:
+        // Example: if API returns latitude/longitude, use them; else geocode:
         if (mapped.location) {
           try {
             const result = await geocodeAddress(mapped.location);
-            if (isMounted) setCoords(result);
+            if (isMounted) {
+              setCoords(result);
+            }
           } catch (e) {
             console.error('geocode fail', e);
           }
         }
-        // Initialize activeImage only if images exist:
         if (mapped.images.length > 0) {
           setActiveImage(0);
           setLightboxIdx(0);
@@ -208,7 +197,6 @@ const PropertyDetails: React.FC = () => {
     );
   }
 
-  // Improved ordinal formatting
   const formatOrdinal = (n: string | number): string => {
     const num = Number(n);
     if (isNaN(num)) return String(n);
@@ -227,17 +215,16 @@ const PropertyDetails: React.FC = () => {
   };
 
   const toUrl = (img: { image: string }) => img.image;
-  const unpublishedBanner = !property.is_published && (
+  const unpublishedBanner = !property.is_published ? (
     <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
       <p className="text-sm text-amber-700">
         This property is not published. Only you can see it.
       </p>
     </div>
-  );
+  ) : null;
 
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* Lightbox Overlay */}
       {lightboxOpen && totalImages > 0 && (
         <div className="fixed inset-0 bg-black/80 flex justify-center items-center z-50">
           <button
@@ -276,7 +263,6 @@ const PropertyDetails: React.FC = () => {
         {/* Hero + Thumbnails */}
         <section className="bg-white rounded-xl overflow-hidden shadow-sm">
           <div className="flex flex-col lg:flex-row">
-            {/* Main Hero Image */}
             <div className="lg:w-2/3">
               {totalImages > 0 ? (
                 <div
@@ -288,7 +274,6 @@ const PropertyDetails: React.FC = () => {
                     className="w-full h-full object-cover"
                     alt={property.title || 'Property image'}
                   />
-                  {/* Status Badges */}
                   <div className="absolute top-4 left-4 flex gap-2 z-30">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-semibold ${
@@ -303,17 +288,11 @@ const PropertyDetails: React.FC = () => {
                       {property.property_type}
                     </span>
                   </div>
-                  {/* Favourite & Share */}
                   <div className="absolute top-4 right-4 flex flex-col items-center gap-2 z-30">
                     <FavouriteButton
                       propertyId={numericId}
                       defaultLiked={!!property?.is_favourite}
                     />
-                    {/*
-                    <button className="p-2 bg-white/80 hover:bg-white rounded-full shadow-md">
-                      <Share2 className="h-5 w-5 text-gray-600 hover:text-blue-500" />
-                    </button>
-                    */}
                   </div>
                 </div>
               ) : (
@@ -323,7 +302,6 @@ const PropertyDetails: React.FC = () => {
               )}
             </div>
 
-            {/* Thumbnail Carousel */}
             <div className="lg:w-1/3 lg:h-[500px] bg-gray-50">
               <div className="relative h-auto lg:h-full">
                 {thumbPage > 0 && totalImages > THUMBS_PER_PAGE && (
@@ -387,11 +365,8 @@ const PropertyDetails: React.FC = () => {
         {/* Details / Description / Amenities / Map */}
         <section className="mt-8">
           <div className="flex flex-col lg:flex-row lg:gap-8">
-            {/* Left Column */}
             <div className="lg:w-2/3">
-              {/* Info Card */}
               <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
-                {/* Title & Price */}
                 <div className="flex flex-col md:flex-row md:justify-between md:items-baseline md:gap-8 mb-6">
                   <div>
                     <h1 className="text-3xl font-bold text-gray-900 mb-4">{property.title}</h1>
@@ -400,7 +375,6 @@ const PropertyDetails: React.FC = () => {
                       <span>{property.location}</span>
                     </div>
                   </div>
-                  {/* Price */}
                   <div className="flex flex-col items-start space-y-2">
                     <p className="text-3xl font-bold text-blue-600">
                       €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
@@ -424,7 +398,6 @@ const PropertyDetails: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Basic Stats */}
                 <div className="flex flex-wrap gap-6 py-4 border-y border-gray-100">
                   <div className="flex items-center text-gray-700">
                     <Bed className="h-5 w-5 mr-2 text-gray-500" />
@@ -470,7 +443,6 @@ const PropertyDetails: React.FC = () => {
                   )}
                 </div>
 
-                {/* Description */}
                 <div className="mt-6">
                   <h2 className="text-xl font-bold mb-4">Description</h2>
                   <p className="text-gray-700 leading-relaxed whitespace-pre-line">
@@ -479,7 +451,6 @@ const PropertyDetails: React.FC = () => {
                 </div>
               </div>
 
-              {/* Amenities */}
               {property.amenities.length > 0 && (
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                   <h2 className="text-xl font-bold mb-4">Amenities</h2>
@@ -494,7 +465,6 @@ const PropertyDetails: React.FC = () => {
                 </div>
               )}
 
-              {/* Map */}
               <div className="bg-white p-6 rounded-xl shadow-sm">
                 <h2 className="text-xl font-bold mb-4">Location</h2>
                 {coords ? (
@@ -509,7 +479,6 @@ const PropertyDetails: React.FC = () => {
               </div>
             </div>
 
-            {/* Sidebar */}
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm sticky top-24">
                 <h3 className="text-xl font-bold mb-6">Contact Information</h3>
@@ -541,10 +510,10 @@ const PropertyDetails: React.FC = () => {
                 )}
               </div>
             </div>
-          </div> {/* closes flex wrapper around left+sidebar */}
-        </section> {/* closes Details / Description / Amenities / Map section */}
-      </div> {/* closes container */}
-    </div> {/* closes root */}
+          </div>
+        </section>
+      </div>
+    </div>
   );
 };
 
