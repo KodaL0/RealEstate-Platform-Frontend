@@ -60,6 +60,7 @@ export default function App() {
               <Route path="/terms" element={<TermsandConditions />} />
               <Route path="/cookies" element={<CookiePolicy />} />
               <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
+              <Route path="/chat/*" element={<ChatContainer />} />
 
               {/* Protected */}
               <Route
