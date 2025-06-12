@@ -84,3 +84,24 @@ export interface ListingForm {
   virtualTourUrl?: string;
   videoUrl?: string;
 }
+
+// Chat system types
+export interface Thread {
+  id: string;
+  user1: number;
+  user2: number;
+  property: number;
+  unread_count: number;
+  updated_at: string;
+}
+
+export interface Message {
+  id: string;
+  thread_id: string;
+  property_id: number;
+  sender: number;
+  recipient: number;
+  content: string;
+  created_at: string;
+  read_at: string | null;
+}
