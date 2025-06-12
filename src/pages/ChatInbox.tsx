@@ -13,16 +13,12 @@ export default function ChatInbox() {
 
   useEffect(() => {
     let filtered = threads;
-
-    // Apply search filter
     if (searchTerm) {
       filtered = filtered.filter(thread => 
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-
-    // Apply type filter
     switch (filterType) {
       case 'unread':
         filtered = filtered.filter(thread => thread.unread_count > 0);
@@ -32,10 +28,7 @@ export default function ChatInbox() {
           new Date(b.updated_at || '').getTime() - new Date(a.updated_at || '').getTime()
         );
         break;
-      default:
-        break;
     }
-
     setFilteredThreads(filtered);
   }, [threads, searchTerm, filterType]);
 
@@ -65,26 +58,25 @@ export default function ChatInbox() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="pt-[64px] min-h-[calc(100vh-64px)] bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
-            <MessageCircle size={32} className="text-white" />
+          <div className="w-14 h-14 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4 animate-pulse">
+            <MessageCircle size={28} className="text-white" />
           </div>
-          <p className="text-gray-600">Loading your conversations...</p>
+          <p className="text-sm text-gray-600">Loading your conversations...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between mb-6">
+    <div className="pt-[64px] min-h-[calc(100vh-64px)] bg-gray-50">
+      <div className="max-w-4xl mx-auto px-4 py-6">
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 mb-2">Messages</h1>
-              <p className="text-gray-600">
+              <h1 className="text-xl font-bold text-gray-900 mb-1">Messages</h1>
+              <p className="text-sm text-gray-600">
                 {threads.length} conversation{threads.length !== 1 ? 's' : ''} 
                 {threads.filter(t => t.unread_count > 0).length > 0 && (
                   <span className="ml-2 text-blue-600 font-medium">
@@ -93,171 +85,87 @@ export default function ChatInbox() {
                 )}
               </p>
             </div>
-            <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center space-x-2">
-              <Plus size={20} />
-              <span>New Chat</span>
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600">
+              <Plus size={16} /> New Chat
             </button>
           </div>
 
-          {/* Search and Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex flex-col sm:flex-row gap-2 mb-4">
             <div className="flex-1 relative">
-              <Search size={20} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" />
+              <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                placeholder="Search conversations, properties, or contacts..."
-                className="w-full pl-12 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm transition-all"
+                placeholder="Search..."
+                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
-            
-            <div className="flex items-center space-x-2">
-              <Filter size={18} className="text-gray-400" />
+            <div className="flex items-center gap-2">
+              <Filter size={16} className="text-gray-400" />
               <select
                 value={filterType}
                 onChange={(e) => setFilterType(e.target.value as 'all' | 'unread' | 'recent')}
-                className="bg-white border border-gray-200 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent shadow-sm"
+                className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="all">All Messages</option>
-                <option value="unread">Unread Only</option>
-                <option value="recent">Most Recent</option>
+                <option value="all">All</option>
+                <option value="unread">Unread</option>
+                <option value="recent">Recent</option>
               </select>
             </div>
           </div>
         </div>
 
-        {/* Conversations List */}
         {filteredThreads.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-24 h-24 bg-gradient-to-r from-blue-100 to-blue-200 rounded-full flex items-center justify-center mx-auto mb-6">
-              <MessageCircle size={40} className="text-blue-500" />
-            </div>
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              {searchTerm ? 'No matching conversations' : 'No conversations yet'}
-            </h3>
-            <p className="text-gray-600 mb-8 max-w-md mx-auto">
-              {searchTerm 
-                ? 'Try adjusting your search terms or filters to find what you\'re looking for.'
-                : 'Start chatting about properties to see your conversations here. Connect with property owners, agents, and other interested parties.'
-              }
-            </p>
-            {!searchTerm && (
-              <button className="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-8 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105">
-                Browse Properties
-              </button>
-            )}
+          <div className="text-center py-12 text-sm text-gray-600">
+            {searchTerm ? 'No results found.' : 'No conversations yet.'}
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredThreads.map((thread) => {
+            {filteredThreads.map(thread => {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
-              
+
               return (
                 <Link
                   key={thread.id}
                   to={`/chat/${thread.id}`}
-                  className="block bg-white rounded-xl border border-gray-200 hover:border-blue-200 hover:shadow-lg transition-all duration-200 group"
+                  className="block bg-white rounded-lg border border-gray-200 hover:shadow-md p-4 transition"
                 >
-                  <div className="p-6">
-                    <div className="flex items-start space-x-4">
-                      {/* Avatar */}
-                      <div className="w-14 h-14 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0 group-hover:scale-105 transition-transform">
-                        <User size={24} className="text-white" />
-                      </div>
-
-                      {/* Content */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center space-x-2">
-                            <Home size={16} className="text-gray-400" />
-                            <h3 className="font-semibold text-gray-900 truncate">
-                              {thread.property_title || `Property #${thread.property}`}
-                            </h3>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            {lastMessage && (
-                              <span className="text-sm text-gray-500 flex items-center space-x-1">
-                                <Clock size={14} />
-                                <span>{formatTime(lastMessage.timestamp || thread.updated_at || new Date().toISOString())}</span>
-                              </span>
-                            )}
-                            {thread.unread_count > 0 && (
-                              <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2.5 py-1 rounded-full min-w-[20px] text-center">
-                                {thread.unread_count > 99 ? '99+' : thread.unread_count}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-
-                        <div className="flex items-center space-x-2 mb-3">
-                          <User size={14} className="text-gray-400" />
-                          <span className="text-sm text-gray-600">
-                            {thread.other_username || 'Unknown User'}
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                      <User size={18} className="text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex justify-between items-center text-sm mb-1">
+                        <span className="font-medium text-gray-800 truncate">
+                          {thread.property_title || `Property #${thread.property}`}
+                        </span>
+                        {lastMessage && (
+                          <span className="text-gray-400 flex items-center gap-1">
+                            <Clock size={12} />
+                            {formatTime(lastMessage.timestamp || thread.updated_at || new Date().toISOString())}
                           </span>
-                        </div>
-
-                        {/* Last Message Preview */}
-                        {lastMessage ? (
-                          <div className="flex items-center space-x-2">
-                            <span className="text-sm text-gray-500">
-                              {isOwnMessage ? 'You: ' : ''}
-                            </span>
-                            <p className="text-sm text-gray-700 truncate flex-1">
-                              {lastMessage.content}
-                            </p>
-                          </div>
-                        ) : (
-                          <p className="text-sm text-gray-500 italic">No messages yet</p>
-                        )}
-
-                        {/* Property Location (if available) */}
-                        {thread.property_address && (
-                          <div className="flex items-center space-x-1 mt-2 text-xs text-gray-500">
-                            <MapPin size={12} />
-                            <span className="truncate">{thread.property_address}</span>
-                          </div>
                         )}
                       </div>
+                      <div className="text-sm text-gray-600 truncate">
+                        {isOwnMessage ? 'You: ' : ''}{lastMessage?.content || 'No messages yet'}
+                      </div>
+                      {thread.unread_count > 0 && (
+                        <div className="text-xs text-white bg-blue-500 w-fit mt-1 px-2 py-0.5 rounded-full">
+                          {thread.unread_count > 99 ? '99+' : thread.unread_count}
+                        </div>
+                      )}
+                      {thread.property_address && (
+                        <div className="flex items-center text-xs text-gray-400 mt-1 gap-1">
+                          <MapPin size={12} /> {thread.property_address}
+                        </div>
+                      )}
                     </div>
                   </div>
                 </Link>
               );
             })}
-          </div>
-        )}
-
-        {/* Quick Stats */}
-        {threads.length > 0 && (
-          <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-6">
-            <div className="bg-white rounded-xl p-6 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <MessageCircle size={24} className="text-blue-600" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">{threads.length}</div>
-              <div className="text-sm text-gray-600">Total Conversations</div>
-            </div>
-            
-            <div className="bg-white rounded-xl p-6 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <User size={24} className="text-green-600" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {new Set(threads.map(t => t.other_username)).size}
-              </div>
-              <div className="text-sm text-gray-600">Unique Contacts</div>
-            </div>
-            
-            <div className="bg-white rounded-xl p-6 border border-gray-200 text-center">
-              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                <Home size={24} className="text-orange-600" />
-              </div>
-              <div className="text-2xl font-bold text-gray-900 mb-1">
-                {new Set(threads.map(t => t.property)).size}
-              </div>
-              <div className="text-sm text-gray-600">Properties Discussed</div>
-            </div>
           </div>
         )}
       </div>
