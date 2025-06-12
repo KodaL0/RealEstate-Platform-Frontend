@@ -39,9 +39,9 @@ export default function ThreadList() {
   };
 
   return (
-    <div className="w-72 pt-[64px] h-[calc(100vh-64px)] bg-transparent">
+    <div className="w-72 pt-[64px] h-[calc(100vh-64px)] bg-white">
       <div className="h-full border-r border-gray-200 overflow-y-auto">
-        <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-2 bg-white">
+        <div className="px-4 py-4 border-b border-gray-200 flex items-center gap-2 bg-gray-50">
           <img src="/logo.svg" alt="Logo" className="h-6" />
           <span className="text-blue-600 font-bold text-lg">PROPERTPRO</span>
         </div>
