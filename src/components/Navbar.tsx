@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, ChevronDown, Building2 } from "lucide-react";
+import { Menu, X, User, ChevronDown, Building2, MessageCircle } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { logout } from "../middleware/auth";
+import { useChat } from "../context/ChatContext";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, setUser } = useUser();
+  const { threads } = useChat();
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -50,6 +52,8 @@ const Navbar: React.FC = () => {
     }
   };
 
+  const unreadTotal = threads.reduce((sum, t) => sum + t.unread_count, 0);
+
   return (
     <nav
       className={`fixed w-full z-50 transition-all duration-300 ${scrolled ? "bg-white shadow-md" : "bg-transparent"} pt-[env(safe-area-inset-top)] h-[calc(4rem+env(safe-area-inset-top))]`}
@@ -85,21 +89,31 @@ const Navbar: React.FC = () => {
         {/* User Menu - Positioned absolutely right */}
         <div className="absolute right-0 hidden md:flex items-center">
           {user ? (
-            <div className="relative group max-w-[280px]">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 max-w-full overflow-hidden">
-                <User className="h-5 w-5 flex-shrink-0" />
-                <span className="truncate max-w-[160px]" title={user.username}>
-                  {user.username}
-                </span>
-                <ChevronDown className="h-4 w-4 flex-shrink-0" />
-              </button>
-              <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-right z-50">
-                <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Profile</Link>
-                <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">My Listings</Link>
-                <Link to="/favourites" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Favourites</Link>
-                <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors">Logout</button>
+            <>
+              <Link to="/chat" className="relative mr-4">
+                <MessageCircle className="h-6 w-6 text-gray-700 hover:text-blue-600" />
+                {unreadTotal > 0 && (
+                  <span className="absolute -top-1 -right-2 bg-red-600 text-white text-xs rounded-full px-1">
+                    {unreadTotal}
+                  </span>
+                )}
+              </Link>
+              <div className="relative group max-w-[280px]">
+                <button className="bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center space-x-2 max-w-full overflow-hidden">
+                  <User className="h-5 w-5 flex-shrink-0" />
+                  <span className="truncate max-w-[160px]" title={user.username}>
+                    {user.username}
+                  </span>
+                  <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                </button>
+                <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-right z-50">
+                  <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Profile</Link>
+                  <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">My Listings</Link>
+                  <Link to="/favourites" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Favourites</Link>
+                  <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors">Logout</button>
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <Link to="/login" className="flex items-center space-x-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors">
               <User className="h-5 w-5" />
