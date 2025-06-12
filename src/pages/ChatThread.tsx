@@ -1,5 +1,5 @@
 import { useParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useChat } from "../context/ChatContext";
 import { Message, Thread } from "../types";
 import { apiClient } from "../config/api";
@@ -11,6 +11,7 @@ export default function ChatThread() {
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
 
   // fetch once if not in context
   useEffect(() => {
@@ -28,6 +29,10 @@ export default function ChatThread() {
       setLocalMsgs(messages[id]);
     }
   }, [messages, id]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [localMsgs]);
 
   // Determine recipient & property using thread or first message
   const thread = threads.find((t) => t.id === id);
@@ -56,7 +61,7 @@ export default function ChatThread() {
   return (
     <div className="max-w-2xl mx-auto flex flex-col h-[80vh] border rounded-lg">
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {localMsgs.map((m) => (
+        {[...localMsgs].reverse().map((m) => (
           <div
             key={m.id}
             className={`max-w-sm p-2 rounded-lg ${m.sender === user?.id ? "bg-blue-600 text-white ml-auto" : "bg-gray-100"}`}
@@ -64,6 +69,7 @@ export default function ChatThread() {
             {m.content}
           </div>
         ))}
+        <div ref={messagesEndRef} />
       </div>
       <div className="p-4 border-t flex gap-2">
         <input
