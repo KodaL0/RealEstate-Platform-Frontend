@@ -91,14 +91,38 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     content: string
   ) => {
     openSocket();
-    ws.current?.send(
-      JSON.stringify({
-        type: "chat.message",
-        recipient_id: recipientId,
-        property_id: propertyId,
-        content,
-      })
-    );
+
+    const payload = JSON.stringify({
+      type: "chat.message",
+      recipient_id: recipientId,
+      property_id: propertyId,
+      content,
+    });
+
+    const sendNow = () => ws.current?.send(payload);
+
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      sendNow();
+    } else {
+      ws.current!.addEventListener("open", sendNow, { once: true });
+    }
+
+    // optimistic local update
+    const newMsg: Message = {
+      id: `temp-${Date.now()}`,
+      thread_id: threadId,
+      property_id: propertyId,
+      sender: Number(document.cookie.split('; ').find(c=>c.startsWith('user_id='))?.split('=')[1] || 0),
+      recipient: recipientId,
+      content,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    } as Message;
+
+    setMessages((prev) => ({
+      ...prev,
+      [threadId]: [newMsg, ...(prev[threadId] || [])],
+    }));
   };
 
   return (
