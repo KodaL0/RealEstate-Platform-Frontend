@@ -375,7 +375,7 @@ const PropertyDetails: React.FC = () => {
                       <span>{property.location}</span>
                     </div>
                   </div>
-                  <div className="flex flex-col items-start space-y-2">
+                  <div className="flex flex-col items-end space-y-2">
                     <p className="text-3xl font-bold text-blue-600">
                       €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                     </p>
