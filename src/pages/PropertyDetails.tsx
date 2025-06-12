@@ -1,12 +1,12 @@
 // src/pages/PropertyDetails.tsx
 import React, { useState, useEffect, useCallback } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, Bed, Bath, Square, Calendar,
   Share2, CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
-  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays,
+  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator, 
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
@@ -93,6 +93,7 @@ const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
+  const navigate = useNavigate();
   const [property, setProperty] = useState<Property | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState(0);
@@ -337,9 +338,29 @@ const PropertyDetails: React.FC = () => {
                       <span>{property.location}</span>
                     </div>
                   </div>
+                  {/* Price */}
                   <p className="text-3xl font-bold text-blue-600">
                     €{Number.isFinite(property.price) ? property.price.toLocaleString() : '0'}
                   </p>
+                  {/* Calculate Mortgage button */}
+                  <button
+                    onClick={() => {
+                      if (property.price && property.price > 0) {
+                        // Adjust the route or query param to match your existing calculator route
+                        navigate(`/mortgage-calculator?price=${property.price}`);
+                      }
+                    }}
+                    disabled={!property.price || property.price <= 0}
+                    className={`mt-3 sm:mt-0 inline-flex items-center px-4 py-2 
+                    ${property.price && property.price > 0
+                      ? 'bg-emerald-600 hover:bg-emerald-700'
+                      : 'bg-gray-300 cursor-not-allowed'}
+                    text-white text-sm font-medium rounded-lg shadow-sm transition`}
+                  >
+                    <Calculator className="w-5 h-5 mr-2" />
+                    Calculate Mortgage
+                    </button>
+                  </div>
                 </div>
 
                 {/* Basic Stats */}
