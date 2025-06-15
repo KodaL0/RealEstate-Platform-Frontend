@@ -65,7 +65,7 @@ export default function ChatThread() {
     setInput("");
   };
 
-  const handleKeyPress = (e: React.KeyboardEvent) => {
+  const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
@@ -88,7 +88,7 @@ export default function ChatThread() {
   };
 
   const groupedMessages = localMsgs.reduce((groups: { [key: string]: Message[] }, message) => {
-    const date = formatDate(message.timestamp || new Date().toISOString());
+    const date = formatDate(message.created_at);
     if (!groups[date]) groups[date] = [];
     groups[date].push(message);
     return groups;
@@ -133,7 +133,7 @@ export default function ChatThread() {
                   <div className={`max-w-xs px-3 py-2 rounded-xl shadow-sm ${isOwn ? "bg-blue-600 text-white" : "bg-white border"}`}>
                     {message.content}
                     <div className="text-[10px] text-gray-400 mt-1 text-right">
-                      {formatTime(message.timestamp || new Date().toISOString())}
+                      {formatTime(message.created_at)}
                     </div>
                   </div>
                 </div>
@@ -162,7 +162,7 @@ export default function ChatThread() {
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyDown}
             className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={1}
             placeholder="Type your message..."

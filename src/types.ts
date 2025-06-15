@@ -95,6 +95,7 @@ export interface Thread {
   other_username: string;
   unread_count: number;
   updated_at: string;
+  property_address?: string;
 }
 
 export interface Message {

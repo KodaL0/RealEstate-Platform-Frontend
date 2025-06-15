@@ -52,6 +52,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           ...prev,
           [msg.thread_id]: [msg, ...(prev[msg.thread_id] || [])],
         }));
+
+        // update thread metadata (unread count + updated_at)
+        setThreads((prev) => {
+          // find thread; if not present, ignore (will refetch later)
+          const threadsCopy = prev.map((t) => {
+            if (t.id !== msg.thread_id) return t;
+            const isIncoming = msg.sender !== Number(document.cookie.split('; ').find(c=>c.startsWith('user_id='))?.split('=')[1] || 0);
+            return {
+              ...t,
+              updated_at: msg.created_at,
+              unread_count: t.unread_count + (isIncoming ? 1 : 0),
+            };
+          });
+          // sort newest first
+          return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        });
       }
     };
 
@@ -130,6 +146,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       ...prev,
       [threadId]: [newMsg, ...(prev[threadId] || [])],
     }));
+
+    // optimistically bump the thread row
+    setThreads((prev) => {
+      const threadsCopy = prev.map((t) =>
+        t.id === threadId ? { ...t, updated_at: newMsg.created_at } : t
+      );
+      return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+    });
   };
 
   return (

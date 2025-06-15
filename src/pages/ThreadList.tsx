@@ -13,7 +13,7 @@ export default function ThreadList() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    let filtered = threads;
+    let filtered = [...threads]; // copy to avoid mutating context state
     if (searchTerm) {
       filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -24,8 +24,8 @@ export default function ThreadList() {
     filtered = filtered.sort((a, b) => {
       const aLast = getLastMessage(a.id);
       const bLast = getLastMessage(b.id);
-      const aTime = aLast?.timestamp || a.updated_at || '0';
-      const bTime = bLast?.timestamp || b.updated_at || '0';
+      const aTime = aLast?.created_at || a.updated_at || '0';
+      const bTime = bLast?.created_at || b.updated_at || '0';
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
     setFilteredThreads(filtered);
@@ -34,7 +34,7 @@ export default function ThreadList() {
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
     return threadMessages && threadMessages.length > 0
-      ? threadMessages[threadMessages.length - 1]
+      ? threadMessages[0] // newest first
       : null;
   };
 
@@ -61,7 +61,7 @@ export default function ThreadList() {
       {/* Sticky Header: match ChatThread header padding (px-4 py-2) */}
       <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between">
-          {/* “Messages” label + icon */}
+          {/* "Messages" label + icon */}
           <div className="flex items-center space-x-2 whitespace-nowrap">
             <MessageCircle size={20} className="text-blue-600" />
             <span className="text-lg font-semibold text-gray-900">Messages</span>
@@ -128,7 +128,7 @@ export default function ThreadList() {
                         {lastMessage && (
                           <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
                             {formatTime(
-                              lastMessage.timestamp ||
+                              lastMessage.created_at ||
                               thread.updated_at ||
                               new Date().toISOString()
                             )}

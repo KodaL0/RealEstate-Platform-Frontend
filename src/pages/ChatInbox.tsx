@@ -12,7 +12,7 @@ export default function ChatInbox() {
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'recent'>('all');
 
   useEffect(() => {
-    let filtered = threads;
+    let filtered = [...threads]; // copy to avoid mutating context state
     if (searchTerm) {
       filtered = filtered.filter(thread => 
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,7 +35,7 @@ export default function ChatInbox() {
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
     return threadMessages && threadMessages.length > 0 
-      ? threadMessages[threadMessages.length - 1]
+      ? threadMessages[0] // newest message is always first in array
       : null;
   };
 
@@ -144,7 +144,7 @@ export default function ChatInbox() {
                         {lastMessage && (
                           <span className="text-gray-400 flex items-center gap-1">
                             <Clock size={12} />
-                            {formatTime(lastMessage.timestamp || thread.updated_at || new Date().toISOString())}
+                            {formatTime(lastMessage.created_at || thread.updated_at || new Date().toISOString())}
                           </span>
                         )}
                       </div>
