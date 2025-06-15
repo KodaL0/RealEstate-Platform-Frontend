@@ -205,7 +205,7 @@ export default function ChatThread() {
       {/* Messages area: scroll internally */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
         {/* Sentinel div to trigger older loading */}
-        <div ref={topSentinelRef} />
+        <div ref={topSentinelRef} className="h-1" />
         {groupedMessages.map(({ label, items }) => (
           <div key={label}>
             <div className="flex justify-center mb-2">
