@@ -1,5 +1,5 @@
 // src/pages/ChatThread.tsx
-import { useParams } from "react-router-dom";
+import { useParams, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
@@ -39,6 +39,11 @@ export default function ChatThread() {
       setLocalMsgs(res.data.results.reverse()); // chronological ascending
       setNextUrl(res.data.next);
       console.log("Initial page loaded, next=", res.data.next);
+      
+      // Scroll to bottom after initial load
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      }, 100);
     });
   }, [id, messages]);
 
@@ -220,9 +225,14 @@ export default function ChatThread() {
             <UserIcon size={16} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">
-              {thread?.property_title || `Property #${propertyId}`}
-            </h2>
+            <Link 
+              to={`/property/${propertyId}`}
+              className="block hover:text-blue-600 transition-colors"
+            >
+              <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate hover:text-blue-600">
+                {thread?.property_title || `Property #${propertyId}`}
+              </h2>
+            </Link>
             <p className="text-xs sm:text-sm text-gray-500 truncate">
               {thread?.other_username ? `Chat with ${thread.other_username}` : `Property ID: ${propertyId}`}
             </p>

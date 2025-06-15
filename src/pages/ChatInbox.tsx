@@ -151,9 +151,17 @@ export default function ChatInbox() {
                     </div>
                     <div className="flex-1">
                       <div className="flex justify-between items-center text-sm mb-1">
-                        <span className="font-medium text-gray-800 truncate">
-                          {thread.property_title || `Property #${thread.property}`}
-                        </span>
+                        <div className="flex-1 mr-2">
+                          <Link 
+                            to={`/property/${thread.property}`}
+                            className="hover:text-blue-600 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <span className="font-medium text-gray-800 truncate hover:text-blue-600 block">
+                              {thread.property_title || `Property #${thread.property}`}
+                            </span>
+                          </Link>
+                        </div>
                         {lastMessage && (
                           <span className="text-gray-400 flex items-center gap-1">
                             <Clock size={12} />

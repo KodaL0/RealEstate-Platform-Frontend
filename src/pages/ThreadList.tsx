@@ -123,9 +123,17 @@ export default function ThreadList() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
-                        <h3 className="font-medium text-sm text-gray-900 truncate flex-1 mr-2">
-                          {thread.property_title || `Property #${thread.property}`}
-                        </h3>
+                        <div className="flex-1 mr-2">
+                          <Link 
+                            to={`/property/${thread.property}`}
+                            className="hover:text-blue-600 transition-colors"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <h3 className="font-medium text-sm text-gray-900 truncate hover:text-blue-600">
+                              {thread.property_title || `Property #${thread.property}`}
+                            </h3>
+                          </Link>
+                        </div>
                         {lastMessage && (
                           <span className="text-xs text-gray-400 flex-shrink-0">
                             {formatTime(lastMessage.created_at || thread.updated_at || new Date().toISOString())}
