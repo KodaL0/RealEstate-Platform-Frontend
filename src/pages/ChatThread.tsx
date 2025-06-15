@@ -7,6 +7,7 @@ import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } f
 import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
+import { useRef as useRefHook } from "react";
 
 // Generic pagination type from DRF
 interface Paginated<T> {
@@ -26,6 +27,7 @@ export default function ChatThread() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const topSentinelRef = useRef<HTMLDivElement>(null);
 
   // Load messages for thread
   useEffect(() => {
@@ -135,17 +137,25 @@ export default function ChatThread() {
     });
   };
 
-  // attach scroll listener to trigger loadMore when scrolled to top
+  // IntersectionObserver to trigger loadMore when sentinel visible
   useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const handler = () => {
-      if (container.scrollTop <= 50) {
-        loadMore();
-      }
-    };
-    container.addEventListener("scroll", handler);
-    return () => container.removeEventListener("scroll", handler);
+    if (!nextUrl) return; // nothing more
+    const sentinel = topSentinelRef.current;
+    if (!sentinel) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            loadMore();
+          }
+        });
+      },
+      { root: messagesContainerRef.current, threshold: 0 }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, [nextUrl, isFetchingMore]);
 
   return (
@@ -175,6 +185,8 @@ export default function ChatThread() {
 
       {/* Messages area: scroll internally */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
+        {/* Sentinel div to trigger older loading */}
+        <div ref={topSentinelRef} />
         {Object.entries(groupedMessages).map(([date, dateMessages]) => (
           <div key={date}>
             <div className="flex justify-center mb-2">
@@ -195,6 +207,17 @@ export default function ChatThread() {
             })}
           </div>
         ))}
+        {nextUrl && !isFetchingMore && localMsgs.length > 0 && (
+          <div className="text-center my-4">
+            <button
+              onClick={loadMore}
+              className="text-xs text-blue-600 hover:underline disabled:text-gray-400"
+              disabled={isFetchingMore}
+            >
+              Load earlier messages
+            </button>
+          </div>
+        )}
         {isFetchingMore && (
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
