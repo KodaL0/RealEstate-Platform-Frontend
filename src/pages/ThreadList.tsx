@@ -34,7 +34,7 @@ export default function ThreadList() {
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
     return threadMessages && threadMessages.length > 0
-      ? threadMessages[0] // newest first
+      ? threadMessages[threadMessages.length - 1] // get the actual last message
       : null;
   };
 
@@ -102,8 +102,26 @@ export default function ThreadList() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User size={18} className="text-white" />
+                    <div className="w-12 h-12 flex-shrink-0 relative">
+                      {thread.property_image ? (
+                        <img 
+                          src={thread.property_image} 
+                          alt={thread.property_title || 'Property'}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                          <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.5 13.5L11 16l2.5-2.5L16 16" />
+                          </svg>
+                        </div>
+                      )}
+                      {thread.unread_count > 0 && (
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                          {thread.unread_count > 9 ? '9+' : thread.unread_count}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
@@ -117,7 +135,10 @@ export default function ThreadList() {
                         )}
                       </div>
                       <p className="text-sm text-gray-600 truncate mb-1">
-                        {isOwnMessage ? 'You: ' : ''}{lastMessage?.content || 'No messages yet'}
+                        {lastMessage 
+                          ? `${isOwnMessage ? 'You: ' : ''}${lastMessage.content}`
+                          : 'No messages yet. Start the conversation.'
+                        }
                       </p>
                       <div className="flex items-center justify-between">
                         {thread.property_address && (
@@ -125,11 +146,6 @@ export default function ThreadList() {
                             <MapPin size={12} className="flex-shrink-0" />
                             <span className="truncate">{thread.property_address}</span>
                           </div>
-                        )}
-                        {thread.unread_count > 0 && (
-                          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full flex-shrink-0">
-                            {thread.unread_count > 99 ? '99+' : thread.unread_count}
-                          </span>
                         )}
                       </div>
                     </div>

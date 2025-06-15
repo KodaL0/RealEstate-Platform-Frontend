@@ -96,6 +96,7 @@ export interface Thread {
   unread_count: number;
   updated_at: string;
   property_address?: string;
+  property_image?: string;
 }
 
 export interface Message {
