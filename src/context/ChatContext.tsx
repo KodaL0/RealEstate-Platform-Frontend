@@ -66,7 +66,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         const msg: Message = data.message;
         setMessages((prev) => ({
           ...prev,
-          [msg.thread_id]: [msg, ...(prev[msg.thread_id] || [])],
+          [msg.thread_id]: [...(prev[msg.thread_id] || []), msg],
         }));
 
         // update thread metadata (unread count + updated_at)
@@ -155,13 +155,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (ws.current.readyState === WebSocket.OPEN) {
       attemptSend();
     } else if (ws.current.readyState === WebSocket.CONNECTING) {
-      ws.current!.addEventListener("open", attemptSend, { once: true });
+      (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
     } else {
       // socket is closed – open a fresh one and send once it opens
       ws.current = null;
       openSocket();
       if (ws.current) {
-        ws.current!.addEventListener("open", attemptSend, { once: true });
+        (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
       }
     }
 
@@ -179,7 +179,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     setMessages((prev) => ({
       ...prev,
-      [threadId]: [newMsg, ...(prev[threadId] || [])],
+      [threadId]: [...(prev[threadId] || []), newMsg],
     }));
 
     // optimistically bump the thread row

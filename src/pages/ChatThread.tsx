@@ -6,22 +6,14 @@ import { useUser } from "../context/UserContext";
 import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } from "lucide-react";
 import { Message } from "../types";
 import { apiClient } from "../config/api";
-
-interface Paginated<T> {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-}
+import axios from "axios";
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads, markThreadRead } = useChat();
+  const { messages, sendMessage, threads } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
-  const [nextUrl, setNextUrl] = useState<string | null>(null);
-  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -29,17 +21,11 @@ export default function ChatThread() {
   // Load messages for thread
   useEffect(() => {
     if (!id) return;
-    markThreadRead(id);
     if (messages[id]) {
       setLocalMsgs(messages[id]);
       return;
     }
-    apiClient
-      .get<Paginated<Message>>(`chat/${id}/messages/?limit=30`)
-      .then((res) => {
-        setLocalMsgs(res.data.results);
-        setNextUrl(res.data.next);
-      });
+    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
   }, [id, messages]);
 
   useEffect(() => {
@@ -57,29 +43,6 @@ export default function ChatThread() {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [localMsgs]);
-
-  // load older messages when scrolled to top
-  const loadMore = () => {
-    if (!nextUrl || isFetchingMore) return;
-    setIsFetchingMore(true);
-    apiClient.get<Paginated<Message>>(nextUrl).then((res) => {
-      setLocalMsgs((prev) => [...prev, ...res.data.results]); // older appended after newer (descending order)
-      setNextUrl(res.data.next);
-      setIsFetchingMore(false);
-    });
-  };
-
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const handler = () => {
-      if (container.scrollTop === 0) {
-        loadMore();
-      }
-    };
-    container.addEventListener("scroll", handler);
-    return () => container.removeEventListener("scroll", handler);
-  }, [nextUrl, isFetchingMore]);
 
   const thread = threads.find((t) => t.id === id);
 
@@ -131,6 +94,12 @@ export default function ChatThread() {
     groups[date].push(message);
     return groups;
   }, {});
+
+  const fetchPage = (url: string) => {
+    return url.startsWith("http")
+      ? axios.get<Paginated<Message>>(url, { withCredentials: true })
+      : apiClient.get<Paginated<Message>>(url);
+  };
 
   return (
     <div className="flex flex-col flex-1 bg-gray-50">
@@ -201,7 +170,7 @@ export default function ChatThread() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={1}
             placeholder="Type your message..."
             style={{
