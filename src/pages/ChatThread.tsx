@@ -25,7 +25,7 @@ export default function ChatThread() {
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
-  const [showJumpToBottom, setShowJumpToBottom] = useState(false);
+  const [showJumpToNewest, setShowJumpToNewest] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -60,24 +60,28 @@ export default function ChatThread() {
     const container = messagesContainerRef.current;
     if (!container) return;
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    setShowJumpToBottom(!isNearBottom && localMsgs.length > 0);
+    
+    // Show/hide jump to newest button based on scroll position
+    setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
+    
     if (isNearBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [localMsgs]);
 
-  // Handle scroll to detect if user is at bottom
-  const handleScroll = () => {
+  // Handle scroll events to show/hide jump button
+  useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    setShowJumpToBottom(!isNearBottom && localMsgs.length > 0);
-  };
 
-  const jumpToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowJumpToBottom(false);
-  };
+    const handleScroll = () => {
+      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
+    };
+
+    container.addEventListener('scroll', handleScroll);
+    return () => container.removeEventListener('scroll', handleScroll);
+  }, [localMsgs.length]);
 
   const thread = threads.find((t) => t.id === id);
 
@@ -118,9 +122,20 @@ export default function ChatThread() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
+    // Standardize date format: "Today", "Yesterday", or "12 Jun"
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+    
+    // Format as "12 Jun" for consistency
+    return date.toLocaleDateString('en-GB', { 
+      day: 'numeric', 
+      month: 'short' 
+    });
+  };
+
+  const jumpToNewest = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowJumpToNewest(false);
   };
 
   // Build an ORDER-PRESERVING array of message groups so date labels always
@@ -192,19 +207,6 @@ export default function ChatThread() {
     return () => observer.disconnect();
   }, [nextUrl, isFetchingMore]);
 
-  // Get display name for header
-  const getDisplayTitle = () => {
-    if (thread?.property_title) return thread.property_title;
-    if (thread?.other_username) return thread.other_username;
-    return "Property Inquiry";
-  };
-
-  const getDisplaySubtitle = () => {
-    if (thread?.property_title && thread?.other_username) return `with ${thread.other_username}`;
-    if (propertyId) return `Property ID: ${propertyId}`;
-    return "";
-  };
-
   return (
     <div className="flex flex-col h-full bg-gray-50 min-h-0">
       {/* Header */}
@@ -218,10 +220,8 @@ export default function ChatThread() {
             <UserIcon size={16} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">{getDisplayTitle()}</h2>
-            {getDisplaySubtitle() && (
-              <p className="text-xs sm:text-sm text-gray-500 truncate">{getDisplaySubtitle()}</p>
-            )}
+            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">Property Inquiry</h2>
+            <p className="text-xs sm:text-sm text-gray-500 truncate">Property ID: {propertyId}</p>
           </div>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
@@ -243,27 +243,10 @@ export default function ChatThread() {
       {/* Messages area: scroll internally */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-3 sm:space-y-4 text-sm min-h-0 relative"
-        onScroll={handleScroll}
+        className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-3 sm:space-y-4 text-sm min-h-0"
       >
         {/* Sentinel div to trigger older loading */}
         <div ref={topSentinelRef} className="h-1" />
-        
-        {/* Empty state */}
-        {localMsgs.length === 0 && !isFetchingMore && (
-          <div className="flex-1 flex items-center justify-center py-12">
-            <div className="text-center">
-              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-3.582 8-8 8a8.001 8.001 0 01-7.7-6M3 12c0-4.418 3.582-8 8-8s8 3.582 8 8z" />
-                </svg>
-              </div>
-              <p className="text-gray-600 text-lg mb-2">No messages yet</p>
-              <p className="text-gray-400 text-sm">Start the conversation below</p>
-            </div>
-          </div>
-        )}
-
         {groupedMessages.map(({ label, items }) => (
           <div key={label}>
             <div className="flex justify-center mb-2">
@@ -271,26 +254,15 @@ export default function ChatThread() {
             </div>
             {items.map((message) => {
               const isOwn = message.sender === user?.id;
-              const senderName = isOwn ? 'You' : (thread?.other_username || 'Other User');
               return (
                 <div key={message.id} className={`flex mb-2 ${isOwn ? "justify-end" : "justify-start"}`}>
-                  {!isOwn && (
-                    <div className="flex flex-col items-center mr-2 flex-shrink-0">
-                      <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
-                        <UserIcon size={12} className="text-white" />
-                      </div>
-                    </div>
-                  )}
                   <div className={`
-                    max-w-[75%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
+                    max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
                     ${isOwn 
                       ? "bg-blue-600 text-white rounded-br-md" 
                       : "bg-white border border-gray-200 rounded-bl-md"
                     }
                   `}>
-                    {!isOwn && (
-                      <div className="text-xs text-gray-500 mb-1 font-medium">{senderName}</div>
-                    )}
                     <div className="whitespace-pre-wrap">{message.content}</div>
                     <div className={`text-[10px] mt-1 text-right ${isOwn ? "text-blue-100" : "text-gray-400"}`}>
                       {formatTime(message.created_at)}
@@ -314,26 +286,33 @@ export default function ChatThread() {
         )}
         {isFetchingMore && (
           <div className="flex items-center justify-center space-x-2 py-4">
-            <div className="flex items-center space-x-2 text-gray-500">
-              <div className="animate-spin rounded-full h-4 w-4 border-2 border-gray-300 border-t-blue-600"></div>
-              <span className="text-sm">Loading messages...</span>
+            <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+              <UserIcon size={12} className="text-white" />
+            </div>
+            <div className="flex space-x-1">
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-200" />
+              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-400" />
             </div>
           </div>
         )}
         <div ref={messagesEndRef} />
-        
-        {/* Jump to bottom button */}
-        {showJumpToBottom && (
+      </div>
+
+      {/* Jump to newest button */}
+      {showJumpToNewest && (
+        <div className="absolute bottom-20 right-4 z-10">
           <button
-            onClick={jumpToBottom}
-            className="fixed bottom-20 right-4 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 z-10"
+            onClick={jumpToNewest}
+            className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
           >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            Jump to newest
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
             </svg>
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Input */}
       <div className="bg-white border-t px-3 sm:px-4 py-3 flex-shrink-0">

@@ -74,11 +74,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           // find thread; if not present, ignore (will refetch later)
           const threadsCopy = prev.map((t) => {
             if (t.id !== msg.thread_id) return t;
+            // Only increment unread count for incoming messages that are unread
             const isIncoming = user ? msg.sender !== user.id : true;
+            const isUnread = !msg.read_at;
+            const shouldIncrement = isIncoming && isUnread;
+            
             return {
               ...t,
               updated_at: msg.created_at,
-              unread_count: t.unread_count + (isIncoming ? 1 : 0),
+              unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
             };
           });
           // sort newest first
@@ -192,7 +196,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markThreadRead = (threadId: string) => {
+    // Mark thread as read and update message read_at timestamps
     setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
+    
+    // Mark all messages in this thread as read
+    setMessages((prev) => {
+      if (!prev[threadId]) return prev;
+      
+      const updatedMessages = prev[threadId].map((msg) => ({
+        ...msg,
+        read_at: msg.read_at || new Date().toISOString(),
+      }));
+      
+      return {
+        ...prev,
+        [threadId]: updatedMessages,
+      };
+    });
+    
+    // TODO: Send API request to mark messages as read on server
+    // apiClient.post(`chat/${threadId}/mark-read/`);
   };
 
   return (
