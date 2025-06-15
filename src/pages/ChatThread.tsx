@@ -9,7 +9,7 @@ import { apiClient } from "../config/api";
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads, markThreadRead } = useChat();
+  const { messages, sendMessage, threads } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -22,13 +22,9 @@ export default function ChatThread() {
     if (!id) return;
     if (messages[id]) {
       setLocalMsgs(messages[id]);
-      markThreadRead(id);
       return;
     }
-    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => {
-      setLocalMsgs(res.data);
-      markThreadRead(id);
-    });
+    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
   }, [id, messages]);
 
   useEffect(() => {
