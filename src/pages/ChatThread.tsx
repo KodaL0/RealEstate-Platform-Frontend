@@ -178,46 +178,63 @@ export default function ChatThread() {
   }, [nextUrl, isFetchingMore]);
 
   return (
-    <div className="flex flex-col flex-1 bg-gray-50">
+    <div className="flex flex-col h-full bg-gray-50 min-h-0">
       {/* Header */}
-      <div className="bg-white border-b px-4 py-2 flex items-center justify-between">
+      <div className="bg-white border-b px-3 sm:px-4 py-3 flex items-center justify-between flex-shrink-0">
         <div className="flex items-center space-x-3">
           {/* Back button for mobile */}
           <button className="lg:hidden text-gray-600">
             <ArrowLeft size={18} />
           </button>
-          <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
             <UserIcon size={16} className="text-white" />
           </div>
-          <div>
-            <h2 className="font-medium text-sm text-gray-800">Property Inquiry</h2>
-            <p className="text-xs text-gray-500">Property ID: {propertyId}</p>
+          <div className="min-w-0 flex-1">
+            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">Property Inquiry</h2>
+            <p className="text-xs sm:text-sm text-gray-500 truncate">Property ID: {propertyId}</p>
           </div>
         </div>
-        <div className="flex items-center space-x-2">
-          <Phone size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
-          <Video size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
-          <Info size={16} className="text-gray-600 hover:text-blue-600 cursor-pointer" />
-          <MoreVertical size={16} className="text-gray-600 hover:text-gray-800 cursor-pointer" />
+        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
+          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
+            <Phone size={16} />
+          </button>
+          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
+            <Video size={16} />
+          </button>
+          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
+            <Info size={16} />
+          </button>
+          <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+            <MoreVertical size={16} />
+          </button>
         </div>
       </div>
 
       {/* Messages area: scroll internally */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
+      <div 
+        ref={messagesContainerRef} 
+        className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-3 sm:space-y-4 text-sm min-h-0"
+      >
         {/* Sentinel div to trigger older loading */}
         <div ref={topSentinelRef} className="h-1" />
         {groupedMessages.map(({ label, items }) => (
           <div key={label}>
             <div className="flex justify-center mb-2">
-              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{label}</span>
+              <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">{label}</span>
             </div>
             {items.map((message) => {
               const isOwn = message.sender === user?.id;
               return (
-                <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
-                  <div className={`max-w-xs px-3 py-2 rounded-xl shadow-sm ${isOwn ? "bg-blue-600 text-white" : "bg-white border"}`}>
-                    {message.content}
-                    <div className="text-[10px] text-gray-400 mt-1 text-right">
+                <div key={message.id} className={`flex mb-2 ${isOwn ? "justify-end" : "justify-start"}`}>
+                  <div className={`
+                    max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
+                    ${isOwn 
+                      ? "bg-blue-600 text-white rounded-br-md" 
+                      : "bg-white border border-gray-200 rounded-bl-md"
+                    }
+                  `}>
+                    <div className="whitespace-pre-wrap">{message.content}</div>
+                    <div className={`text-[10px] mt-1 text-right ${isOwn ? "text-blue-100" : "text-gray-400"}`}>
                       {formatTime(message.created_at)}
                     </div>
                   </div>
@@ -230,7 +247,7 @@ export default function ChatThread() {
           <div className="text-center my-4">
             <button
               onClick={loadMore}
-              className="text-xs text-blue-600 hover:underline disabled:text-gray-400"
+              className="text-xs sm:text-sm text-blue-600 hover:underline disabled:text-gray-400 px-4 py-2 rounded-full hover:bg-blue-50 transition-colors"
               disabled={isFetchingMore}
             >
               Load earlier messages
@@ -238,7 +255,7 @@ export default function ChatThread() {
           </div>
         )}
         {isFetchingMore && (
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center justify-center space-x-2 py-4">
             <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
               <UserIcon size={12} className="text-white" />
             </div>
@@ -253,35 +270,42 @@ export default function ChatThread() {
       </div>
 
       {/* Input */}
-      <div className="bg-white border-t px-4 py-2">
-        <div className="flex items-center space-x-2">
+      <div className="bg-white border-t px-3 sm:px-4 py-3 flex-shrink-0">
+        <div className="flex items-end space-x-2 sm:space-x-3">
           <textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="
+              flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none 
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+              placeholder-gray-400 min-h-[40px] max-h-[120px]
+            "
             rows={1}
             placeholder="Type your message..."
             style={{
-              minHeight: "36px",
-              height: Math.min(Math.max(36, input.split("\n").length * 18 + 18), 120) + "px",
+              height: Math.min(Math.max(40, input.split("\n").length * 20 + 20), 120) + "px",
             }}
           />
           <button
             onClick={handleSend}
             disabled={!input.trim() || !recipientId || !propertyId}
-            className={`p-2 rounded-full ${
+            className={`
+              p-2 sm:p-3 rounded-full transition-all duration-200 flex-shrink-0
+              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
               input.trim() && recipientId && propertyId
-                ? "bg-blue-600 text-white hover:bg-blue-700"
+                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:scale-105" 
                 : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }`}
+            }
+            `}
           >
-            <Send size={16} />
+            <Send size={16} className="sm:w-5 sm:h-5" />
           </button>
         </div>
-        <div className="text-[10px] text-gray-400 mt-1 flex justify-between">
-          <span>Enter to send • Shift + Enter = newline</span>
-          <span className="flex items-center gap-1">
+        <div className="text-[10px] sm:text-xs text-gray-400 mt-2 flex flex-col sm:flex-row sm:justify-between gap-1">
+          <span className="hidden sm:inline">Enter to send • Shift + Enter = newline</span>
+          <span className="sm:hidden">Enter to send</span>
+          <span className="flex items-center gap-1 self-end sm:self-auto">
             <div className="w-2 h-2 bg-green-500 rounded-full"></div> Online
           </span>
         </div>

@@ -57,114 +57,81 @@ export default function ThreadList() {
   const totalUnread = threads.reduce((sum, thread) => sum + thread.unread_count, 0);
 
   return (
-    <div className="h-full flex flex-col bg-white">
-      {/* Sticky Header: match ChatThread header padding (px-4 py-2) */}
-      <div className="sticky top-0 z-10 border-b border-gray-200 bg-white flex-shrink-0">
-        <div className="px-4 py-2 flex items-center justify-between">
-          {/* "Messages" label + icon */}
-          <div className="flex items-center space-x-2 whitespace-nowrap">
-            <MessageCircle size={20} className="text-blue-600" />
-            <span className="text-lg font-semibold text-gray-900">Messages</span>
-          </div>
-          <button className="p-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition duration-200">
-            <Plus size={18} />
-          </button>
+    <div className="h-full flex flex-col bg-white min-h-0">
+      {/* Header */}
+      <div className="p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
+        <h1 className="text-lg font-semibold text-gray-900 mb-3">Messages</h1>
+        
+        {/* Search */}
+        <div className="relative mb-3">
+          <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Search conversations..."
+            className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
-        {/* Search Bar: also use px-4, py-2 spacing */}
-        <div className="px-4 py-2">
-          <div className="relative">
-            <Search size={18} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-            />
-          </div>
-        </div>
+
+        {/* New Chat Button */}
+        <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 flex items-center justify-center gap-2">
+          <Plus size={16} />
+          New Chat
+        </button>
       </div>
 
-      {/* Scrollable Thread List */}
-      <div className="flex-1 overflow-y-auto">
+      {/* Thread List */}
+      <div className="flex-1 overflow-y-auto min-h-0">
         {filteredThreads.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-full p-8 text-center">
-            <MessageCircle size={32} className="text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? 'No matching conversations' : 'No conversations yet'}
-            </h3>
-            <p className="text-sm text-gray-500 max-w-xs">
-              {searchTerm 
-                ? 'Try adjusting your search terms.'
-                : 'Start chatting about properties to see your conversations here.'
-              }
-            </p>
+          <div className="p-4 text-center text-gray-500 text-sm">
+            {searchTerm ? 'No conversations found.' : 'No conversations yet.'}
           </div>
         ) : (
           <div className="divide-y divide-gray-100">
-            {filteredThreads.map((thread) => {
+            {filteredThreads.map(thread => {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
               const isActive = thread.id === activeId;
               return (
                 <Link
-                  to={`/chat/${thread.id}`}
                   key={thread.id}
-                  className={`block hover:bg-gray-50 transition-colors ${
+                  to={`/chat/${thread.id}`}
+                  className={`block p-3 sm:p-4 hover:bg-gray-50 transition-colors active:bg-gray-100 ${
                     isActive ? 'bg-blue-50 border-r-2 border-blue-500' : ''
                   }`}
                 >
-                  <div className="px-4 py-3 flex items-start space-x-3">
-                    {/* Avatar */}
-                    <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User size={20} className="text-white" />
+                  <div className="flex items-start gap-3">
+                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User size={18} className="text-white" />
                     </div>
-                    {/* Content */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate text-sm">
+                      <div className="flex justify-between items-start mb-1">
+                        <h3 className="font-medium text-sm text-gray-900 truncate flex-1 mr-2">
                           {thread.property_title || `Property #${thread.property}`}
                         </h3>
                         {lastMessage && (
-                          <span className="text-xs text-gray-500 ml-2 flex-shrink-0">
-                            {formatTime(
-                              lastMessage.created_at ||
-                              thread.updated_at ||
-                              new Date().toISOString()
-                            )}
+                          <span className="text-xs text-gray-400 flex-shrink-0">
+                            {formatTime(lastMessage.created_at || thread.updated_at || new Date().toISOString())}
                           </span>
                         )}
                       </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <p className="text-sm text-gray-600 truncate">
-                          {thread.other_username || 'Unknown User'}
-                        </p>
+                      <p className="text-sm text-gray-600 truncate mb-1">
+                        {isOwnMessage ? 'You: ' : ''}{lastMessage?.content || 'No messages yet'}
+                      </p>
+                      <div className="flex items-center justify-between">
+                        {thread.property_address && (
+                          <div className="flex items-center text-xs text-gray-400 gap-1 truncate flex-1 mr-2">
+                            <MapPin size={12} className="flex-shrink-0" />
+                            <span className="truncate">{thread.property_address}</span>
+                          </div>
+                        )}
                         {thread.unread_count > 0 && (
-                          <span className="bg-gradient-to-r from-blue-500 to-blue-600 text-white text-xs font-medium px-2 py-0.5 rounded-full min-w-[18px] text-center">
+                          <span className="bg-blue-500 text-white text-xs px-2 py-0.5 rounded-full flex-shrink-0">
                             {thread.unread_count > 99 ? '99+' : thread.unread_count}
                           </span>
                         )}
                       </div>
-                      {/* Last Message Preview */}
-                      {lastMessage ? (
-                        <div className="flex items-center space-x-1 mb-2">
-                          <span className="text-xs text-gray-500">
-                            {isOwnMessage ? 'You: ' : ''}
-                          </span>
-                          <p className="text-xs text-gray-600 truncate flex-1">
-                            {lastMessage.content}
-                          </p>
-                        </div>
-                      ) : (
-                        <p className="text-xs text-gray-500 italic mb-2">No messages yet</p>
-                      )}
-                      {/* Property Location */}
-                      {thread.property_address && (
-                        <div className="flex items-center space-x-1 text-xs text-gray-400">
-                          <MapPin size={10} />
-                          <span className="truncate">{thread.property_address}</span>
-                        </div>
-                      )}
                     </div>
                   </div>
                 </Link>
