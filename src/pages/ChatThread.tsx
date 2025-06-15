@@ -19,7 +19,7 @@ interface Paginated<T> {
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads, markThreadRead } = useChat();
+  const { messages, sendMessage, threads, markThreadRead, connectionStatus } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -383,7 +383,16 @@ export default function ChatThread() {
           <span className="hidden sm:inline">Enter to send • Shift + Enter = newline</span>
           <span className="sm:hidden">Enter to send</span>
           <span className="flex items-center gap-1 self-end sm:self-auto">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div> Online
+            <div className={`w-2 h-2 rounded-full ${
+              connectionStatus === 'connected' ? 'bg-green-500' :
+              connectionStatus === 'connecting' ? 'bg-yellow-500 animate-pulse' :
+              connectionStatus === 'error' ? 'bg-red-500' :
+              'bg-gray-400'
+            }`}></div>
+            {connectionStatus === 'connected' ? 'Online' :
+             connectionStatus === 'connecting' ? 'Connecting...' :
+             connectionStatus === 'error' ? 'Connection Error' :
+             'Offline'}
           </span>
         </div>
       </div>
