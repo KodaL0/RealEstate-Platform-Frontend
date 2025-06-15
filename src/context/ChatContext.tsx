@@ -18,7 +18,6 @@ interface ChatContextValue {
     content: string
   ) => void;
   markThreadRead: (threadId: string) => void;
-  connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error';
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -28,26 +27,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
-  const [connectionStatus, setConnectionStatus] = useState<'connecting' | 'connected' | 'disconnected' | 'error'>('disconnected');
-  const [retryCount, setRetryCount] = useState(0);
   const ws = useRef<WebSocket | null>(null);
-  const reconnectTimeoutRef = useRef<number | null>(null);
-  const pingIntervalRef = useRef<number | null>(null);
   const { user } = useUser();
 
   // helper to lazy-open websocket
-  const openSocket = (isReconnect = false) => {
+  const openSocket = () => {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
-    
-    // Clear any existing reconnect timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    
-    setConnectionStatus('connecting');
-    console.log(`${isReconnect ? 'Reconnecting' : 'Connecting'} to WebSocket...`);
-    
     const baseWs =
       (import.meta.env.VITE_API_WS as string | undefined) ||
       window.location.origin.replace(/^http/, "ws");
@@ -62,129 +47,102 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       ws.current = new WebSocket(wsUrl);
-      console.log("WebSocket connecting to:", ws.current.url);
+      // eslint-disable-next-line no-console
+      console.log("WS connecting to", ws.current.url);
     } catch (err) {
-      console.error("WebSocket creation failed:", err);
-      setConnectionStatus('error');
-      scheduleReconnect();
+      // eslint-disable-next-line no-console
+      console.error("WebSocket creation failed", err);
       return;
     }
 
-    ws.current.onopen = () => {
-      console.log("WebSocket connected successfully");
-      setConnectionStatus('connected');
-      setRetryCount(0);
-      
-      // Start keepalive ping
-      startPingInterval();
-    };
-
     ws.current.onerror = (e) => {
-      console.error("WebSocket error:", e);
-      setConnectionStatus('error');
+      // eslint-disable-next-line no-console
+      console.error("WebSocket error", e);
     };
 
     ws.current.onmessage = (e) => {
-      try {
-        const data = JSON.parse(e.data);
-        console.log("WebSocket received:", data);
-        
-        if (data.type === "pong") {
-          console.log("Received pong from server");
-          return;
-        }
-        
-        if (data.type === "chat.message") {
-          const msg: Message = data.message;
-          console.log("Processing chat message:", msg);
-          
-          setMessages((prev) => ({
-            ...prev,
-            [msg.thread_id]: [...(prev[msg.thread_id] || []), msg],
-          }));
+      const data = JSON.parse(e.data);
+      if (data.type === "chat.message") {
+        const msg: Message = data.message;
+        setMessages((prev) => ({
+          ...prev,
+          [msg.thread_id]: [...(prev[msg.thread_id] || []), msg],
+        }));
 
-          // update thread metadata (unread count + updated_at)
-          setThreads((prev) => {
-            // find thread; if not present, ignore (will refetch later)
-            const threadsCopy = prev.map((t) => {
-              if (t.id !== msg.thread_id) return t;
-              // Only increment unread count for incoming messages that are unread
-              const isIncoming = user ? msg.sender !== user.id : true;
-              const isUnread = !msg.read_at;
-              const shouldIncrement = isIncoming && isUnread;
-              
-              return {
-                ...t,
-                updated_at: msg.created_at,
-                unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
-              };
-            });
-            // sort newest first
-            return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        // update thread metadata (unread count + updated_at)
+        setThreads((prev) => {
+          // find thread; if not present, ignore (will refetch later)
+          const threadsCopy = prev.map((t) => {
+            if (t.id !== msg.thread_id) return t;
+            // Only increment unread count for incoming messages that are unread
+            const isIncoming = user ? msg.sender !== user.id : true;
+            const isUnread = !msg.read_at;
+            const shouldIncrement = isIncoming && isUnread;
+            
+            return {
+              ...t,
+              updated_at: msg.created_at,
+              unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
+            };
           });
-        }
-      } catch (error) {
-        console.error("Error parsing WebSocket message:", error, e.data);
+          // sort newest first
+          return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+        });
+      } else if (data.type === "messages.read") {
+        // Handle read receipts from other users
+        console.log("Received read receipt:", data);
+        
+        const { thread_id, message_ids, read_at } = data;
+        
+        // Update message read_at timestamps
+        setMessages((prev) => {
+          if (!prev[thread_id]) return prev;
+          
+          const updatedMessages = prev[thread_id].map((msg) => {
+            if (message_ids.includes(msg.id)) {
+              return { ...msg, read_at };
+            }
+            return msg;
+          });
+          
+          return {
+            ...prev,
+            [thread_id]: updatedMessages,
+          };
+        });
+        
+        // Update thread unread count if these were our messages that got read
+        setThreads((prev) => {
+          return prev.map((t) => {
+            if (t.id !== thread_id) return t;
+            
+            // If the other user read our messages, we don't need to update unread count
+            // (unread count is for messages WE haven't read)
+            return t;
+          });
+        });
       }
     };
 
-    ws.current.onclose = (event) => {
-      console.warn("WebSocket closed:", event.code, event.reason);
-      setConnectionStatus('disconnected');
-      stopPingInterval();
-      ws.current = null;
-      
-      // Don't reconnect if it was a clean close (code 1000) or authentication error (code 1008)
-      if (event.code !== 1000 && event.code !== 1008) {
-        scheduleReconnect();
-      }
-    };
-  };
-
-  const startPingInterval = () => {
-    stopPingInterval();
-    pingIntervalRef.current = setInterval(() => {
+    // keepalive
+    const ping = setInterval(() => {
       if (ws.current?.readyState === WebSocket.OPEN) {
-        console.log("Sending ping to server");
         ws.current.send(JSON.stringify({ type: "ping" }));
       }
     }, 30000);
-  };
 
-  const stopPingInterval = () => {
-    if (pingIntervalRef.current) {
-      clearInterval(pingIntervalRef.current);
-      pingIntervalRef.current = null;
-    }
-  };
-
-  const scheduleReconnect = () => {
-    if (reconnectTimeoutRef.current) return; // Already scheduled
-    
-    const delay = Math.min(1000 * Math.pow(2, retryCount), 30000); // Exponential backoff, max 30s
-    console.log(`Scheduling reconnect in ${delay}ms (attempt ${retryCount + 1})`);
-    
-    reconnectTimeoutRef.current = setTimeout(() => {
-      setRetryCount(prev => prev + 1);
-      openSocket(true);
-    }, delay);
+    ws.current.onclose = () => {
+      clearInterval(ping);
+      // eslint-disable-next-line no-console
+      console.warn("WebSocket closed, will retry on next action");
+      ws.current = null;
+    };
   };
 
   // initial fetch threads
   useEffect(() => {
     apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
     openSocket();
-    
-    // Cleanup on unmount
-    return () => {
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-      }
-      stopPingInterval();
-      if (ws.current) {
-        ws.current.close(1000, "Component unmounting");
-      }
-    };
   }, []);
 
   const getOrCreateThread = async (
@@ -216,7 +174,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const payload = JSON.stringify({
       type: "chat.message",
-      thread_id: threadId,
       recipient_id: recipientId,
       property_id: propertyId,
       content,
@@ -224,10 +181,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const attemptSend = () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        console.log("Sending message via WebSocket:", payload);
+        // eslint-disable-next-line no-console
+        console.log("WS sent", payload);
         ws.current.send(payload);
-      } else {
-        console.warn("WebSocket not ready for sending, state:", ws.current?.readyState);
       }
     };
 
@@ -236,11 +192,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     if (ws.current.readyState === WebSocket.OPEN) {
       attemptSend();
     } else if (ws.current.readyState === WebSocket.CONNECTING) {
-      console.log("WebSocket connecting, queuing message...");
       (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
     } else {
       // socket is closed – open a fresh one and send once it opens
-      console.log("WebSocket closed, reopening and queuing message...");
       ws.current = null;
       openSocket();
       if (ws.current) {
@@ -260,7 +214,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       read_at: null,
     } as Message;
 
-    console.log("Adding optimistic message:", newMsg);
     setMessages((prev) => ({
       ...prev,
       [threadId]: [...(prev[threadId] || []), newMsg],
@@ -276,17 +229,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markThreadRead = (threadId: string) => {
-    // Mark thread as read and update message read_at timestamps
+    console.log("Marking thread as read:", threadId);
+    
+    // Optimistically update local state first
     setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
     
-    // Mark all messages in this thread as read
+    // Get unread message IDs before updating local state
+    const unreadMessageIds: string[] = [];
     setMessages((prev) => {
       if (!prev[threadId]) return prev;
       
-      const updatedMessages = prev[threadId].map((msg) => ({
-        ...msg,
-        read_at: msg.read_at || new Date().toISOString(),
-      }));
+      const updatedMessages = prev[threadId].map((msg) => {
+        // Collect unread message IDs for server update
+        if (!msg.read_at && msg.sender !== user?.id) {
+          unreadMessageIds.push(msg.id);
+        }
+        return {
+          ...msg,
+          read_at: msg.read_at || new Date().toISOString(),
+        };
+      });
       
       return {
         ...prev,
@@ -294,12 +256,34 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       };
     });
     
-    // TODO: Send API request to mark messages as read on server
-    // apiClient.post(`chat/${threadId}/mark-read/`);
+    // Send API request to mark messages as read on server
+    if (unreadMessageIds.length > 0) {
+      apiClient.post(`chat/${threadId}/mark-read/`, {
+        message_ids: unreadMessageIds
+      }).then(() => {
+        console.log("Successfully marked messages as read on server:", unreadMessageIds);
+      }).catch((error) => {
+        console.error("Failed to mark messages as read on server:", error);
+        // Optionally revert optimistic update on failure
+      });
+    }
+    
+    // Also send WebSocket notification for real-time updates to other clients
+    if (ws.current?.readyState === WebSocket.OPEN && unreadMessageIds.length > 0) {
+      const readNotification = JSON.stringify({
+        type: "messages.read",
+        thread_id: threadId,
+        message_ids: unreadMessageIds,
+        read_at: new Date().toISOString()
+      });
+      
+      ws.current.send(readNotification);
+      console.log("Sent read notification via WebSocket:", readNotification);
+    }
   };
 
   return (
-    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead, connectionStatus }}>
+    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead }}>
       {children}
     </ChatContext.Provider>
   );
