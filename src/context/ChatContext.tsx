@@ -88,22 +88,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           // sort newest first
           return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
         });
-      } else if (data.type === "messages.read") {
-        // Handle read receipts from other users
-        console.log("Received read receipt:", data);
-        
+      }
+      
+      // Handle read receipts
+      if (data.type === "message.read") {
         const { thread_id, message_ids, read_at } = data;
         
-        // Update message read_at timestamps
+        // Update messages with read_at timestamp
         setMessages((prev) => {
           if (!prev[thread_id]) return prev;
           
-          const updatedMessages = prev[thread_id].map((msg) => {
-            if (message_ids.includes(msg.id)) {
-              return { ...msg, read_at };
-            }
-            return msg;
-          });
+          const updatedMessages = prev[thread_id].map((msg) => 
+            message_ids.includes(msg.id) 
+              ? { ...msg, read_at } 
+              : msg
+          );
           
           return {
             ...prev,
@@ -111,16 +110,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           };
         });
         
-        // Update thread unread count if these were our messages that got read
-        setThreads((prev) => {
-          return prev.map((t) => {
-            if (t.id !== thread_id) return t;
-            
-            // If the other user read our messages, we don't need to update unread count
-            // (unread count is for messages WE haven't read)
-            return t;
-          });
-        });
+        // Update thread unread count (should be 0 for the reader)
+        setThreads((prev) => prev.map((t) => 
+          t.id === thread_id 
+            ? { ...t, unread_count: Math.max(0, t.unread_count - message_ids.length) }
+            : t
+        ));
       }
     };
 
@@ -229,26 +224,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markThreadRead = (threadId: string) => {
-    console.log("Marking thread as read:", threadId);
-    
-    // Optimistically update local state first
+    // Mark thread as read and update message read_at timestamps
     setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
     
-    // Get unread message IDs before updating local state
-    const unreadMessageIds: string[] = [];
+    // Mark all messages in this thread as read
     setMessages((prev) => {
       if (!prev[threadId]) return prev;
       
-      const updatedMessages = prev[threadId].map((msg) => {
-        // Collect unread message IDs for server update
-        if (!msg.read_at && msg.sender !== user?.id) {
-          unreadMessageIds.push(msg.id);
-        }
-        return {
-          ...msg,
-          read_at: msg.read_at || new Date().toISOString(),
-        };
-      });
+      const updatedMessages = prev[threadId].map((msg) => ({
+        ...msg,
+        read_at: msg.read_at || new Date().toISOString(),
+      }));
       
       return {
         ...prev,
@@ -257,29 +243,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     });
     
     // Send API request to mark messages as read on server
-    if (unreadMessageIds.length > 0) {
-      apiClient.post(`chat/${threadId}/mark-read/`, {
-        message_ids: unreadMessageIds
-      }).then(() => {
-        console.log("Successfully marked messages as read on server:", unreadMessageIds);
-      }).catch((error) => {
-        console.error("Failed to mark messages as read on server:", error);
-        // Optionally revert optimistic update on failure
+    apiClient.post(`chat/${threadId}/mark_read/`)
+      .then((response) => {
+        console.log("Messages marked as read:", response.data);
+      })
+      .catch((error) => {
+        console.error("Failed to mark messages as read:", error);
+        // Optionally revert optimistic update on error
       });
-    }
-    
-    // Also send WebSocket notification for real-time updates to other clients
-    if (ws.current?.readyState === WebSocket.OPEN && unreadMessageIds.length > 0) {
-      const readNotification = JSON.stringify({
-        type: "messages.read",
-        thread_id: threadId,
-        message_ids: unreadMessageIds,
-        read_at: new Date().toISOString()
-      });
-      
-      ws.current.send(readNotification);
-      console.log("Sent read notification via WebSocket:", readNotification);
-    }
   };
 
   return (

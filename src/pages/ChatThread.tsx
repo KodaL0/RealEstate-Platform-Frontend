@@ -33,6 +33,7 @@ export default function ChatThread() {
   // Load messages for thread
   useEffect(() => {
     if (!id) return;
+    markThreadRead(id);
     console.log("Initial page fetch", id);
     fetchPage(`chat/${id}/messages/?limit=30`).then((res) => {
       setLocalMsgs(res.data.results.reverse()); // chronological ascending
@@ -42,8 +43,6 @@ export default function ChatThread() {
       // Scroll to bottom after initial load
       setTimeout(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-        // Mark thread as read after scrolling to bottom
-        markThreadRead(id);
       }, 100);
     });
   }, [id, messages]);
@@ -83,16 +82,11 @@ export default function ChatThread() {
     const handleScroll = () => {
       const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
-      
-      // Mark messages as read when user scrolls to bottom
-      if (isNearBottom && id) {
-        markThreadRead(id);
-      }
     };
 
     container.addEventListener('scroll', handleScroll);
     return () => container.removeEventListener('scroll', handleScroll);
-  }, [localMsgs.length, id, markThreadRead]);
+  }, [localMsgs.length]);
 
   const thread = threads.find((t) => t.id === id);
 
@@ -304,13 +298,9 @@ export default function ChatThread() {
                       <div className="text-[10px] mt-1 text-right text-blue-100 flex items-center justify-end gap-1">
                         <span>{formatTime(message.created_at)}</span>
                         {/* Read receipt indicator */}
-                        {message.read_at ? (
+                        {message.read_at && (
                           <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3 h-3 text-blue-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         )}
                       </div>
