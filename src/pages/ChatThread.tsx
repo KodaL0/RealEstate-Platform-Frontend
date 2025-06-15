@@ -7,12 +7,21 @@ import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } f
 import { Message } from "../types";
 import { apiClient } from "../config/api";
 
+interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
   const { messages, sendMessage, threads, markThreadRead } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -25,7 +34,12 @@ export default function ChatThread() {
       setLocalMsgs(messages[id]);
       return;
     }
-    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
+    apiClient
+      .get<Paginated<Message>>(`chat/${id}/messages/?limit=30`)
+      .then((res) => {
+        setLocalMsgs(res.data.results);
+        setNextUrl(res.data.next);
+      });
   }, [id, messages]);
 
   useEffect(() => {
@@ -43,6 +57,29 @@ export default function ChatThread() {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [localMsgs]);
+
+  // load older messages when scrolled to top
+  const loadMore = () => {
+    if (!nextUrl || isFetchingMore) return;
+    setIsFetchingMore(true);
+    apiClient.get<Paginated<Message>>(nextUrl).then((res) => {
+      setLocalMsgs((prev) => [...prev, ...res.data.results]); // older appended after newer (descending order)
+      setNextUrl(res.data.next);
+      setIsFetchingMore(false);
+    });
+  };
+
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const handler = () => {
+      if (container.scrollTop === 0) {
+        loadMore();
+      }
+    };
+    container.addEventListener("scroll", handler);
+    return () => container.removeEventListener("scroll", handler);
+  }, [nextUrl, isFetchingMore]);
 
   const thread = threads.find((t) => t.id === id);
 
