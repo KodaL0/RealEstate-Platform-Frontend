@@ -31,9 +31,11 @@ export default function ChatThread() {
   useEffect(() => {
     if (!id) return;
     markThreadRead(id);
+    console.log("Initial page fetch", id);
     fetchPage(`chat/${id}/messages/?limit=30`).then((res) => {
       setLocalMsgs(res.data.results.reverse()); // chronological ascending
       setNextUrl(res.data.next);
+      console.log("Initial page loaded, next=", res.data.next);
     });
   }, [id, messages]);
 
@@ -123,6 +125,7 @@ export default function ChatThread() {
       setLocalMsgs((prev) => [...older, ...prev]);
       setNextUrl(res.data.next);
       setIsFetchingMore(false);
+      console.log("Loaded older page, new next=", res.data.next);
 
       setTimeout(() => {
         if (container) {
@@ -137,7 +140,7 @@ export default function ChatThread() {
     const container = messagesContainerRef.current;
     if (!container) return;
     const handler = () => {
-      if (container.scrollTop === 0) {
+      if (container.scrollTop <= 50) {
         loadMore();
       }
     };
