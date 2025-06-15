@@ -1,11 +1,15 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 
 const MortgageCalculator: React.FC = () => {
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+
   // Keep these as strings so the user can type e.g. "", "150000", "150000.", etc.
-  const [propertyPrice, setPropertyPrice] = useState<string>('');
-  const [downPaymentPercent, setDownPaymentPercent] = useState<string>('');
-  const [loanTermYears, setLoanTermYears] = useState<string>('1');
-  const [interestRate, setInterestRate] = useState<string>('');
+  const [propertyPrice, setPropertyPrice] = useState<string>(() => searchParams.get('price') ?? '');
+  const [downPaymentPercent, setDownPaymentPercent] = useState<string>(() => searchParams.get('down') ?? '');
+  const [loanTermYears, setLoanTermYears] = useState<string>(() => searchParams.get('term') ?? '1');
+  const [interestRate, setInterestRate] = useState<string>(() => searchParams.get('rate') ?? '');
   
   // Computed values are still numbers (or null if invalid)
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);

@@ -385,7 +385,7 @@ const PropertyDetails: React.FC = () => {
                      <button
                        onClick={() => {
                         if (property.price && property.price > 0) {
-                          navigate(`/mortgage-calculator?price=${property.price}`);
+                          navigate(`/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`);
                         }
                       }}
                       disabled={!property.price || property.price <= 0}
