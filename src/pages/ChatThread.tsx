@@ -8,29 +8,38 @@ import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
 
+// Generic pagination type from DRF
+interface Paginated<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads } = useChat();
+  const { messages, sendMessage, threads, markThreadRead } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
-  const [isTyping, setIsTyping] = useState(false);
+  const [nextUrl, setNextUrl] = useState<string | null>(null);
+  const [isFetchingMore, setIsFetchingMore] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
 
   // Load messages for thread
   useEffect(() => {
     if (!id) return;
-    if (messages[id]) {
-      setLocalMsgs(messages[id]);
-      return;
-    }
-    apiClient.get<Message[]>(`chat/${id}/messages/`).then((res) => setLocalMsgs(res.data));
+    markThreadRead(id);
+    fetchPage(`chat/${id}/messages/?limit=30`).then((res) => {
+      setLocalMsgs(res.data.results.reverse()); // chronological ascending
+      setNextUrl(res.data.next);
+    });
   }, [id, messages]);
 
   useEffect(() => {
     if (id && messages[id]) {
-      setLocalMsgs(messages[id]);
+      setLocalMsgs([...messages[id]]); // already ascending due to push
     }
   }, [messages, id]);
 
@@ -133,7 +142,7 @@ export default function ChatThread() {
             <div className="flex justify-center mb-2">
               <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{date}</span>
             </div>
-            {dateMessages.slice().reverse().map((message) => {
+            {dateMessages.map((message) => {
               const isOwn = message.sender === user?.id;
               return (
                 <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
@@ -148,7 +157,7 @@ export default function ChatThread() {
             })}
           </div>
         ))}
-        {isTyping && (
+        {isFetchingMore && (
           <div className="flex items-center space-x-2">
             <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
               <UserIcon size={12} className="text-white" />
