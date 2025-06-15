@@ -37,8 +37,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       (import.meta.env.VITE_API_WS as string | undefined) ||
       window.location.origin.replace(/^http/, "ws");
 
+    // grab JWT from cookie
+    const token = document.cookie
+      .split("; ")
+      .find((c) => c.startsWith("access_token="))
+      ?.split("=")[1];
+
+    const wsUrl = token ? `${baseWs}/ws/chat/?token=${token}` : `${baseWs}/ws/chat/`;
+
     try {
-      ws.current = new WebSocket(`${baseWs}/ws/chat/`);
+      ws.current = new WebSocket(wsUrl);
       // eslint-disable-next-line no-console
       console.log("WS connecting to", ws.current.url);
     } catch (err) {
@@ -46,6 +54,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       console.error("WebSocket creation failed", err);
       return;
     }
+
+    ws.current.onerror = (e) => {
+      // eslint-disable-next-line no-console
+      console.error("WebSocket error", e);
+    };
 
     ws.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
@@ -81,7 +94,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }, 30000);
 
-    ws.current.onclose = () => clearInterval(ping);
+    ws.current.onclose = () => {
+      clearInterval(ping);
+      // eslint-disable-next-line no-console
+      console.warn("WebSocket closed, will retry on next action");
+      ws.current = null;
+    };
   };
 
   // initial fetch threads
