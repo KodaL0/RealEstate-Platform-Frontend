@@ -132,6 +132,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     propertyId: number,
     content: string
   ) => {
+    // ensure we have an OPEN or CONNECTING socket
     openSocket();
 
     const payload = JSON.stringify({
@@ -141,14 +142,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       content,
     });
 
+    const attemptSend = () => {
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        // eslint-disable-next-line no-console
+        console.log("WS sent", payload);
+        ws.current.send(payload);
+      }
+    };
+
     if (!ws.current) return;
 
-    const sendNow = () => ws.current?.send(payload);
-
     if (ws.current.readyState === WebSocket.OPEN) {
-      sendNow();
+      attemptSend();
+    } else if (ws.current.readyState === WebSocket.CONNECTING) {
+      ws.current!.addEventListener("open", attemptSend, { once: true });
     } else {
-      ws.current.addEventListener("open", sendNow, { once: true });
+      // socket is closed – open a fresh one and send once it opens
+      ws.current = null;
+      openSocket();
+      if (ws.current) {
+        ws.current!.addEventListener("open", attemptSend, { once: true });
+      }
     }
 
     // optimistic local update
@@ -192,4 +206,4 @@ export const useChat = () => {
   const ctx = useContext(ChatContext);
   if (!ctx) throw new Error("useChat must be within ChatProvider");
   return ctx;
-}; 
+};
