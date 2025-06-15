@@ -110,6 +110,41 @@ export default function ChatThread() {
       : apiClient.get<Paginated<Message>>(url);
   };
 
+  const loadMore = () => {
+    if (!nextUrl || isFetchingMore) return;
+    setIsFetchingMore(true);
+
+    fetchPage(nextUrl).then((res) => {
+      const older = res.data.results.reverse(); // keep ascending
+
+      const container = messagesContainerRef.current;
+      const prevHeight = container ? container.scrollHeight : 0;
+
+      setLocalMsgs((prev) => [...older, ...prev]);
+      setNextUrl(res.data.next);
+      setIsFetchingMore(false);
+
+      setTimeout(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - prevHeight;
+        }
+      }, 0);
+    });
+  };
+
+  // attach scroll listener to trigger loadMore when scrolled to top
+  useEffect(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const handler = () => {
+      if (container.scrollTop === 0) {
+        loadMore();
+      }
+    };
+    container.addEventListener("scroll", handler);
+    return () => container.removeEventListener("scroll", handler);
+  }, [nextUrl, isFetchingMore]);
+
   return (
     <div className="flex flex-col flex-1 bg-gray-50">
       {/* Header */}
