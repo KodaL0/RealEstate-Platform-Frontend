@@ -1,6 +1,6 @@
 // src/pages/ChatThread.tsx
 import { useParams } from "react-router-dom";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useMemo } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } from "lucide-react";
@@ -41,11 +41,18 @@ export default function ChatThread() {
     });
   }, [id, messages]);
 
+  // Sync real-time context updates without wiping paginated history.
   useEffect(() => {
-    if (id && messages[id]) {
-      setLocalMsgs([...messages[id]]); // already ascending due to push
-    }
-  }, [messages, id]);
+    if (!id || !messages[id]) return;
+    setLocalMsgs((prev) => {
+      const seen = new Set(prev.map((m) => m.id));
+      const merged = [...prev];
+      messages[id].forEach((m) => {
+        if (!seen.has(m.id)) merged.push(m);
+      });
+      return merged;
+    });
+  }, [id, messages]);
 
   // Auto-scroll when new messages arrive, but only if near bottom
   useEffect(() => {
@@ -101,12 +108,19 @@ export default function ChatThread() {
     return date.toLocaleDateString();
   };
 
-  const groupedMessages = localMsgs.reduce((groups: { [key: string]: Message[] }, message) => {
-    const date = formatDate(message.created_at);
-    if (!groups[date]) groups[date] = [];
-    groups[date].push(message);
-    return groups;
-  }, {});
+  // Build an ORDER-PRESERVING array of message groups so date labels always
+  // appear before the messages that belong to them (fixes "Today" chip
+  // mis-placement when older pages are prepended).
+  const groupedMessages = useMemo(() => {
+    const out: { label: string; items: Message[] }[] = [];
+    localMsgs.forEach((m) => {
+      const label = formatDate(m.created_at);
+      const last = out[out.length - 1];
+      if (!last || last.label !== label) out.push({ label, items: [] });
+      out[out.length - 1].items.push(m);
+    });
+    return out;
+  }, [localMsgs]);
 
   const fetchPage = (url: string) => {
     return url.startsWith("http")
@@ -124,7 +138,12 @@ export default function ChatThread() {
       const container = messagesContainerRef.current;
       const prevHeight = container ? container.scrollHeight : 0;
 
-      setLocalMsgs((prev) => [...older, ...prev]);
+      // Prepend older messages while de-duplicating (guards against page
+      // boundary overlaps that can otherwise flash duplicates).
+      setLocalMsgs((prev) => {
+        const seen = new Set(prev.map((m) => m.id));
+        return [...older.filter((m) => !seen.has(m.id)), ...prev];
+      });
       setNextUrl(res.data.next);
       setIsFetchingMore(false);
       console.log("Loaded older page, new next=", res.data.next);
@@ -187,12 +206,12 @@ export default function ChatThread() {
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto px-4 py-2 space-y-4 text-sm">
         {/* Sentinel div to trigger older loading */}
         <div ref={topSentinelRef} />
-        {Object.entries(groupedMessages).map(([date, dateMessages]) => (
-          <div key={date}>
+        {groupedMessages.map(({ label, items }) => (
+          <div key={label}>
             <div className="flex justify-center mb-2">
-              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{date}</span>
+              <span className="bg-gray-200 text-gray-600 text-xs px-2 py-1 rounded-full">{label}</span>
             </div>
-            {dateMessages.map((message) => {
+            {items.map((message) => {
               const isOwn = message.sender === user?.id;
               return (
                 <div key={message.id} className={`flex ${isOwn ? "justify-end" : "justify-start"}`}>
