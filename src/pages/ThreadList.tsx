@@ -3,7 +3,7 @@ import { Link, useParams } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { useEffect, useState } from "react";
-import { MessageCircle, User, MapPin, Search, Plus } from "lucide-react";
+import { MessageCircle, User, MapPin, Search, Plus, Home } from "lucide-react";
 
 export default function ThreadList() {
   const { threads, messages } = useChat();
@@ -107,8 +107,19 @@ export default function ThreadList() {
                   }`}
                 >
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User size={18} className="text-white" />
+                    <div className="flex-shrink-0">
+                      {/* Property photo thumbnail or fallback */}
+                      {thread.property_image ? (
+                        <img 
+                          src={thread.property_image} 
+                          alt={thread.property_title || 'Property'}
+                          className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                        />
+                      ) : (
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                          <Home size={20} className="text-white" />
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
@@ -121,9 +132,21 @@ export default function ThreadList() {
                           </span>
                         )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate mb-1">
-                        {isOwnMessage ? 'You: ' : ''}{lastMessage?.content || 'No messages yet'}
-                      </p>
+                      
+                      {/* Latest message preview with clear authorship */}
+                      <div className="mb-2">
+                        {lastMessage ? (
+                          <p className="text-sm text-gray-600 truncate">
+                            <span className={`font-medium ${isOwnMessage ? 'text-blue-600' : 'text-gray-800'}`}>
+                              {isOwnMessage ? 'You: ' : `${thread.other_username || 'Them'}: `}
+                            </span>
+                            <span className="text-gray-600">{lastMessage.content}</span>
+                          </p>
+                        ) : (
+                          <p className="text-sm text-gray-400 italic">No messages yet</p>
+                        )}
+                      </div>
+                      
                       <div className="flex items-center justify-between">
                         {thread.property_address && (
                           <div className="flex items-center text-xs text-gray-400 gap-1 truncate flex-1 mr-2">

@@ -220,8 +220,12 @@ export default function ChatThread() {
             <UserIcon size={16} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">Property Inquiry</h2>
-            <p className="text-xs sm:text-sm text-gray-500 truncate">Property ID: {propertyId}</p>
+            <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate">
+              {thread?.property_title || `Property #${propertyId}`}
+            </h2>
+            <p className="text-xs sm:text-sm text-gray-500 truncate">
+              {thread?.other_username ? `Chat with ${thread.other_username}` : `Property ID: ${propertyId}`}
+            </p>
           </div>
         </div>
         <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
@@ -256,18 +260,36 @@ export default function ChatThread() {
               const isOwn = message.sender === user?.id;
               return (
                 <div key={message.id} className={`flex mb-2 ${isOwn ? "justify-end" : "justify-start"}`}>
-                  <div className={`
-                    max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
-                    ${isOwn 
-                      ? "bg-blue-600 text-white rounded-br-md" 
-                      : "bg-white border border-gray-200 rounded-bl-md"
-                    }
-                  `}>
-                    <div className="whitespace-pre-wrap">{message.content}</div>
-                    <div className={`text-[10px] mt-1 text-right ${isOwn ? "text-blue-100" : "text-gray-400"}`}>
-                      {formatTime(message.created_at)}
+                  {/* Sender label for incoming messages */}
+                  {!isOwn && (
+                    <div className="flex flex-col items-start">
+                      <span className="text-xs text-gray-500 mb-1 ml-1">
+                        {thread?.other_username || 'Other User'}
+                      </span>
+                      <div className={`
+                        max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
+                        bg-white border border-gray-200 rounded-bl-md
+                      `}>
+                        <div className="whitespace-pre-wrap">{message.content}</div>
+                        <div className="text-[10px] mt-1 text-right text-gray-400">
+                          {formatTime(message.created_at)}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
+                  
+                  {/* Own messages (right side) */}
+                  {isOwn && (
+                    <div className={`
+                      max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
+                      bg-blue-600 text-white rounded-br-md
+                    `}>
+                      <div className="whitespace-pre-wrap">{message.content}</div>
+                      <div className="text-[10px] mt-1 text-right text-blue-100">
+                        {formatTime(message.created_at)}
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })}
