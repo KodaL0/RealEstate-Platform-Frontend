@@ -9,7 +9,7 @@ import { apiClient } from "../config/api";
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads } = useChat();
+  const { messages, sendMessage, threads, markThreadRead } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -20,6 +20,7 @@ export default function ChatThread() {
   // Load messages for thread
   useEffect(() => {
     if (!id) return;
+    markThreadRead(id);
     if (messages[id]) {
       setLocalMsgs(messages[id]);
       return;
@@ -163,7 +164,7 @@ export default function ChatThread() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyDown}
-            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none overflow-hidden focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={1}
             placeholder="Type your message..."
             style={{

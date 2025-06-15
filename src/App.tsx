@@ -5,7 +5,6 @@ import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
 import LoginWebViewWarning from "./components/LoginWebViewWarning";
-import { UserProvider } from "./context/UserContext";
 import { RequireAuth } from "./components/RequireAuth";
 
 import Home from "./pages/Home";
@@ -38,89 +37,87 @@ function RouteChangeTracker() {
 
 export default function App() {
   return (
-    <UserProvider>
-      <Router>
-        <RouteChangeTracker />
-        <ScrollToTop />
-        <LoginWebViewWarning />
+    <Router>
+      <RouteChangeTracker />
+      <ScrollToTop />
+      <LoginWebViewWarning />
 
-        <div className="min-h-screen flex flex-col">
-          <Navbar />
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
 
-          <main className="flex-grow">
-            <Routes>
-              {/* Public */}
-              <Route path="/" element={<Home />} />
-              <Route path="/buy" element={<Buy />} />
-              <Route path="/rent" element={<Rent />} />
-              <Route path="/property/:id" element={<PropertyDetails />} />
-              <Route path="/login" element={<AuthPage />} />
-              <Route path="/oauth/callback" element={<OAuthCallback />} />
-              <Route path="/about" element={<AboutUs />} />
-              <Route path="/terms" element={<TermsandConditions />} />
-              <Route path="/cookies" element={<CookiePolicy />} />
-              <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
-              <Route path="/chat/*" element={<ChatContainer />} />
+        <main className="flex-grow">
+          <Routes>
+            {/* Public */}
+            <Route path="/" element={<Home />} />
+            <Route path="/buy" element={<Buy />} />
+            <Route path="/rent" element={<Rent />} />
+            <Route path="/property/:id" element={<PropertyDetails />} />
+            <Route path="/login" element={<AuthPage />} />
+            <Route path="/oauth/callback" element={<OAuthCallback />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/terms" element={<TermsandConditions />} />
+            <Route path="/cookies" element={<CookiePolicy />} />
+            <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
+            <Route path="/chat/*" element={<ChatContainer />} />
 
-              {/* Protected */}
-              <Route
-                path="/profile"
-                element={
-                  <RequireAuth>
-                    <ProfilePage />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/favourites"
-                element={
-                  <RequireAuth>
-                    <Favourites />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/create-listing"
-                element={
-                  <RequireAuth>
-                    <CreateListing />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/edit-listing/:id"
-                element={
-                  <RequireAuth>
-                    <CreateListing />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/my-listings"
-                element={
-                  <RequireAuth>
-                    <MyListings />
-                  </RequireAuth>
-                }
-              />
-              <Route
-                path="/chat"
-                element={
-                  <RequireAuth>
-                    <ChatPage />
-                  </RequireAuth>
-                }
-              >
-                <Route index element={<p className="p-8">Select a conversation</p>} />
-                <Route path=":id" element={<ChatThread />} />
-              </Route>
-            </Routes>
-          </main>
+            {/* Protected */}
+            <Route
+              path="/profile"
+              element={
+                <RequireAuth>
+                  <ProfilePage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/favourites"
+              element={
+                <RequireAuth>
+                  <Favourites />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/create-listing"
+              element={
+                <RequireAuth>
+                  <CreateListing />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/edit-listing/:id"
+              element={
+                <RequireAuth>
+                  <CreateListing />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/my-listings"
+              element={
+                <RequireAuth>
+                  <MyListings />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="/chat"
+              element={
+                <RequireAuth>
+                  <ChatPage />
+                </RequireAuth>
+              }
+            >
+              <Route index element={<p className="p-8">Select a conversation</p>} />
+              <Route path=":id" element={<ChatThread />} />
+            </Route>
+          </Routes>
+        </main>
 
-          <Footer />
-        </div>
-      </Router>
-    </UserProvider>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

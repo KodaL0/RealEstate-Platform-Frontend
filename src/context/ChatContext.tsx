@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { Thread, Message } from "../types";
 import { apiClient } from "../config/api";
+import { useUser } from "./UserContext";
 
 interface ChatContextValue {
   threads: Thread[];
@@ -16,6 +17,7 @@ interface ChatContextValue {
     propertyId: number,
     content: string
   ) => void;
+  markThreadRead: (threadId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -26,10 +28,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const ws = useRef<WebSocket | null>(null);
+  const { user } = useUser();
 
   // helper to lazy-open websocket
   const openSocket = () => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) return;
+    if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
     const baseWs =
       (import.meta.env.VITE_API_WS as string | undefined) ||
       window.location.origin.replace(/^http/, "ws");
@@ -58,7 +61,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
           // find thread; if not present, ignore (will refetch later)
           const threadsCopy = prev.map((t) => {
             if (t.id !== msg.thread_id) return t;
-            const isIncoming = msg.sender !== Number(document.cookie.split('; ').find(c=>c.startsWith('user_id='))?.split('=')[1] || 0);
+            const isIncoming = user ? msg.sender !== user.id : true;
             return {
               ...t,
               updated_at: msg.created_at,
@@ -135,7 +138,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       id: `temp-${Date.now()}`,
       thread_id: threadId,
       property_id: propertyId,
-      sender: Number(document.cookie.split('; ').find(c=>c.startsWith('user_id='))?.split('=')[1] || 0),
+      sender: user?.id || 0,
       recipient: recipientId,
       content,
       created_at: new Date().toISOString(),
@@ -156,8 +159,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
+  const markThreadRead = (threadId: string) => {
+    setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
+  };
+
   return (
-    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage }}>
+    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead }}>
       {children}
     </ChatContext.Provider>
   );
