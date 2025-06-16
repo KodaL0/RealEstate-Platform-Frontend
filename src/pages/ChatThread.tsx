@@ -17,7 +17,7 @@ interface Paginated<T> {
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, sendMessage, threads, markThreadRead } = useChat();
+  const { messages, setMessages, sendMessage, threads, markThreadRead } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
