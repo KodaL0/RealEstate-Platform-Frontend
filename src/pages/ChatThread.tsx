@@ -1,13 +1,11 @@
-// src/pages/ChatThread.tsx
 import { useParams, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown } from "lucide-react";
 import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
-import { useRef as useRefHook } from "react";
 
 // Generic pagination type from DRF
 interface Paginated<T> {
@@ -27,6 +25,7 @@ export default function ChatThread() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [showJumpToNewest, setShowJumpToNewest] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -36,23 +35,17 @@ export default function ChatThread() {
   useEffect(() => {
     if (!id || isInitialLoading) return;
     
-    // Prevent duplicate fetches for the same thread
     if (currentFetchRef.current === id) return;
     
     currentFetchRef.current = id;
     setIsInitialLoading(true);
     
-    console.log("Initial page fetch", id);
-    
     fetchPage(`chat/${id}/messages/?limit=30`)
       .then((res) => {
-        // Only update if this is still the current thread
         if (currentFetchRef.current === id) {
-          setLocalMsgs(res.data.results.reverse()); // chronological ascending
+          setLocalMsgs(res.data.results.reverse());
           setNextUrl(res.data.next);
-          console.log("Initial page loaded, next=", res.data.next);
           
-          // Scroll to bottom after initial load
           setTimeout(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
           }, 100);
@@ -69,15 +62,15 @@ export default function ChatThread() {
           currentFetchRef.current = null;
         }
       });
-  }, [id]); // ✅ FIXED: Only depend on id, not messages
+  }, [id]);
 
-  // Mark thread as read when user opens the chat (separate from message loading)
+  // Mark thread as read when user opens the chat
   useEffect(() => {
     if (!id) return;
     markThreadRead(id);
   }, [id, markThreadRead]);
 
-  // Sync real-time context updates without wiping paginated history.
+  // Sync real-time context updates
   useEffect(() => {
     if (!id || !messages[id]) return;
     setLocalMsgs((prev) => {
@@ -90,13 +83,12 @@ export default function ChatThread() {
     });
   }, [id, messages]);
 
-  // Auto-scroll when new messages arrive, but only if near bottom
+  // Auto-scroll and jump button logic
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
     
-    // Show/hide jump to newest button based on scroll position
     setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
     
     if (isNearBottom) {
@@ -104,7 +96,7 @@ export default function ChatThread() {
     }
   }, [localMsgs]);
 
-  // Handle scroll events to show/hide jump button
+  // Handle scroll events
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -137,6 +129,10 @@ export default function ChatThread() {
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
     
+    // Simulate typing indicator
+    setIsTyping(true);
+    setTimeout(() => setIsTyping(false), 1000);
+    
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
   };
@@ -158,11 +154,9 @@ export default function ChatThread() {
     const yesterday = new Date(today);
     yesterday.setDate(yesterday.getDate() - 1);
 
-    // Standardize date format: "Today", "Yesterday", or "12 Jun"
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
     
-    // Format as "12 Jun" for consistency
     return date.toLocaleDateString('en-GB', { 
       day: 'numeric', 
       month: 'short' 
@@ -174,9 +168,6 @@ export default function ChatThread() {
     setShowJumpToNewest(false);
   };
 
-  // Build an ORDER-PRESERVING array of message groups so date labels always
-  // appear before the messages that belong to them (fixes "Today" chip
-  // mis-placement when older pages are prepended).
   const groupedMessages = useMemo(() => {
     const out: { label: string; items: Message[] }[] = [];
     localMsgs.forEach((m) => {
@@ -199,20 +190,16 @@ export default function ChatThread() {
     setIsFetchingMore(true);
 
     fetchPage(nextUrl).then((res) => {
-      const older = res.data.results.reverse(); // keep ascending
-
+      const older = res.data.results.reverse();
       const container = messagesContainerRef.current;
       const prevHeight = container ? container.scrollHeight : 0;
 
-      // Prepend older messages while de-duplicating (guards against page
-      // boundary overlaps that can otherwise flash duplicates).
       setLocalMsgs((prev) => {
         const seen = new Set(prev.map((m) => m.id));
         return [...older.filter((m) => !seen.has(m.id)), ...prev];
       });
       setNextUrl(res.data.next);
       setIsFetchingMore(false);
-      console.log("Loaded older page, new next=", res.data.next);
 
       setTimeout(() => {
         if (container) {
@@ -222,9 +209,9 @@ export default function ChatThread() {
     });
   };
 
-  // IntersectionObserver to trigger loadMore when sentinel visible
+  // IntersectionObserver for infinite scroll
   useEffect(() => {
-    if (!nextUrl) return; // nothing more
+    if (!nextUrl) return;
     const sentinel = topSentinelRef.current;
     if (!sentinel) return;
 
@@ -244,184 +231,246 @@ export default function ChatThread() {
   }, [nextUrl, isFetchingMore]);
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 min-h-0">
-      {/* Header */}
-      <div className="bg-white border-b px-3 sm:px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <div className="flex items-center space-x-3">
-          {/* Back button for mobile */}
-          <button className="lg:hidden text-gray-600">
+    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
+      {/* Enhanced Header */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-4 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
+        <div className="flex items-center space-x-4">
+          <button className="lg:hidden text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-full p-2 transition-all duration-200">
             <ArrowLeft size={18} />
           </button>
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-500 rounded-full flex items-center justify-center flex-shrink-0">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-blue-100">
             <UserIcon size={16} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
             <Link 
               to={`/property/${propertyId}`}
-              className="block hover:text-blue-600 transition-colors"
+              className="block hover:text-blue-600 transition-colors group"
             >
-              <h2 className="font-medium text-sm sm:text-base text-gray-800 truncate hover:text-blue-600">
+              <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
                 {thread?.property_title || `Property #${propertyId}`}
               </h2>
             </Link>
-            <p className="text-xs sm:text-sm text-gray-500 truncate">
-              {thread?.other_username ? `Chat with ${thread.other_username}` : `Property ID: ${propertyId}`}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm text-slate-500 truncate">
+                {thread?.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}
+              </p>
+              <div className="flex items-center gap-1">
+                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
+                <span className="text-xs text-green-600 font-medium">Active</span>
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex items-center space-x-1 sm:space-x-2 flex-shrink-0">
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
-            <Phone size={16} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
-            <Video size={16} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-blue-600 hover:bg-gray-100 rounded-full transition-colors">
-            <Info size={16} />
-          </button>
-          <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
-            <MoreVertical size={16} />
-          </button>
+        <div className="flex items-center space-x-1 flex-shrink-0">
+          {[Phone, Video, Info, MoreVertical].map((Icon, idx) => (
+            <button 
+              key={idx}
+              className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200 hover:scale-105"
+            >
+              <Icon size={18} />
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Messages area: scroll internally */}
+      {/* Enhanced Messages Area */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto px-3 sm:px-4 py-2 space-y-3 sm:space-y-4 text-sm min-h-0"
+        className="flex-1 overflow-y-auto px-4 py-6 space-y-6 min-h-0 scroll-smooth"
       >
-        {/* Sentinel div to trigger older loading */}
         <div ref={topSentinelRef} className="h-1" />
+        
         {groupedMessages.map(({ label, items }) => (
-          <div key={label}>
-            <div className="flex justify-center mb-2">
-              <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full font-medium">{label}</span>
+          <div key={label} className="space-y-4">
+            {/* Enhanced Date Separator */}
+            <div className="flex justify-center">
+              <div className="bg-white/80 backdrop-blur-sm text-slate-600 text-xs px-4 py-2 rounded-full font-medium shadow-sm border border-slate-200/50">
+                {label}
+              </div>
             </div>
-            {items.map((message) => {
-              const isOwn = message.sender === user?.id;
-              return (
-                <div key={message.id} className={`flex mb-2 ${isOwn ? "justify-end" : "justify-start"}`}>
-                  {/* Sender label for incoming messages */}
-                  {!isOwn && (
-                    <div className="flex flex-col items-start">
-                      <span className="text-xs text-gray-500 mb-1 ml-1">
-                        {thread?.other_username || 'Other User'}
-                      </span>
-                      <div className={`
-                        max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
-                        bg-white border border-gray-200 rounded-bl-md
-                      `}>
-                        <div className="whitespace-pre-wrap">{message.content}</div>
-                        <div className="text-[10px] mt-1 text-right text-gray-400">
-                          {formatTime(message.created_at)}
+            
+            {/* Messages */}
+            <div className="space-y-3">
+              {items.map((message, idx) => {
+                const isOwn = message.sender === user?.id;
+                const showAvatar = idx === 0 || items[idx - 1]?.sender !== message.sender;
+                
+                return (
+                  <div key={message.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} group`}>
+                    {/* Avatar for incoming messages */}
+                    {!isOwn && (
+                      <div className={`w-7 h-7 rounded-full flex-shrink-0 transition-opacity duration-200 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
+                        <div className="w-full h-full bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shadow-sm">
+                          <UserIcon size={12} className="text-white" />
                         </div>
                       </div>
-                    </div>
-                  )}
-                  
-                  {/* Own messages (right side) */}
-                  {isOwn && (
+                    )}
+                    
+                    {/* Message Bubble */}
                     <div className={`
-                      max-w-[85%] sm:max-w-xs md:max-w-sm px-3 py-2 rounded-xl shadow-sm break-words
-                      bg-blue-600 text-white rounded-br-md
+                      max-w-[75%] sm:max-w-md lg:max-w-lg xl:max-w-xl
+                      ${isOwn 
+                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        : 'bg-white border border-slate-200/60 shadow-sm'
+                      }
+                      rounded-2xl px-4 py-3 relative
+                      transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
+                      ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
                     `}>
-                      <div className="whitespace-pre-wrap">{message.content}</div>
-                      <div className="text-[10px] mt-1 text-right text-blue-100 flex items-center justify-end gap-1">
+                      {/* Sender name for incoming messages */}
+                      {!isOwn && showAvatar && (
+                        <div className="text-xs font-medium text-slate-600 mb-1">
+                          {thread?.other_username || 'Other User'}
+                        </div>
+                      )}
+                      
+                      {/* Message content */}
+                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-slate-800'}`}>
+                        {message.content}
+                      </div>
+                      
+                      {/* Time and status */}
+                      <div className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? 'text-blue-100' : 'text-slate-400'}`}>
                         <span>{formatTime(message.created_at)}</span>
-                        {/* Read receipt indicator */}
-                        {message.read_at && (
-                          <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                          </svg>
+                        {isOwn && (
+                          <div className="flex items-center gap-1">
+                            {/* Double check for read */}
+                            {message.read_at ? (
+                              <div className="flex">
+                                <svg className="w-3 h-3 text-blue-200 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                                <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                </svg>
+                              </div>
+                            ) : (
+                              <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              </svg>
+                            )}
+                          </div>
                         )}
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </div>
+                );
+              })}
+            </div>
           </div>
         ))}
-        {nextUrl && !isFetchingMore && localMsgs.length > 0 && (
-          <div className="text-center my-4">
-            <button
-              onClick={loadMore}
-              className="text-xs sm:text-sm text-blue-600 hover:underline disabled:text-gray-400 px-4 py-2 rounded-full hover:bg-blue-50 transition-colors"
-              disabled={isFetchingMore}
-            >
-              Load earlier messages
-            </button>
+
+        {/* Enhanced Loading State */}
+        {isFetchingMore && (
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center gap-3 bg-white/80 backdrop-blur-sm rounded-full px-4 py-3 shadow-sm border border-slate-200/50">
+              <div className="w-6 h-6 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center">
+                <UserIcon size={12} className="text-white" />
+              </div>
+              <div className="flex space-x-1">
+                {[0, 1, 2].map((i) => (
+                  <div 
+                    key={i}
+                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 0.2}s` }}
+                  />
+                ))}
+              </div>
+              <span className="text-sm text-slate-600 font-medium">Loading messages...</span>
+            </div>
           </div>
         )}
-        {isFetchingMore && (
-          <div className="flex items-center justify-center space-x-2 py-4">
-            <div className="w-6 h-6 bg-gray-400 rounded-full flex items-center justify-center">
+
+        {/* Typing Indicator */}
+        {isTyping && (
+          <div className="flex items-end gap-2">
+            <div className="w-7 h-7 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shadow-sm">
               <UserIcon size={12} className="text-white" />
             </div>
-            <div className="flex space-x-1">
-              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse" />
-              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-200" />
-              <div className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-pulse delay-400" />
+            <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl rounded-bl-md px-4 py-3">
+              <div className="flex space-x-1">
+                {[0, 1, 2].map((i) => (
+                  <div 
+                    key={i}
+                    className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
+                    style={{ animationDelay: `${i * 0.3}s` }}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         )}
+
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Jump to newest button */}
+      {/* Enhanced Jump to Newest Button */}
       {showJumpToNewest && (
-        <div className="absolute bottom-20 right-4 z-10">
+        <div className="absolute bottom-24 right-6 z-10">
           <button
             onClick={jumpToNewest}
-            className="bg-blue-600 text-white px-4 py-2 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-200 flex items-center gap-2 text-sm font-medium"
+            className="bg-white/90 backdrop-blur-sm text-slate-600 hover:text-blue-600 pl-4 pr-3 py-3 rounded-full shadow-lg hover:shadow-xl border border-slate-200/50 hover:border-blue-200 transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 group"
           >
-            Jump to newest
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-            </svg>
+            <span>Jump to newest</span>
+            <div className="bg-blue-50 group-hover:bg-blue-100 rounded-full p-1 transition-colors">
+              <ChevronDown size={14} className="text-blue-600" />
+            </div>
           </button>
         </div>
       )}
 
-      {/* Input */}
-      <div className="bg-white border-t px-3 sm:px-4 py-3 flex-shrink-0">
-        <div className="flex items-end space-x-2 sm:space-x-3">
-          <textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyDown}
-            className="
-              flex-1 border border-gray-300 rounded-xl px-3 py-2 text-sm resize-none 
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-              placeholder-gray-400 min-h-[40px] max-h-[120px]
-            "
-            rows={1}
-            placeholder="Type your message..."
-            style={{
-              height: Math.min(Math.max(40, input.split("\n").length * 20 + 20), 120) + "px",
-            }}
-          />
+      {/* Enhanced Input Area */}
+      <div className="bg-white/90 backdrop-blur-sm border-t border-slate-200/60 px-4 py-4 flex-shrink-0">
+        <div className="flex items-end gap-3">
+          <div className="flex-1 relative">
+            <textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyDown}
+              className="
+                w-full border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 
+                rounded-2xl px-4 py-3 pr-12 text-sm resize-none transition-all duration-200
+                focus:outline-none focus:ring-4 focus:ring-blue-500/20
+                placeholder-slate-400 bg-white/50 backdrop-blur-sm
+                min-h-[48px] max-h-[120px]
+              "
+              rows={1}
+              placeholder="Type your message..."
+              style={{
+                height: Math.min(Math.max(48, input.split("\n").length * 24 + 24), 120) + "px",
+              }}
+            />
+            {/* Character count or typing indicator could go here */}
+          </div>
+          
           <button
             onClick={handleSend}
             disabled={!input.trim() || !recipientId || !propertyId}
             className={`
-              p-2 sm:p-3 rounded-full transition-all duration-200 flex-shrink-0
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-              input.trim() && recipientId && propertyId
-                ? "bg-blue-600 text-white hover:bg-blue-700 shadow-md hover:shadow-lg transform hover:scale-105" 
-                : "bg-gray-200 text-gray-400 cursor-not-allowed"
-            }
+              p-3 rounded-full transition-all duration-200 flex-shrink-0 shadow-lg
+              focus:outline-none focus:ring-4 focus:ring-blue-500/20
+              ${input.trim() && recipientId && propertyId
+                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:scale-105 active:scale-95" 
+                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              }
             `}
           >
-            <Send size={16} className="sm:w-5 sm:h-5" />
+            <Send size={18} />
           </button>
         </div>
-        <div className="text-[10px] sm:text-xs text-gray-400 mt-2 flex flex-col sm:flex-row sm:justify-between gap-1">
-          <span className="hidden sm:inline">Enter to send • Shift + Enter = newline</span>
-          <span className="sm:hidden">Enter to send</span>
-          <span className="flex items-center gap-1 self-end sm:self-auto">
-            <div className="w-2 h-2 bg-green-500 rounded-full"></div> Online
-          </span>
+        
+        {/* Enhanced Status Bar */}
+        <div className="flex justify-between items-center mt-3 text-xs text-slate-500">
+          <div className="flex items-center gap-4">
+            <span className="hidden sm:inline">Press Enter to send • Shift + Enter for new line</span>
+            <span className="sm:hidden">Enter to send</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
+              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
+              <span className="font-medium text-green-600">Online</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
