@@ -129,7 +129,6 @@ export default function ThreadList() {
             {filteredThreads.map(thread => {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
-              const isActive = thread.id === activeId;
               const hasUnread = (thread.unread_count || 0) > 0;
 
               return (
