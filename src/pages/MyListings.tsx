@@ -236,7 +236,7 @@ function MyListings() {
                         >
                           {p.is_published ? 'Published' : 'Unpublished'}
                         </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-white-600 text-white">
+                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
                           {p.property_type.charAt(0).toUpperCase() + p.property_type.slice(1)}
                         </span>
                       </div>
