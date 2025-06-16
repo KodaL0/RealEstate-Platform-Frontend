@@ -137,8 +137,6 @@ export default function ThreadList() {
                   key={thread.id}
                   to={`/chat/${thread.id}`}
                   className={`block hover:bg-slate-50/80 transition-all duration-200 group relative ${
-                    isActive ? 'bg-blue-50/50 border-r-4 border-blue-500' : ''
-                  }`}
                 >
                   <div className="px-6 py-5 flex items-start gap-4">
                     {/* Enhanced Avatar */}
