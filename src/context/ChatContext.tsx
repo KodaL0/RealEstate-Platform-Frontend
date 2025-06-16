@@ -5,122 +5,108 @@ import { useUser } from "./UserContext";
 
 interface ChatContextValue {
   threads: Thread[];
-  messages: Record<string, Message[]>; // keyed by threadId
+  messages: Record<string, Message[]>;
   getOrCreateThread: (
     sellerId: number,
     propertyId: number,
     title: string
-  ) => Promise<string>; // returns threadId
+  ) => Promise<string>;
   sendMessage: (
     threadId: string,
     recipientId: number,
     propertyId: number,
-    content: string
+    content: string,
+    id?: string
   ) => void;
   markThreadRead: (threadId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
-export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
-  children,
-}) => {
+export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const ws = useRef<WebSocket | null>(null);
   const { user } = useUser();
   const markReadTimeouts = useRef<Record<string, number>>({});
 
-  // helper to lazy-open websocket
   const openSocket = () => {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
-    const baseWs =
-      (import.meta.env.VITE_API_WS as string | undefined) ||
-      window.location.origin.replace(/^http/, "ws");
 
-    // grab JWT from cookie
-    const token = document.cookie
-      .split("; ")
-      .find((c) => c.startsWith("access_token="))
-      ?.split("=")[1];
-
+    const baseWs = (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
+    const token = document.cookie.split("; ").find((c) => c.startsWith("access_token="))?.split("=")[1];
     const wsUrl = token ? `${baseWs}/ws/chat/?token=${token}` : `${baseWs}/ws/chat/`;
 
     try {
       ws.current = new WebSocket(wsUrl);
-      // eslint-disable-next-line no-console
       console.log("WS connecting to", ws.current.url);
     } catch (err) {
-      // eslint-disable-next-line no-console
       console.error("WebSocket creation failed", err);
       return;
     }
 
-    ws.current.onerror = (e) => {
-      // eslint-disable-next-line no-console
-      console.error("WebSocket error", e);
-    };
+    ws.current.onerror = (e) => console.error("WebSocket error", e);
 
     ws.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
       if (data.type === "chat.message") {
         const msg: Message = data.message;
-        setMessages((prev) => ({
-          ...prev,
-          [msg.thread_id]: [...(prev[msg.thread_id] || []), msg],
-        }));
 
-        // update thread metadata (unread count + updated_at)
+        setMessages((prev) => {
+          const threadMsgs = prev[msg.thread_id] || [];
+          const exists = threadMsgs.some((m) => m.id === msg.id);
+          if (exists) return prev;
+
+          return {
+            ...prev,
+            [msg.thread_id]: [...threadMsgs, msg],
+          };
+        });
+
         setThreads((prev) => {
-          // find thread; if not present, ignore (will refetch later)
           const threadsCopy = prev.map((t) => {
             if (t.id !== msg.thread_id) return t;
-            // Only increment unread count for incoming messages that are unread
             const isIncoming = user ? msg.sender !== user.id : true;
             const isUnread = !msg.read_at;
             const shouldIncrement = isIncoming && isUnread;
-            
+
             return {
               ...t,
               updated_at: msg.created_at,
               unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
             };
           });
-          // sort newest first
+
           return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
         });
       }
-      
-      // Handle read receipts
+
       if (data.type === "message.read") {
         const { thread_id, message_ids, read_at } = data;
-        
-        // Update messages with read_at timestamp
+
         setMessages((prev) => {
           if (!prev[thread_id]) return prev;
-          
-          const updatedMessages = prev[thread_id].map((msg) => 
-            message_ids.includes(msg.id) 
-              ? { ...msg, read_at } 
-              : msg
+
+          const updatedMessages = prev[thread_id].map((msg) =>
+            message_ids.includes(msg.id) ? { ...msg, read_at } : msg
           );
-          
+
           return {
             ...prev,
             [thread_id]: updatedMessages,
           };
         });
-        
-        // Update thread unread count (should be 0 for the reader)
-        setThreads((prev) => prev.map((t) => 
-          t.id === thread_id 
-            ? { ...t, unread_count: Math.max(0, t.unread_count - message_ids.length) }
-            : t
-        ));
+
+        setThreads((prev) =>
+          prev.map((t) =>
+            t.id === thread_id
+              ? { ...t, unread_count: Math.max(0, t.unread_count - message_ids.length) }
+              : t
+          )
+        );
       }
     };
 
-    // keepalive
     const ping = setInterval(() => {
       if (ws.current?.readyState === WebSocket.OPEN) {
         ws.current.send(JSON.stringify({ type: "ping" }));
@@ -129,13 +115,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
 
     ws.current.onclose = () => {
       clearInterval(ping);
-      // eslint-disable-next-line no-console
       console.warn("WebSocket closed, will retry on next action");
       ws.current = null;
     };
   };
 
-  // initial fetch threads
   useEffect(() => {
     apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
     openSocket();
@@ -163,21 +147,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     threadId: string,
     recipientId: number,
     propertyId: number,
-    content: string
+    content: string,
+    id?: string
   ) => {
-    // ensure we have an OPEN or CONNECTING socket
     openSocket();
+
+    const messageId = id || `temp-${Date.now()}`;
 
     const payload = JSON.stringify({
       type: "chat.message",
       recipient_id: recipientId,
       property_id: propertyId,
       content,
+      id: messageId
     });
 
     const attemptSend = () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        // eslint-disable-next-line no-console
         console.log("WS sent", payload);
         ws.current.send(payload);
       }
@@ -190,7 +176,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     } else if (ws.current.readyState === WebSocket.CONNECTING) {
       (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
     } else {
-      // socket is closed – open a fresh one and send once it opens
       ws.current = null;
       openSocket();
       if (ws.current) {
@@ -198,9 +183,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       }
     }
 
-    // optimistic local update
     const newMsg: Message = {
-      id: `temp-${Date.now()}`,
+      id: messageId,
       thread_id: threadId,
       property_id: propertyId,
       sender: user?.id || 0,
@@ -215,7 +199,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       [threadId]: [...(prev[threadId] || []), newMsg],
     }));
 
-    // optimistically bump the thread row
     setThreads((prev) => {
       const threadsCopy = prev.map((t) =>
         t.id === threadId ? { ...t, updated_at: newMsg.created_at } : t
@@ -225,32 +208,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const markThreadRead = useCallback((threadId: string) => {
-    // Clear any pending timeout for this thread
     if (markReadTimeouts.current[threadId]) {
       clearTimeout(markReadTimeouts.current[threadId]);
     }
 
-    // Mark thread as read and update message read_at timestamps (optimistic update)
-    setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
-    
-    // Mark all messages in this thread as read (optimistic update)
+    setThreads((prev) =>
+      prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t))
+    );
+
     setMessages((prev) => {
       if (!prev[threadId]) return prev;
-      
+
       const updatedMessages = prev[threadId].map((msg) => ({
         ...msg,
         read_at: msg.read_at || new Date().toISOString(),
       }));
-      
+
       return {
         ...prev,
         [threadId]: updatedMessages,
       };
     });
-    
-    // Throttle the API call - only send after 500ms of no new calls
+
     markReadTimeouts.current[threadId] = window.setTimeout(() => {
-      apiClient.post(`chat/${threadId}/mark_read/`)
+      apiClient
+        .post(`chat/${threadId}/mark_read/`)
         .then((response) => {
           console.log("Messages marked as read:", response.data);
           delete markReadTimeouts.current[threadId];
@@ -258,7 +240,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
         .catch((error) => {
           console.error("Failed to mark messages as read:", error);
           delete markReadTimeouts.current[threadId];
-          // Optionally revert optimistic update on error
         });
     }, 500);
   }, []);
