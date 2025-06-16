@@ -15,6 +15,25 @@ interface Paginated<T> {
   results: T[];
 }
 
+function waitForStableHeight(element: HTMLElement, timeout = 500): Promise<void> {
+  return new Promise((resolve) => {
+    let lastHeight = element.scrollHeight;
+    const start = Date.now();
+
+    const interval = setInterval(() => {
+      const currentHeight = element.scrollHeight;
+      const elapsed = Date.now() - start;
+
+      if (currentHeight === lastHeight || elapsed > timeout) {
+        clearInterval(interval);
+        resolve();
+      } else {
+        lastHeight = currentHeight;
+      }
+    }, 50);
+  });
+}
+
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
   const { messages, setMessages, sendMessage, threads, markThreadRead } = useChat();
@@ -31,43 +50,41 @@ export default function ChatThread() {
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const currentFetchRef = useRef<string | null>(null);
 
-    // Load messages for thread
   useEffect(() => {
     if (!id || isInitialLoading) return;
-  
-    // Avoid duplicate fetch
+
     if (currentFetchRef.current === id) return;
-  
+
     const existingMessages = messages[id];
-  
-    if (existingMessages && existingMessages.length > 0) {
-      // Already cached — use immediately
+
+    const scrollToBottom = async () => {
+      if (!messagesContainerRef.current) return;
+      await waitForStableHeight(messagesContainerRef.current);
+      messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+    };
+
+    if (existingMessages?.length > 0) {
       setLocalMsgs(existingMessages);
-      requestAnimationFrame(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-      });
+      scrollToBottom();
       return;
     }
-  
-    // Not cached — fetch
+
     currentFetchRef.current = id;
     setIsInitialLoading(true);
-  
+
     fetchPage(`chat/${id}/messages/?limit=30`)
-      .then((res) => {
+      .then(async (res) => {
         if (currentFetchRef.current === id) {
           const reversed = res.data.results.reverse();
           setLocalMsgs(reversed);
           setNextUrl(res.data.next);
-  
+
           setMessages((prev) => ({
             ...prev,
             [id]: reversed,
           }));
-  
-          requestAnimationFrame(() => {
-            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-          });
+
+          await scrollToBottom();
         }
       })
       .catch((err) => console.error("Failed to fetch messages:", err))
@@ -79,13 +96,11 @@ export default function ChatThread() {
       });
   }, [id, messages, setMessages, isInitialLoading]);
 
-  // Mark thread as read when user opens the chat
   useEffect(() => {
     if (!id) return;
     markThreadRead(id);
   }, [id, markThreadRead]);
 
-  // Sync real-time context updates
   useEffect(() => {
     if (!id || !messages[id]) return;
     setLocalMsgs((prev) => {
@@ -98,20 +113,18 @@ export default function ChatThread() {
     });
   }, [id, messages]);
 
-  // Auto-scroll and jump button logic
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    
+
     setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
-    
+
     if (isNearBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
     }
   }, [localMsgs]);
 
-  // Handle scroll events
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
@@ -121,8 +134,8 @@ export default function ChatThread() {
       setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
     };
 
-    container.addEventListener('scroll', handleScroll);
-    return () => container.removeEventListener('scroll', handleScroll);
+    container.addEventListener("scroll", handleScroll);
+    return () => container.removeEventListener("scroll", handleScroll);
   }, [localMsgs.length]);
 
   const thread = threads.find((t) => t.id === id);
@@ -143,11 +156,10 @@ export default function ChatThread() {
 
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
-    
-    // Simulate typing indicator
+
     setIsTyping(true);
     setTimeout(() => setIsTyping(false), 1000);
-    
+
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
   };
@@ -159,9 +171,7 @@ export default function ChatThread() {
     }
   };
 
-  const formatTime = (timestamp: string) => {
-    return new Date(timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
+  const formatTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -171,10 +181,10 @@ export default function ChatThread() {
 
     if (date.toDateString() === today.toDateString()) return "Today";
     if (date.toDateString() === yesterday.toDateString()) return "Yesterday";
-    
-    return date.toLocaleDateString('en-GB', { 
-      day: 'numeric', 
-      month: 'short' 
+
+    return date.toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
     });
   };
 
@@ -224,7 +234,6 @@ export default function ChatThread() {
     });
   };
 
-  // IntersectionObserver for infinite scroll
   useEffect(() => {
     if (!nextUrl) return;
     const sentinel = topSentinelRef.current;
