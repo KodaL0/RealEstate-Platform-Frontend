@@ -192,5 +192,3 @@ export default function ThreadList() {
 }
 
 export default ThreadList;   
-      
-}      
