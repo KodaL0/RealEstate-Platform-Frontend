@@ -43,7 +43,7 @@ function AppContent() {
     <div className="min-h-screen flex flex-col">
       <Navbar />
 
-      <main className="flex-grow relative">
+      <main className={`relative ${isChatRoute ? "h-full" : "flex-grow"}`}>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Home />} />
