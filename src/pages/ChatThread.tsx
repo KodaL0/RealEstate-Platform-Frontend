@@ -26,26 +26,56 @@ export default function ChatThread() {
   const [nextUrl, setNextUrl] = useState<string | null>(null);
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [showJumpToNewest, setShowJumpToNewest] = useState(false);
+  const [isInitialLoading, setIsInitialLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
+  const currentFetchRef = useRef<string | null>(null);
 
   // Load messages for thread
   useEffect(() => {
+    if (!id || isInitialLoading) return;
+    
+    // Prevent duplicate fetches for the same thread
+    if (currentFetchRef.current === id) return;
+    
+    currentFetchRef.current = id;
+    setIsInitialLoading(true);
+    
+    console.log("Initial page fetch", id);
+    
+    fetchPage(`chat/${id}/messages/?limit=30`)
+      .then((res) => {
+        // Only update if this is still the current thread
+        if (currentFetchRef.current === id) {
+          setLocalMsgs(res.data.results.reverse()); // chronological ascending
+          setNextUrl(res.data.next);
+          console.log("Initial page loaded, next=", res.data.next);
+          
+          // Scroll to bottom after initial load
+          setTimeout(() => {
+            messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+          }, 100);
+        }
+        setIsInitialLoading(false);
+        if (currentFetchRef.current === id) {
+          currentFetchRef.current = null;
+        }
+      })
+      .catch((error) => {
+        console.error("Failed to load messages:", error);
+        setIsInitialLoading(false);
+        if (currentFetchRef.current === id) {
+          currentFetchRef.current = null;
+        }
+      });
+  }, [id]); // ✅ FIXED: Only depend on id, not messages
+
+  // Mark thread as read when user opens the chat (separate from message loading)
+  useEffect(() => {
     if (!id) return;
     markThreadRead(id);
-    console.log("Initial page fetch", id);
-    fetchPage(`chat/${id}/messages/?limit=30`).then((res) => {
-      setLocalMsgs(res.data.results.reverse()); // chronological ascending
-      setNextUrl(res.data.next);
-      console.log("Initial page loaded, next=", res.data.next);
-      
-      // Scroll to bottom after initial load
-      setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-      }, 100);
-    });
-  }, [id, messages]);
+  }, [id, markThreadRead]);
 
   // Sync real-time context updates without wiping paginated history.
   useEffect(() => {

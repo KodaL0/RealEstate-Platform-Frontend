@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useRef, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
 import { Thread, Message } from "../types";
 import { apiClient } from "../config/api";
 import { useUser } from "./UserContext";
@@ -29,6 +29,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const ws = useRef<WebSocket | null>(null);
   const { user } = useUser();
+  const markReadTimeouts = useRef<Record<string, number>>({});
 
   // helper to lazy-open websocket
   const openSocket = () => {
@@ -223,11 +224,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
     });
   };
 
-  const markThreadRead = (threadId: string) => {
-    // Mark thread as read and update message read_at timestamps
+  const markThreadRead = useCallback((threadId: string) => {
+    // Clear any pending timeout for this thread
+    if (markReadTimeouts.current[threadId]) {
+      clearTimeout(markReadTimeouts.current[threadId]);
+    }
+
+    // Mark thread as read and update message read_at timestamps (optimistic update)
     setThreads((prev) => prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t)));
     
-    // Mark all messages in this thread as read
+    // Mark all messages in this thread as read (optimistic update)
     setMessages((prev) => {
       if (!prev[threadId]) return prev;
       
@@ -242,16 +248,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({
       };
     });
     
-    // Send API request to mark messages as read on server
-    apiClient.post(`chat/${threadId}/mark_read/`)
-      .then((response) => {
-        console.log("Messages marked as read:", response.data);
-      })
-      .catch((error) => {
-        console.error("Failed to mark messages as read:", error);
-        // Optionally revert optimistic update on error
-      });
-  };
+    // Throttle the API call - only send after 500ms of no new calls
+    markReadTimeouts.current[threadId] = window.setTimeout(() => {
+      apiClient.post(`chat/${threadId}/mark_read/`)
+        .then((response) => {
+          console.log("Messages marked as read:", response.data);
+          delete markReadTimeouts.current[threadId];
+        })
+        .catch((error) => {
+          console.error("Failed to mark messages as read:", error);
+          delete markReadTimeouts.current[threadId];
+          // Optionally revert optimistic update on error
+        });
+    }, 500);
+  }, []);
 
   return (
     <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead }}>
