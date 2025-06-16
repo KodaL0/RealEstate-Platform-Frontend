@@ -1,9 +1,8 @@
-// src/pages/ThreadList.tsx
 import { Link, useParams } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { useEffect, useState } from "react";
-import { MessageCircle, User, MapPin, Search, Plus, Home } from "lucide-react";
+import { MapPin, Search, Home } from "lucide-react";
 
 export default function ThreadList() {
   const { threads, messages } = useChat();
@@ -13,7 +12,7 @@ export default function ThreadList() {
   const [searchTerm, setSearchTerm] = useState("");
 
   useEffect(() => {
-    let filtered = [...threads]; // copy to avoid mutating context state
+    let filtered = [...threads];
     if (searchTerm) {
       filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -33,16 +32,13 @@ export default function ThreadList() {
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0
-      ? threadMessages[0] // newest first
-      : null;
+    return threadMessages && threadMessages.length > 0 ? threadMessages[0] : null;
   };
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();
     const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
     if (diffInHours < 1) {
       const minutes = Math.floor(diffInHours * 60);
       return minutes <= 1 ? 'Just now' : `${minutes}m ago`;
@@ -51,23 +47,14 @@ export default function ThreadList() {
     } else if (diffInHours < 48) {
       return 'Yesterday';
     } else {
-      // Standardize format: "12 Jun"
-      return date.toLocaleDateString('en-GB', { 
-        day: 'numeric', 
-        month: 'short' 
-      });
+      return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
     }
   };
 
-  const totalUnread = threads.reduce((sum, thread) => sum + thread.unread_count, 0);
-
   return (
-    <div className="h-full flex flex-col bg-white min-h-0">
-      {/* Header */}
+    <div className="flex flex-col h-full min-h-0 overflow-hidden bg-white">
       <div className="p-3 sm:p-4 border-b border-gray-200 flex-shrink-0">
         <h1 className="text-lg font-semibold text-gray-900 mb-3">Messages</h1>
-        
-        {/* Search */}
         <div className="relative mb-3">
           <Search size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           <input
@@ -77,9 +64,9 @@ export default function ThreadList() {
             placeholder="Search conversations..."
             className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-       </div>
+        </div>
+      </div>
 
-      {/* Thread List */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {filteredThreads.length === 0 ? (
           <div className="p-4 text-center text-gray-500 text-sm">
@@ -91,6 +78,7 @@ export default function ThreadList() {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
               const isActive = thread.id === activeId;
+
               return (
                 <Link
                   key={thread.id}
@@ -101,10 +89,9 @@ export default function ThreadList() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
-                      {/* Property photo thumbnail or fallback */}
                       {thread.property_image ? (
-                        <img 
-                          src={thread.property_image} 
+                        <img
+                          src={thread.property_image}
                           alt={thread.property_title || 'Property'}
                           className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                         />
@@ -117,7 +104,7 @@ export default function ThreadList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-start mb-1">
                         <div className="flex-1 mr-2">
-                          <Link 
+                          <Link
                             to={`/property/${thread.property}`}
                             className="hover:text-blue-600 transition-colors"
                             onClick={(e) => e.stopPropagation()}
@@ -133,8 +120,6 @@ export default function ThreadList() {
                           </span>
                         )}
                       </div>
-                      
-                      {/* Latest message preview with clear authorship */}
                       <div className="mb-2">
                         {lastMessage ? (
                           <p className="text-sm text-gray-600 truncate">
@@ -147,7 +132,6 @@ export default function ThreadList() {
                           <p className="text-sm text-gray-400 italic">No messages yet</p>
                         )}
                       </div>
-                      
                       <div className="flex items-center justify-between">
                         {thread.property_address && (
                           <div className="flex items-center text-xs text-gray-400 gap-1 truncate flex-1 mr-2">
@@ -170,7 +154,6 @@ export default function ThreadList() {
         )}
       </div>
 
-      {/* Footer Stats */}
       {threads.length > 0 && (
         <div className="flex-shrink-0 border-t border-gray-200 bg-gray-50 px-4 py-2">
           <div className="grid grid-cols-2 gap-4 text-center">
@@ -190,5 +173,3 @@ export default function ThreadList() {
     </div>
   );
 }
-
-export default ThreadList;   
