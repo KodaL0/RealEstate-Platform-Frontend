@@ -31,24 +31,44 @@ export default function ChatThread() {
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const currentFetchRef = useRef<string | null>(null);
 
-  // Load messages for thread
+    // Load messages for thread
   useEffect(() => {
     if (!id || isInitialLoading) return;
-    
+
+    // If already preloaded, use cached messages
+    if (messages[id]) {
+      setLocalMsgs(messages[id]);
+      setIsInitialLoading(false);
+      
+      requestAnimationFrame(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
+      });
+
+      return;
+    }
+
+    // Avoid duplicate fetch
     if (currentFetchRef.current === id) return;
-    
+
     currentFetchRef.current = id;
     setIsInitialLoading(true);
-    
+
     fetchPage(`chat/${id}/messages/?limit=30`)
       .then((res) => {
         if (currentFetchRef.current === id) {
-          setLocalMsgs(res.data.results.reverse());
+          const reversed = res.data.results.reverse();
+          setLocalMsgs(reversed);
           setNextUrl(res.data.next);
-          
-          setTimeout(() => {
+
+          // Save to context for future use
+          setMessages((prev) => ({
+            ...prev,
+            [id]: reversed,
+          }));
+
+          requestAnimationFrame(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
-          }, 100);
+          });
         }
         setIsInitialLoading(false);
         if (currentFetchRef.current === id) {
@@ -62,7 +82,7 @@ export default function ChatThread() {
           currentFetchRef.current = null;
         }
       });
-  }, [id]);
+  }, [id, messages, setMessages]);
 
   // Mark thread as read when user opens the chat
   useEffect(() => {
