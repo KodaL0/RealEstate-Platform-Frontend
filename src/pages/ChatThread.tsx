@@ -34,55 +34,50 @@ export default function ChatThread() {
     // Load messages for thread
   useEffect(() => {
     if (!id || isInitialLoading) return;
-
-    // If already preloaded, use cached messages
-    if (messages[id]) {
-      setLocalMsgs(messages[id]);
-      setIsInitialLoading(false);
-      
+  
+    // Avoid duplicate fetch
+    if (currentFetchRef.current === id) return;
+  
+    const existingMessages = messages[id];
+  
+    if (existingMessages && existingMessages.length > 0) {
+      // Already cached — use immediately
+      setLocalMsgs(existingMessages);
       requestAnimationFrame(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
       });
-
       return;
     }
-
-    // Avoid duplicate fetch
-    if (currentFetchRef.current === id) return;
-
+  
+    // Not cached — fetch
     currentFetchRef.current = id;
     setIsInitialLoading(true);
-
+  
     fetchPage(`chat/${id}/messages/?limit=30`)
       .then((res) => {
         if (currentFetchRef.current === id) {
           const reversed = res.data.results.reverse();
           setLocalMsgs(reversed);
           setNextUrl(res.data.next);
-
-          // Save to context for future use
+  
           setMessages((prev) => ({
             ...prev,
             [id]: reversed,
           }));
-
+  
           requestAnimationFrame(() => {
             messagesEndRef.current?.scrollIntoView({ behavior: "auto" });
           });
         }
-        setIsInitialLoading(false);
-        if (currentFetchRef.current === id) {
-          currentFetchRef.current = null;
-        }
       })
-      .catch((error) => {
-        console.error("Failed to load messages:", error);
-        setIsInitialLoading(false);
+      .catch((err) => console.error("Failed to fetch messages:", err))
+      .finally(() => {
         if (currentFetchRef.current === id) {
           currentFetchRef.current = null;
+          setIsInitialLoading(false);
         }
       });
-  }, [id, messages, setMessages]);
+  }, [id, messages, setMessages, isInitialLoading]);
 
   // Mark thread as read when user opens the chat
   useEffect(() => {
