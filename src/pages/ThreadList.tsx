@@ -60,7 +60,7 @@ export default function ThreadList() {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
-      {/* Enhanced Header */}
+      {/* Header */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-6 py-5 flex-shrink-0 shadow-sm">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-4">
@@ -83,17 +83,10 @@ export default function ThreadList() {
               </div>
             </div>
           </div>
-          <div className="flex items-center gap-1">
-            <button className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200 hover:scale-105">
-              <Plus size={18} />
-            </button>
-            <button className="p-2.5 text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all duration-200 hover:scale-105">
-              <MoreVertical size={18} />
-            </button>
-          </div>
+          {/* Buttons removed: no Plus or MoreVertical icons here */}
         </div>
-
-        {/* Enhanced Search */}
+    
+        {/* Search input remains unchanged */}
         <div className="relative">
           <Search size={18} className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" />
           <input
