@@ -40,7 +40,7 @@ function AppContent() {
   const isChatRoute = location.pathname.startsWith('/chat');
 
   return (
-    <div className="min-h-screen flex flex-col">
+   <div className="h-full flex flex-col">
       <Navbar />
 
       <main className={`relative ${isChatRoute ? "h-full" : "flex-grow"}`}>
