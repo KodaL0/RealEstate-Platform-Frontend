@@ -285,16 +285,6 @@ export default function ChatThread() {
             </div>
           </div>
         </div>
-        <div className="flex items-center space-x-1 flex-shrink-0">
-          {[Phone, Video, Info, MoreVertical].map((Icon, idx) => (
-            <button 
-              key={idx}
-              className="p-2.5 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200 hover:scale-105"
-            >
-              <Icon size={18} />
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* Enhanced Messages Area */}
