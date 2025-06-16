@@ -136,7 +136,7 @@ export default function ThreadList() {
                 <Link
                   key={thread.id}
                   to={`/chat/${thread.id}`}
-                  className={`block hover:bg-slate-50/80 transition-all duration-200 group relative ${
+                  className="block hover:bg-slate-50/80 transition-all duration-200 group relative"
                 >
                   <div className="px-6 py-5 flex items-start gap-4">
                     {/* Enhanced Avatar */}
