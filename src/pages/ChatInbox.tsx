@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
-import { Search, MessageCircle, User, Clock, MapPin, Home, Plus, Filter } from "lucide-react";
+import { Search, MessageCircle, Clock, MapPin, Home, Plus, Filter } from "lucide-react";
 
 export default function ChatInbox() {
   const { threads, messages } = useChat();
@@ -12,19 +12,19 @@ export default function ChatInbox() {
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'recent'>('all');
 
   useEffect(() => {
-    let filtered = [...threads]; // copy to avoid mutating context state
+    let filtered = [...threads];
     if (searchTerm) {
-      filtered = filtered.filter(thread => 
+      filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
     switch (filterType) {
       case 'unread':
-        filtered = filtered.filter(thread => thread.unread_count > 0);
+        filtered = filtered.filter(t => getUnreadCount(t.id) > 0);
         break;
       case 'recent':
-        filtered = filtered.sort((a, b) => 
+        filtered = filtered.sort((a, b) =>
           new Date(b.updated_at || '').getTime() - new Date(a.updated_at || '').getTime()
         );
         break;
@@ -34,9 +34,16 @@ export default function ChatInbox() {
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0 
-      ? threadMessages[0] // newest message is always first in array
+    return threadMessages && threadMessages.length > 0
+      ? threadMessages[0]
       : null;
+  };
+
+  const getUnreadCount = (threadId: string) => {
+    const threadMessages = messages[threadId] || [];
+    return threadMessages.filter(
+      msg => msg.sender !== user?.id && !msg.read_at
+    ).length;
   };
 
   const formatTime = (timestamp: string) => {
@@ -52,9 +59,9 @@ export default function ChatInbox() {
     } else if (diffInHours < 48) {
       return 'Yesterday';
     } else {
-      return date.toLocaleDateString('en-GB', { 
-        day: 'numeric', 
-        month: 'short' 
+      return date.toLocaleDateString('en-GB', {
+        day: 'numeric',
+        month: 'short'
       });
     }
   };
@@ -80,15 +87,15 @@ export default function ChatInbox() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 mb-1">Messages</h1>
               <p className="text-sm text-gray-600">
-                {threads.length} conversation{threads.length !== 1 ? 's' : ''} 
-                {threads.filter(t => t.unread_count > 0).length > 0 && (
+                {threads.length} conversation{threads.length !== 1 ? 's' : ''}
+                {threads.filter(t => getUnreadCount(t.id) > 0).length > 0 && (
                   <span className="ml-2 text-blue-600 font-medium">
-                    • {threads.filter(t => t.unread_count > 0).length} unread
+                    • {threads.filter(t => getUnreadCount(t.id) > 0).length} unread
                   </span>
                 )}
               </p>
             </div>
-            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600">
+            <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 flex items-center gap-2">
               <Plus size={16} /> New Chat
             </button>
           </div>
@@ -128,6 +135,7 @@ export default function ChatInbox() {
             {filteredThreads.map(thread => {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
+              const unreadCount = getUnreadCount(thread.id);
 
               return (
                 <Link
@@ -138,8 +146,8 @@ export default function ChatInbox() {
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
                       {thread.property_image ? (
-                        <img 
-                          src={thread.property_image} 
+                        <img
+                          src={thread.property_image}
                           alt={thread.property_title || 'Property'}
                           className="w-12 h-12 rounded-lg object-cover border border-gray-200"
                         />
@@ -152,7 +160,7 @@ export default function ChatInbox() {
                     <div className="flex-1">
                       <div className="flex justify-between items-center text-sm mb-1">
                         <div className="flex-1 mr-2">
-                          <Link 
+                          <Link
                             to={`/property/${thread.property}`}
                             className="hover:text-blue-600 transition-colors"
                             onClick={(e) => e.stopPropagation()}
@@ -181,9 +189,9 @@ export default function ChatInbox() {
                           <span className="text-gray-400 italic">No messages yet</span>
                         )}
                       </div>
-                      {thread.unread_count > 0 && (
+                      {unreadCount > 0 && (
                         <div className="text-xs text-white bg-blue-500 w-fit mt-1 px-2 py-0.5 rounded-full">
-                          {thread.unread_count > 99 ? '99+' : thread.unread_count}
+                          {unreadCount > 99 ? '99+' : unreadCount}
                         </div>
                       )}
                       {thread.property_address && (
