@@ -77,7 +77,7 @@ export default function ThreadList() {
             placeholder="Search conversations..."
             className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
-        </div>
+       </div>
 
       {/* Thread List */}
       <div className="flex-1 overflow-y-auto min-h-0">
