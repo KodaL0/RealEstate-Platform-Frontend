@@ -79,13 +79,6 @@ export default function ThreadList() {
           />
         </div>
 
-        {/* New Chat Button */}
-        <button className="w-full bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 flex items-center justify-center gap-2">
-          <Plus size={16} />
-          New Chat
-        </button>
-      </div>
-
       {/* Thread List */}
       <div className="flex-1 overflow-y-auto min-h-0">
         {filteredThreads.length === 0 ? (
