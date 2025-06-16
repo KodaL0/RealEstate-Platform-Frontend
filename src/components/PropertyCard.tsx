@@ -119,7 +119,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             {isForSale ? 'For Sale' : 'For Rent'}
           </span>
           <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-            {property_type}
+            {property_type.charAt(0).toUpperCase() + property_type.slice(1)}
           </span>
         </div>
 
