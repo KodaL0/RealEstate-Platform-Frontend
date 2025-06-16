@@ -6,6 +6,7 @@ import { useUser } from "./UserContext";
 interface ChatContextValue {
   threads: Thread[];
   messages: Record<string, Message[]>;
+  setMessages: React.Dispatch<React.SetStateAction<Record<string, Message[]>>>;
   getOrCreateThread: (
     sellerId: number,
     propertyId: number,
@@ -225,7 +226,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead }}>
+    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead, setMessages }}>
       {children}
     </ChatContext.Provider>
   );
