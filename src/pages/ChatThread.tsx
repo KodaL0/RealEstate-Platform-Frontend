@@ -8,7 +8,6 @@ import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
 import { useRef as useRefHook } from "react";
-import { v4 as uuidv4 } from 'uuid';
 
 // Generic pagination type from DRF
 interface Paginated<T> {
@@ -138,20 +137,7 @@ export default function ChatThread() {
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
     
-    const generatedId = uuidv4();
-    const newMessage: Message = {
-      id: generatedId,
-      thread: id,
-      content: input.trim(),
-      sender: user.id,
-      recipient: recipientId,
-      property_id: propertyId,
-      created_at: new Date().toISOString(),
-      read_at: null,
-    };
-
-    setLocalMsgs((prev) => [...prev, newMessage]);
-    sendMessage(id, recipientId, propertyId, input.trim(), generatedId);
+    sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
   };
 

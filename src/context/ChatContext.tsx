@@ -15,8 +15,7 @@ interface ChatContextValue {
     threadId: string,
     recipientId: number,
     propertyId: number,
-    content: string,
-    id?: string
+    content: string
   ) => void;
   markThreadRead: (threadId: string) => void;
 }
@@ -147,19 +146,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     threadId: string,
     recipientId: number,
     propertyId: number,
-    content: string,
-    id?: string
+    content: string
   ) => {
     openSocket();
-
-    const messageId = id || `temp-${Date.now()}`;
 
     const payload = JSON.stringify({
       type: "chat.message",
       recipient_id: recipientId,
       property_id: propertyId,
       content,
-      id: messageId
     });
 
     const attemptSend = () => {
@@ -183,25 +178,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     }
 
-    const newMsg: Message = {
-      id: messageId,
-      thread_id: threadId,
-      property_id: propertyId,
-      sender: user?.id || 0,
-      recipient: recipientId,
-      content,
-      created_at: new Date().toISOString(),
-      read_at: null,
-    } as Message;
-
-    setMessages((prev) => ({
-      ...prev,
-      [threadId]: [...(prev[threadId] || []), newMsg],
-    }));
-
+    // Update thread timestamp optimistically
     setThreads((prev) => {
       const threadsCopy = prev.map((t) =>
-        t.id === threadId ? { ...t, updated_at: newMsg.created_at } : t
+        t.id === threadId ? { ...t, updated_at: new Date().toISOString() } : t
       );
       return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     });
