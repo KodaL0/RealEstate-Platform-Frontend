@@ -32,7 +32,9 @@ export default function ThreadList() {
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0 ? threadMessages[0] : null;
+    return threadMessages && threadMessages.length > 0
+      ? threadMessages[threadMessages.length - 1]
+      : null;
   };
 
   const formatTime = (timestamp: string) => {
