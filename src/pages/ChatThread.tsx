@@ -106,7 +106,7 @@ export default function ChatThread() {
     if (unreadFromOthers.length > 0) {
       markThreadRead(id);
     }
-  }, [id, messages, user, markThreadRead]);
+  }, [id, messages[id]?.length, user?.id, markThreadRead]);
 
   useEffect(() => {
     if (!id || !messages[id]) return;
