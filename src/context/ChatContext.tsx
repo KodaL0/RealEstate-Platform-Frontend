@@ -200,10 +200,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setMessages((prev) => {
       if (!prev[threadId]) return prev;
 
-      const updatedMessages = prev[threadId].map((msg) => ({
-        ...msg,
-        read_at: msg.read_at || new Date().toISOString(),
-      }));
+      const updatedMessages = prev[threadId].map((msg) => {
+        if (!msg.read_at && msg.sender !== user?.id) {
+          return { ...msg, read_at: new Date().toISOString() };
+        }
+        return msg;
+      });
 
       return {
         ...prev,
