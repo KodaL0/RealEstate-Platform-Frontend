@@ -97,9 +97,16 @@ export default function ChatThread() {
   }, [id, messages, setMessages, isInitialLoading]);
 
   useEffect(() => {
-    if (!id) return;
-    markThreadRead(id);
-  }, [id, markThreadRead]);
+    if (!id || !user || !messages[id]) return;
+  
+    const unreadFromOthers = messages[id].filter(
+      (msg) => !msg.read_at && msg.sender !== user.id
+    );
+  
+    if (unreadFromOthers.length > 0) {
+      markThreadRead(id);
+    }
+  }, [id, messages, user, markThreadRead]);
 
   useEffect(() => {
     if (!id || !messages[id]) return;
