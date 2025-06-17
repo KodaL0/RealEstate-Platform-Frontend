@@ -57,7 +57,12 @@ export default function ThreadList() {
   };
 
   const getTotalUnreadCount = () => {
-    return filteredThreads.reduce((total, thread) => total + (thread.unread_count || 0), 0);
+    return filteredThreads.reduce((total, thread) => {
+      const unreadMessages = messages[thread.id]?.filter(
+        msg => !msg.read_at && msg.sender !== user?.id
+      ) || [];
+      return total + unreadMessages.length;
+    }, 0);
   };
 
   return (
