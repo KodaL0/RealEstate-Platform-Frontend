@@ -97,6 +97,13 @@ export interface Thread {
   updated_at: string;
   property_address?: string;
   property_image?: string;
+  last_message?: {
+    id: string;
+    content: string;
+    sender: number;
+    created_at: string;
+    read_at: string | null;
+  } | null;
 }
 
 export interface Message {

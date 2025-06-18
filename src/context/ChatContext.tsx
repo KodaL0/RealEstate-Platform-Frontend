@@ -37,6 +37,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const markReadTimeouts = useRef<Record<string, number>>({});
   const typingTimeouts = useRef<Record<string, number>>({});
 
+
+
   const openSocket = () => {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
 
@@ -176,7 +178,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
-    apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
+    apiClient.get<Thread[]>("chat/").then((res) => {
+      setThreads(res.data);
+    });
     openSocket();
   }, []);
 

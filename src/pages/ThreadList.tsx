@@ -23,18 +23,37 @@ export default function ThreadList() {
     filtered = filtered.sort((a, b) => {
       const aLast = getLastMessage(a.id);
       const bLast = getLastMessage(b.id);
-      const aTime = aLast?.created_at || a.updated_at || '0';
-      const bTime = bLast?.created_at || b.updated_at || '0';
+      // Use last message timestamp, or backend last_message, or thread updated_at as fallback
+      const aTime = aLast?.created_at || a.last_message?.created_at || a.updated_at || '0';
+      const bTime = bLast?.created_at || b.last_message?.created_at || b.updated_at || '0';
       return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
     setFilteredThreads(filtered);
   }, [threads, searchTerm, messages]);
 
   const getLastMessage = (threadId: string) => {
+    // First try to get from loaded messages (most up-to-date)
     const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0
-      ? threadMessages[threadMessages.length - 1]
-      : null;
+    if (threadMessages && threadMessages.length > 0) {
+      return threadMessages[threadMessages.length - 1];
+    }
+    
+    // Fallback to thread's last_message from backend
+    const thread = threads.find(t => t.id === threadId);
+    if (thread?.last_message) {
+      return {
+        id: thread.last_message.id,
+        thread_id: threadId,
+        property_id: thread.property,
+        sender: thread.last_message.sender,
+        recipient: thread.user1 === thread.last_message.sender ? thread.user2 : thread.user1,
+        content: thread.last_message.content,
+        created_at: thread.last_message.created_at,
+        read_at: thread.last_message.read_at,
+      };
+    }
+    
+    return null;
   };
 
   const formatTime = (timestamp: string) => {
@@ -209,11 +228,16 @@ export default function ThreadList() {
                           <span className={`text-xs font-medium ${
                             hasUnread ? 'text-blue-600' : 'text-slate-500'
                           }`}>
-                            {lastMessage ? formatTime(lastMessage.created_at) : formatTime(thread.updated_at || new Date().toISOString())}
+                            {lastMessage 
+                              ? formatTime(lastMessage.created_at) 
+                              : thread.last_message 
+                                ? formatTime(thread.last_message.created_at)
+                                : formatTime(thread.updated_at || new Date().toISOString())
+                            }
                           </span>
-                          {isOwnMessage && lastMessage && (
+                          {isOwnMessage && (lastMessage || thread.last_message) && (
                             <div className="flex items-center gap-1">
-                              {lastMessage.read_at ? (
+                              {(lastMessage?.read_at || thread.last_message?.read_at) ? (
                                 <CheckCheck size={12} className="text-blue-500" />
                               ) : (
                                 <Clock size={12} className="text-slate-400" />
