@@ -52,6 +52,19 @@ export default function ChatThread() {
   const currentFetchRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
 
+  // Reset local state when thread changes
+  useEffect(() => {
+    if (!id) return;
+    
+    // Clear local state when switching threads
+    setLocalMsgs([]);
+    setNextUrl(null);
+    setIsInitialLoading(false);
+    setIsFetchingMore(false);
+    setShowJumpToNewest(false);
+    currentFetchRef.current = null;
+  }, [id]);
+
   useEffect(() => {
     if (!id || isInitialLoading) return;
 
@@ -87,6 +100,7 @@ export default function ChatThread() {
           }));
 
           await scrollToBottom();
+          setIsInitialLoading(false);
         }
       })
       .catch((err) => {
@@ -99,28 +113,43 @@ export default function ChatThread() {
   }, [id, messages, setMessages, isInitialLoading]);
 
   useEffect(() => {
-    if (!id || !user || !messages[id]) return;
+    if (!id || !user) return;
+    
+    const threadMessages = messages[id];
+    if (!threadMessages) return;
   
-    const unreadFromOthers = messages[id].filter(
+    const unreadFromOthers = threadMessages.filter(
       (msg) => !msg.read_at && msg.sender !== user.id
     );
   
     if (unreadFromOthers.length > 0) {
       markThreadRead(id);
     }
-  }, [id, messages[id]?.length, user?.id, markThreadRead]);
+  }, [id, messages, user?.id, markThreadRead]);
 
   useEffect(() => {
-    if (!id || !messages[id]) return;
+    if (!id) return;
+    
+    const threadMessages = messages[id];
+    if (!threadMessages) return;
+    
+    // If we're switching to a thread that already has messages cached,
+    // and localMsgs is empty, set it directly
+    if (localMsgs.length === 0 && threadMessages.length > 0) {
+      setLocalMsgs(threadMessages);
+      return;
+    }
+    
+    // Otherwise, merge new messages
     setLocalMsgs((prev) => {
       const seen = new Set(prev.map((m) => m.id));
       const merged = [...prev];
-      messages[id].forEach((m) => {
+      threadMessages.forEach((m) => {
         if (!seen.has(m.id)) merged.push(m);
       });
       return merged;
     });
-  }, [id, messages]);
+  }, [id, messages, localMsgs.length]);
 
   useEffect(() => {
     const container = messagesContainerRef.current;
