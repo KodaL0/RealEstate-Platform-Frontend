@@ -18,25 +18,27 @@ interface Paginated<T> {
 function waitForStableHeight(element: HTMLElement, timeout = 500): Promise<void> {
   return new Promise((resolve) => {
     let lastHeight = element.scrollHeight;
-    const start = Date.now();
-
-    const interval = setInterval(() => {
-      const currentHeight = element.scrollHeight;
-      const elapsed = Date.now() - start;
-
-      if (currentHeight === lastHeight || elapsed > timeout) {
-        clearInterval(interval);
-        resolve();
+    let stableCount = 0;
+    const check = () => {
+      if (element.scrollHeight === lastHeight) {
+        stableCount++;
+        if (stableCount >= 3) {
+          resolve();
+          return;
+        }
       } else {
-        lastHeight = currentHeight;
+        lastHeight = element.scrollHeight;
+        stableCount = 0;
       }
-    }, 50);
+      setTimeout(check, timeout / 10);
+    };
+    check();
   });
 }
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { messages, setMessages, sendMessage, threads, markThreadRead } = useChat();
+  const { threads, messages, setMessages, sendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -44,11 +46,11 @@ export default function ChatThread() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [showJumpToNewest, setShowJumpToNewest] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
-  const [isTyping, setIsTyping] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const currentFetchRef = useRef<string | null>(null);
+  const typingTimeoutRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id || isInitialLoading) return;
@@ -87,8 +89,8 @@ export default function ChatThread() {
           await scrollToBottom();
         }
       })
-      .catch((err) => console.error("Failed to fetch messages:", err))
-      .finally(() => {
+      .catch((err) => {
+        console.error("Failed to fetch messages:", err);
         if (currentFetchRef.current === id) {
           currentFetchRef.current = null;
           setIsInitialLoading(false);
@@ -161,11 +163,12 @@ export default function ChatThread() {
     ? thread.property
     : localMsgs[0]?.property_id ?? null;
 
+  // Check if other user is typing and online
+  const isOtherUserTyping = id ? typingUsers[id] || false : false;
+  const isOtherUserOnline = recipientId ? userStatuses[recipientId] === 'online' : false;
+
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
-
-    setIsTyping(true);
-    setTimeout(() => setIsTyping(false), 1000);
 
     sendMessage(id, recipientId, propertyId, input.trim());
     setInput("");
@@ -403,7 +406,7 @@ export default function ChatThread() {
         )}
 
         {/* Typing Indicator */}
-        {isTyping && (
+        {id && isOtherUserTyping && (
           <div className="flex items-end gap-2">
             <div className="w-7 h-7 bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shadow-sm">
               <UserIcon size={12} className="text-white" />
@@ -489,7 +492,7 @@ export default function ChatThread() {
           <div className="flex items-center gap-2">
             <div className="flex items-center gap-1.5">
               <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-              <span className="font-medium text-green-600">Online</span>
+              <span className="font-medium text-green-600">{isOtherUserOnline ? 'Online' : 'Offline'}</span>
             </div>
           </div>
         </div>

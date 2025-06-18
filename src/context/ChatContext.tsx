@@ -19,6 +19,10 @@ interface ChatContextValue {
     content: string
   ) => void;
   markThreadRead: (threadId: string) => void;
+  sendTypingStart: (threadId: string, recipientId: number) => void;
+  sendTypingStop: (threadId: string, recipientId: number) => void;
+  typingUsers: Record<string, boolean>; // threadId -> isOtherUserTyping
+  userStatuses: Record<number, 'online' | 'offline'>; // userId -> status
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -26,9 +30,12 @@ const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
+  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+  const [userStatuses, setUserStatuses] = useState<Record<number, 'online' | 'offline'>>({});
   const ws = useRef<WebSocket | null>(null);
   const { user } = useUser();
   const markReadTimeouts = useRef<Record<string, number>>({});
+  const typingTimeouts = useRef<Record<string, number>>({});
 
   const openSocket = () => {
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
@@ -113,6 +120,45 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               : t
           )
         );
+      }
+
+      if (data.type === "typing.indicator") {
+        const { thread_id, user_id, is_typing } = data;
+        
+        // Only show typing indicator if it's from another user
+        if (user && user_id !== user.id) {
+          setTypingUsers((prev) => ({
+            ...prev,
+            [thread_id]: is_typing,
+          }));
+
+          // Clear typing indicator after 3 seconds if no stop signal
+          if (is_typing) {
+            if (typingTimeouts.current[thread_id]) {
+              clearTimeout(typingTimeouts.current[thread_id]);
+            }
+            typingTimeouts.current[thread_id] = window.setTimeout(() => {
+              setTypingUsers((prev) => ({
+                ...prev,
+                [thread_id]: false,
+              }));
+              delete typingTimeouts.current[thread_id];
+            }, 3000);
+          } else {
+            if (typingTimeouts.current[thread_id]) {
+              clearTimeout(typingTimeouts.current[thread_id]);
+              delete typingTimeouts.current[thread_id];
+            }
+          }
+        }
+      }
+
+      if (data.type === "user.status") {
+        const { user_id, status } = data;
+        setUserStatuses((prev) => ({
+          ...prev,
+          [user_id]: status,
+        }));
       }
     };
 
@@ -257,8 +303,39 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 500);
   }, []);
 
+  const sendTypingStart = useCallback((threadId: string, recipientId: number) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({
+        type: "typing.start",
+        thread_id: threadId,
+        recipient_id: recipientId,
+      }));
+    }
+  }, []);
+
+  const sendTypingStop = useCallback((threadId: string, recipientId: number) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({
+        type: "typing.stop",
+        thread_id: threadId,
+        recipient_id: recipientId,
+      }));
+    }
+  }, []);
+
   return (
-    <ChatContext.Provider value={{ threads, messages, getOrCreateThread, sendMessage, markThreadRead, setMessages }}>
+    <ChatContext.Provider value={{ 
+      threads, 
+      messages, 
+      getOrCreateThread, 
+      sendMessage, 
+      markThreadRead, 
+      setMessages,
+      sendTypingStart,
+      sendTypingStop,
+      typingUsers,
+      userStatuses
+    }}>
       {children}
     </ChatContext.Provider>
   );
