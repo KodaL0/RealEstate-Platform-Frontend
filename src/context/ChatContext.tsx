@@ -54,12 +54,21 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         setMessages((prev) => {
           const threadMsgs = prev[msg.thread_id] || [];
-          const exists = threadMsgs.some((m) => m.id === msg.id);
-          if (exists) return prev;
+          
+          // Check if this is a real message replacing an optimistic one
+          // Remove any optimistic messages with similar content and sender
+          const filteredMsgs = threadMsgs.filter((m) => {
+            if (m.id.toString().startsWith('temp_') && 
+                m.sender === msg.sender && 
+                m.content === msg.content) {
+              return false; // Remove optimistic message
+            }
+            return m.id !== msg.id; // Remove any exact duplicates
+          });
 
           return {
             ...prev,
-            [msg.thread_id]: [...threadMsgs, msg],
+            [msg.thread_id]: [...filteredMsgs, msg],
           };
         });
 
@@ -150,6 +159,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     content: string
   ) => {
     openSocket();
+
+    // Create optimistic message for immediate UI update
+    const optimisticMessage: Message = {
+      id: `temp_${Date.now()}`, // Temporary ID until server responds
+      thread_id: threadId,
+      property_id: propertyId,
+      sender: user?.id || 0,
+      recipient: recipientId,
+      content: content,
+      created_at: new Date().toISOString(),
+      read_at: null,
+    };
+
+    // Add message optimistically to local state
+    setMessages((prev) => {
+      const threadMsgs = prev[threadId] || [];
+      return {
+        ...prev,
+        [threadId]: [...threadMsgs, optimisticMessage],
+      };
+    });
 
     const payload = JSON.stringify({
       type: "chat.message",
