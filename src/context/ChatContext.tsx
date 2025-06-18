@@ -180,6 +180,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             [thread_id]: updatedMessages,
           };
         });
+
+        // Update thread list to reflect the unsent message
+        setThreads((prev) => 
+          prev.map((thread) => {
+            if (thread.id === thread_id && thread.last_message?.id === message_id) {
+              return {
+                ...thread,
+                last_message: thread.last_message ? {
+                  ...thread.last_message,
+                  content: "Message Unsent"
+                } : null
+              };
+            }
+            return thread;
+          })
+        );
       }
     };
 
