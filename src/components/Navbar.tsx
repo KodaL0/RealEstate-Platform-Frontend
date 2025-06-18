@@ -82,6 +82,9 @@ const Navbar: React.FC = () => {
               <Link to="/mortgage-calculator" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
                 Mortgage Calculator
               </Link>
+              <Link to="/rent-vs-buy" className="block px-4 py-2 text-sm text-gray-700 hover:bg-blue-50 hover:text-blue-600">
+                Rent vs Buy Calculator
+              </Link>
             </div>
           </div>
         </div>
@@ -136,6 +139,7 @@ const Navbar: React.FC = () => {
             <Link to="/buy" onClick={() => setIsOpen(false)} className={`font-medium ${isActive("/buy") ? "text-blue-600" : "text-gray-700"}`}>Buy</Link>
             <Link to="/rent" onClick={() => setIsOpen(false)} className={`font-medium ${isActive("/rent") ? "text-blue-600" : "text-gray-700"}`}>Rent</Link>
             <Link to="/mortgage-calculator" onClick={() => setIsOpen(false)} className={`font-medium ${isActive("/mortgage-calculator") ? "text-blue-600" : "text-gray-700"}`}>Mortgage Calculator</Link>
+            <Link to="/rent-vs-buy" onClick={() => setIsOpen(false)} className={`font-medium ${isActive("/rent-vs-buy") ? "text-blue-600" : "text-gray-700"}`}>Rent vs Buy Calculator</Link>
             {user ? (
               <>
                 <Link to="/profile" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">Profile</Link>

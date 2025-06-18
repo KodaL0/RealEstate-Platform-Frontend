@@ -18,6 +18,7 @@ import Favourites from "./pages/Favourites";
 import CreateListing from "./pages/CreateListing";
 import MyListings from "./pages/MyListings";
 import MortgageCalculator from "./pages/MortgageCalculator";
+import RentVsBuyPage from "./pages/RentvsBuypage";
 import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
@@ -56,6 +57,7 @@ function AppContent() {
           <Route path="/terms" element={<TermsandConditions />} />
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
+          <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/chat/*" element={<ChatContainer />} />
 
           {/* Protected */}
