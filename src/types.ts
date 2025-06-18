@@ -113,6 +113,9 @@ export interface Message {
   sender: number;
   recipient: number;
   content: string;
+  original_content?: string | null;
   created_at: string;
   read_at: string | null;
+  is_unsent: boolean;
+  unsent_at: string | null;
 }

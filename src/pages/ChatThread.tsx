@@ -2,7 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown, X } from "lucide-react";
 import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
@@ -38,7 +38,7 @@ function waitForStableHeight(element: HTMLElement, timeout = 500): Promise<void>
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const { threads, messages, setMessages, sendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses } = useChat();
+  const { threads, messages, setMessages, sendMessage, unsendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -210,6 +210,15 @@ export default function ChatThread() {
     }
   };
 
+  const handleUnsend = async (messageId: string) => {
+    try {
+      await unsendMessage(messageId);
+    } catch (error) {
+      console.error("Failed to unsend message:", error);
+      // You might want to show a toast notification here
+    }
+  };
+
   const formatTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   const formatDate = (timestamp: string) => {
@@ -363,12 +372,15 @@ export default function ChatThread() {
                     <div className={`
                       max-w-[75%] sm:max-w-md lg:max-w-lg xl:max-w-xl
                       ${isOwn 
-                        ? 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25' 
+                        ? message.is_unsent 
+                          ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25' 
+                          : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
                         : 'bg-white border border-slate-200/60 shadow-sm'
                       }
                       rounded-2xl px-4 py-3 relative
                       transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
                       ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
+                      ${message.is_unsent ? 'opacity-75' : ''}
                     `}>
                       {/* Sender name for incoming messages */}
                       {!isOwn && showAvatar && (
@@ -378,14 +390,28 @@ export default function ChatThread() {
                       )}
                       
                       {/* Message content */}
-                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-slate-800'}`}>
+                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-slate-800'} ${message.is_unsent ? 'italic' : ''}`}>
                         {message.content}
                       </div>
+                      
+                      {/* Unsend button for own messages (only if not already unsent) */}
+                      {isOwn && !message.is_unsent && (
+                        <button
+                          onClick={() => handleUnsend(message.id)}
+                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                          title="Unsend message"
+                        >
+                          <X size={12} />
+                        </button>
+                      )}
                       
                       {/* Time and status */}
                       <div className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? 'text-blue-100' : 'text-slate-400'}`}>
                         <span>{formatTime(message.created_at)}</span>
-                        {isOwn && (
+                        {message.is_unsent && (
+                          <span className="text-xs opacity-75">• Unsent</span>
+                        )}
+                        {isOwn && !message.is_unsent && (
                           <div className="flex items-center gap-1">
                             {/* Double check for read */}
                             {message.read_at ? (

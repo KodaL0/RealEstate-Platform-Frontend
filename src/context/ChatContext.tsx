@@ -18,6 +18,7 @@ interface ChatContextValue {
     propertyId: number,
     content: string
   ) => void;
+  unsendMessage: (messageId: string) => Promise<void>;
   markThreadRead: (threadId: string) => void;
   sendTypingStart: (threadId: string, recipientId: number) => void;
   sendTypingStop: (threadId: string, recipientId: number) => void;
@@ -162,6 +163,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           [user_id]: status,
         }));
       }
+
+      if (data.type === "message.unsent") {
+        const { message_id, thread_id } = data;
+        setMessages((prev) => {
+          if (!prev[thread_id]) return prev;
+
+          const updatedMessages = prev[thread_id].map((msg) =>
+            msg.id === message_id 
+              ? { ...msg, content: "Message Unsent", is_unsent: true, unsent_at: new Date().toISOString() } 
+              : msg
+          );
+
+          return {
+            ...prev,
+            [thread_id]: updatedMessages,
+          };
+        });
+      }
     };
 
     const ping = setInterval(() => {
@@ -220,6 +239,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       content: content,
       created_at: new Date().toISOString(),
       read_at: null,
+      is_unsent: false,
+      unsent_at: null,
     };
 
     // Add message optimistically to local state
@@ -327,12 +348,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
+  const unsendMessage = useCallback(async (messageId: string) => {
+    try {
+      // Call the API to unsend the message
+      await apiClient.post(`chat/messages/${messageId}/unsend/`);
+      
+      // Also send via WebSocket for real-time updates
+      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({
+          type: "message.unsend",
+          message_id: messageId,
+        }));
+      }
+    } catch (error) {
+      console.error("Failed to unsend message:", error);
+      throw error;
+    }
+  }, []);
+
   return (
     <ChatContext.Provider value={{ 
       threads, 
       messages, 
       getOrCreateThread, 
       sendMessage, 
+      unsendMessage,
       markThreadRead, 
       setMessages,
       sendTypingStart,
