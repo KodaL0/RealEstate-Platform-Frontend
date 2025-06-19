@@ -486,38 +486,78 @@ const PropertyDetails: React.FC = () => {
             <div className="lg:w-1/3 mt-8 lg:mt-0">
               <div className="bg-white p-6 rounded-xl shadow-sm sticky top-24">
                 <h3 className="text-xl font-bold mb-6">Contact Information</h3>
-                {property.contact_phone || property.contact_email ? (
-                  <div className="space-y-4">
-                    {property.contact_phone && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Phone</p>
-                        <p className="text-gray-900">
-                          <a href={`tel:${property.contact_phone}`} className="text-emerald-600">
-                            {property.contact_phone}
-                          </a>
-                        </p>
-                      </div>
-                    )}
-                    {property.contact_email && (
-                      <div>
-                        <p className="text-gray-500 text-sm uppercase">Email</p>
-                        <p className="text-gray-900">
-                          <a href={`mailto:${property.contact_email}`} className="text-emerald-600">
-                            {property.contact_email}
-                          </a>
-                        </p>
-                      </div>
-                    )}
+                
+                {/* Show contact details only for authenticated users */}
+                {user ? (
+                  // Authenticated user - show contact information
+                  (property.contact_phone || property.contact_email) ? (
+                    <div className="space-y-4">
+                      {property.contact_phone && (
+                        <div>
+                          <p className="text-gray-500 text-sm uppercase">Phone</p>
+                          <p className="text-gray-900">
+                            <a href={`tel:${property.contact_phone}`} className="text-emerald-600">
+                              {property.contact_phone}
+                            </a>
+                          </p>
+                        </div>
+                      )}
+                      {property.contact_email && (
+                        <div>
+                          <p className="text-gray-500 text-sm uppercase">Email</p>
+                          <p className="text-gray-900">
+                            <a href={`mailto:${property.contact_email}`} className="text-emerald-600">
+                              {property.contact_email}
+                            </a>
+                          </p>
+                        </div>
+                      )}
 
-                    {/* Chat button */}
-                    <ChatButton
-                      sellerId={property.owner.id}
-                      propertyId={property.id}
-                      title={property.title}
-                    />
-                  </div>
+                      {/* Chat button */}
+                      <ChatButton
+                        sellerId={property.owner.id}
+                        propertyId={property.id}
+                        title={property.title}
+                      />
+                    </div>
+                  ) : (
+                    <p className="text-gray-600">Contact details not provided.</p>
+                  )
                 ) : (
-                  <p className="text-gray-600">Contact details not provided.</p>
+                  // Unauthenticated user - show login prompt
+                  <div className="space-y-4">
+                    <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                      <div className="flex items-center justify-center mb-3">
+                        <div className="bg-blue-100 rounded-full p-2">
+                          <svg className="w-5 h-5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" />
+                          </svg>
+                        </div>
+                      </div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        Contact Details Protected
+                      </h4>
+                      <p className="text-gray-600 text-sm mb-4">
+                        Please log in to view contact information and send messages to property owners.
+                      </p>
+                      <button
+                        onClick={() => navigate('/login')}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg shadow-sm transition duration-200"
+                      >
+                        <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z" clipRule="evenodd" />
+                        </svg>
+                        Log In to View Contact Info
+                      </button>
+                    </div>
+                    
+                    {/* Alternative contact method note */}
+                    <div className="text-center">
+                      <p className="text-xs text-gray-500">
+                        Already have an account? <button onClick={() => navigate('/login')} className="text-blue-600 hover:text-blue-700 underline">Sign in here</button>
+                      </p>
+                    </div>
+                  </div>
                 )}
               </div>
             </div>
