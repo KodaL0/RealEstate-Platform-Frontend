@@ -25,6 +25,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import ChatPage from "./pages/ChatPage";
 import ChatThread from "./pages/ChatThread";
 import ChatContainer from './pages/ChatContainer';
+import PublicProfile from "./pages/PublicProfile";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -112,6 +113,9 @@ function AppContent() {
             <Route index element={<p className="p-8">Select a conversation</p>} />
             <Route path=":id" element={<ChatThread />} />
           </Route>
+
+          {/* Public profile route - must be last to avoid conflicts */}
+          <Route path="/:username" element={<PublicProfile />} />
         </Routes>
       </main>
 

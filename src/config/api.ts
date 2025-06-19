@@ -119,6 +119,7 @@ const api = {
     refreshToken:    ()        => apiPost('users/refresh'),
     getUser:         ()        => apiGet('users/get_user'),
     updateProfile:   (d: any)  => apiPut('users/profile', d),
+    getPublicProfile: (username: string) => apiGet(`users/profiles/${username}`),
   },
 
   properties: {
