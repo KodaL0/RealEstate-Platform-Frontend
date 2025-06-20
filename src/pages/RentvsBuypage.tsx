@@ -203,13 +203,14 @@ const RentVsBuyPage: React.FC = () => {
   };
 
   const resetCalculator = () => {
-    setPropertyPrice(300000);
-    setDownPaymentPercent(20);
-    setInterestRate(4.25);
-    setLoanTermYears(25);
-    setMonthlyRent(1000);
-    setRentGrowthRate(2.5);
-    setStayDuration(10);
+    setPropertyPrice(null);
+    setDownPaymentPercent(null);
+    setInterestRate(null);
+    setLoanTermYears(null);
+    setMonthlyRent(null);
+    setRentGrowthRate(null);
+    setStayDuration(null);
+    // You may keep defaults for advanced/investment, e.g.:
     setInvestmentReturnRate(6);
     setReinvestMonthlyDiff(true);
     setMaintenanceRate(1);
@@ -219,10 +220,13 @@ const RentVsBuyPage: React.FC = () => {
     setSellingCostRate(2);
     setShowAdvanced(false);
     setShowBreakdown(false);
+  
     setErrors({});
-    
-    // Trigger recalculation after reset
-    setTimeout(() => calculateComparison(), 0);
+    setTouched({});  // clear touched so no errors show
+    setBuyCost(null);
+    setRentCost(null);
+    setRecommendation('Enter values to see comparison');
+    // No need to call calculateComparison here; if called, it sees nulls and stays neutral.
   };
 
   const renderInputField = (
