@@ -251,47 +251,56 @@ function Home() {
         </div>
       </section>
       
-      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
-      <section className="py-20 bg-white">
-        <div className="text-center max-w-3xl mx-auto mb-12">
-          <h2 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">
-            Available Mortgages in Cyprus
-          </h2>
-          <p className="mt-2 text-gray-500">
-            Compare top bank offers and find the best rate for your home loan.
-          </p>
-        </div>
+     {/* ───────────── Available Mortgages in Cyprus ───────────── */}
+      <section className="pt-24 pb-20 bg-white">
+        {/* 
+          pt-24: extra top padding so that if you have a fixed header, the title isn't hidden.
+          Adjust as needed (e.g., pt-16) depending on your navbar height.
+        */}
+        <div className="container mx-auto px-4">
+          {/* Title and subtitle, centered, limited width */}
+          <div className="max-w-3xl mx-auto text-center mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+              Available Mortgages in Cyprus
+            </h2>
+            <p className="mt-2 text-gray-500">
+              Compare top bank offers and find the best rate for your home loan.
+            </p>
+          </div>
       
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {mortgages.map((m) => (
-            <a
-              key={m.name}
-              href={m.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
-            >
-              <div className="flex items-center justify-center mb-4 space-x-2">
-                <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
-                {m.logoUrl && (
-                  <img
-                    src={m.logoUrl}
-                    alt={`${m.name} logo`}
-                    className="h-8 w-auto object-contain mx-auto"
-                  />
-                )}
-              </div>
-              <p className="text-gray-600 flex-grow">{m.description}</p>
-              {m.rate && (
-                <p className="mt-4 text-sm font-medium text-gray-900">
-                  Starting rate {m.rate}
-                </p>
-              )}
-            </a>
-          ))}
+          {/* Grid of cards, but wrapped in a max-width so they don’t stretch too wide */}
+          <div className="max-w-5xl mx-auto">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {mortgages.map((m) => (
+                <a
+                  key={m.name}
+                  href={m.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
+                >
+                  <div className="flex items-center justify-center mb-4 space-x-2">
+                    <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
+                    {m.logoUrl && (
+                      <img
+                        src={m.logoUrl}
+                        alt={`${m.name} logo`}
+                        className="h-8 w-auto object-contain"
+                      />
+                    )}
+                  </div>
+                  <p className="text-gray-600 flex-grow">{m.description}</p>
+                  {m.rate && (
+                    <p className="mt-4 text-sm font-medium text-gray-900">
+                      Starting rate {m.rate}
+                    </p>
+                  )}
+                </a>
+              ))}
+            </div>
+          </div>
         </div>
       </section>
-
 
       {/* ───────────── CTA Section ───────────── */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
