@@ -87,7 +87,7 @@ const RentVsBuyPage: React.FC = () => {
     if (!validateInputs()) {
       setBuyCost(null);
       setRentCost(null);
-      setRecommendation('Please fix the errors above to see results.');
+      setRecommendation('Please fill the form to see results.');
       setIsCalculating(false);
       return;
     }
