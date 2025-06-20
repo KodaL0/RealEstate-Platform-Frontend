@@ -67,8 +67,11 @@ export async function login(email: string, password: string) {
  */
 export async function register(username: string, email: string, password1: string, password2: string) {
   try {
+    // Convert username to lowercase before sending to backend
+    const lowercaseUsername = username.toLowerCase();
+    
     const response = await api.auth.register({ 
-      username, email, password1, password2 
+      username: lowercaseUsername, email, password1, password2 
     });
     return { status: response.status, ...response.data };
   } catch (error: any) {

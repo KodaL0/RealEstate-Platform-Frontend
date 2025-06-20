@@ -11,6 +11,7 @@ const ProfilePage: React.FC = () => {
   const [newUsername, setNewUsername] = useState('');
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+  const [validationError, setValidationError] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -22,10 +23,45 @@ const ProfilePage: React.FC = () => {
 
   if (!user) return null;
 
+  const validateUsername = (username: string): string | null => {
+    if (!username || username.length < 3) {
+      return 'Username must be at least 3 characters long';
+    }
+    
+    // Check if username contains only lowercase letters, numbers, underscores, and hyphens
+    const regex = /^[a-z0-9_-]+$/;
+    if (!regex.test(username)) {
+      return 'Username can only contain lowercase letters, numbers, underscores, and hyphens';
+    }
+    
+    return null;
+  };
+
+  const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toLowerCase(); // Convert to lowercase automatically
+    setNewUsername(value);
+    
+    // Real-time validation
+    const validationMsg = validateUsername(value);
+    setValidationError(validationMsg || '');
+    
+    // Clear previous messages when user starts typing
+    if (message) setMessage('');
+    if (error) setError('');
+  };
+
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setMessage('');
+    
+    // Final validation before submission
+    const validationMsg = validateUsername(newUsername);
+    if (validationMsg) {
+      setValidationError(validationMsg);
+      return;
+    }
+    
     try {
       const response = await authFetch.put('/api/users/profile', { 
         username: newUsername
@@ -34,6 +70,7 @@ const ProfilePage: React.FC = () => {
       if (response.status === 200) {
         setMessage(data.message);
         setUser({ ...user, username: newUsername });
+        setValidationError('');
       } else {
         setError(data.error || 'Failed to update username.');
       }
@@ -60,15 +97,27 @@ const ProfilePage: React.FC = () => {
             <input 
               type="text" 
               value={newUsername} 
-              onChange={(e) => setNewUsername(e.target.value)} 
-              className="border rounded w-full p-2" 
+              onChange={handleUsernameChange}
+              className={`border rounded w-full p-2 ${validationError ? 'border-red-500' : 'border-gray-300'}`}
               required 
               minLength={3}
+              placeholder="Enter lowercase username"
             />
+            {validationError && (
+              <p className="text-red-500 text-sm mt-1">{validationError}</p>
+            )}
+            <p className="text-gray-500 text-xs mt-1">
+              Username will be automatically converted to lowercase. Only letters, numbers, underscores, and hyphens are allowed.
+            </p>
           </div>
           <button 
             type="submit" 
-            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition-colors"
+            disabled={!!validationError || !newUsername.trim()}
+            className={`w-full font-bold py-2 px-4 rounded transition-colors ${
+              validationError || !newUsername.trim()
+                ? 'bg-gray-400 cursor-not-allowed text-gray-700'
+                : 'bg-blue-600 hover:bg-blue-700 text-white'
+            }`}
           >
             Save Changes
           </button>
