@@ -62,6 +62,27 @@ function Home() {
         }
       }
     };
+    
+    const mortgages = [
+      {
+        name: 'Hellenic Bank',
+        description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
+        rate: '3.80%',
+        logoUrl: '/public/Hellenic_bank_Official_Logo.png',
+      },
+      {
+        name: 'Bank of Cyprus',
+        description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
+        rate: '4.66%',
+        logoUrl: '/public/boc-logo-small.png',
+      },
+      {
+        name: 'Alpha Bank',
+        description: 'Buy, build or renovate your home without using up your own funds.',
+        rate: '5.80%',
+        logoUrl: '/public/alpha-bank-vector-logo-400x400.png',
+      },
+    ];
 
     getFeaturedPage();
     return () => {
@@ -285,16 +306,43 @@ function Home() {
         </div>
       </section>
 
-      {/* ───────────── CTA Section ───────────── */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
-
-        <div className="container mx-auto px-4 text-center relative z-10">
-          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">Take The Next Step</span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">Ready to Find Your Perfect Property?</h2>
-          <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you're looking to buy, rent, or invest, our team is here to help you every step of the way.
-          </p>
+      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
+      <section className="py-20 bg-white">
+        <div className="container mx-auto px-4">
+          <div className="text-center max-w-3xl mx-auto mb-12">
+            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Available mortgages in Cyprus</h2>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mortgages.map((m, idx) => {
+              // For the first card we mimic the pink background from your screenshot; others white
+              const isFirst = idx === 0;
+              const bgClass = isFirst ? 'bg-pink-50' : 'bg-white';
+              const borderClass = isFirst ? 'border-pink-200' : 'border-gray-200';
+              return (
+                <div
+                  key={m.name}
+                  className={`${bgClass} border ${borderClass} rounded-xl p-6 flex flex-col justify-between`}
+                >
+                  <div className="flex items-start justify-between mb-4">
+                    <h3 className="text-lg font-semibold text-gray-900">{m.name}</h3>
+                    {m.logoUrl && (
+                      <img
+                        src={m.logoUrl}
+                        alt={`${m.name} logo`}
+                        className="h-8 w-auto object-contain"
+                      />
+                    )}
+                  </div>
+                  <p className="text-gray-700 flex-grow">{m.description}</p>
+                  <p className="mt-4 text-sm font-medium text-gray-900">
+                    Starting rate {m.rate}
+                  </p>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </section>
 
           {/* single CTA button */}
           <Link
