@@ -12,7 +12,7 @@ import PropertyCard from "../components/PropertyCard";
 import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
 
-const PAGE_SIZE = 9;
+const PAGE_SIZE = 10;
 
 interface SearchFiltersType {
   location?: string;
