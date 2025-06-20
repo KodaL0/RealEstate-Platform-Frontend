@@ -30,6 +30,7 @@ const Rent = () => {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -83,6 +84,7 @@ const Rent = () => {
         setProperties(normalized);
         
         const totalCount = paginatedData.count || 0;
+        setTotalCount(totalCount);
         setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching RENT properties:", err);
@@ -203,7 +205,7 @@ const Rent = () => {
               </div>
             ) : (
               <p className="text-gray-600">
-                <span className="font-semibold text-gray-900">{properties.length}</span> properties found
+                <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> properties found
               </p>
             )}
           </div>

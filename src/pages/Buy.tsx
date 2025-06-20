@@ -31,6 +31,7 @@ const Buy = () => {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -58,25 +59,34 @@ const Buy = () => {
 
       try {
         const qp: Record<string, string> = {
-          pageSize: PAGE_SIZE.toString(),
-          page: currentPage.toString(),
-          sort: sortOption,
+          page_size: PAGE_SIZE.toString(),
+          sort_by: sortOption,
         };
-        if (searchFilters.minPrice)  qp.minPrice  = searchFilters.minPrice;
-        if (searchFilters.maxPrice)  qp.maxPrice  = searchFilters.maxPrice;
-        if (searchFilters.bedrooms)  qp.bedrooms  = searchFilters.bedrooms;
+        if (searchFilters.search) qp.search = searchFilters.search;
+        if (currentPage !== 1) qp.page = currentPage.toString();
+        if (searchFilters.minPrice) qp.price_min = searchFilters.minPrice;
+        if (searchFilters.maxPrice) qp.price_max = searchFilters.maxPrice;
+        if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
         if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
-        if (searchFilters.location)  qp.location  = searchFilters.location;
-        if (searchFilters.search)    qp.search    = searchFilters.search;
+        if (searchFilters.property_type) qp.property_type = searchFilters.property_type;
+        if (sortOption === "price-asc" || sortOption === "price-desc") {
+          qp.order = sortOption === "price-asc" ? "asc" : "desc";
+        }
+        if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching BUY with query params:", qp);
 
-        const resultsArr = await api.properties.buy(qp);
-        console.log("BUY array length:", resultsArr.length);
+        const paginatedData = await api.properties.buy(qp);
+        console.log("BUY pagination data:", paginatedData);
 
+        const resultsArr = paginatedData.results || [];
         const normalized = resultsArr.map(normalizePropertyData);
+
         setProperties(normalized);
-        setTotalPages(Math.ceil(normalized.length / PAGE_SIZE));
+        
+        const totalCount = paginatedData.count || 0;
+        setTotalCount(totalCount);
+        setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
         setError("Failed to fetch properties. Please try again.");
@@ -88,8 +98,7 @@ const Buy = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  const startIdx = (currentPage - 1) * PAGE_SIZE;
-  const displayed = properties.slice(startIdx, startIdx + PAGE_SIZE);
+  const displayed = properties;
 
   const handleSearch = (f: SearchFiltersType) => {
     setSearchFilters(f);
@@ -197,7 +206,7 @@ const Buy = () => {
               </div>
             ) : (
               <p className="text-gray-600">
-                <span className="font-semibold text-gray-900">{properties.length}</span> properties found
+                <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> properties found
               </p>
             )}
           </div>
