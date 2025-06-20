@@ -3,13 +3,15 @@ import { Calculator, Home, TrendingUp, Info, RefreshCw, ChevronDown, ChevronUp, 
 
 const RentVsBuyPage: React.FC = () => {
   // Main inputs - using numbers for better performance and validation
-  const [propertyPrice, setPropertyPrice] = useState<number>(300000);
-  const [downPaymentPercent, setDownPaymentPercent] = useState<number>(20);
-  const [interestRate, setInterestRate] = useState<number>(4.25);
-  const [loanTermYears, setLoanTermYears] = useState<number>(25);
-  const [monthlyRent, setMonthlyRent] = useState<number>(1000);
-  const [rentGrowthRate, setRentGrowthRate] = useState<number>(2.5);
-  const [stayDuration, setStayDuration] = useState<number>(10);
+  const [propertyPrice, setPropertyPrice] = useState<number | null>(null);
+  const [downPaymentPercent, setDownPaymentPercent] = useState<number | null>(null);
+  const [interestRate, setInterestRate] = useState<number | null>(null);
+  const [loanTermYears, setLoanTermYears] = useState<number | null>(null);
+  const [monthlyRent, setMonthlyRent] = useState<number | null>(null);
+  const [rentGrowthRate, setRentGrowthRate] = useState<number | null>(null);
+  const [stayDuration, setStayDuration] = useState<number | null>(null);
+  const [investmentReturnRate, setInvestmentReturnRate] = useState<number | null>(null);
+
   
   // Investment assumptions
   const [investmentReturnRate, setInvestmentReturnRate] = useState<number>(6);
