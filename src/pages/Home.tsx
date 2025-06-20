@@ -250,45 +250,48 @@ function Home() {
           )}
         </div>
       </section>
-
+      
       {/* ───────────── Available Mortgages in Cyprus ───────────── */}
       <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-              Available Mortgages in Cyprus
-            </h2>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {mortgages.map((m) => (
-              <a
-                key={m.name}
-                href={m.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
-              >
-                <div className="flex items-center justify-center mb-4 space-x-2">
-                  <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
-                  {m.logoUrl && (
-                    <img
-                      src={m.logoUrl}
-                      alt={`${m.name} logo`}
-                      className="h-8 w-auto object-contain mx-auto"
-                    />
-                  )}
-                </div>
-                <p className="text-gray-600 flex-grow">{m.description}</p>
-                {m.rate && (
-                  <p className="mt-4 text-sm font-medium text-gray-900">
-                    Starting rate {m.rate}
-                  </p>
+        <div className="text-center max-w-3xl mx-auto mb-12">
+          <h2 className="text-3xl md:text-4xl font-extrabold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-500">
+            Available Mortgages in Cyprus
+          </h2>
+          <p className="mt-2 text-gray-500">
+            Compare top bank offers and find the best rate for your home loan.
+          </p>
+        </div>
+      
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {mortgages.map((m) => (
+            <a
+              key={m.name}
+              href={m.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
+            >
+              <div className="flex items-center justify-center mb-4 space-x-2">
+                <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
+                {m.logoUrl && (
+                  <img
+                    src={m.logoUrl}
+                    alt={`${m.name} logo`}
+                    className="h-8 w-auto object-contain mx-auto"
+                  />
                 )}
-              </a>
-            ))}
-          </div>
+              </div>
+              <p className="text-gray-600 flex-grow">{m.description}</p>
+              {m.rate && (
+                <p className="mt-4 text-sm font-medium text-gray-900">
+                  Starting rate {m.rate}
+                </p>
+              )}
+            </a>
+          ))}
         </div>
       </section>
+
 
       {/* ───────────── CTA Section ───────────── */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
