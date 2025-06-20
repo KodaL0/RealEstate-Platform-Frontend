@@ -37,7 +37,7 @@ function Home() {
       name: 'Hellenic Bank',
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
-      logoUrl: '/Hellenic_bank_Official_Logo.png', // place logo in public/images/
+      logoUrl: '/unnamed.png', // place logo in public/images/
     },
     {
       name: 'Bank of Cyprus',
