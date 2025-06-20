@@ -37,21 +37,21 @@ function Home() {
       name: 'Hellenic Bank',
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
-      logoUrl: '/unnamed.png', // place logo in public/images/
+      logoUrl: '/unnamed.png',  // ensure this file is in public/
       url: 'https://www.hellenicbank.com/en/personal/housing',
     },
     {
       name: 'Bank of Cyprus',
       description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
       rate: '4.66%',
-      logoUrl: '/boc-logo-small.png',
+      logoUrl: '/boc-logo-small.png',  // ensure this file is in public/
       url: 'https://www.bankofcyprus.com/en-gb/Personal/loans/Housing/Your-first-home/',
     },
     {
       name: 'Alpha Bank',
       description: 'Buy, build or renovate your home without using up your own funds.',
       rate: '5.80%',
-      logoUrl: '/alpha-bank-vector-logo-400x400.png',
+      logoUrl: '/alpha-bank-vector-logo-400x400.png',  // ensure this file is in public/
       url: 'https://www.alpha.gr/en/retail/loans/housing-loans/Alpha-cash-collateral/',
     },
   ];
@@ -261,9 +261,12 @@ function Home() {
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {mortgages.map((m) => (
-              <div
+              <a
                 key={m.name}
-                className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
+                href={m.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
               >
                 <div className="flex items-center justify-center mb-4 space-x-2">
                   <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
@@ -271,7 +274,7 @@ function Home() {
                     <img
                       src={m.logoUrl}
                       alt={`${m.name} logo`}
-                      className="h-8 w-auto object-contain"
+                      className="h-8 w-auto object-contain mx-auto"
                     />
                   )}
                 </div>
@@ -281,7 +284,7 @@ function Home() {
                     Starting rate {m.rate}
                   </p>
                 )}
-              </div>
+              </a>
             ))}
           </div>
         </div>
