@@ -253,13 +253,9 @@ function Home() {
       
      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
       <section className="pt-24 pb-20 bg-white">
-        {/* 
-          pt-24: extra top padding so that if you have a fixed header, the title isn't hidden.
-          Adjust as needed (e.g., pt-16) depending on your navbar height.
-        */}
         <div className="container mx-auto px-4">
-          {/* Title and subtitle, centered, limited width */}
-          <div className="max-w-3xl mx-auto text-center mb-12">
+          {/* Widened title area */}
+          <div className="max-w-5xl mx-auto text-center mb-12">
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
               Available Mortgages in Cyprus
             </h2>
@@ -268,8 +264,8 @@ function Home() {
             </p>
           </div>
       
-          {/* Grid of cards, but wrapped in a max-width so they don’t stretch too wide */}
-          <div className="max-w-5xl mx-auto">
+          {/* Wider grid wrapper */}
+          <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {mortgages.map((m) => (
                 <a
@@ -301,6 +297,7 @@ function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ───────────── CTA Section ───────────── */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
