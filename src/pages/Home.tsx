@@ -37,19 +37,19 @@ function Home() {
       name: 'Hellenic Bank',
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
-      logoUrl: '/images/hellenic-bank-logo.png', // place logo in public/images/
+      logoUrl: '/public/Hellenic_bank_Official_Logo.png', // place logo in public/images/
     },
     {
       name: 'Bank of Cyprus',
       description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
       rate: '4.66%',
-      logoUrl: '/images/bank-of-cyprus-logo.png',
+      logoUrl: '/public/boc-logo-small.png',
     },
     {
       name: 'Alpha Bank',
       description: 'Buy, build or renovate your home without using up your own funds.',
       rate: '5.80%',
-      logoUrl: '/images/alpha-bank-logo.png',
+      logoUrl: '/public/alpha-bank-vector-logo-400x400.png',
     },
   ];
 
