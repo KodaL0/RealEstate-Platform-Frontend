@@ -237,6 +237,8 @@ const RentVsBuyPage: React.FC = () => {
     step = "0.01",
     tooltip?: string
   ) => (
+    const showError = errors[id] && value !== null;
+  
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center gap-2">
         {label}
@@ -262,7 +264,7 @@ const RentVsBuyPage: React.FC = () => {
           }}
           placeholder={placeholder}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            errors[id] ? 'border-red-500' : 'border-gray-300'
+            showError ? 'border-red-500' : 'border-gray-300'
           }`}
           aria-describedby={unit ? `${id}-unit` : undefined}
           aria-invalid={errors[id] ? 'true' : 'false'}
@@ -273,7 +275,7 @@ const RentVsBuyPage: React.FC = () => {
           </span>
         )}
       </div>
-      {errors[id] && value !== null && (
+      {showError && (
         <p className="text-red-500 text-sm" role="alert">{errors[id]}</p>
       )}
     </div>
