@@ -238,7 +238,8 @@ const RentVsBuyPage: React.FC = () => {
     tooltip?: string
   ) => (
     const showError = errors[id] && value !== null;
-  
+
+  return (
     <div className="space-y-2">
       <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center gap-2">
         {label}
