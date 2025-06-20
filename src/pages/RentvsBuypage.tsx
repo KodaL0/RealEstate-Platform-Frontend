@@ -1,6 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Calculator, Home, TrendingUp, Info, RefreshCw, ChevronDown, ChevronUp, DollarSign, PieChart } from 'lucide-react';
 
+const sanitize = (val: number | string | null): number => {
+  if (val === null) return 0;
+  if (typeof val === 'number') return val;
+  return parseFloat(val.toString().replace(/,/g, '')) || 0;
+};
+
 const RentVsBuyPage: React.FC = () => {
   // Main inputs - using numbers for better performance and validation
   const [propertyPrice, setPropertyPrice] = useState<number | null>(null);
@@ -222,8 +228,8 @@ const RentVsBuyPage: React.FC = () => {
   const renderInputField = (
     id: string,
     label: string,
-    value: number,
-    setter: (val: number) => void,
+    value: number | null,
+    setter: (val: number | null) => void,
     placeholder: string,
     unit?: string,
     min = 0,
@@ -246,14 +252,13 @@ const RentVsBuyPage: React.FC = () => {
       <div className="relative">
         <input
           id={id}
-          type="number"
+          type="text"
+          inputMode="decimal"
           step={step}
-          min={min}
-          max={max}
-          value={value}
+          value={value === null ? '' : value.toString()}
           onChange={(e) => {
-            const newValue = Number(e.target.value) || 0;
-            setter(Math.max(min, Math.min(max, newValue)));
+            const val = e.target.value;
+            setter(val === '' ? null : sanitize(val));
           }}
           placeholder={placeholder}
           className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
@@ -268,7 +273,7 @@ const RentVsBuyPage: React.FC = () => {
           </span>
         )}
       </div>
-      {errors[id] && (
+      {errors[id] && value !== null && (
         <p className="text-red-500 text-sm" role="alert">{errors[id]}</p>
       )}
     </div>
