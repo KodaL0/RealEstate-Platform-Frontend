@@ -126,7 +126,7 @@ const MortgageCalculator: React.FC = () => {
                     }
                   }}
                   className="w-full h-11 pl-7 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 300000"
+                  placeholder="300000"
                 />
               </div>
             </div>
@@ -162,7 +162,7 @@ const MortgageCalculator: React.FC = () => {
                     }
                   }}
                   className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 20"
+                  placeholder="20"
                 />
                 <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">
                   %
@@ -278,7 +278,7 @@ const MortgageCalculator: React.FC = () => {
                     }
                   }}
                   className="w-full h-11 pr-8 pl-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="e.g., 4.25"
+                  placeholder="4.25"
                 />
                 <span className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 pointer-events-none">
                   %
