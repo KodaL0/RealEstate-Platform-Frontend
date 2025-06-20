@@ -10,9 +10,7 @@ const RentVsBuyPage: React.FC = () => {
   const [monthlyRent, setMonthlyRent] = useState<number | null>(null);
   const [rentGrowthRate, setRentGrowthRate] = useState<number | null>(null);
   const [stayDuration, setStayDuration] = useState<number | null>(null);
-  const [investmentReturnRate, setInvestmentReturnRate] = useState<number | null>(null);
 
-  
   // Investment assumptions
   const [investmentReturnRate, setInvestmentReturnRate] = useState<number>(6);
   const [reinvestMonthlyDiff, setReinvestMonthlyDiff] = useState<boolean>(true);
