@@ -35,6 +35,27 @@ function Home() {
   /* ref for the "Featured Properties" section (for scrolling) */
   const featuredTopRef = useRef<HTMLDivElement | null>(null);
 
+  const mortgages = [
+    {
+      name: 'Hellenic Bank',
+      description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
+      rate: '3.80%',
+      logoUrl: '/public/Hellenic_bank_Official_Logo.png',
+    },
+    {
+      name: 'Bank of Cyprus',
+      description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
+      rate: '4.66%',
+      logoUrl: '/public/boc-logo-small.png',
+    },
+    {
+      name: 'Alpha Bank',
+      description: 'Buy, build or renovate your home without using up your own funds.',
+      rate: '5.80%',
+      logoUrl: '/public/alpha-bank-vector-logo-400x400.png',
+    },
+  ];
+
   /* ───────────── fetch one page of featured properties ───────────── */
   useEffect(() => {
     let canceled = false;
@@ -62,27 +83,6 @@ function Home() {
         }
       }
     };
-    
-    const mortgages = [
-      {
-        name: 'Hellenic Bank',
-        description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
-        rate: '3.80%',
-        logoUrl: '/public/Hellenic_bank_Official_Logo.png',
-      },
-      {
-        name: 'Bank of Cyprus',
-        description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
-        rate: '4.66%',
-        logoUrl: '/public/boc-logo-small.png',
-      },
-      {
-        name: 'Alpha Bank',
-        description: 'Buy, build or renovate your home without using up your own funds.',
-        rate: '5.80%',
-        logoUrl: '/public/alpha-bank-vector-logo-400x400.png',
-      },
-    ];
 
     getFeaturedPage();
     return () => {
@@ -256,53 +256,6 @@ function Home() {
               })}
             </div>
           )}
-        </div>
-      </section>
-
-      {/* ───────────── Why Choose Us Section ───────────── */}
-      <section className="py-20 bg-white">
-        <div className="container mx-auto px-4">
-          <div className="text-center max-w-3xl mx-auto mb-12">
-            <span className="inline-block text-blue-600 font-medium mb-2">Our Advantages</span>
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose PROPERTPRO</h2>
-            <p className="text-gray-600">
-              We provide an exceptional real estate experience with personalized service and unmatched expertise.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
-                <HomeIcon className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Premium Properties</h3>
-              <p className="text-gray-600">Access to exclusive listings and luxury properties not available elsewhere.</p>
-            </div>
-
-            <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
-                <Building className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Expert Guidance</h3>
-              <p className="text-gray-600">Our team of experienced agents provides personalized advice and support.</p>
-            </div>
-
-            <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
-                <Briefcase className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Investment Insights</h3>
-              <p className="text-gray-600">Strategic investment advice to maximize your property portfolio returns.</p>
-            </div>
-
-            <div className="bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100">
-              <div className="bg-blue-100 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-6 transform transition-transform hover:scale-110 duration-300">
-                <Award className="h-8 w-8 text-blue-600" />
-              </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Concierge Service</h3>
-              <p className="text-gray-600">White-glove service from property search to closing and beyond.</p>
-            </div>
-          </div>
         </div>
       </section>
 
