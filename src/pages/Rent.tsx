@@ -1,4 +1,3 @@
-// src/pages/Rent.tsx
 import {
   useState,
   useEffect,
@@ -6,7 +5,7 @@ import {
   useLayoutEffect,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin } from "lucide-react";
+import { MapPin, Filter, Grid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
@@ -29,23 +28,19 @@ const Rent = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
 
-  const [properties, setProperties]       = useState<Property[]>([]);
-  const [totalPages, setTotalPages]       = useState(1);
-  const [currentPage, setCurrentPage]     = useState(1);
-  const [isLoading, setIsLoading]         = useState(false);
-  const [error, setError]                 = useState<string | null>(null);
-  const [sortOption, setSortOption]       = useState("recommended");
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState("recommended");
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
-    location:    initialLocation,
-    search:      "",
-    minPrice:    "",
-    maxPrice:    "",
-    bedrooms:    "",
-    bathrooms:   "",
-    propertyType:""
+    location: initialLocation,
   });
 
-  // Scroll to top on page change
+  // scroll to top on page change
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -64,32 +59,29 @@ const Rent = () => {
         const qp: Record<string, string> = {
           page_size: PAGE_SIZE.toString(),
         };
-        if (searchFilters.search)      qp.search        = searchFilters.search;
-        if (currentPage !== 1)         qp.page          = currentPage.toString();
-        if (searchFilters.minPrice)    qp.price_min     = searchFilters.minPrice;
-        if (searchFilters.maxPrice)    qp.price_max     = searchFilters.maxPrice;
-        if (searchFilters.bedrooms)    qp.bedrooms      = searchFilters.bedrooms;
-        if (searchFilters.bathrooms)   qp.bathrooms     = searchFilters.bathrooms;
-        if (searchFilters.propertyType)qp.property_type = searchFilters.propertyType;
-        if (sortOption)                qp.sort_by       = sortOption;
+        if (searchFilters.search) qp.search = searchFilters.search;
+        if (currentPage !== 1) qp.page = currentPage.toString();
+        if (searchFilters.minPrice) qp.price_min = searchFilters.minPrice;
+        if (searchFilters.maxPrice) qp.price_max = searchFilters.maxPrice;
+        if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
+        if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
+        if (searchFilters.propertyType) qp.property_type = searchFilters.propertyType;
+        if (sortOption) qp.sort_by = sortOption;
         if (sortOption === "price-asc" || sortOption === "price-desc") {
           qp.order = sortOption === "price-asc" ? "asc" : "desc";
         }
-        if (searchFilters.location)    qp.location      = searchFilters.location;
+        if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching RENT with query params:", qp);
 
-        // rent() now returns pagination data with results
         const paginatedData = await api.properties.rent(qp);
         console.log("RENT pagination data:", paginatedData);
 
-        // Extract results array and normalize
         const resultsArr = paginatedData.results || [];
         const normalized = resultsArr.map(normalizePropertyData);
 
         setProperties(normalized);
         
-        // Calculate total pages from the total count returned by API
         const totalCount = paginatedData.count || 0;
         setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
       } catch (err) {
@@ -103,137 +95,227 @@ const Rent = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-  // With server-side pagination, we no longer need to slice the properties array
-  // Each API response already contains the correct page of properties
   const displayed = properties;
 
-  const handleSearch = (filters: SearchFiltersType) => {
-    setSearchFilters(filters);
+  const handleSearch = (f: SearchFiltersType) => {
+    setSearchFilters(f);
     setCurrentPage(1);
   };
+
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
     setCurrentPage(1);
   };
+
   const goToPage = (p: number) => setCurrentPage(p);
   const prev = () => currentPage > 1 && setCurrentPage(p => p - 1);
   const next = () => currentPage < totalPages && setCurrentPage(p => p + 1);
 
+  const sortOptions = [
+    { value: "recommended", label: "Recommended" },
+    { value: "price-asc", label: "Price: Low to High" },
+    { value: "price-desc", label: "Price: High to Low" },
+    { value: "newest", label: "Newest First" },
+    { value: "oldest", label: "Oldest First" },
+  ];
+
   return (
-    <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* Hero */}
-      <section className="py-12 bg-gradient-to-r from-indigo-600 to-purple-600">
-        <div className="container mx-auto px-4">
-          <h1 className="text-4xl font-bold text-white mb-3">
-            Properties for Rent
-          </h1>
-          <p className="text-lg text-white/90 mb-2">
-            Explore our curated selection of premium rental properties
-          </p>
-          <div className="flex items-center text-white/80">
-            <MapPin className="h-5 w-5 mr-2" />
-            <span>Properties available nationwide</span>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200 pt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="py-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Properties for Rent</h1>
+                <div className="flex items-center mt-2 text-gray-600">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span>Find your perfect rental home</span>
+                </div>
+              </div>
+              <div className="flex items-center space-x-4">
+                <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                  <button
+                    onClick={() => setViewMode('grid')}
+                    className={`p-2 rounded-md transition-colors ${
+                      viewMode === 'grid' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <Grid className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => setViewMode('list')}
+                    className={`p-2 rounded-md transition-colors ${
+                      viewMode === 'list' 
+                        ? 'bg-white text-gray-900 shadow-sm' 
+                        : 'text-gray-600 hover:text-gray-900'
+                    }`}
+                  >
+                    <List className="h-4 w-4" />
+                  </button>
+                </div>
+                <button
+                  onClick={() => setShowFilters(!showFilters)}
+                  className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+                >
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filters
+                </button>
+              </div>
+            </div>
           </div>
         </div>
-      </section>
+      </div>
 
       {/* Filters */}
-      <section className="container mx-auto px-4 mt-4">
-        <SearchFilters
-          forSale={false}
-          onSearch={handleSearch}
-          initialLocation={initialLocation}
-          buttonClassName="bg-purple-600 hover:bg-purple-700 text-white"
-        />
-      </section>
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
+            className="overflow-hidden bg-white border-b border-gray-200"
+          >
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+              <SearchFilters
+                forSale={false}
+                onSearch={handleSearch}
+                buttonClassName="bg-purple-600 hover:bg-purple-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
+                initialLocation={initialLocation}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Listings */}
-      <section className="container mx-auto px-4 py-8">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-900">
-              Available Properties
-            </h2>
-            <p className="text-gray-600">
-              {isLoading
-                ? "Loading properties..."
-                : `${properties.length} properties found`}
-            </p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Results Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
+          <div className="mb-4 sm:mb-0">
+            {isLoading ? (
+              <div className="flex items-center">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-purple-600 border-t-transparent mr-3"></div>
+                <span className="text-gray-600">Loading properties...</span>
+              </div>
+            ) : (
+              <p className="text-gray-600">
+                <span className="font-semibold text-gray-900">{properties.length}</span> properties found
+              </p>
+            )}
           </div>
-          <div className="flex items-center">
-            <label htmlFor="sort" className="mr-2 text-gray-700">
-              Sort by:
-            </label>
-            <select
-              id="sort"
-              value={sortOption}
-              onChange={handleSortChange}
-              disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500"
-            >
-              <option value="recommended">Recommended</option>
-              <option value="price-asc">Price (Low to High)</option>
-              <option value="price-desc">Price (High to Low)</option>
-              <option value="newest">Newest</option>
-              <option value="oldest">Oldest</option>
-            </select>
+          
+          <div className="flex items-center space-x-4">
+            <div className="flex items-center">
+              <label htmlFor="sort" className="text-sm font-medium text-gray-700 mr-3">
+                Sort by:
+              </label>
+              <select
+                id="sort"
+                value={sortOption}
+                onChange={handleSortChange}
+                disabled={isLoading}
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
+              >
+                {sortOptions.map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
         </div>
 
-        {/* Error */}
+        {/* Error State */}
         {error && (
-          <div className="bg-red-50 border border-red-200 text-red-800 rounded-lg p-4 mb-6">
-            <p>{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-2 px-4 py-2 bg-red-100 hover:bg-red-200 rounded-lg"
-            >
-              Try Again
-            </button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 border border-red-200 rounded-lg p-6 mb-8"
+          >
+            <div className="flex items-center">
+              <div className="flex-shrink-0">
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <span className="text-red-600 font-semibold">!</span>
+                </div>
+              </div>
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error loading properties</h3>
+                <p className="mt-1 text-sm text-red-700">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-3 px-4 py-2 bg-red-100 hover:bg-red-200 text-red-800 rounded-lg text-sm font-medium transition-colors"
+                >
+                  Try Again
+                </button>
+              </div>
+            </div>
+          </motion.div>
         )}
 
-        {/* Loading / Empty / Grid */}
+        {/* Properties Grid/List */}
         {isLoading ? (
-          <div className="flex justify-center py-12">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-indigo-500" />
+          <div className="flex justify-center py-16">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-4 border-purple-600 border-t-transparent mx-auto mb-4"></div>
+              <p className="text-gray-600">Finding perfect rental properties for you...</p>
+            </div>
           </div>
         ) : displayed.length === 0 ? (
-          <div className="text-center py-12">
-            <h3 className="text-xl font-semibold mb-4">
-              No properties match your search criteria
-            </h3>
-            <button
-              onClick={() => {
-                setSearchFilters({
-                  location: initialLocation,
-                  search: "",
-                  minPrice: "",
-                  maxPrice: "",
-                  bedrooms: "",
-                  bathrooms: "",
-                  propertyType: ""
-                });
-                setSortOption("recommended");
-              }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
-            >
-              Clear All Filters
-            </button>
-          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-16"
+          >
+            <div className="max-w-md mx-auto">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MapPin className="h-8 w-8 text-gray-400" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                No properties found
+              </h3>
+              <p className="text-gray-600 mb-6">
+                We couldn't find any rental properties matching your search criteria.
+              </p>
+              <button
+                onClick={() => {
+                  setSearchFilters({});
+                  setSortOption("recommended");
+                  setShowFilters(false);
+                }}
+                className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
+              >
+                Clear All Filters
+              </button>
+            </div>
+          </motion.div>
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
-              key={currentPage}
-              initial={{ x: 200, opacity: 0 }}
-              animate={{ x: 0, opacity: 1 }}
-              exit={{ x: -200, opacity: 0 }}
-              transition={{ duration: 0.45, ease: "easeOut" }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              key={`${currentPage}-${viewMode}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.4, ease: "easeOut" }}
+              className={
+                viewMode === 'grid'
+                  ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  : "space-y-6"
+              }
             >
-              {displayed.map((p) => (
-                <PropertyCard key={p.id} property={p} />
+              {displayed.map((property, index) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <PropertyCard property={property} viewMode={viewMode} />
+                </motion.div>
               ))}
             </motion.div>
           </AnimatePresence>
@@ -241,39 +323,66 @@ const Rent = () => {
 
         {/* Pagination */}
         {totalPages > 1 && (
-          <div className="mt-12 flex justify-center">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="mt-12 flex justify-center"
+          >
             <nav className="flex items-center space-x-2">
               <button
                 onClick={prev}
                 disabled={currentPage === 1}
-                className="px-4 py-2 border rounded-md"
+                className={`p-2 rounded-lg border transition-colors ${
+                  currentPage === 1
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                Previous
+                <ChevronLeft className="h-5 w-5" />
               </button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
-                <button
-                  key={p}
-                  onClick={() => goToPage(p)}
-                  className={`px-4 py-2 rounded-md ${
-                    currentPage === p
-                      ? "bg-indigo-600 text-white"
-                      : "border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {p}
-                </button>
-              ))}
+              
+              {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                let pageNumber;
+                if (totalPages <= 7) {
+                  pageNumber = i + 1;
+                } else if (currentPage <= 4) {
+                  pageNumber = i + 1;
+                } else if (currentPage >= totalPages - 3) {
+                  pageNumber = totalPages - 6 + i;
+                } else {
+                  pageNumber = currentPage - 3 + i;
+                }
+
+                return (
+                  <button
+                    key={pageNumber}
+                    onClick={() => goToPage(pageNumber)}
+                    className={`px-4 py-2 rounded-lg border transition-colors ${
+                      currentPage === pageNumber
+                        ? 'bg-purple-600 text-white border-purple-600'
+                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    }`}
+                  >
+                    {pageNumber}
+                  </button>
+                );
+              })}
+              
               <button
                 onClick={next}
                 disabled={currentPage === totalPages}
-                className="px-4 py-2 border rounded-md"
+                className={`p-2 rounded-lg border transition-colors ${
+                  currentPage === totalPages
+                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
+                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
-                Next
+                <ChevronRight className="h-5 w-5" />
               </button>
             </nav>
-          </div>
+          </motion.div>
         )}
-      </section>
+      </div>
     </div>
   );
 };
