@@ -236,51 +236,54 @@ const RentVsBuyPage: React.FC = () => {
     max = Infinity,
     step = "0.01",
     tooltip?: string
-  ) => (
-    const showError = errors[id] && value !== null;
-
-  return (
-    <div className="space-y-2">
-      <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center gap-2">
-        {label}
-        {tooltip && (
-          <div className="group relative">
-            <Info className="h-4 w-4 text-gray-400 cursor-help" />
-            <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg -top-2 left-6">
-              {tooltip}
+  ) => {
+    // Compute whether to show error only after user has input something
+    const showError = Boolean(errors[id] && value !== null);
+  
+    return (
+      <div className="space-y-2">
+        <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center gap-2">
+          {label}
+          {tooltip && (
+            <div className="group relative">
+              <Info className="h-4 w-4 text-gray-400 cursor-help" />
+              <div className="invisible group-hover:visible absolute z-10 w-64 p-2 bg-gray-800 text-white text-xs rounded shadow-lg -top-2 left-6">
+                {tooltip}
+              </div>
             </div>
-          </div>
-        )}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          step={step}
-          value={value === null ? '' : value.toString()}
-          onChange={(e) => {
-            const val = e.target.value;
-            setter(val === '' ? null : sanitize(val));
-          }}
-          placeholder={placeholder}
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-            showError ? 'border-red-500' : 'border-gray-300'
-          }`}
-          aria-describedby={unit ? `${id}-unit` : undefined}
-          aria-invalid={errors[id] ? 'true' : 'false'}
-        />
-        {unit && (
-          <span id={`${id}-unit`} className="absolute right-3 top-2.5 text-gray-500 text-sm">
-            {unit}
-          </span>
+          )}
+        </label>
+        <div className="relative">
+          <input
+            id={id}
+            type="text"
+            inputMode="decimal"
+            step={step}
+            value={value === null ? '' : value.toString()}
+            onChange={(e) => {
+              const val = e.target.value;
+              setter(val === '' ? null : sanitize(val));
+            }}
+            placeholder={placeholder}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+              showError ? 'border-red-500' : 'border-gray-300'
+            }`}
+            aria-describedby={unit ? `${id}-unit` : undefined}
+            aria-invalid={showError ? 'true' : 'false'}
+          />
+          {unit && (
+            <span id={`${id}-unit`} className="absolute right-3 top-2.5 text-gray-500 text-sm">
+              {unit}
+            </span>
+          )}
+        </div>
+        {showError && (
+          <p className="text-red-500 text-sm" role="alert">{errors[id]}</p>
         )}
       </div>
-      {showError && (
-        <p className="text-red-500 text-sm" role="alert">{errors[id]}</p>
-      )}
-    </div>
-  );
+    );
+  };
+
 
   const renderResultCard = (
     title: string,
