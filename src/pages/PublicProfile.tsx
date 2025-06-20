@@ -2,9 +2,11 @@ import React, { useState, useEffect, FormEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Calendar, Home, User, AlertCircle, MessageCircle, Heart, Edit } from 'lucide-react';
 import { motion } from 'framer-motion';
+import PropertyCard from '../components/PropertyCard';
+import { normalizePropertyData, Property } from '../types';
 import api from '../config/api';
 
-// Types for profile and posts
+// Types for profile, posts, and properties
 interface PublicProfileData {
   username: string;
   date_joined: string;
@@ -18,10 +20,8 @@ interface Post {
   content: string;
   created_at: string;
   author: string;
-  // add other fields like likes_count, comments_count if supported
 }
 
-// Utility to normalize post data from API
 const normalizePostData = (data: any): Post => ({
   id: data.id,
   title: data.title || undefined,
@@ -40,7 +40,7 @@ const PublicProfile: React.FC = () => {
   const navigate = useNavigate();
   
   const [profileData, setProfileData] = useState<PublicProfileData | null>(null);
-  const [properties, setProperties] = useState<any[]>([]);
+  const [properties, setProperties] = useState<Property[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [newPostTitle, setNewPostTitle] = useState('');
   const [newPostContent, setNewPostContent] = useState('');
@@ -65,7 +65,9 @@ const PublicProfile: React.FC = () => {
 
         if (data.status === 200 && data.profile) {
           setProfileData(data.profile);
-          setProperties(data.profile.published_properties.map((p: any) => p));
+          // Normalize properties
+          const normalizedProps = data.profile.published_properties.map(normalizePropertyData);
+          setProperties(normalizedProps);
         } else {
           setError('Profile not found');
         }
@@ -88,7 +90,6 @@ const PublicProfile: React.FC = () => {
         const data = resp.data;
         if (data.status === 200 && Array.isArray(data.posts)) {
           const normalized = data.posts.map(normalizePostData);
-          // Sort by created_at descending
           normalized.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           setPosts(normalized);
         }
@@ -183,6 +184,8 @@ const PublicProfile: React.FC = () => {
     );
   }
 
+  if (!profileData) return null;
+
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
       {/* Profile Header */}
@@ -199,21 +202,66 @@ const PublicProfile: React.FC = () => {
                 <User className="h-12 w-12 text-blue-600" />
               </div>
               <h1 className="text-4xl font-bold text-white mb-2">
-                {profileData?.username}
+                {profileData.username}
               </h1>
               <div className="flex items-center justify-center text-white/90 mb-4">
                 <Calendar className="h-5 w-5 mr-2" />
-                <span>Member since {formatJoinDate(profileData!.date_joined)}</span>
+                <span>Member since {formatJoinDate(profileData.date_joined)}</span>
               </div>
               <div className="flex items-center justify-center text-white/90">
                 <Home className="h-5 w-5 mr-2" />
                 <span>
-                  {profileData!.properties_count} {profileData!.properties_count === 1 ? 'listing' : 'listings'}
+                  {profileData.properties_count} {profileData.properties_count === 1 ? 'listing' : 'listings'}
                 </span>
               </div>
             </div>
           </motion.div>
         </div>
+      </section>
+
+      {/* Properties Section */}
+      <section className="container mx-auto px-4 py-12">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <div className="mb-8">
+            <h2 className="text-3xl font-bold text-gray-900 mb-2">Published Listings</h2>
+            <p className="text-gray-600">
+              {profileData.properties_count === 0
+                ? `${profileData.username} has no published listings yet.`
+                : `Showing ${profileData.properties_count} ${profileData.properties_count === 1 ? 'property' : 'properties'} by ${profileData.username}`
+              }
+            </p>
+          </div>
+
+          {properties.length === 0 ? (
+            <div className="text-center py-16">
+              <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No Published Listings</h3>
+              <p className="text-gray-600">This user has no published listings yet.</p>
+            </div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {properties.map((property, index) => (
+                <motion.div
+                  key={property.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: 0.1 * index }}
+                >
+                  <PropertyCard property={property} />
+                </motion.div>
+              ))}
+            </motion.div>
+          )}
+        </motion.div>
       </section>
 
       {/* New Post Section */}
