@@ -115,18 +115,18 @@ function Home() {
   /* ───────────── JSX ───────────── */
   return (
     <div className="bg-white">
-    {/* ───────────── Hero Section ───────────── */}
+      {/* ───────────── Hero Section ───────────── */}
       <section className="relative h-[70vh] md:h-[75vh]">
         <div
           className="absolute inset-0 bg-cover bg-center animate-in fade-in duration-1000"
           style={{
             backgroundImage:
               "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80')",
+            WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
+            maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-          {/* Smooth white fade at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-white" />
         </div>
       
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
@@ -171,6 +171,7 @@ function Home() {
           </div>
         </div>
       </section>
+
 
 
       {/* ───────────── Featured Properties ───────────── */}
