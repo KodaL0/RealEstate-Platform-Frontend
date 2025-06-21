@@ -136,8 +136,8 @@ function Home() {
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 pointer-events-none" />
         </div>
       
-        <div className="relative container mx-auto px-4 h-full flex items-center justify-center animate-in slide-in-from-bottom duration-700">
-          <div className="flex flex-col items-center text-center max-w-3xl w-full">
+        <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
+          <div className="max-w-3xl">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight animate-in slide-in-from-left duration-700 delay-200">
               Find Your <span className="text-blue-400">Dream Home</span>
             </h1>
@@ -145,29 +145,30 @@ function Home() {
               Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
             </p>
       
-            {/* Filter container - placeholder for advanced filters */}
-            <div className="bg-white/95 backdrop-blur-md p-4 md:p-6 rounded-xl shadow-2xl w-full animate-in slide-in-from-left duration-700 delay-400">
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-grow relative">
-                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Enter an address, city, or ZIP code"
-                    className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                  />
+            <div className="bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-xl shadow-2xl animate-in slide-in-from-left duration-700 delay-400">
+              <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+                <div className="flex-grow">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Enter an address, city, or ZIP code"
+                      className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                  </div>
                 </div>
-                <div className="flex gap-4">
+                <div className="flex space-x-4">
                   <Link
                     to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                    className="bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
+                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Buy
                   </Link>
                   <Link
                     to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
+                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
                   >
                     Rent
                   </Link>
