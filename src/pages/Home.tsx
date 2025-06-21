@@ -125,7 +125,7 @@ function Home() {
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-          <div className="absolute bottom-0 left-0 right-0 h-20 bg-gradient-to-t from-gray-50 to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-white to-transparent" />
         </div>
 
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
