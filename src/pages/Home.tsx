@@ -126,7 +126,7 @@ function Home() {
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
           {/* Smooth white fade at bottom */}
-          <div className="absolute bottom-0 left-0 right-0 h-28 bg-white opacity-90 blur-sm pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 h-40 bg-gradient-to-b from-transparent to-white" />
         </div>
       
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
