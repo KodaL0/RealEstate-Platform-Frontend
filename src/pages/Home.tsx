@@ -174,7 +174,7 @@ function Home() {
 
 
       {/* ───────────── Featured Properties ───────────── */}
-      <section className="py-16 md:py-20 bg-gray-50">
+      <section className="py-16 md:py-20 bg-gradient-to-b from-white via-gray-50 to-gray-100">
         <div ref={featuredTopRef} className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
