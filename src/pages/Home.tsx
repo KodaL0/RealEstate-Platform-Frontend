@@ -115,7 +115,7 @@ function Home() {
   /* ───────────── JSX ───────────── */
   return (
     <div className="bg-white">
-      {/* ───────────── Hero Section ───────────── */}
+    {/* ───────────── Hero Section ───────────── */}
       <section className="relative h-[70vh] md:h-[75vh]">
         <div
           className="absolute inset-0 bg-cover bg-center animate-in fade-in duration-1000"
@@ -125,9 +125,10 @@ function Home() {
           }}
         >
           <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60" />
-          <div className="absolute bottom-0 left-0 right-0 h-28 bg-gradient-to-t from-white to-transparent" />
+          {/* Smooth white fade at bottom */}
+          <div className="absolute bottom-0 left-0 right-0 h-28 bg-white opacity-90 blur-sm pointer-events-none" />
         </div>
-
+      
         <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
           <div className="max-w-3xl">
             <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight animate-in slide-in-from-left duration-700 delay-200">
@@ -136,7 +137,7 @@ function Home() {
             <p className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 animate-in slide-in-from-left duration-700 delay-300">
               Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
             </p>
-
+      
             <div className="bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-xl shadow-2xl animate-in slide-in-from-left duration-700 delay-400">
               <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
                 <div className="flex-grow">
@@ -170,6 +171,7 @@ function Home() {
           </div>
         </div>
       </section>
+
 
       {/* ───────────── Featured Properties ───────────── */}
       <section className="py-16 md:py-20 bg-gray-50">
