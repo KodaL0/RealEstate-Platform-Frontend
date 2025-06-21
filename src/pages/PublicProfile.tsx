@@ -209,10 +209,10 @@ const PublicProfile: React.FC = () => {
 
   useEffect(() => {
     if (profileData) {
-      document.title = `${profileData.username} - Profile | MySocialApp`;
+      document.title = `${profileData.username} - Profile | PROPERTPRO`;
     }
     return () => {
-      document.title = 'MySocialApp';
+      document.title = 'PROPERTPRO Media';
     };
   }, [profileData]);
 
