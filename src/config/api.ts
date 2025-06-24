@@ -206,31 +206,31 @@ const api = {
   connections: {
     // Send a connection request
     sendRequest: (toUserId: number) =>
-      apiClient.post('/users/connections/', { to_user_id: toUserId }),
+      apiPost('users/connections', { to_user_id: toUserId }),
     
     // Get all connections for current user
     getMyConnections: () =>
-      apiClient.get('/users/connections/my_connections/'),
+      apiGet('users/connections/my_connections'),
     
     // Get pending connection requests
     getPendingRequests: () =>
-      apiClient.get('/users/connections/pending_requests/'),
+      apiGet('users/connections/pending_requests'),
     
     // Accept a connection request
     acceptRequest: (connectionId: string) =>
-      apiClient.post(`/users/connections/${connectionId}/accept/`),
+      apiPost(`users/connections/${connectionId}/accept`),
     
     // Reject a connection request
     rejectRequest: (connectionId: string) =>
-      apiClient.post(`/users/connections/${connectionId}/reject/`),
+      apiPost(`users/connections/${connectionId}/reject`),
     
     // Disconnect from a user
     disconnect: (connectionId: string) =>
-      apiClient.delete(`/users/connections/${connectionId}/disconnect/`),
+      apiDelete(`users/connections/${connectionId}/disconnect`),
     
     // Get connection status with another user
     getStatus: (userId: number) =>
-      apiClient.get(`/users/connection-status/${userId}/`),
+      apiGet(`users/connection-status/${userId}`),
   },
 };
 
