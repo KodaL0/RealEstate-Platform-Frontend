@@ -78,8 +78,8 @@ const PublicProfile: React.FC = () => {
     { id: 'overview', label: 'Overview', icon: User },
     { id: 'listings', label: 'Listings', icon: Home },
     { id: 'reviews', label: 'Reviews', icon: Star },
-    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
-    { id: 'activity', label: 'Activity Log', icon: Activity },
+    // { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    // { id: 'activity', label: 'Activity Log', icon: Activity },
     { id: 'contact', label: 'Contact Info', icon: Mail },
   ];
 
@@ -667,7 +667,7 @@ const PublicProfile: React.FC = () => {
           </div>
         );
 
-      case 'analytics':
+    /*  case 'analytics':
         return (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-md">
@@ -763,7 +763,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
           </div>
-        );
+        ); 
 
       case 'activity':
         return (
@@ -801,7 +801,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
           </div>
-        );
+        ); */
 
       case 'contact':
         return (
