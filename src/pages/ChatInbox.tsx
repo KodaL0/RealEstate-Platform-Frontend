@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
-import { Search, MessageCircle, Clock, MapPin, Home, Plus, Filter } from "lucide-react";
+import { Search, MessageCircle, Clock, MapPin, Home, Plus, Filter, User as UserIcon } from "lucide-react";
 
 export default function ChatInbox() {
   const { threads, messages } = useChat();
@@ -10,9 +10,15 @@ export default function ChatInbox() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredThreads, setFilteredThreads] = useState(threads);
   const [filterType, setFilterType] = useState<'all' | 'unread' | 'recent'>('all');
+  const [activeTab, setActiveTab] = useState<'property' | 'dm'>('property');
+
+  // Separate threads by type
+  const propertyThreads = threads.filter(thread => thread.property);
+  const dmThreads = threads.filter(thread => !thread.property);
+  const currentThreads = activeTab === 'property' ? propertyThreads : dmThreads;
 
   useEffect(() => {
-    let filtered = [...threads];
+    let filtered = [...currentThreads];
     if (searchTerm) {
       filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -30,7 +36,7 @@ export default function ChatInbox() {
         break;
     }
     setFilteredThreads(filtered);
-  }, [threads, searchTerm, filterType]);
+  }, [currentThreads, searchTerm, filterType]);
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
@@ -87,16 +93,42 @@ export default function ChatInbox() {
             <div>
               <h1 className="text-xl font-bold text-gray-900 mb-1">Messages</h1>
               <p className="text-sm text-gray-600">
-                {threads.length} conversation{threads.length !== 1 ? 's' : ''}
-                {threads.filter(t => getUnreadCount(t.id) > 0).length > 0 && (
+                {currentThreads.length} conversation{currentThreads.length !== 1 ? 's' : ''}
+                {currentThreads.filter(t => getUnreadCount(t.id) > 0).length > 0 && (
                   <span className="ml-2 text-blue-600 font-medium">
-                    • {threads.filter(t => getUnreadCount(t.id) > 0).length} unread
+                    • {currentThreads.filter(t => getUnreadCount(t.id) > 0).length} unread
                   </span>
                 )}
               </p>
             </div>
             <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm hover:bg-blue-600 flex items-center gap-2">
               <Plus size={16} /> New Chat
+            </button>
+          </div>
+
+          {/* Tab Navigation */}
+          <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+            <button
+              onClick={() => setActiveTab('property')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'property'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <Home size={16} />
+              Property Chats ({propertyThreads.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('dm')}
+              className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
+                activeTab === 'dm'
+                  ? 'bg-white text-blue-600 shadow-sm'
+                  : 'text-gray-600 hover:text-gray-900'
+              }`}
+            >
+              <UserIcon size={16} />
+              Direct Messages ({dmThreads.length})
             </button>
           </div>
 
@@ -145,30 +177,42 @@ export default function ChatInbox() {
                 >
                   <div className="flex items-start gap-3">
                     <div className="flex-shrink-0">
-                      {thread.property_image ? (
-                        <img
-                          src={thread.property_image}
-                          alt={thread.property_title || 'Property'}
-                          className="w-12 h-12 rounded-lg object-cover border border-gray-200"
-                        />
+                      {activeTab === 'property' ? (
+                        thread.property_image ? (
+                          <img
+                            src={thread.property_image}
+                            alt={thread.property_title || 'Property'}
+                            className="w-12 h-12 rounded-lg object-cover border border-gray-200"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
+                            <Home size={20} className="text-white" />
+                          </div>
+                        )
                       ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center">
-                          <Home size={20} className="text-white" />
+                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg flex items-center justify-center">
+                          <UserIcon size={20} className="text-white" />
                         </div>
                       )}
                     </div>
-                    <div className="flex-1">
+                    <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center text-sm mb-1">
                         <div className="flex-1 mr-2">
-                          <Link
-                            to={`/property/${thread.property}`}
-                            className="hover:text-blue-600 transition-colors"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <span className="font-medium text-gray-800 truncate hover:text-blue-600 block">
-                              {thread.property_title || `Property #${thread.property}`}
+                          {activeTab === 'property' ? (
+                            <Link
+                              to={`/property/${thread.property}`}
+                              className="hover:text-blue-600 transition-colors"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <span className="font-medium text-gray-800 truncate hover:text-blue-600 block">
+                                {thread.property_title || `Property #${thread.property}`}
+                              </span>
+                            </Link>
+                          ) : (
+                            <span className="font-medium text-gray-800 truncate block">
+                              {thread.other_username}
                             </span>
-                          </Link>
+                          )}
                         </div>
                         {lastMessage && (
                           <span className="text-gray-400 flex items-center gap-1">

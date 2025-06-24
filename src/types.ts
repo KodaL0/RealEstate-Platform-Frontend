@@ -85,12 +85,21 @@ export interface ListingForm {
   videoUrl?: string;
 }
 
+// Types for profile, posts, and properties
+export interface PublicProfileData {
+  id: number;
+  username: string;
+  date_joined: string;
+  properties_count: number;
+  published_properties: any[];
+}
+
 // Chat system types
 export interface Thread {
   id: string;
   user1: number;
   user2: number;
-  property: number;
+  property: number | null;  // Now nullable for DM threads
   property_title: string;
   other_username: string;
   unread_count: number;

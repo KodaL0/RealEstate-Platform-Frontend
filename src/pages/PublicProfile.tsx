@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyCard from '../components/PropertyCard';
-import { normalizePropertyData, Property } from '../types';
+import { normalizePropertyData, Property, PublicProfileData } from '../types';
 import api from '../config/api';
 
 // Mock data for enhanced features
@@ -78,13 +78,6 @@ const mockActivities = [
 ];
 
 // Types for profile, posts, and properties
-interface PublicProfileData {
-  username: string;
-  date_joined: string;
-  properties_count: number;
-  published_properties: any[];
-}
-
 interface Post {
   id: string;
   title?: string;
@@ -834,7 +827,19 @@ const PublicProfile: React.FC = () => {
             </div>
             
             <div className="flex space-x-3">
-              <button className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center">
+              <button 
+                onClick={async () => {
+                  try {
+                    const response = await api.post('chat/', { 
+                      recipient_id: profileData.id 
+                    });
+                    navigate(`/chat/${response.data.id}`);
+                  } catch (error) {
+                    console.error('Error creating DM thread:', error);
+                  }
+                }}
+                className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center"
+              >
                 <Send className="h-4 w-4 mr-2" />
                 Message
               </button>
