@@ -198,7 +198,7 @@ export default function ChatInbox() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex justify-between items-center text-sm mb-1">
-                        <div className="flex-1 mr-2">
+                        <div className="flex-1 mr-2 min-w-0">
                           {activeTab === 'property' ? (
                             <Link
                               to={`/property/${thread.property}`}
