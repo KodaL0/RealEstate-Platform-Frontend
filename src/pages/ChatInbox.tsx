@@ -1,3 +1,4 @@
+// src/pages/ChatInbox.tsx
 import { Link } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
@@ -201,10 +202,10 @@ export default function ChatInbox() {
                           {activeTab === 'property' ? (
                             <Link
                               to={`/property/${thread.property}`}
-                              className="hover:text-blue-600 transition-colors"
                               onClick={(e) => e.stopPropagation()}
+                              className="block hover:text-blue-600 transition-colors"
                             >
-                              <span className="font-medium text-gray-800 truncate hover:text-blue-600 block">
+                              <span className="font-medium text-gray-800 truncate">
                                 {thread.property_title || `Property #${thread.property}`}
                               </span>
                             </Link>
