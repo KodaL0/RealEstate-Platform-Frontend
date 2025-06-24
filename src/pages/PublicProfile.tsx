@@ -129,15 +129,28 @@ const PublicProfile: React.FC = () => {
       setIsLoadingProfile(true);
       setError(null);
       try {
+        // Fetch profile data
         const response = await api.auth.getPublicProfile(username);
         const data = response.data;
 
         if (data.status === 200 && data.profile) {
           console.log('Profile data received:', data.profile);
-          console.log('Connection status:', data.profile.connection_status);
-          setProfileData(data.profile);
+          console.log('Initial connection status from API:', data.profile.connection_status);
+          
+          // Set initial profile data
+          let profileData = data.profile;
+          
+          // Also check connections directly to get accurate connection status
+          const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
+          if (isActuallyConnected) {
+            // Override the connection status with the correct one
+            profileData = {...profileData, connection_status: 'connected'};
+            console.log('Corrected connection status to connected on initial load');
+          }
+          
+          setProfileData(profileData);
           // Normalize properties
-          const normalizedProps = data.profile.published_properties.map(normalizePropertyData);
+          const normalizedProps = profileData.published_properties.map(normalizePropertyData);
           setProperties(normalizedProps);
         } else {
           setError('Profile not found');
@@ -171,6 +184,24 @@ const PublicProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  const checkActualConnectionStatus = async (targetUsername: string): Promise<boolean> => {
+    try {
+      const connectionsResponse = await api.connections.getMyConnections();
+      const myConnections = connectionsResponse.data;
+      
+      // Check if target user is in our connections
+      const isConnected = myConnections.some((conn: any) => 
+        conn.user.username === targetUsername
+      );
+      
+      console.log(`Direct connection check for ${targetUsername}:`, isConnected);
+      return isConnected;
+    } catch (error) {
+      console.error('Error checking actual connection status:', error);
+      return false;
+    }
+  };
+
   const refreshConnectionStatus = async () => {
     if (!profileData) return;
     
@@ -178,25 +209,12 @@ const PublicProfile: React.FC = () => {
       console.log('Refreshing connection status...');
       
       // Also check connections directly to verify
-      try {
-        const connectionsResponse = await api.connections.getMyConnections();
-        const myConnections = connectionsResponse.data;
-        console.log('My connections:', myConnections);
-        
-        // Check if dalmirask is in the connections
-        const isConnected = myConnections.some((conn: any) => 
-          conn.user.username === profileData.username
-        );
-        console.log('Direct connection check - is connected:', isConnected);
-        
-        if (isConnected) {
-          // If we find a direct connection, update the profile data manually
-          setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
-          console.log('Manually updated connection status to connected');
-          return;
-        }
-      } catch (connError) {
-        console.error('Error checking direct connections:', connError);
+      const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
+      if (isActuallyConnected) {
+        // If we find a direct connection, update the profile data manually
+        setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
+        console.log('Manually updated connection status to connected');
+        return;
       }
       
       const response = await api.auth.getPublicProfile(username!);
@@ -826,10 +844,7 @@ const PublicProfile: React.FC = () => {
                     <span>Since {enhancedProfile.memberSince}</span>
                   </div>
                 </div>
-                {/* Debug: Current connection status */}
-                <div className="text-white/70 text-sm mt-2">
-                  Debug: Connection Status = "{profileData.connection_status}"
-                </div>
+
               </div>
             </div>
             
@@ -870,13 +885,7 @@ const PublicProfile: React.FC = () => {
                 )}
                 {isConnecting ? 'Processing...' : getConnectionButtonText()}
               </button>
-              <button 
-                onClick={refreshConnectionStatus}
-                className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
-                title="Refresh connection status"
-              >
-                🔄
-              </button>
+
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
               </button>
