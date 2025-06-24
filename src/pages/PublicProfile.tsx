@@ -141,11 +141,11 @@ const PublicProfile: React.FC = () => {
           let profileData = data.profile;
           
           // Also check connections directly to get accurate connection status
-          const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
-          if (isActuallyConnected) {
+          const actualStatus = await checkActualConnectionStatus(profileData.username);
+          if (actualStatus !== 'none') {
             // Override the connection status with the correct one
-            profileData = {...profileData, connection_status: 'connected'};
-            console.log('Corrected connection status to connected on initial load');
+            profileData = {...profileData, connection_status: actualStatus};
+            console.log(`Corrected connection status to ${actualStatus} on initial load`);
           }
           
           setProfileData(profileData);
@@ -184,21 +184,41 @@ const PublicProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
-  const checkActualConnectionStatus = async (targetUsername: string): Promise<boolean> => {
+  const checkActualConnectionStatus = async (targetUsername: string): Promise<string> => {
     try {
+      // Check if user is in our accepted connections
       const connectionsResponse = await api.connections.getMyConnections();
       const myConnections = connectionsResponse.data;
       
-      // Check if target user is in our connections
       const isConnected = myConnections.some((conn: any) => 
         conn.user.username === targetUsername
       );
       
-      console.log(`Direct connection check for ${targetUsername}:`, isConnected);
-      return isConnected;
+      if (isConnected) {
+        console.log(`Direct connection check for ${targetUsername}: connected`);
+        return 'connected';
+      }
+      
+      // Check if we have a pending request TO this user
+      const pendingResponse = await api.connections.getPendingRequests();
+      const pendingRequests = pendingResponse.data;
+      
+      // Note: pending_requests API returns requests sent TO us, not FROM us
+      // So we need to check if we have a pending request FROM this user
+      const hasPendingFromThem = pendingRequests.some((req: any) => 
+        req.from_user_username === targetUsername
+      );
+      
+      if (hasPendingFromThem) {
+        console.log(`Direct connection check for ${targetUsername}: pending_received`);
+        return 'pending_received';
+      }
+      
+      console.log(`Direct connection check for ${targetUsername}: none`);
+      return 'none';
     } catch (error) {
       console.error('Error checking actual connection status:', error);
-      return false;
+      return 'none';
     }
   };
 
@@ -217,12 +237,12 @@ const PublicProfile: React.FC = () => {
         
         let finalStatus = data.profile.connection_status;
         
-        // Only override with my_connections if the API says 'none' but we're actually connected
+        // Only override with direct checks if the API says 'none' but we have a different actual status
         if (finalStatus === 'none') {
-          const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
-          if (isActuallyConnected) {
-            finalStatus = 'connected';
-            console.log('Corrected none status to connected via my_connections');
+          const actualStatus = await checkActualConnectionStatus(profileData.username);
+          if (actualStatus !== 'none') {
+            finalStatus = actualStatus;
+            console.log(`Corrected none status to ${actualStatus} via direct API checks`);
           }
         }
         
@@ -262,9 +282,9 @@ const PublicProfile: React.FC = () => {
         setProfileData(prev => prev ? {...prev, connection_status: 'pending_sent'} : null);
         console.log('Optimistically updated to pending_sent');
         
-        // Add a delay and then refresh to get actual status
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        await refreshConnectionStatus();
+        // Don't refresh immediately - let the optimistic update persist
+        // The user will see "Request Sent" which is accurate
+        console.log('Keeping optimistic pending_sent status - not refreshing immediately');
         
       } else if (status === 'pending_received') {
         // Accept pending request
@@ -906,9 +926,15 @@ const PublicProfile: React.FC = () => {
                 ) : (
                   React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })
                 )}
-                {isConnecting ? 'Processing...' : getConnectionButtonText()}
+                                {isConnecting ? 'Processing...' : getConnectionButtonText()}
               </button>
-
+              <button 
+                onClick={refreshConnectionStatus}
+                className="px-3 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
+                title="Refresh Status"
+              >
+                🔄
+              </button>
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
               </button>
