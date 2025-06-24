@@ -175,10 +175,13 @@ const PublicProfile: React.FC = () => {
     if (!profileData) return;
     
     try {
+      console.log('Refreshing connection status...');
       const response = await api.auth.getPublicProfile(username!);
       const data = response.data;
       
       if (data.status === 200 && data.profile) {
+        console.log('New connection status after refresh:', data.profile.connection_status);
+        console.log('Full profile data after refresh:', data.profile);
         setProfileData(data.profile);
       }
     } catch (error) {
@@ -192,19 +195,30 @@ const PublicProfile: React.FC = () => {
     setIsConnecting(true);
     try {
       const status = profileData.connection_status;
+      console.log('Current connection status before action:', status);
       
       if (status === 'none' || status === 'rejected') {
         // Send connection request
-        await api.connections.sendRequest(profileData.id);
-        // Refresh the profile to get updated connection status
-        await refreshConnectionStatus();
+        console.log('Sending connection request...');
+        const response = await api.connections.sendRequest(profileData.id);
+        console.log('Connection request response:', response);
+        
+        // Add a small delay to ensure database is updated
+        setTimeout(async () => {
+          await refreshConnectionStatus();
+        }, 500);
       } else if (status === 'pending_received') {
         // Accept pending request
         // We need to get the connection ID first, but for now we'll just send a new request
         // which will auto-accept if there's a pending request from the other user
-        await api.connections.sendRequest(profileData.id);
-        // Refresh the profile to get updated connection status
-        await refreshConnectionStatus();
+        console.log('Auto-accepting pending connection...');
+        const response = await api.connections.sendRequest(profileData.id);
+        console.log('Auto-accept response:', response);
+        
+        // Add a small delay to ensure database is updated
+        setTimeout(async () => {
+          await refreshConnectionStatus();
+        }, 500);
       }
     } catch (error) {
       console.error('Error handling connection:', error);
@@ -791,6 +805,10 @@ const PublicProfile: React.FC = () => {
                     <span>Since {enhancedProfile.memberSince}</span>
                   </div>
                 </div>
+                {/* Debug: Current connection status */}
+                <div className="text-white/70 text-sm mt-2">
+                  Debug: Connection Status = "{profileData.connection_status}"
+                </div>
               </div>
             </div>
             
@@ -830,6 +848,13 @@ const PublicProfile: React.FC = () => {
                   React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })
                 )}
                 {isConnecting ? 'Processing...' : getConnectionButtonText()}
+              </button>
+              <button 
+                onClick={refreshConnectionStatus}
+                className="px-4 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                title="Refresh connection status"
+              >
+                🔄
               </button>
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
