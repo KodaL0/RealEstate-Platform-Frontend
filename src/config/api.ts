@@ -212,9 +212,13 @@ const api = {
     getMyConnections: () =>
       apiGet('users/connections/my_connections'),
     
-    // Get pending connection requests
+    // Get pending connection requests sent TO me
     getPendingRequests: () =>
       apiGet('users/connections/pending_requests'),
+    
+    // Get pending connection requests sent BY me
+    getPendingSentRequests: () =>
+      apiGet('users/connections/pending_sent_requests'),
     
     // Accept a connection request
     acceptRequest: (connectionId: string) =>

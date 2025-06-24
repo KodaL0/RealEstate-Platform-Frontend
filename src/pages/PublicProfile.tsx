@@ -199,12 +199,23 @@ const PublicProfile: React.FC = () => {
         return 'connected';
       }
       
-      // Check if we have a pending request TO this user
+      // Check if we have a pending request TO this user (requests we sent)
+      const pendingSentResponse = await api.connections.getPendingSentRequests();
+      const pendingSentRequests = pendingSentResponse.data;
+      
+      const hasPendingSentToThem = pendingSentRequests.some((req: any) => 
+        req.to_user_username === targetUsername
+      );
+      
+      if (hasPendingSentToThem) {
+        console.log(`Direct connection check for ${targetUsername}: pending_sent`);
+        return 'pending_sent';
+      }
+      
+      // Check if we have a pending request FROM this user (requests sent to us)
       const pendingResponse = await api.connections.getPendingRequests();
       const pendingRequests = pendingResponse.data;
       
-      // Note: pending_requests API returns requests sent TO us, not FROM us
-      // So we need to check if we have a pending request FROM this user
       const hasPendingFromThem = pendingRequests.some((req: any) => 
         req.from_user_username === targetUsername
       );
