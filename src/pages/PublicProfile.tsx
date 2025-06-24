@@ -176,6 +176,29 @@ const PublicProfile: React.FC = () => {
     
     try {
       console.log('Refreshing connection status...');
+      
+      // Also check connections directly to verify
+      try {
+        const connectionsResponse = await api.connections.getMyConnections();
+        const myConnections = connectionsResponse.data;
+        console.log('My connections:', myConnections);
+        
+        // Check if dalmirask is in the connections
+        const isConnected = myConnections.some((conn: any) => 
+          conn.user.username === profileData.username
+        );
+        console.log('Direct connection check - is connected:', isConnected);
+        
+        if (isConnected) {
+          // If we find a direct connection, update the profile data manually
+          setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
+          console.log('Manually updated connection status to connected');
+          return;
+        }
+      } catch (connError) {
+        console.error('Error checking direct connections:', connError);
+      }
+      
       const response = await api.auth.getPublicProfile(username!);
       const data = response.data;
       
@@ -204,9 +227,8 @@ const PublicProfile: React.FC = () => {
         console.log('Connection request response:', response);
         
         // Add a small delay to ensure database is updated
-        setTimeout(async () => {
-          await refreshConnectionStatus();
-        }, 500);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await refreshConnectionStatus();
       } else if (status === 'pending_received') {
         // Accept pending request
         // We need to get the connection ID first, but for now we'll just send a new request
@@ -216,9 +238,8 @@ const PublicProfile: React.FC = () => {
         console.log('Auto-accept response:', response);
         
         // Add a small delay to ensure database is updated
-        setTimeout(async () => {
-          await refreshConnectionStatus();
-        }, 500);
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        await refreshConnectionStatus();
       }
     } catch (error) {
       console.error('Error handling connection:', error);
