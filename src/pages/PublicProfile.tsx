@@ -414,7 +414,7 @@ const PublicProfile: React.FC = () => {
                 About {profileData?.username}
               </h3>
               <p className="text-gray-700 leading-relaxed mb-4">{enhancedProfile.bio}</p>
-              
+              {/*
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                 <div>
                   <h4 className="font-semibold text-gray-900 mb-2">Specializations</h4>
@@ -426,7 +426,7 @@ const PublicProfile: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <div>
+                <div> 
                   <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
                   <div className="flex flex-wrap gap-2">
                     {enhancedProfile.languages.map((lang, index) => (
@@ -449,7 +449,7 @@ const PublicProfile: React.FC = () => {
                   ))}
                 </div>
               </div>
-            </div>
+            </div> */}
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
