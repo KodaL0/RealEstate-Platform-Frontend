@@ -208,22 +208,27 @@ const PublicProfile: React.FC = () => {
     try {
       console.log('Refreshing connection status...');
       
-      // Also check connections directly to verify
-      const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
-      if (isActuallyConnected) {
-        // If we find a direct connection, update the profile data manually
-        setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
-        console.log('Manually updated connection status to connected');
-        return;
-      }
-      
+      // First get the latest status from the API
       const response = await api.auth.getPublicProfile(username!);
       const data = response.data;
       
       if (data.status === 200 && data.profile) {
         console.log('New connection status after refresh:', data.profile.connection_status);
-        console.log('Full profile data after refresh:', data.profile);
-        setProfileData(data.profile);
+        
+        let finalStatus = data.profile.connection_status;
+        
+        // Only override with my_connections if the API says 'none' but we're actually connected
+        if (finalStatus === 'none') {
+          const isActuallyConnected = await checkActualConnectionStatus(profileData.username);
+          if (isActuallyConnected) {
+            finalStatus = 'connected';
+            console.log('Corrected none status to connected via my_connections');
+          }
+        }
+        
+        // Update profile with the correct status
+        setProfileData({...data.profile, connection_status: finalStatus});
+        console.log('Final connection status set to:', finalStatus);
       }
     } catch (error) {
       console.error('Error refreshing connection status:', error);
@@ -231,9 +236,17 @@ const PublicProfile: React.FC = () => {
   };
 
   const handleConnectionAction = async () => {
-    if (!profileData) return;
+    if (!profileData || isConnecting) return;
+    
+    // Prevent action if already connected or request already sent
+    if (profileData.connection_status === 'connected' || profileData.connection_status === 'pending_sent') {
+      console.log('Action blocked - already connected or pending');
+      return;
+    }
     
     setIsConnecting(true);
+    setError(null);
+    
     try {
       const status = profileData.connection_status;
       console.log('Current connection status before action:', status);
@@ -243,25 +256,35 @@ const PublicProfile: React.FC = () => {
         console.log('Sending connection request...');
         const response = await api.connections.sendRequest(profileData.id);
         console.log('Connection request response:', response);
+        console.log('Response data:', response.data);
         
-        // Add a small delay to ensure database is updated
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Immediately update UI to show pending status (optimistic update)
+        setProfileData(prev => prev ? {...prev, connection_status: 'pending_sent'} : null);
+        console.log('Optimistically updated to pending_sent');
+        
+        // Add a delay and then refresh to get actual status
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await refreshConnectionStatus();
+        
       } else if (status === 'pending_received') {
         // Accept pending request
-        // We need to get the connection ID first, but for now we'll just send a new request
-        // which will auto-accept if there's a pending request from the other user
         console.log('Auto-accepting pending connection...');
         const response = await api.connections.sendRequest(profileData.id);
         console.log('Auto-accept response:', response);
         
-        // Add a small delay to ensure database is updated
-        await new Promise(resolve => setTimeout(resolve, 1500));
+        // Optimistically update to connected
+        setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
+        console.log('Optimistically updated to connected');
+        
+        // Add a delay and then refresh to confirm
+        await new Promise(resolve => setTimeout(resolve, 1000));
         await refreshConnectionStatus();
       }
     } catch (error) {
       console.error('Error handling connection:', error);
       setError('Failed to update connection. Please try again.');
+      // Revert optimistic update on error
+      await refreshConnectionStatus();
     } finally {
       setIsConnecting(false);
     }
