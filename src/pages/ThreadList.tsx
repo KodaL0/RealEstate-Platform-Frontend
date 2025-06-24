@@ -224,7 +224,7 @@ export default function ThreadList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0 mr-3">
-                          {/* Make this Link a block so truncate works */}
+                          {/* ✨ MAKE THIS LINK A BLOCK for truncate to work */}
                           <Link
                             to={`/property/${thread.property}`}
                             className="block hover:text-blue-600 transition-colors group/property"
@@ -239,6 +239,13 @@ export default function ThreadList() {
                                 `Property #${thread.property}`}
                             </h3>
                           </Link>
+                          {/* If you’d rather wrap long words, swap `truncate` for `break-words`: */}
+                          {/*
+                          <h3 className="font-semibold text-slate-800 break-words">
+                            {thread.property_title ||
+                              `Property #${thread.property}`}
+                          </h3>
+                          */}
                           <div className="flex items-center gap-2 mt-1">
                             <span
                               className={`text-sm font-medium truncate ${
