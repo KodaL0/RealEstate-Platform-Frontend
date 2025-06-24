@@ -415,42 +415,41 @@ const PublicProfile: React.FC = () => {
               </h3>
               <p className="text-gray-700 leading-relaxed mb-4">{enhancedProfile.bio}</p>
               {/*
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                <div>
-                  <h4 className="font-semibold text-gray-900 mb-2">Specializations</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {enhancedProfile.specializations.map((spec, index) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                        {spec}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-                <div> 
-                  <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {enhancedProfile.languages.map((lang, index) => (
-                      <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                        {lang}
-                      </span>
-                    ))}
-                  </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <div>
+                <h4 className="font-semibold text-gray-900 mb-2">Specializations</h4>
+                <div className="flex flex-wrap gap-2">
+                  {enhancedProfile.specializations.map((spec, index) => (
+                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
+                      {spec}
+                    </span>
+                  ))}
                 </div>
               </div>
-
-              <div className="border-t pt-4">
-                <h4 className="font-semibold text-gray-900 mb-2">Certifications</h4>
-                <div className="space-y-2">
-                  {enhancedProfile.certifications.map((cert, index) => (
-                    <div key={index} className="flex items-center text-gray-700">
-                      <Award className="h-4 w-4 mr-2 text-yellow-600" />
-                      {cert}
-                    </div>
+              <div> 
+                <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
+                <div className="flex flex-wrap gap-2">
+                  {enhancedProfile.languages.map((lang, index) => (
+                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
+                      {lang}
+                    </span>
                   ))}
                 </div>
               </div>
             </div>
-            */}
+            
+            <div className="border-t pt-4">
+              <h4 className="font-semibold text-gray-900 mb-2">Certifications</h4>
+              <div className="space-y-2">
+                {enhancedProfile.certifications.map((cert, index) => (
+                  <div key={index} className="flex items-center text-gray-700">
+                    <Award className="h-4 w-4 mr-2 text-yellow-600" />
+                    {cert}
+                  </div>
+                ))}
+              </div>
+            </div>
+              */}
 
             {/* Quick Stats */}
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
