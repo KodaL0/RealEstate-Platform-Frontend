@@ -91,7 +91,10 @@ export interface PublicProfileData {
   username: string;
   date_joined: string;
   properties_count: number;
-  published_properties: any[];
+  published_properties: Property[];
+  connections_count: number;
+  connection_status: 'connected' | 'pending_sent' | 'pending_received' | 'rejected' | 'none' | 'self';
+  mutual_connections_count: number;
 }
 
 // Chat system types
@@ -127,4 +130,31 @@ export interface Message {
   read_at: string | null;
   is_unsent: boolean;
   unsent_at: string | null;
+}
+
+export interface Connection {
+  id: string;
+  from_user: number;
+  to_user: number;
+  from_user_username: string;
+  to_user_username: string;
+  status: 'pending' | 'accepted' | 'rejected';
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserConnection {
+  connection_id: string;
+  user: {
+    id: number;
+    username: string;
+    date_joined: string;
+  };
+  connected_since: string;
+}
+
+export interface ConnectionStatus {
+  status: 'connected' | 'pending_sent' | 'pending_received' | 'rejected' | 'none' | 'self';
+  user_id: number;
+  username: string;
 }

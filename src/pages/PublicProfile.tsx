@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyCard from '../components/PropertyCard';
-import { normalizePropertyData, Property, PublicProfileData } from '../types';
+import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus } from '../types';
 import api from '../config/api';
 
 // Mock data for enhanced features
@@ -20,7 +20,6 @@ const mockAnalytics = {
   messagesReceived: 89,
   responseRate: 94,
   avgResponseTime: '1.2 hours',
-  totalConnections: 342,
   monthlyGrowth: 12.5
 };
 
@@ -90,6 +89,7 @@ const PublicProfile: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
@@ -169,6 +169,73 @@ const PublicProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  const handleConnectionAction = async () => {
+    if (!profileData) return;
+    
+    setIsConnecting(true);
+    try {
+      const status = profileData.connection_status;
+      
+      if (status === 'none' || status === 'rejected') {
+        // Send connection request
+        await api.connections.sendRequest(profileData.id);
+        setProfileData({
+          ...profileData,
+          connection_status: 'pending_sent'
+        });
+      } else if (status === 'pending_received') {
+        // Accept pending request
+        // We need to get the connection ID first, but for now we'll just send a new request
+        // which will auto-accept if there's a pending request from the other user
+        await api.connections.sendRequest(profileData.id);
+        setProfileData({
+          ...profileData,
+          connection_status: 'connected',
+          connections_count: profileData.connections_count + 1
+        });
+      }
+    } catch (error) {
+      console.error('Error handling connection:', error);
+      setError('Failed to update connection. Please try again.');
+    } finally {
+      setIsConnecting(false);
+    }
+  };
+
+  const getConnectionButtonText = () => {
+    if (!profileData) return 'Connect';
+    
+    switch (profileData.connection_status) {
+      case 'connected':
+        return 'Connected';
+      case 'pending_sent':
+        return 'Request Sent';
+      case 'pending_received':
+        return 'Accept Request';
+      case 'rejected':
+        return 'Connect';
+      case 'none':
+        return 'Connect';
+      default:
+        return 'Connect';
+    }
+  };
+
+  const getConnectionButtonIcon = () => {
+    if (!profileData) return UserPlus;
+    
+    switch (profileData.connection_status) {
+      case 'connected':
+        return CheckCircle;
+      case 'pending_sent':
+        return Clock;
+      case 'pending_received':
+        return CheckCircle;
+      default:
+        return UserPlus;
+    }
+  };
+
   const renderStarRating = (rating: number, size: 'sm' | 'md' = 'sm') => {
     const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
     return (
@@ -237,10 +304,18 @@ const PublicProfile: React.FC = () => {
             </div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-white p-4 rounded-xl shadow-md text-center">
                 <div className="text-2xl font-bold text-blue-600">{profileData?.properties_count || 0}</div>
                 <div className="text-gray-600 text-sm">Active Listings</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-md text-center">
+                <div className="text-2xl font-bold text-pink-600">{profileData?.connections_count || 0}</div>
+                <div className="text-gray-600 text-sm">Connections</div>
+              </div>
+              <div className="bg-white p-4 rounded-xl shadow-md text-center">
+                <div className="text-2xl font-bold text-indigo-600">{profileData?.mutual_connections_count || 0}</div>
+                <div className="text-gray-600 text-sm">Mutual Connections</div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-md text-center">
                 <div className="text-2xl font-bold text-yellow-600">{enhancedProfile.averageRating}</div>
@@ -249,10 +324,6 @@ const PublicProfile: React.FC = () => {
               <div className="bg-white p-4 rounded-xl shadow-md text-center">
                 <div className="text-2xl font-bold text-green-600">{enhancedProfile.totalReviews}</div>
                 <div className="text-gray-600 text-sm">Total Reviews</div>
-              </div>
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-purple-600">{enhancedProfile.responseRate}%</div>
-                <div className="text-gray-600 text-sm">Response Rate</div>
               </div>
             </div>
 
@@ -484,7 +555,7 @@ const PublicProfile: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-pink-600 text-sm font-medium">Connections</p>
-                      <p className="text-2xl font-bold text-pink-900">{mockAnalytics.totalConnections}</p>
+                      <p className="text-2xl font-bold text-pink-900">{profileData?.connections_count || 0}</p>
                     </div>
                     <Users className="h-8 w-8 text-pink-500" />
                   </div>
@@ -728,9 +799,25 @@ const PublicProfile: React.FC = () => {
                 <Send className="h-4 w-4 mr-2" />
                 Message
               </button>
-              <button className="px-6 py-3 bg-blue-500 text-white font-semibold rounded-lg hover:bg-blue-400 transition-colors flex items-center">
-                <UserPlus className="h-4 w-4 mr-2" />
-                Connect
+              <button 
+                onClick={handleConnectionAction}
+                disabled={isConnecting || profileData?.connection_status === 'connected' || profileData?.connection_status === 'pending_sent'}
+                className={`px-6 py-3 font-semibold rounded-lg transition-colors flex items-center ${
+                  profileData?.connection_status === 'connected'
+                    ? 'bg-green-500 text-white cursor-default'
+                    : profileData?.connection_status === 'pending_sent'
+                    ? 'bg-gray-400 text-white cursor-default'
+                    : profileData?.connection_status === 'pending_received'
+                    ? 'bg-blue-600 text-white hover:bg-blue-700'
+                    : 'bg-blue-500 text-white hover:bg-blue-400'
+                } ${isConnecting ? 'opacity-75 cursor-not-allowed' : ''}`}
+              >
+                {isConnecting ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white mr-2" />
+                ) : (
+                  React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })
+                )}
+                {isConnecting ? 'Processing...' : getConnectionButtonText()}
               </button>
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
