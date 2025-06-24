@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyCard from '../components/PropertyCard';
+import ReviewForm from '../components/ReviewForm';
 import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus, Review, ReviewStats, ReviewCategory, CanReviewResponse } from '../types';
 import api from '../config/api';
 
@@ -48,6 +49,7 @@ const PublicProfile: React.FC = () => {
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
   const [reviewCategories, setReviewCategories] = useState<ReviewCategory[]>([]);
   const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
+  const [showReviewForm, setShowReviewForm] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -117,6 +119,9 @@ const PublicProfile: React.FC = () => {
           
           // Fetch reviews for this user
           fetchReviews(profileData.id);
+          
+          // Check if current user can review this profile
+          checkCanReview(profileData.id);
         } else {
           setError('Profile not found');
         }
@@ -362,6 +367,23 @@ const PublicProfile: React.FC = () => {
     }
   };
 
+  const checkCanReview = async (userId: number) => {
+    try {
+      const response = await api.reviews.canReviewUser(userId);
+      setCanReview(response.data);
+    } catch (error) {
+      console.error('Error checking review eligibility:', error);
+    }
+  };
+
+  const handleReviewSuccess = () => {
+    // Refresh reviews and check can review status
+    if (profileData) {
+      fetchReviews(profileData.id);
+      checkCanReview(profileData.id);
+    }
+  };
+
   const renderStarRating = (rating: number, size: 'sm' | 'md' = 'sm') => {
     const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
     return (
@@ -562,7 +584,22 @@ const PublicProfile: React.FC = () => {
 
             {/* Individual Reviews */}
             <div className="space-y-4">
-              {reviews.map((review) => (
+              {isLoadingReviews ? (
+                <div className="text-center py-8">
+                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                  <p className="text-gray-600">Loading reviews...</p>
+                </div>
+              ) : reviews.length === 0 ? (
+                <div className="text-center py-16">
+                  <Star className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h4 className="text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h4>
+                  <p className="text-gray-600">
+                    This user hasn't received any reviews yet.
+                    {canReview?.can_review && " Be the first to write one!"}
+                  </p>
+                </div>
+              ) : (
+                reviews.map((review) => (
                 <div key={review.id} className="bg-white p-6 rounded-2xl shadow-md">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -624,7 +661,8 @@ const PublicProfile: React.FC = () => {
                     </div>
                   </div>
                 </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
         );
@@ -958,6 +996,18 @@ const PublicProfile: React.FC = () => {
                 <Send className="h-4 w-4 mr-2" />
                 Message
               </button>
+              
+              {/* Write Review Button - Only show if user can review */}
+              {canReview?.can_review && (
+                <button 
+                  onClick={() => setShowReviewForm(true)}
+                  className="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors flex items-center"
+                >
+                  <Star className="h-4 w-4 mr-2" />
+                  Write Review
+                </button>
+              )}
+              
               <button 
                 onClick={handleConnectionAction}
                 disabled={isConnecting || profileData?.connection_status === 'connected' || profileData?.connection_status === 'pending_sent'}
@@ -1027,6 +1077,20 @@ const PublicProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Review Form Modal */}
+      {profileData && (
+        <ReviewForm
+          reviewee={{
+            id: profileData.id,
+            username: profileData.username,
+            email: '' // Not needed for the form
+          }}
+          isOpen={showReviewForm}
+          onClose={() => setShowReviewForm(false)}
+          onSuccess={handleReviewSuccess}
+        />
+      )}
     </div>
   );
 };
