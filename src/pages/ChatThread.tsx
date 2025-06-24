@@ -533,11 +533,11 @@ export default function ChatThread() {
           
           <button
             onClick={handleSend}
-            disabled={!input.trim() || !recipientId || !propertyId}
+            disabled={!input.trim() || !recipientId}
             className={`
               p-3 rounded-full transition-all duration-200 flex-shrink-0 shadow-lg
               focus:outline-none focus:ring-4 focus:ring-blue-500/20
-              ${input.trim() && recipientId && propertyId
+              ${input.trim() && recipientId
                 ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:scale-105 active:scale-95" 
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }

@@ -1,6 +1,6 @@
 // src/pages/ChatContainer.tsx
 import { Routes, Route } from "react-router-dom";
-import ThreadList from "./ThreadList";
+import ChatInbox from "./ChatInbox";
 import ChatThread from "./ChatThread";
 import { useState, useEffect } from "react";
 import Footer from "../components/Footer";
@@ -76,7 +76,7 @@ export default function ChatContainer() {
               </button>
             </div>
             <div className="flex-1 overflow-hidden">
-              <ThreadList />
+              <ChatInbox />
             </div>
           </div>
         </aside>
