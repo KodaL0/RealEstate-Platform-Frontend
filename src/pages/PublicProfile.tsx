@@ -77,28 +77,6 @@ const mockActivities = [
   { id: 7, action: 'Property sold', details: 'Successfully closed Maple Street listing', time: '2 weeks ago', type: 'sale', icon: Award }
 ];
 
-// Types for profile, posts, and properties
-interface Post {
-  id: string;
-  title?: string;
-  content: string;
-  created_at: string;
-  author: string;
-}
-
-const normalizePostData = (data: any): Post => ({
-  id: data.id,
-  title: data.title || undefined,
-  content: data.content,
-  created_at: data.created_at,
-  author: data.author_username || data.author || '',
-});
-
-const formatDateTime = (dateString: string) => {
-  const date = new Date(dateString);
-  return date.toLocaleString('en-US', { month: 'long', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-};
-
 const formatDateOnly = (dateString: string) => {
   const date = new Date(dateString);
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -110,14 +88,9 @@ const PublicProfile: React.FC = () => {
   
   const [profileData, setProfileData] = useState<PublicProfileData | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
-  const [posts, setPosts] = useState<Post[]>([]);
-  const [newPostTitle, setNewPostTitle] = useState('');
-  const [newPostContent, setNewPostContent] = useState('');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
-  const [isLoadingPosts, setIsLoadingPosts] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [postError, setPostError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
 
   // Enhanced profile data
@@ -179,25 +152,7 @@ const PublicProfile: React.FC = () => {
       }
     };
 
-    const fetchPosts = async () => {
-      setIsLoadingPosts(true);
-      try {
-        const resp = await api.posts.getUserPosts(username);
-        const data = resp.data;
-        if (data.status === 200 && Array.isArray(data.posts)) {
-          const normalized = data.posts.map(normalizePostData);
-          normalized.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-          setPosts(normalized);
-        }
-      } catch (err) {
-        console.error('Error fetching posts:', err);
-      } finally {
-        setIsLoadingPosts(false);
-      }
-    };
-
     fetchProfile();
-    fetchPosts();
   }, [username, navigate]);
 
   useEffect(() => {
@@ -212,33 +167,6 @@ const PublicProfile: React.FC = () => {
   const formatJoinDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  };
-
-  const handleNewPostSubmit = async (e: FormEvent) => {
-    e.preventDefault();
-    if (!newPostContent.trim()) {
-      setPostError('Content cannot be empty');
-      return;
-    }
-    setIsSubmitting(true);
-    setPostError(null);
-    try {
-      const payload: any = { content: newPostContent };
-      if (newPostTitle.trim()) {
-        payload.title = newPostTitle;
-      }
-      const resp = await api.posts.createPost(payload);
-      const created = resp.data.post;
-      const normalized = normalizePostData(created);
-      setPosts(prev => [normalized, ...prev]);
-      setNewPostTitle('');
-      setNewPostContent('');
-    } catch (err: any) {
-      console.error('Error creating post:', err);
-      setPostError('Failed to submit post. Please try again.');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const renderStarRating = (rating: number, size: 'sm' | 'md' = 'sm') => {
@@ -328,60 +256,17 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* New Post Section */}
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <Edit className="h-5 w-5 mr-2 text-gray-600" /> Create Post
-              </h3>
-              <form onSubmit={handleNewPostSubmit}>
-                <input
-                  type="text"
-                  placeholder="Title (optional, for articles)"
-                  value={newPostTitle}
-                  onChange={e => setNewPostTitle(e.target.value)}
-                  className="w-full mb-3 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-                <textarea
-                  placeholder="What's on your mind?"
-                  value={newPostContent}
-                  onChange={e => setNewPostContent(e.target.value)}
-                  rows={4}
-                  className="w-full mb-3 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
-                />
-                {postError && <p className="text-red-500 mb-2">{postError}</p>}
-                <button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors disabled:opacity-50"
-                >
-                  {isSubmitting ? 'Posting...' : 'Post'}
-                </button>
-              </form>
-            </div>
-
-            {/* Recent Posts */}
+            {/* Posts Section - Coming Soon */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <MessageCircle className="h-5 w-5 mr-2 text-gray-600" />
-                Recent Posts
+                Posts & Updates
               </h3>
-              {isLoadingPosts ? (
-                <div className="flex justify-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
-                </div>
-              ) : posts.length === 0 ? (
-                <p className="text-gray-500 text-center py-8">No posts yet.</p>
-              ) : (
-                <div className="space-y-4">
-                  {posts.slice(0, 3).map(post => (
-                    <div key={post.id} className="border-b border-gray-200 pb-4 last:border-b-0">
-                      {post.title && <h4 className="font-semibold text-gray-900 mb-1">{post.title}</h4>}
-                      <p className="text-gray-700 text-sm mb-2">{post.content.substring(0, 150)}...</p>
-                      <p className="text-gray-500 text-xs">{formatDateTime(post.created_at)}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
+              <div className="text-center py-8">
+                <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">Posts Coming Soon</h4>
+                <p className="text-gray-600">User posts and updates will be available in a future update.</p>
+              </div>
             </div>
           </div>
         );
