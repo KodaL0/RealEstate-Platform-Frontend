@@ -236,6 +236,56 @@ const api = {
     getStatus: (userId: number) =>
       apiGet(`users/connection-status/${userId}`),
   },
+
+  reviews: {
+    // Get all review categories
+    getCategories: () =>
+      apiGet('reviews/categories'),
+    
+    // Get reviews for a specific user
+    getUserReviews: (userId: number, params?: any) =>
+      apiGet(`reviews/users/${userId}`, { params }),
+    
+    // Get review statistics for a user
+    getUserStats: (userId: number) =>
+      apiGet(`reviews/users/${userId}/stats`),
+    
+    // Check if current user can review another user
+    canReviewUser: (userId: number) =>
+      apiGet(`reviews/users/${userId}/can-review`),
+    
+    // Create a new review
+    createReview: (data: any) =>
+      apiPost('reviews', data),
+    
+    // Get a specific review
+    getReview: (reviewId: number) =>
+      apiGet(`reviews/${reviewId}`),
+    
+    // Update a review (only reviewer can do this)
+    updateReview: (reviewId: number, data: any) =>
+      apiPut(`reviews/${reviewId}`, data),
+    
+    // Delete a review (only reviewer can do this)
+    deleteReview: (reviewId: number) =>
+      apiDelete(`reviews/${reviewId}`),
+    
+    // Mark a review as helpful/unhelpful
+    toggleHelpful: (reviewId: number, isHelpful: boolean) =>
+      apiPost(`reviews/${reviewId}/helpful`, { is_helpful: isHelpful }),
+    
+    // Remove helpful vote
+    removeHelpful: (reviewId: number) =>
+      apiDelete(`reviews/${reviewId}/helpful/remove`),
+    
+    // Report a review
+    reportReview: (reviewId: number, reason: string, description?: string) =>
+      apiPost(`reviews/${reviewId}/report`, { reason, description }),
+    
+    // Get review dashboard data for current user
+    getDashboard: () =>
+      apiGet('reviews/dashboard'),
+  },
 };
 
 export default api;

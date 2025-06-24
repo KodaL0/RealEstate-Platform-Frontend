@@ -158,3 +158,77 @@ export interface ConnectionStatus {
   user_id: number;
   username: string;
 }
+
+// Review system types
+export interface ReviewCategory {
+  id: number;
+  name: string;
+  description: string;
+  display_order: number;
+}
+
+export interface CategoryRating {
+  id: number;
+  category: ReviewCategory;
+  category_id: number;
+  rating: number;
+}
+
+export interface ReviewResponse {
+  id: number;
+  content: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface UserBasic {
+  id: number;
+  username: string;
+  email: string;
+}
+
+export interface Review {
+  id: number;
+  reviewer: UserBasic;
+  reviewee: UserBasic;
+  overall_rating: number;
+  title: string;
+  content: string;
+  interaction_context: string;
+  is_public: boolean;
+  is_verified: boolean;
+  created_at: string;
+  updated_at: string;
+  category_ratings: CategoryRating[];
+  response?: ReviewResponse;
+  helpful_count: number;
+  unhelpful_count: number;
+  user_found_helpful?: boolean | null;
+}
+
+export interface ReviewStats {
+  reviews_received_count: number;
+  reviews_given_count: number;
+  average_rating: number;
+  rating_distribution: {
+    [key: string]: number; // "1": 5, "2": 10, etc.
+  };
+  category_averages: {
+    [categoryName: string]: number;
+  };
+  recent_reviews: Review[];
+}
+
+export interface CanReviewResponse {
+  can_review: boolean;
+  reason: string;
+}
+
+export interface ReviewDashboard {
+  reviews_received_count: number;
+  reviews_given_count: number;
+  average_rating_received: number;
+  pending_reviews_count: number;
+  recent_reviews_received: Review[];
+  recent_reviews_given: Review[];
+}

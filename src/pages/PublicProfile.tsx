@@ -9,10 +9,10 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyCard from '../components/PropertyCard';
-import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus } from '../types';
+import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus, Review, ReviewStats, ReviewCategory, CanReviewResponse } from '../types';
 import api from '../config/api';
 
-// Mock data for enhanced features
+// Mock data for enhanced features (keeping some for features not yet implemented)
 const mockAnalytics = {
   profileViews: 1247,
   listingsViewed: 3891,
@@ -22,49 +22,6 @@ const mockAnalytics = {
   avgResponseTime: '1.2 hours',
   monthlyGrowth: 12.5
 };
-
-const mockReviews = [
-  {
-    id: 1,
-    reviewer: 'Sarah Johnson',
-    avatar: 'SJ',
-    rating: 5,
-    comment: 'Excellent communication and very professional. The property was exactly as described! Highly recommend working with this agent.',
-    date: '2024-01-15',
-    verified: true,
-    helpful: 12
-  },
-  {
-    id: 2,
-    reviewer: 'Mike Chen',
-    avatar: 'MC',
-    rating: 4,
-    comment: 'Great experience overall. Quick responses and helpful throughout the process. Would definitely work with again.',
-    date: '2024-01-10',
-    verified: true,
-    helpful: 8
-  },
-  {
-    id: 3,
-    reviewer: 'Emily Rodriguez',
-    avatar: 'ER',
-    rating: 5,
-    comment: 'Outstanding service! Very knowledgeable about the local market and went above and beyond.',
-    date: '2024-01-05',
-    verified: false,
-    helpful: 15
-  },
-  {
-    id: 4,
-    reviewer: 'David Park',
-    avatar: 'DP',
-    rating: 5,
-    comment: 'Professional, reliable, and genuinely cares about finding the right fit. Exceeded expectations!',
-    date: '2023-12-28',
-    verified: true,
-    helpful: 6
-  }
-];
 
 const mockActivities = [
   { id: 1, action: 'Listed new property', details: '3-bedroom apartment in Downtown', time: '2 hours ago', type: 'listing', icon: Home },
@@ -87,7 +44,12 @@ const PublicProfile: React.FC = () => {
   
   const [profileData, setProfileData] = useState<PublicProfileData | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
+  const [reviewCategories, setReviewCategories] = useState<ReviewCategory[]>([]);
+  const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +114,9 @@ const PublicProfile: React.FC = () => {
           // Normalize properties
           const normalizedProps = profileData.published_properties.map(normalizePropertyData);
           setProperties(normalizedProps);
+          
+          // Fetch reviews for this user
+          fetchReviews(profileData.id);
         } else {
           setError('Profile not found');
         }
@@ -355,6 +320,48 @@ const PublicProfile: React.FC = () => {
     }
   };
 
+  const handleToggleHelpful = async (reviewId: number, isHelpful: boolean) => {
+    try {
+      await api.reviews.toggleHelpful(reviewId, isHelpful);
+      // Refresh reviews to show updated helpful count
+      if (profileData) {
+        fetchReviews(profileData.id);
+      }
+    } catch (error) {
+      console.error('Error toggling helpful vote:', error);
+    }
+  };
+
+  const handleReportReview = async (reviewId: number) => {
+    const reason = prompt('Please select a reason for reporting this review:\n1. Spam\n2. Fake Review\n3. Inappropriate Content\n4. Harassment\n5. Other');
+    if (!reason) return;
+    
+    try {
+      await api.reviews.reportReview(reviewId, reason.toLowerCase());
+      alert('Review reported successfully');
+    } catch (error) {
+      console.error('Error reporting review:', error);
+      alert('Failed to report review');
+    }
+  };
+
+  const fetchReviews = async (userId: number) => {
+    setIsLoadingReviews(true);
+    try {
+      const [reviewsResponse, statsResponse] = await Promise.all([
+        api.reviews.getUserReviews(userId),
+        api.reviews.getUserStats(userId)
+      ]);
+      
+      setReviews(reviewsResponse.data);
+      setReviewStats(statsResponse.data);
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setIsLoadingReviews(false);
+    }
+  };
+
   const renderStarRating = (rating: number, size: 'sm' | 'md' = 'sm') => {
     const sizeClass = size === 'sm' ? 'h-4 w-4' : 'h-5 w-5';
     return (
@@ -508,18 +515,24 @@ const PublicProfile: React.FC = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">{enhancedProfile.averageRating}</div>
+                  <div className="text-4xl font-bold text-gray-900 mb-2">
+                    {reviewStats?.average_rating?.toFixed(1) || '0.0'}
+                  </div>
                   <div className="flex justify-center mb-2">
-                    {renderStarRating(enhancedProfile.averageRating, 'md')}
+                    {renderStarRating(reviewStats?.average_rating || 0, 'md')}
                   </div>
                   <p className="text-gray-600">Overall Rating</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">{enhancedProfile.totalReviews}</div>
+                  <div className="text-4xl font-bold text-gray-900 mb-2">
+                    {reviewStats?.reviews_received_count || 0}
+                  </div>
                   <p className="text-gray-600">Total Reviews</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">{enhancedProfile.responseRate}%</div>
+                  <div className="text-4xl font-bold text-gray-900 mb-2">
+                    {enhancedProfile.responseRate}%
+                  </div>
                   <p className="text-gray-600">Response Rate</p>
                 </div>
               </div>
@@ -527,8 +540,9 @@ const PublicProfile: React.FC = () => {
               {/* Rating Breakdown */}
               <div className="space-y-2">
                 {[5, 4, 3, 2, 1].map((rating) => {
-                  const count = mockReviews.filter(r => r.rating === rating).length;
-                  const percentage = (count / mockReviews.length) * 100;
+                  const count = reviewStats?.rating_distribution[rating.toString()] || 0;
+                  const totalReviews = reviewStats?.reviews_received_count || 1;
+                  const percentage = (count / totalReviews) * 100;
                   return (
                     <div key={rating} className="flex items-center space-x-3">
                       <span className="text-sm font-medium w-8">{rating}</span>
@@ -548,40 +562,65 @@ const PublicProfile: React.FC = () => {
 
             {/* Individual Reviews */}
             <div className="space-y-4">
-              {mockReviews.map((review) => (
+              {reviews.map((review) => (
                 <div key={review.id} className="bg-white p-6 rounded-2xl shadow-md">
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-600 font-semibold">{review.avatar}</span>
+                      <span className="text-blue-600 font-semibold">
+                        {review.reviewer.username.substring(0, 2).toUpperCase()}
+                      </span>
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center space-x-3">
-                          <h4 className="font-semibold text-gray-900">{review.reviewer}</h4>
-                          {review.verified && (
+                          <h4 className="font-semibold text-gray-900">{review.reviewer.username}</h4>
+                          {review.is_verified && (
                             <div className="flex items-center text-green-600">
                               <CheckCircle className="h-4 w-4 mr-1" />
                               <span className="text-xs">Verified</span>
                             </div>
                           )}
                         </div>
-                        <span className="text-gray-500 text-sm">{formatDateOnly(review.date)}</span>
+                        <span className="text-gray-500 text-sm">{formatDateOnly(review.created_at)}</span>
                       </div>
+                      {review.title && (
+                        <h5 className="font-medium text-gray-900 mb-2">{review.title}</h5>
+                      )}
                       <div className="flex items-center mb-3">
-                        {renderStarRating(review.rating)}
-                        <span className="ml-2 text-sm text-gray-600">({review.rating}/5)</span>
+                        {renderStarRating(review.overall_rating)}
+                        <span className="ml-2 text-sm text-gray-600">({review.overall_rating}/5)</span>
                       </div>
-                      <p className="text-gray-700 mb-3">{review.comment}</p>
+                      <p className="text-gray-700 mb-3">{review.content}</p>
+                      {review.interaction_context && (
+                        <p className="text-sm text-gray-500 mb-3 italic">Context: {review.interaction_context}</p>
+                      )}
                       <div className="flex items-center space-x-4 text-sm text-gray-500">
-                        <button className="flex items-center hover:text-blue-600">
+                        <button 
+                          onClick={() => handleToggleHelpful(review.id, true)}
+                          className="flex items-center hover:text-blue-600"
+                        >
                           <ThumbsUp className="h-4 w-4 mr-1" />
-                          Helpful ({review.helpful})
+                          Helpful ({review.helpful_count})
                         </button>
-                        <button className="flex items-center hover:text-red-600">
+                        <button 
+                          onClick={() => handleReportReview(review.id)}
+                          className="flex items-center hover:text-red-600"
+                        >
                           <Flag className="h-4 w-4 mr-1" />
                           Report
                         </button>
                       </div>
+                      {review.response && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                          <div className="flex items-center mb-2">
+                            <h6 className="font-medium text-gray-900">Response from {profileData?.username}</h6>
+                            <span className="ml-auto text-xs text-gray-500">
+                              {formatDateOnly(review.response.created_at)}
+                            </span>
+                          </div>
+                          <p className="text-gray-700">{review.response.content}</p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
