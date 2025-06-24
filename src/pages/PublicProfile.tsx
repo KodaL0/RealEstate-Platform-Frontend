@@ -667,7 +667,7 @@ const PublicProfile: React.FC = () => {
           </div>
         );
 
-    /*  case 'analytics':
+            {/*  case 'analytics':
         return (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-md">
@@ -765,7 +765,7 @@ const PublicProfile: React.FC = () => {
           </div>
         ); 
 
-      case 'activity':
+             case 'activity':
         return (
           <div className="space-y-6">
             <div className="bg-white p-6 rounded-2xl shadow-md">
@@ -801,7 +801,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
           </div>
-        ); */
+        ); */}
 
       case 'contact':
         return (
