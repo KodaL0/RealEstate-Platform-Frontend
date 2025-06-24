@@ -224,9 +224,10 @@ export default function ThreadList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0 mr-3">
+                          {/* Make this Link a block so truncate works */}
                           <Link
                             to={`/property/${thread.property}`}
-                            className="hover:text-blue-600 transition-colors group/property"
+                            className="block hover:text-blue-600 transition-colors group/property"
                             onClick={(e) => e.stopPropagation()}
                           >
                             <h3
@@ -282,11 +283,13 @@ export default function ThreadList() {
 
                       <div className="mb-3">
                         {lastMessage ? (
-                          <p className={`text-sm truncate ${
-                            hasUnread
-                              ? "font-medium text-slate-700"
-                              : "text-slate-600"
-                          }`}>
+                          <p
+                            className={`text-sm truncate ${
+                              hasUnread
+                                ? "font-medium text-slate-700"
+                                : "text-slate-600"
+                            }`}
+                          >
                             <span
                               className={`font-medium ${
                                 isOwn ? "text-blue-600" : "text-slate-800"
