@@ -238,7 +238,7 @@ export default function ChatInbox() {
                           {unreadCount > 99 ? '99+' : unreadCount}
                         </div>
                       )}
-                      {thread.property_address && (
+                      {activeTab === 'property' && thread.property_address && (
                         <div className="flex items-center text-xs text-gray-400 mt-1 gap-1">
                           <MapPin size={12} /> {thread.property_address}
                         </div>

@@ -12,11 +12,12 @@ interface ChatContextValue {
     propertyId: number,
     title: string
   ) => Promise<string>;
+  getOrCreateDmThread: (userId: number) => Promise<string>;
   sendMessage: (
     threadId: string,
     recipientId: number,
-    propertyId: number,
-    content: string
+    content: string,
+    propertyId?: number
   ) => void;
   unsendMessage: (messageId: string) => Promise<void>;
   markThreadRead: (threadId: string) => void;
@@ -237,11 +238,25 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return res.data.id;
   };
 
+  const getOrCreateDmThread = async (userId: number) => {
+    // Check for existing DM thread
+    const existing = threads.find(
+      (t) => !t.property && ((t.user1 === userId && t.user2 === user?.id) || (t.user1 === user?.id && t.user2 === userId))
+    );
+    if (existing) return existing.id;
+    
+    const res = await apiClient.post<Thread>("chat/", {
+      recipient_id: userId,
+    });
+    setThreads((prev) => [res.data, ...prev]);
+    return res.data.id;
+  };
+
   const sendMessage = (
     threadId: string,
     recipientId: number,
-    propertyId: number,
-    content: string
+    content: string,
+    propertyId?: number
   ) => {
     openSocket();
 
@@ -249,7 +264,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const optimisticMessage: Message = {
       id: `temp_${Date.now()}`, // Temporary ID until server responds
       thread_id: threadId,
-      property_id: propertyId,
+      property_id: propertyId || null,
       sender: user?.id || 0,
       recipient: recipientId,
       content: content,
@@ -268,17 +283,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       };
     });
 
-    const payload = JSON.stringify({
+    const payload: any = {
       type: "chat.message",
       recipient_id: recipientId,
-      property_id: propertyId,
       content,
-    });
+    };
+    
+    // Only add property_id if it exists
+    if (propertyId) {
+      payload.property_id = propertyId;
+    }
+
+    const payloadString = JSON.stringify(payload);
 
     const attemptSend = () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        console.log("WS sent", payload);
-        ws.current.send(payload);
+        console.log("WS sent", payloadString);
+        ws.current.send(payloadString);
       }
     };
 
@@ -387,6 +408,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       threads, 
       messages, 
       getOrCreateThread, 
+      getOrCreateDmThread,
       sendMessage, 
       unsendMessage,
       markThreadRead, 

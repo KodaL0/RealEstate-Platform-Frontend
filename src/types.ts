@@ -118,7 +118,7 @@ export interface Thread {
 export interface Message {
   id: string;
   thread_id: string;
-  property_id: number;
+  property_id: number | null;  // Now nullable
   sender: number;
   recipient: number;
   content: string;

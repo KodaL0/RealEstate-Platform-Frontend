@@ -112,6 +112,7 @@ function AppContent() {
           >
             <Route index element={<p className="p-8">Select a conversation</p>} />
             <Route path=":id" element={<ChatThread />} />
+            <Route path="dm/:id" element={<ChatThread />} />
           </Route>
 
           {/* Public profile route - must be last to avoid conflicts */}

@@ -197,9 +197,9 @@ export default function ChatThread() {
   const isOtherUserOnline = recipientId ? userStatuses[recipientId] === 'online' : false;
 
   const handleSend = () => {
-    if (!input.trim() || !id || !user || !recipientId || !propertyId) return;
+    if (!input.trim() || !id || !user || !recipientId) return;
 
-    sendMessage(id, recipientId, propertyId, input.trim());
+    sendMessage(id, recipientId, input.trim(), propertyId || undefined);
     setInput("");
   };
 
@@ -314,17 +314,26 @@ export default function ChatThread() {
             <UserIcon size={16} className="text-white" />
           </div>
           <div className="min-w-0 flex-1">
-            <Link 
-              to={`/property/${propertyId}`}
-              className="block hover:text-blue-600 transition-colors group"
-            >
-              <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
-                {thread?.property_title || `Property #${propertyId}`}
+            {thread?.property ? (
+              <Link 
+                to={`/property/${propertyId}`}
+                className="block hover:text-blue-600 transition-colors group"
+              >
+                <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                  {thread?.property_title || `Property #${propertyId}`}
+                </h2>
+              </Link>
+            ) : (
+              <h2 className="font-semibold text-slate-800 truncate">
+                {thread?.other_username || 'Direct Message'}
               </h2>
-            </Link>
+            )}
             <div className="flex items-center gap-2">
               <p className="text-sm text-slate-500 truncate">
-                {thread?.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}
+                {thread?.property ? 
+                  `${thread.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}` :
+                  'Direct Message'
+                }
               </p>
               <div className="flex items-center gap-1">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
