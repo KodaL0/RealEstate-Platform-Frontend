@@ -939,13 +939,6 @@ const PublicProfile: React.FC = () => {
                 )}
                                 {isConnecting ? 'Processing...' : getConnectionButtonText()}
               </button>
-              <button 
-                onClick={refreshConnectionStatus}
-                className="px-3 py-3 bg-gray-500 text-white rounded-lg hover:bg-gray-600 transition-colors text-sm"
-                title="Refresh Status"
-              >
-                🔄
-              </button>
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
               </button>
