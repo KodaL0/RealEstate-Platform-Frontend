@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X, Star, Send, AlertCircle, CheckCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import api from '../config/api';
-import { ReviewCategory, UserBasic } from '../types';
+import { UserBasic } from '../types';
 
 interface ReviewFormProps {
   reviewee: UserBasic;
@@ -11,69 +11,23 @@ interface ReviewFormProps {
   onSuccess: () => void;
 }
 
-interface CategoryRatingData {
-  category_id: number;
-  rating: number;
-}
-
 interface ReviewFormData {
   overall_rating: number;
-  title: string;
   content: string;
-  interaction_context: string;
-  category_ratings: CategoryRatingData[];
 }
 
 const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState<ReviewFormData>({
     overall_rating: 0,
-    title: '',
-    content: '',
-    interaction_context: '',
-    category_ratings: []
+    content: ''
   });
   
-  const [categories, setCategories] = useState<ReviewCategory[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (isOpen) {
-      fetchCategories();
-    }
-  }, [isOpen]);
-
-  const fetchCategories = async () => {
-    try {
-      const response = await api.reviews.getCategories();
-      const fetchedCategories = response.data;
-      setCategories(fetchedCategories);
-      
-      // Initialize category ratings
-      setFormData(prev => ({
-        ...prev,
-        category_ratings: fetchedCategories.map((cat: ReviewCategory) => ({
-          category_id: cat.id,
-          rating: 0
-        }))
-      }));
-    } catch (error) {
-      console.error('Error fetching categories:', error);
-    }
-  };
-
   const handleOverallRatingChange = (rating: number) => {
     setFormData(prev => ({ ...prev, overall_rating: rating }));
-  };
-
-  const handleCategoryRatingChange = (categoryId: number, rating: number) => {
-    setFormData(prev => ({
-      ...prev,
-      category_ratings: prev.category_ratings.map(cr =>
-        cr.category_id === categoryId ? { ...cr, rating } : cr
-      )
-    }));
   };
 
   const handleInputChange = (field: keyof ReviewFormData, value: string) => {
@@ -109,10 +63,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
       const submitData = {
         reviewee_id: reviewee.id,
         overall_rating: formData.overall_rating,
-        title: formData.title,
-        content: formData.content,
-        interaction_context: formData.interaction_context,
-        category_ratings: formData.category_ratings.filter(cr => cr.rating > 0)
+        content: formData.content
       };
 
       await api.reviews.createReview(submitData);
@@ -136,10 +87,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
   const resetForm = () => {
     setFormData({
       overall_rating: 0,
-      title: '',
-      content: '',
-      interaction_context: '',
-      category_ratings: categories.map(cat => ({ category_id: cat.id, rating: 0 }))
+      content: ''
     });
     setError(null);
     setSuccess(false);
@@ -221,21 +169,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
                 </div>
               </div>
 
-              {/* Review Title */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Review Title (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.title}
-                  onChange={(e) => handleInputChange('title', e.target.value)}
-                  placeholder="Brief summary of your experience"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  maxLength={200}
-                />
-              </div>
-
               {/* Review Content */}
               <div>
                 <label className="block text-sm font-semibold text-gray-900 mb-2">
@@ -245,7 +178,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
                   value={formData.content}
                   onChange={(e) => handleInputChange('content', e.target.value)}
                   placeholder="Share your experience working with this person. What made them stand out?"
-                  rows={4}
+                  rows={6}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
                   required
                 />
@@ -253,53 +186,6 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
                   {formData.content.length} characters (minimum 10 required)
                 </p>
               </div>
-
-              {/* Interaction Context */}
-              <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
-                  Interaction Context (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.interaction_context}
-                  onChange={(e) => handleInputChange('interaction_context', e.target.value)}
-                  placeholder="e.g., Property Purchase, Rental Agreement, Consultation"
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  maxLength={100}
-                />
-              </div>
-
-              {/* Category Ratings */}
-              {categories.length > 0 && (
-                <div>
-                  <label className="block text-sm font-semibold text-gray-900 mb-4">
-                    Detailed Ratings (Optional)
-                  </label>
-                  <div className="space-y-4">
-                    {categories.map((category) => {
-                      const categoryRating = formData.category_ratings.find(cr => cr.category_id === category.id);
-                      return (
-                        <div key={category.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                          <div className="flex-1">
-                            <h4 className="font-medium text-gray-900">{category.name}</h4>
-                            <p className="text-sm text-gray-600">{category.description}</p>
-                          </div>
-                          <div className="flex items-center space-x-3">
-                            {renderStarRating(
-                              categoryRating?.rating || 0,
-                              (rating) => handleCategoryRatingChange(category.id, rating),
-                              'sm'
-                            )}
-                            <span className="text-sm text-gray-500 w-8">
-                              {categoryRating?.rating || 0}/5
-                            </span>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
 
               {/* Submit Button */}
               <div className="flex justify-end space-x-4 pt-4 border-t">
