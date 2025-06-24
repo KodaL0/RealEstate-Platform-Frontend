@@ -169,6 +169,21 @@ const PublicProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  const refreshConnectionStatus = async () => {
+    if (!profileData) return;
+    
+    try {
+      const response = await api.auth.getPublicProfile(username!);
+      const data = response.data;
+      
+      if (data.status === 200 && data.profile) {
+        setProfileData(data.profile);
+      }
+    } catch (error) {
+      console.error('Error refreshing connection status:', error);
+    }
+  };
+
   const handleConnectionAction = async () => {
     if (!profileData) return;
     
@@ -179,20 +194,15 @@ const PublicProfile: React.FC = () => {
       if (status === 'none' || status === 'rejected') {
         // Send connection request
         await api.connections.sendRequest(profileData.id);
-        setProfileData({
-          ...profileData,
-          connection_status: 'pending_sent'
-        });
+        // Refresh the profile to get updated connection status
+        await refreshConnectionStatus();
       } else if (status === 'pending_received') {
         // Accept pending request
         // We need to get the connection ID first, but for now we'll just send a new request
         // which will auto-accept if there's a pending request from the other user
         await api.connections.sendRequest(profileData.id);
-        setProfileData({
-          ...profileData,
-          connection_status: 'connected',
-          connections_count: profileData.connections_count + 1
-        });
+        // Refresh the profile to get updated connection status
+        await refreshConnectionStatus();
       }
     } catch (error) {
       console.error('Error handling connection:', error);

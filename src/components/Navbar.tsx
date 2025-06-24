@@ -1,15 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { Menu, X, User, ChevronDown, Building2, MessageCircle } from "lucide-react";
+import { Menu, X, User, ChevronDown, Building2, MessageCircle, Users } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { logout } from "../middleware/auth";
 import { useChat } from "../context/ChatContext";
+import { useConnections } from "../hooks/useConnections";
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, setUser } = useUser();
   const { threads } = useChat();
+  const { pendingRequestsCount } = useConnections(!!user);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -111,6 +113,17 @@ const Navbar: React.FC = () => {
                 </button>
                 <div className="absolute right-0 mt-2 w-48 bg-white shadow-lg rounded-md overflow-hidden transform scale-0 group-hover:scale-100 opacity-0 group-hover:opacity-100 transition-all duration-200 origin-top-right z-50">
                   <Link to="/profile" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Profile</Link>
+                  <Link to="/connections" className="flex items-center justify-between px-4 py-2 text-gray-700 hover:bg-blue-50">
+                    <div className="flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      Connections
+                    </div>
+                    {pendingRequestsCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                        {pendingRequestsCount}
+                      </span>
+                    )}
+                  </Link>
                   <Link to="/my-listings" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">My Listings</Link>
                   <Link to="/favourites" className="block px-4 py-2 text-gray-700 hover:bg-blue-50">Favourites</Link>
                   <button onClick={handleLogout} className="w-full text-left block px-4 py-2 text-red-600 hover:bg-red-50 transition-colors">Logout</button>
@@ -143,6 +156,17 @@ const Navbar: React.FC = () => {
             {user ? (
               <>
                 <Link to="/profile" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">Profile</Link>
+                <Link to="/connections" onClick={() => setIsOpen(false)} className="flex items-center justify-between font-medium text-gray-700">
+                  <div className="flex items-center">
+                    <Users className="h-4 w-4 mr-2" />
+                    Connections
+                  </div>
+                  {pendingRequestsCount > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {pendingRequestsCount}
+                    </span>
+                  )}
+                </Link>
                 <Link to="/my-listings" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">My Listings</Link>
                 <Link to="/favourites" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">Favourites</Link>
                 <button onClick={handleLogout} className="font-medium text-red-600 text-left hover:bg-red-50 transition-colors rounded-md px-2 py-1">Logout</button>

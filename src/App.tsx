@@ -26,6 +26,7 @@ import ChatPage from "./pages/ChatPage";
 import ChatThread from "./pages/ChatThread";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
+import Connections from "./pages/Connections";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -99,6 +100,14 @@ function AppContent() {
             element={
               <RequireAuth>
                 <MyListings />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/connections"
+            element={
+              <RequireAuth>
+                <Connections />
               </RequireAuth>
             }
           />
