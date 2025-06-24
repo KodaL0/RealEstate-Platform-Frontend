@@ -5,7 +5,7 @@ import api from '../config/api'; // Use the main API client
 import { useUser } from '../context/UserContext'; // Import useUser
 
 interface FavouriteButtonProps {
-  propertyId: number; // Add propertyId prop
+  propertyId: string | number; // Accept both string and number
   defaultLiked?: boolean;
   onToggle?: (liked: boolean) => void; // Keep onToggle for immediate UI feedback if needed
   onUnlikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful unlike
@@ -22,6 +22,9 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
   const [liked, setLiked] = useState(defaultLiked);
   const [isLoading, setIsLoading] = useState(false); // Add loading state
   const { user } = useUser(); // Get user context
+  
+  // Convert propertyId to number for API calls
+  const numericPropertyId = typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId;
 
   const handleClick = useCallback(async (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevent parent onClick
@@ -55,7 +58,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
 
     try {
       // Use the correct API client that includes the /api/ prefix
-      const response = await api.properties.toggleFavorite(propertyId);
+      const response = await api.properties.toggleFavorite(numericPropertyId);
       console.log('Favourite toggled successfully:', response);
       const actualLikedState = response.data.is_favourite;
       setLiked(actualLikedState);
@@ -63,10 +66,10 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       // Call appropriate callback based on the action
       if (previousLikedState === false && actualLikedState === true) {
         // Property was liked
-        onLikeSuccess?.(propertyId);
+        onLikeSuccess?.(numericPropertyId);
       } else if (previousLikedState === true && actualLikedState === false) {
         // Property was unliked
-        onUnlikeSuccess?.(propertyId);
+        onUnlikeSuccess?.(numericPropertyId);
       }
 
     } catch (error) {
@@ -78,7 +81,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [liked, isLoading, propertyId, onToggle, onUnlikeSuccess, onLikeSuccess, user]); // Add onLikeSuccess to dependencies
+  }, [liked, isLoading, numericPropertyId, onToggle, onUnlikeSuccess, onLikeSuccess, user]); // Add onLikeSuccess to dependencies
 
   // Update local state if defaultLiked prop changes (e.g., after initial data load)
   React.useEffect(() => {
