@@ -133,6 +133,8 @@ const PublicProfile: React.FC = () => {
         const data = response.data;
 
         if (data.status === 200 && data.profile) {
+          console.log('Profile data received:', data.profile);
+          console.log('Connection status:', data.profile.connection_status);
           setProfileData(data.profile);
           // Normalize properties
           const normalizedProps = data.profile.published_properties.map(normalizePropertyData);
