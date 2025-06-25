@@ -88,8 +88,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (data.type === "chat.message") {
         const msg: Message = data.message;
 
+        let shouldUpdateThread = false;
+        let isOptimisticReplacement = false;
+
         setMessages((prev) => {
           const threadMsgs = prev[msg.thread_id] || [];
+          
+          // Check if this exact message already exists (prevent duplicates)
+          const messageAlreadyExists = threadMsgs.some(m => m.id === msg.id);
+          if (messageAlreadyExists) {
+            console.log(`Message ${msg.id} already exists, skipping duplicate`);
+            return prev;
+          }
           
           // Find and remove matching optimistic message
           let optimisticMessageRemoved = false;
@@ -101,47 +111,54 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // Remove this optimistic message and track its removal
               pendingMessages.current.delete(m.id.toString());
               optimisticMessageRemoved = true;
+              isOptimisticReplacement = true;
               console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
               return false;
             }
-            // Keep all other messages, but avoid exact duplicates
-            return m.id !== msg.id;
+            // Keep all other messages
+            return true;
           });
 
-          // Only add the real message if we're not creating a duplicate
-          const messageExists = filteredMsgs.some(m => m.id === msg.id);
-          
-          if (!messageExists) {
-            return {
-              ...prev,
-              [msg.thread_id]: [...filteredMsgs, msg],
-            };
-          } else {
-            // Message already exists, don't add duplicate
-            console.log(`Message ${msg.id} already exists, skipping duplicate`);
-            return {
-              ...prev,
-              [msg.thread_id]: filteredMsgs,
-            };
+          // If this is a new message (not replacing optimistic), we should update thread
+          if (!optimisticMessageRemoved) {
+            shouldUpdateThread = true;
           }
+
+          // Add the real message
+          return {
+            ...prev,
+            [msg.thread_id]: [...filteredMsgs, msg],
+          };
         });
 
-        setThreads((prev) => {
-          const threadsCopy = prev.map((t) => {
-            if (t.id !== msg.thread_id) return t;
-            const isIncoming = user ? msg.sender !== user.id : true;
-            const isUnread = !msg.read_at;
-            const shouldIncrement = isIncoming && isUnread;
+        // Only update thread for genuinely new messages, not optimistic replacements
+        if (shouldUpdateThread) {
+          setThreads((prev) => {
+            const threadsCopy = prev.map((t) => {
+              if (t.id !== msg.thread_id) return t;
+              
+              // Check if this is an incoming message (from someone else) or outgoing (from current user)
+              const isIncoming = user ? msg.sender !== user.id : true;
+              const isUnread = !msg.read_at;
+              
+              // Only increment unread count for incoming messages
+              // When user sends a message, don't treat their own message as unread
+              const shouldIncrement = isIncoming && isUnread;
 
-            return {
-              ...t,
-              updated_at: msg.created_at,
-              unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
-            };
+              console.log(`Thread update - Message from ${msg.sender}, Current user: ${user?.id}, isIncoming: ${isIncoming}, shouldIncrement: ${shouldIncrement}`);
+
+              return {
+                ...t,
+                updated_at: msg.created_at,
+                unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
+              };
+            });
+
+            return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
           });
-
-          return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-        });
+        } else {
+          console.log(`Skipping thread update for optimistic message replacement`);
+        }
       }
 
       if (data.type === "message.read") {
