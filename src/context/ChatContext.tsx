@@ -359,14 +359,22 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const payloadString = JSON.stringify(payload);
     
-    // Track if message was sent via WebSocket to avoid double-sending
-    let sentViaWebSocket = false;
+    // Track if message was confirmed via WebSocket to avoid double-sending  
+    let fallbackTimeoutId: number | null = null;
 
     const attemptSend = () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         console.log("WS sent", payloadString);
         ws.current.send(payloadString);
-        sentViaWebSocket = true;
+        
+        // Set up timeout only after sending via WebSocket
+        fallbackTimeoutId = window.setTimeout(() => {
+          // Check if optimistic message is still pending (not replaced by WebSocket response)
+          if (pendingMessages.current.has(optimisticMessage.id)) {
+            console.warn("WebSocket send timeout, falling back to REST API");
+            sendViaRestAPI();
+          }
+        }, 3000);
       } else {
         console.warn("WebSocket not available, falling back to REST API");
         sendViaRestAPI();
@@ -374,6 +382,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const sendViaRestAPI = async () => {
+      // Clear timeout if it exists
+      if (fallbackTimeoutId) {
+        clearTimeout(fallbackTimeoutId);
+        fallbackTimeoutId = null;
+      }
+
       try {
         const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
           content: content,
@@ -460,14 +474,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sendViaRestAPI();
       }
     }
-
-    // Add a timeout to fallback to REST API if WebSocket doesn't respond within 3 seconds
-    setTimeout(() => {
-      if (!sentViaWebSocket) {
-        console.warn("WebSocket send timeout, falling back to REST API");
-        sendViaRestAPI();
-      }
-    }, 3000);
 
     // Update thread timestamp optimistically
     setThreads((prev) => {
