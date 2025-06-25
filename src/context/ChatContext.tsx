@@ -85,8 +85,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     ws.current.onmessage = (e) => {
       const data = JSON.parse(e.data);
+      console.log(`📨 WebSocket message received:`, data);
+      
       if (data.type === "chat.message") {
         const msg: Message = data.message;
+        console.log(`💬 Processing chat message: ID=${msg.id}, Sender=${msg.sender}, Content="${msg.content}", CurrentUser=${user?.id}`);
 
         let shouldUpdateThread = false;
         let isOptimisticReplacement = false;
@@ -134,6 +137,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Add the real message
+          console.log(`➕ Adding real message ${msg.id} to UI. Thread ${msg.thread_id} will have ${filteredMsgs.length + 1} messages`);
           return {
             ...prev,
             [msg.thread_id]: [...filteredMsgs, msg],
