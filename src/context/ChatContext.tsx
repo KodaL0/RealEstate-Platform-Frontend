@@ -68,14 +68,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /* ---------------------------- WebSocket setup --------------------------- */
   const ws = useRef<WebSocket | null>(null);
+  const reconnectTimeoutRef = useRef<number | null>(null);
+  const isReconnectingRef = useRef(false);
 
   const openSocket = useCallback(() => {
+    // Prevent multiple simultaneous reconnection attempts
+    if (isReconnectingRef.current) {
+      return;
+    }
+
     if (
       ws.current &&
       (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)
     ) {
       return;
     }
+
+    isReconnectingRef.current = true;
 
     const baseWs =
       (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
@@ -170,16 +179,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     ws.current.onerror = (err) => {
       console.warn("WebSocket error", err);
+      isReconnectingRef.current = false;
+    };
+
+    ws.current.onopen = () => {
+      console.log("WebSocket connected successfully");
+      isReconnectingRef.current = false;
     };
 
     ws.current.onclose = () => {
       clearInterval(pingInterval);
       ws.current = null;
+      isReconnectingRef.current = false;
+
+      // Clear any existing reconnect timeout
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+
       // Attempt a simple reconnect after a short delay
-      setTimeout(() => {
+      reconnectTimeoutRef.current = window.setTimeout(() => {
         console.log("Re-opening WebSocket after close…");
         openSocket();
-      }, 2000);
+      }, 5000); // Increased delay to 5 seconds to avoid rate limiting
     };
   }, [user?.id]);
 
@@ -187,6 +209,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
     openSocket();
+
+    // Cleanup on unmount
+    return () => {
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+      }
+      if (ws.current) {
+        ws.current.close();
+      }
+    };
   }, [openSocket]);
 
   /* --------------------------- Helper functions --------------------------- */
