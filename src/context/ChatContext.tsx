@@ -38,6 +38,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { user } = useUser();
   const markReadTimeouts = useRef<Record<string, number>>({});
   const typingTimeouts = useRef<Record<string, number>>({});
+  const pendingMessages = useRef<Set<string>>(new Set()); // Track pending optimistic messages
 
 
 
@@ -90,21 +91,39 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMessages((prev) => {
           const threadMsgs = prev[msg.thread_id] || [];
           
-          // Check if this is a real message replacing an optimistic one
-          // Remove any optimistic messages with similar content and sender
+          // Find and remove matching optimistic message
+          let optimisticMessageRemoved = false;
           const filteredMsgs = threadMsgs.filter((m) => {
+            // Check if this is an optimistic message that matches the real one
             if (m.id.toString().startsWith('temp_') && 
                 m.sender === msg.sender && 
                 m.content === msg.content) {
-              return false; // Remove optimistic message
+              // Remove this optimistic message and track its removal
+              pendingMessages.current.delete(m.id.toString());
+              optimisticMessageRemoved = true;
+              console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
+              return false;
             }
-            return m.id !== msg.id; // Remove any exact duplicates
+            // Keep all other messages, but avoid exact duplicates
+            return m.id !== msg.id;
           });
 
-          return {
-            ...prev,
-            [msg.thread_id]: [...filteredMsgs, msg],
-          };
+          // Only add the real message if we're not creating a duplicate
+          const messageExists = filteredMsgs.some(m => m.id === msg.id);
+          
+          if (!messageExists) {
+            return {
+              ...prev,
+              [msg.thread_id]: [...filteredMsgs, msg],
+            };
+          } else {
+            // Message already exists, don't add duplicate
+            console.log(`Message ${msg.id} already exists, skipping duplicate`);
+            return {
+              ...prev,
+              [msg.thread_id]: filteredMsgs,
+            };
+          }
         });
 
         setThreads((prev) => {
@@ -286,7 +305,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Create optimistic message for immediate UI update
     const optimisticMessage: Message = {
-      id: `temp_${Date.now()}`, // Temporary ID until server responds
+      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // More unique temporary ID
       thread_id: threadId,
       property_id: propertyId || null,
       sender: user?.id || 0,
@@ -297,6 +316,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       is_unsent: false,
       unsent_at: null,
     };
+
+    // Track this optimistic message
+    pendingMessages.current.add(optimisticMessage.id);
 
     // Add message optimistically to local state
     setMessages((prev) => {
@@ -319,11 +341,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     const payloadString = JSON.stringify(payload);
+    
+    // Track if message was sent via WebSocket to avoid double-sending
+    let sentViaWebSocket = false;
 
     const attemptSend = () => {
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         console.log("WS sent", payloadString);
         ws.current.send(payloadString);
+        sentViaWebSocket = true;
       } else {
         console.warn("WebSocket not available, falling back to REST API");
         sendViaRestAPI();
@@ -353,14 +379,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMessages((prev) => {
           const threadMsgs = prev[threadId] || [];
           
+          // Only proceed if this optimistic message is still pending
+          if (!pendingMessages.current.has(optimisticMessage.id)) {
+            console.log(`Optimistic message ${optimisticMessage.id} already processed, skipping REST API response`);
+            return prev;
+          }
+
           // Remove optimistic message and add real message
           const filteredMsgs = threadMsgs.filter((m) => {
-            if (m.id.toString().startsWith('temp_') && 
-                m.sender === realMessage.sender && 
-                m.content === realMessage.content) {
+            if (m.id === optimisticMessage.id) {
+              pendingMessages.current.delete(m.id);
+              console.log(`REST API replacing optimistic message ${m.id} with real message ${realMessage.id}`);
               return false; // Remove optimistic message
             }
-            return true;
+            return m.id !== realMessage.id; // Avoid duplicates
           });
 
           return {
@@ -376,9 +408,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setMessages((prev) => {
           const threadMsgs = prev[threadId] || [];
           const updatedMsgs = threadMsgs.map((m) => {
-            if (m.id.toString().startsWith('temp_') && 
-                m.sender === user?.id && 
-                m.content === content) {
+            if (m.id === optimisticMessage.id && pendingMessages.current.has(m.id)) {
+              pendingMessages.current.delete(m.id);
               return { ...m, content: `❌ Failed to send: ${content}` };
             }
             return m;
@@ -412,6 +443,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         sendViaRestAPI();
       }
     }
+
+    // Add a timeout to fallback to REST API if WebSocket doesn't respond within 3 seconds
+    setTimeout(() => {
+      if (!sentViaWebSocket) {
+        console.warn("WebSocket send timeout, falling back to REST API");
+        sendViaRestAPI();
+      }
+    }, 3000);
 
     // Update thread timestamp optimistically
     setThreads((prev) => {
@@ -524,3 +563,4 @@ export const useChat = () => {
   if (!ctx) throw new Error("useChat must be within ChatProvider");
   return ctx;
 };
+
