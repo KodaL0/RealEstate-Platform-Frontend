@@ -103,21 +103,30 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Find and remove matching optimistic message
           let optimisticMessageRemoved = false;
+          console.log(`🔍 Looking for matching optimistic message for real message ${msg.id} - content: "${msg.content}"`);
+          console.log(`📋 Current thread messages: ${threadMsgs.map(m => `${m.id}(${m.content.substring(0, 20)})`).join(', ')}`);
+          
           const filteredMsgs = threadMsgs.filter((m) => {
             // Check if this is an optimistic message that matches the real one
             if (m.id.toString().startsWith('temp_') && 
                 m.sender === msg.sender && 
                 m.content === msg.content) {
               // Remove this optimistic message and track its removal
+              console.log(`🎯 Found matching optimistic message ${m.id} for real message ${msg.id}`);
               pendingMessages.current.delete(m.id.toString());
               optimisticMessageRemoved = true;
               isOptimisticReplacement = true;
-              console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
+              console.log(`✅ Replacing optimistic message ${m.id} with real message ${msg.id}`);
+              console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
               return false;
             }
             // Keep all other messages
             return true;
           });
+          
+          if (!optimisticMessageRemoved) {
+            console.log(`ℹ️ No matching optimistic message found - this is a new incoming message`);
+          }
 
           // If this is a new message (not replacing optimistic), we should update thread
           if (!optimisticMessageRemoved) {
@@ -318,6 +327,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     content: string,
     propertyId?: number
   ) => {
+    console.log(`🚀 SEND MESSAGE START - Content: "${content}", ThreadId: ${threadId}, RecipientId: ${recipientId}`);
     openSocket();
 
     // Create optimistic message for immediate UI update
@@ -334,12 +344,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsent_at: null,
     };
 
+    console.log(`📝 Created optimistic message: ${optimisticMessage.id}`);
+
     // Track this optimistic message
     pendingMessages.current.add(optimisticMessage.id);
+    console.log(`📌 Added to pending messages. Current pending count: ${pendingMessages.current.size}`);
 
     // Add message optimistically to local state
     setMessages((prev) => {
       const threadMsgs = prev[threadId] || [];
+      console.log(`💾 Adding optimistic message to UI. Thread ${threadId} has ${threadMsgs.length} existing messages`);
       return {
         ...prev,
         [threadId]: [...threadMsgs, optimisticMessage],
@@ -364,48 +378,62 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let messageSent = false; // Prevent multiple sends
 
     const attemptSend = () => {
+      console.log(`🔄 attemptSend() called - messageSent: ${messageSent}, WS state: ${ws.current?.readyState || 'null'}`);
+      
       if (messageSent) {
-        console.log("Message already sent, skipping duplicate send");
+        console.log("⚠️ Message already sent, skipping duplicate send");
         return;
       }
       
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        console.log("WS sent", payloadString);
+        console.log(`📡 WebSocket READY - Sending message: ${payloadString}`);
         ws.current.send(payloadString);
         messageSent = true;
+        console.log(`✅ WebSocket message sent successfully, messageSent = ${messageSent}`);
         
         // Set up timeout only after sending via WebSocket
         fallbackTimeoutId = window.setTimeout(() => {
+          console.log(`⏰ Timeout fired - checking if optimistic message ${optimisticMessage.id} still pending`);
           // Check if optimistic message is still pending (not replaced by WebSocket response)
           if (pendingMessages.current.has(optimisticMessage.id)) {
-            console.warn("WebSocket send timeout, falling back to REST API");
+            console.warn(`🔄 WebSocket send timeout, falling back to REST API for message: ${optimisticMessage.id}`);
             sendViaRestAPI();
+          } else {
+            console.log(`✅ Optimistic message ${optimisticMessage.id} already processed, no REST API fallback needed`);
           }
         }, 3000);
+        console.log(`⏱️ Set fallback timeout with ID: ${fallbackTimeoutId}`);
       } else {
-        console.warn("WebSocket not available, falling back to REST API");
+        console.warn(`❌ WebSocket not available (state: ${ws.current?.readyState || 'null'}), falling back to REST API`);
         sendViaRestAPI();
       }
     };
 
     const sendViaRestAPI = async () => {
+      console.log(`🌐 sendViaRestAPI() called - messageSent: ${messageSent}`);
+      
       if (messageSent) {
-        console.log("Message already sent via WebSocket, skipping REST API");
+        console.log("⚠️ Message already sent via WebSocket, skipping REST API");
         return;
       }
       
       messageSent = true;
+      console.log(`🔒 Set messageSent = true in REST API, preventing further sends`);
       
       // Clear timeout if it exists
       if (fallbackTimeoutId) {
+        console.log(`🧹 Clearing fallback timeout ${fallbackTimeoutId}`);
         clearTimeout(fallbackTimeoutId);
         fallbackTimeoutId = null;
       }
 
       try {
+        console.log(`📤 Making REST API call to send message: "${content}"`);
         const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
           content: content,
         });
+        
+        console.log(`📥 REST API response received - Message ID: ${response.data.id}`);
         
         // Replace optimistic message with real message from server
         const realMessage: Message = {
@@ -426,15 +454,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Only proceed if this optimistic message is still pending
           if (!pendingMessages.current.has(optimisticMessage.id)) {
-            console.log(`Optimistic message ${optimisticMessage.id} already processed, skipping REST API response`);
+            console.log(`⚠️ Optimistic message ${optimisticMessage.id} already processed, skipping REST API response`);
             return prev;
           }
+
+          console.log(`🔄 Processing REST API response - replacing optimistic ${optimisticMessage.id} with real ${realMessage.id}`);
 
           // Remove optimistic message and add real message
           const filteredMsgs = threadMsgs.filter((m) => {
             if (m.id === optimisticMessage.id) {
               pendingMessages.current.delete(m.id);
-              console.log(`REST API replacing optimistic message ${m.id} with real message ${realMessage.id}`);
+              console.log(`✅ REST API replacing optimistic message ${m.id} with real message ${realMessage.id}`);
+              console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
               return false; // Remove optimistic message
             }
             return m.id !== realMessage.id; // Avoid duplicates
@@ -446,15 +477,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           };
         });
 
-        console.log("Message sent via REST API");
+        console.log("✅ Message sent successfully via REST API");
       } catch (error) {
-        console.error("Failed to send message via REST API:", error);
+        console.error("❌ Failed to send message via REST API:", error);
         // Mark optimistic message as failed
         setMessages((prev) => {
           const threadMsgs = prev[threadId] || [];
           const updatedMsgs = threadMsgs.map((m) => {
             if (m.id === optimisticMessage.id && pendingMessages.current.has(m.id)) {
               pendingMessages.current.delete(m.id);
+              console.log(`❌ Marked optimistic message ${m.id} as failed`);
               return { ...m, content: `❌ Failed to send: ${content}` };
             }
             return m;
@@ -468,23 +500,37 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     };
 
+    console.log(`🔍 Checking WebSocket state - ws.current: ${ws.current ? 'exists' : 'null'}`);
+    
     if (!ws.current) {
-      console.warn("No WebSocket available, using REST API");
+      console.warn("❌ No WebSocket available, using REST API");
       sendViaRestAPI();
       return;
     }
 
+    console.log(`📊 WebSocket readyState: ${ws.current.readyState} (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED)`);
+    
     if (ws.current.readyState === WebSocket.OPEN) {
+      console.log("🟢 WebSocket is OPEN - calling attemptSend immediately");
       attemptSend();
     } else if (ws.current.readyState === WebSocket.CONNECTING) {
-      (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
+      console.log("🟡 WebSocket is CONNECTING - adding event listener for open");
+      (ws.current as WebSocket).addEventListener("open", () => {
+        console.log("🔥 WebSocket opened via CONNECTING listener - calling attemptSend");
+        attemptSend();
+      }, { once: true });
     } else {
+      console.log("🔴 WebSocket is CLOSED/CLOSING - creating new socket");
       ws.current = null;
       openSocket();
       if (ws.current) {
-        (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
+        console.log("🆕 New WebSocket created - adding event listener for open");
+        (ws.current as WebSocket).addEventListener("open", () => {
+          console.log("🔥 WebSocket opened via NEW socket listener - calling attemptSend");
+          attemptSend();
+        }, { once: true });
       } else {
-        // If WebSocket creation failed, fallback to REST API
+        console.warn("❌ Failed to create new WebSocket - falling back to REST API");
         sendViaRestAPI();
       }
     }
@@ -496,6 +542,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       );
       return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
     });
+    
+    console.log(`🏁 SEND MESSAGE END - Optimistic message ${optimisticMessage.id} setup complete`);
   };
 
   const markThreadRead = useCallback((threadId: string) => {
