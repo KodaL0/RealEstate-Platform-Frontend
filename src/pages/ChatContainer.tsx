@@ -5,7 +5,7 @@ import ChatThread from "./ChatThread";
 import { useState, useEffect } from "react";
 import { ArrowLeft, Menu, MessageCircle } from "lucide-react";
 
-// Empty state component for when no chat is selected
+// Empty state component for when no chat is selected on desktop
 function ChatEmptyState() {
   return (
     <div className="h-full flex items-center justify-center bg-gray-50 p-8">
@@ -35,9 +35,9 @@ export default function ChatContainer() {
   const [navHeight, setNavHeight] = useState(64); // Default navbar height
   const [showSidebar, setShowSidebar] = useState(false);
   
-  // Check if we're in a chat thread (mobile should hide sidebar)
+  // Check if we're in a chat thread
   const isInThread = location.pathname.includes('/chat/') && location.pathname.split('/').length > 2;
-  const isMobile = window.innerWidth < 1024; // lg breakpoint
+  const isDesktop = window.innerWidth >= 1024; // lg breakpoint
 
   useEffect(() => {
     // Calculate navbar height dynamically
@@ -59,23 +59,39 @@ export default function ChatContainer() {
     }
   }, []);
 
-  // Auto-hide sidebar on mobile when navigating to a thread
+  // Handle responsive behavior
   useEffect(() => {
-    if (isMobile && isInThread) {
-      setShowSidebar(false);
-    }
-  }, [isInThread, isMobile]);
+    const handleResize = () => {
+      const newIsDesktop = window.innerWidth >= 1024;
+      
+      // On desktop, always show sidebar unless manually hidden
+      if (newIsDesktop) {
+        setShowSidebar(true);
+      } else {
+        // On mobile, show sidebar only when not in thread
+        setShowSidebar(!isInThread);
+      }
+    };
+
+    // Set initial state
+    handleResize();
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isInThread]);
 
   // Handle back navigation on mobile
   const handleBackToInbox = () => {
-    if (isMobile) {
+    if (!isDesktop) {
       navigate('/chat');
     }
   };
 
-  // Close sidebar when clicking outside
+  // Close sidebar when clicking outside (mobile only)
   const handleOverlayClick = () => {
-    setShowSidebar(false);
+    if (!isDesktop) {
+      setShowSidebar(false);
+    }
   };
 
   // Toggle sidebar
@@ -92,9 +108,9 @@ export default function ChatContainer() {
       }}
     >
       {/* Mobile sidebar overlay */}
-      {showSidebar && (
+      {!isDesktop && showSidebar && isInThread && (
         <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 bg-black bg-opacity-50 z-40"
           onClick={handleOverlayClick}
         />
       )}
@@ -103,27 +119,29 @@ export default function ChatContainer() {
       <div className="flex flex-1 min-h-0 relative">
         {/* Sidebar - Inbox */}
         <aside className={`
-          w-full sm:w-80 sm:max-w-[80vw] border-r border-gray-200 bg-white flex-shrink-0
-          lg:relative lg:translate-x-0 lg:z-auto lg:block
-          ${showSidebar || (!isMobile && !isInThread)
-            ? 'fixed left-0 top-0 bottom-0 z-50 translate-x-0' 
-            : 'fixed left-0 top-0 bottom-0 z-50 -translate-x-full'
+          w-full lg:w-80 lg:max-w-none border-r border-gray-200 bg-white flex-shrink-0
+          ${isDesktop
+            ? 'relative z-auto' // Desktop: always visible
+            : showSidebar 
+              ? 'fixed left-0 top-0 bottom-0 z-50' // Mobile: overlay when visible
+              : 'fixed left-0 top-0 bottom-0 z-50 -translate-x-full' // Mobile: hidden
           }
-          ${isMobile && isInThread ? 'hidden lg:block' : ''}
           transition-transform duration-300 ease-in-out
         `}>
           <div className="h-full flex flex-col">
-            {/* Mobile header with close button */}
-            <div className="lg:hidden flex items-center justify-between p-4 border-b border-gray-200 bg-white">
-              <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
-              <button 
-                onClick={() => setShowSidebar(false)}
-                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                aria-label="Close messages"
-              >
-                <ArrowLeft size={20} />
-              </button>
-            </div>
+            {/* Mobile header with close button - only show on mobile when in thread */}
+            {!isDesktop && isInThread && (
+              <div className="flex items-center justify-between p-4 border-b border-gray-200 bg-white">
+                <h2 className="text-lg font-semibold text-gray-900">Messages</h2>
+                <button 
+                  onClick={() => setShowSidebar(false)}
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                  aria-label="Close messages"
+                >
+                  <ArrowLeft size={20} />
+                </button>
+              </div>
+            )}
             
             <div className="flex-1 overflow-hidden">
               <ChatInbox />
@@ -134,11 +152,12 @@ export default function ChatContainer() {
         {/* Main Chat Area */}
         <main className={`
           flex-1 flex flex-col min-h-0 bg-white
-          ${isMobile && !isInThread ? 'hidden lg:flex' : 'flex'}
+          ${!isDesktop && !isInThread ? 'hidden' : 'flex'}
+          ${!isDesktop && showSidebar && isInThread ? 'hidden' : ''}
         `}>
           {/* Mobile header for chat threads */}
-          {isMobile && isInThread && (
-            <div className="lg:hidden bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
+          {!isDesktop && isInThread && (
+            <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
               <button 
                 onClick={handleBackToInbox}
                 className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors -ml-2"
@@ -146,12 +165,19 @@ export default function ChatContainer() {
               >
                 <ArrowLeft size={20} />
               </button>
+              <button 
+                onClick={toggleSidebar}
+                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
+                aria-label="Show messages list"
+              >
+                <Menu size={20} />
+              </button>
               <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
             </div>
           )}
 
-          {/* Desktop header with menu button (only when sidebar is hidden) */}
-          {!isMobile && isInThread && (
+          {/* Desktop header with menu button (only when sidebar can be toggled) */}
+          {isDesktop && (
             <div className="hidden lg:flex bg-white border-b border-gray-200 px-4 py-3 items-center gap-3 flex-shrink-0">
               <button 
                 onClick={toggleSidebar}
@@ -167,7 +193,9 @@ export default function ChatContainer() {
           {/* Chat content */}
           <div className="flex-1 flex flex-col min-h-0">
             <Routes>
-              <Route path="/" element={<ChatEmptyState />} />
+              <Route path="/" element={
+                isDesktop ? <ChatEmptyState /> : <ChatInbox />
+              } />
               <Route path="/:id" element={<ChatThread />} />
             </Routes>
           </div>
@@ -175,11 +203,11 @@ export default function ChatContainer() {
       </div>
 
       {/* Mobile floating action button for opening messages when in a thread */}
-      {isMobile && isInThread && !showSidebar && (
+      {!isDesktop && isInThread && !showSidebar && (
         <button
           onClick={toggleSidebar}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 z-30 lg:hidden"
-          aria-label="Open messages"
+          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-500 text-white rounded-full shadow-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 z-30"
+          aria-label="Open messages list"
         >
           <MessageCircle size={24} className="mx-auto" />
         </button>
