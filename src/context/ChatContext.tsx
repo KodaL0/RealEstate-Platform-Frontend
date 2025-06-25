@@ -29,7 +29,7 @@ interface ChatContextValue {
     recipientId: number,
     content: string,
     propertyId?: number
-  ) => Promise<void>;
+  ) => void;
   markThreadRead: (threadId: string) => void;
   sendTypingStart: (threadId: string, recipientId: number) => void;
   sendTypingStop: (threadId: string, recipientId: number) => void;
@@ -228,31 +228,54 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 
   const sendMessage = useCallback(
-    async (
+    (
       threadId: string,
       recipientId: number,
       content: string,
       propertyId?: number
     ) => {
-      // 1. Send via REST – simple and reliable; backend will broadcast on WebSocket
-      const res = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
-        content,
-        property_id: propertyId,
-        recipient_id: recipientId,
-      });
-
-      // 2. Optimistically add the message immediately using server response (no temp IDs)
-      setMessages((prev) => {
-        const list = prev[threadId] ?? [];
-        if (list.some((m) => m.id === res.data.id)) return prev; // already present
-        return {
-          ...prev,
-          [threadId]: [...list, res.data],
-        };
-      });
-
-      // 3. Ensure socket connection is alive so future pushes are received
+      // Ensure the socket is (re)opened
       openSocket();
+
+      const payload: any = {
+        type: "chat.message",
+        recipient_id: recipientId,
+        content,
+      };
+      if (propertyId) payload.property_id = propertyId;
+
+      const json = JSON.stringify(payload);
+
+      const sendViaRest = async () => {
+        await apiClient.post<Message>(`chat/${threadId}/messages/`, {
+          content,
+          property_id: propertyId,
+          recipient_id: recipientId,
+        });
+      };
+
+      if (!ws.current) {
+        // No socket – fallback immediately
+        void sendViaRest();
+        return;
+      }
+
+      switch (ws.current.readyState) {
+        case WebSocket.OPEN:
+          ws.current.send(json);
+          break;
+        case WebSocket.CONNECTING:
+          ws.current.addEventListener(
+            "open",
+            () => {
+              ws.current?.send(json);
+            },
+            { once: true }
+          );
+          break;
+        default:
+          void sendViaRest();
+      }
     },
     [openSocket]
   );
