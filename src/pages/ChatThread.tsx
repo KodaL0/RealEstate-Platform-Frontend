@@ -50,6 +50,9 @@ export default function ChatThread() {
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
   const [longPressActive, setLongPressActive] = useState<string | null>(null);
+  const [hoveredMessage, setHoveredMessage] = useState<string | null>(null);
+  const [lastTapTime, setLastTapTime] = useState<number>(0);
+  const [lastTappedMessage, setLastTappedMessage] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -262,6 +265,31 @@ export default function ChatThread() {
     setSelectedMessage(null);
   };
 
+  // Mobile-friendly message interaction handlers
+  const handleMessagePress = (messageId: string) => {
+    setHoveredMessage(messageId);
+  };
+
+  const handleMessageRelease = () => {
+    // Keep the button visible for a short time on mobile
+    setTimeout(() => setHoveredMessage(null), 2000);
+  };
+
+  // Handle double-tap for quick access to unsend
+  const handleMessageTap = (messageId: string) => {
+    const now = Date.now();
+    const timeDiff = now - lastTapTime;
+    
+    if (timeDiff < 300 && lastTappedMessage === messageId) {
+      // Double tap detected - show unsend button
+      setHoveredMessage(messageId);
+      setTimeout(() => setHoveredMessage(null), 3000);
+    }
+    
+    setLastTapTime(now);
+    setLastTappedMessage(messageId);
+  };
+
   // Handle context menu prevention
   const handleContextMenu = (event: React.MouseEvent) => {
     event.preventDefault(); // Prevent browser context menu
@@ -415,7 +443,7 @@ export default function ChatThread() {
                 const showAvatar = idx === 0 || items[idx - 1]?.sender !== message.sender;
                 
                 return (
-                  <div key={message.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} group`}>
+                  <div key={message.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} group ${hoveredMessage === message.id ? 'message-active' : ''}`}>
                     {/* Avatar for incoming messages */}
                     {!isOwn && (
                       <div className={`w-7 h-7 rounded-full flex-shrink-0 transition-opacity duration-200 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
@@ -442,12 +470,23 @@ export default function ChatThread() {
                         ${longPressActive === message.id ? 'scale-95 shadow-xl ring-2 ring-blue-300/50' : ''}
                         touch-manipulation select-text
                       `}
-                      onTouchStart={isOwn && !message.is_unsent ? (e) => handleLongPressStart(message.id, e) : undefined}
-                      onTouchEnd={handleLongPressEnd}
-                      onTouchCancel={handleLongPressEnd}
+                      onTouchStart={isOwn && !message.is_unsent ? (e) => {
+                        handleMessagePress(message.id);
+                        handleLongPressStart(message.id, e);
+                      } : undefined}
+                      onClick={isOwn && !message.is_unsent ? () => handleMessageTap(message.id) : undefined}
+                      onTouchEnd={() => {
+                        handleLongPressEnd();
+                        handleMessageRelease();
+                      }}
+                      onTouchCancel={() => {
+                        handleLongPressEnd();
+                        setHoveredMessage(null);
+                      }}
+                      onMouseEnter={isOwn && !message.is_unsent ? () => setHoveredMessage(message.id) : undefined}
+                      onMouseLeave={() => setHoveredMessage(null)}
                       onMouseDown={isOwn && !message.is_unsent ? (e) => handleLongPressStart(message.id, e) : undefined}
                       onMouseUp={handleLongPressEnd}
-                      onMouseLeave={handleLongPressEnd}
                       onContextMenu={handleContextMenu}
                     >
                       {/* Sender name for incoming messages */}
@@ -466,16 +505,27 @@ export default function ChatThread() {
                       {longPressActive === message.id && (
                         <div className="long-press-progress"></div>
                       )}
+
+                      {/* Mobile hint for first-time users */}
+                      {isOwn && !message.is_unsent && hoveredMessage === message.id && (
+                        <div className="absolute -bottom-8 left-1/2 transform -translate-x-1/2 bg-black/80 text-white text-xs px-2 py-1 rounded whitespace-nowrap opacity-90 animate-in fade-in duration-200 pointer-events-none lg:hidden">
+                          Long press or double tap
+                        </div>
+                      )}
                       
-                      {/* Delicate Unsend button for desktop (hidden on touch devices) */}
+                      {/* Enhanced Unsend button for all devices */}
                       {isOwn && !message.is_unsent && (
                         <button
                           onClick={() => handleUnsend(message.id)}
-                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500/90 hover:bg-red-600 focus:bg-red-600 text-white rounded-full p-1.5 sm:p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300/60 focus:ring-offset-1 min-w-[28px] min-h-[28px] sm:min-w-[22px] sm:min-h-[22px] flex items-center justify-center touch-manipulation active:scale-90 hover:scale-110 backdrop-blur-sm border border-red-400/20"
+                          className={`absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500/90 hover:bg-red-600 focus:bg-red-600 active:bg-red-700 text-white rounded-full p-1.5 sm:p-1 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300/60 focus:ring-offset-1 min-w-[32px] min-h-[32px] sm:min-w-[24px] sm:min-h-[24px] flex items-center justify-center touch-manipulation active:scale-90 hover:scale-110 backdrop-blur-sm border border-red-400/20 ${
+                            hoveredMessage === message.id || longPressActive === message.id 
+                              ? 'opacity-100 scale-110' 
+                              : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+                          }`}
                           title="Delete message"
                           aria-label="Delete this message"
                         >
-                          <X size={12} className="sm:w-2.5 sm:h-2.5" />
+                          <X size={14} className="sm:w-3 sm:h-3" />
                         </button>
                       )}
                       

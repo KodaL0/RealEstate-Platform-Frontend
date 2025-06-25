@@ -336,6 +336,21 @@ body,
     -webkit-backdrop-filter: blur(8px);
   }
 
+  /* Message active state for mobile interactions */
+  .message-active {
+    position: relative;
+  }
+
+  .message-active::before {
+    content: '';
+    position: absolute;
+    inset: -8px;
+    background: rgba(59, 130, 246, 0.05);
+    border-radius: 20px;
+    pointer-events: none;
+    z-index: -1;
+  }
+
   /* Long press progress indicator */
   .long-press-progress {
     position: absolute;
