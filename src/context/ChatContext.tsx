@@ -85,6 +85,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     ws.current = new WebSocket(url);
 
+    // Keep the connection alive
+    const pingInterval = window.setInterval(() => {
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.send(JSON.stringify({ type: "ping" }));
+      }
+    }, 30000); // 30 s
+
     ws.current.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
@@ -159,6 +166,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         default:
           break;
       }
+    };
+
+    ws.current.onerror = (err) => {
+      console.warn("WebSocket error", err);
+    };
+
+    ws.current.onclose = () => {
+      clearInterval(pingInterval);
+      ws.current = null;
+      // Attempt a simple reconnect after a short delay
+      setTimeout(() => {
+        console.log("Re-opening WebSocket after close…");
+        openSocket();
+      }, 2000);
     };
   }, [user?.id]);
 
