@@ -41,9 +41,24 @@ export default function ChatInbox() {
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
-    return threadMessages && threadMessages.length > 0
-      ? threadMessages[0]
-      : null;
+    if (threadMessages && threadMessages.length > 0) {
+      return threadMessages[threadMessages.length - 1]; // Get the latest message
+    }
+    // Fallback to server data if no cached messages
+    const thread = threads.find((t) => t.id === threadId);
+    if (thread?.last_message) {
+      return {
+        id: thread.last_message.id,
+        thread_id: threadId,
+        property_id: thread.property,
+        sender: thread.last_message.sender,
+        recipient: thread.user1 === thread.last_message.sender ? thread.user2 : thread.user1,
+        content: thread.last_message.content,
+        created_at: thread.last_message.created_at,
+        read_at: thread.last_message.read_at
+      };
+    }
+    return null;
   };
 
   const getUnreadCount = (threadId: string) => {
