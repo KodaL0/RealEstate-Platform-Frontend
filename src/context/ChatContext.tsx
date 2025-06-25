@@ -1,7 +1,18 @@
-import React, { createContext, useContext, useEffect, useRef, useState, useCallback } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { Thread, Message } from "../types";
 import { apiClient } from "../config/api";
 import { useUser } from "./UserContext";
+
+/* -------------------------------------------------------------------------- */
+/*                                Context API                                 */
+/* -------------------------------------------------------------------------- */
 
 interface ChatContextValue {
   threads: Thread[];
@@ -9,8 +20,8 @@ interface ChatContextValue {
   setMessages: React.Dispatch<React.SetStateAction<Record<string, Message[]>>>;
   getOrCreateThread: (
     sellerId: number,
-    propertyId: number,
-    title: string
+    propertyId: number | null,
+    title?: string
   ) => Promise<string>;
   getOrCreateDmThread: (userId: number) => Promise<string>;
   sendMessage: (
@@ -18,689 +29,280 @@ interface ChatContextValue {
     recipientId: number,
     content: string,
     propertyId?: number
-  ) => void;
-  unsendMessage: (messageId: string) => Promise<void>;
+  ) => Promise<void>;
   markThreadRead: (threadId: string) => void;
   sendTypingStart: (threadId: string, recipientId: number) => void;
   sendTypingStop: (threadId: string, recipientId: number) => void;
-  typingUsers: Record<string, boolean>; // threadId -> isOtherUserTyping
-  userStatuses: Record<number, 'online' | 'offline'>; // userId -> status
+  unsendMessage: (messageId: string) => Promise<void>;
+  typingUsers: Record<string, boolean>;
+  userStatuses: Record<number, "online" | "offline">;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
 
+/* -------------------------------------------------------------------------- */
+/*                              Helper functions                               */
+/* -------------------------------------------------------------------------- */
+
+// Very small helper to grab a cookie by name – we avoid the extra logic of fall-backs
+const getCookie = (name: string): string | null => {
+  return (
+    document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`))
+      ?.split("=")[1] ?? null
+  );
+};
+
+/* -------------------------------------------------------------------------- */
+/*                             Provider component                              */
+/* -------------------------------------------------------------------------- */
+
 export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  /* ------------------------------ Local state ------------------------------ */
+  const { user } = useUser();
   const [threads, setThreads] = useState<Thread[]>([]);
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
-  const [userStatuses, setUserStatuses] = useState<Record<number, 'online' | 'offline'>>({});
+  const [userStatuses, setUserStatuses] = useState<Record<number, "online" | "offline">>({});
+
+  /* ---------------------------- WebSocket setup --------------------------- */
   const ws = useRef<WebSocket | null>(null);
-  const { user } = useUser();
-  const markReadTimeouts = useRef<Record<string, number>>({});
-  const typingTimeouts = useRef<Record<string, number>>({});
-  const pendingMessages = useRef<Set<string>>(new Set()); // Track pending optimistic messages
-  const processedRealMessages = useRef<Set<string>>(new Set()); // Track processed real messages to prevent duplicates
 
-
-
-  const openSocket = () => {
-    if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
-
-    const baseWs = (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
-    
-    // More robust token extraction with mobile fallback
-    const getCookieValue = (name: string): string | null => {
-      const cookies = document.cookie.split(';');
-      for (let cookie of cookies) {
-        const [cookieName, ...cookieValueParts] = cookie.trim().split('=');
-        if (cookieName === name) {
-          return cookieValueParts.join('='); // Handle values with = signs
-        }
-      }
-      return null;
-    };
-    
-    // Try access_token first, then mobile fallback
-    let token = getCookieValue('access_token');
-    if (!token) {
-      token = getCookieValue('mobile_access_token');
-      if (token) {
-        console.log('WebSocket using mobile_access_token fallback');
-      }
-    }
-    const wsUrl = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
-
-    console.log("Mobile debug - Token found:", !!token);
-    console.log("Mobile debug - All cookies:", document.cookie);
-    console.log("Mobile debug - WS URL (without token):", baseWs + "/ws/chat/");
-
-    try {
-      ws.current = new WebSocket(wsUrl);
-      console.log("WS connecting to", ws.current.url.replace(/token=[^&]*/, 'token=***'));
-    } catch (err) {
-      console.error("WebSocket creation failed", err);
+  const openSocket = useCallback(() => {
+    if (
+      ws.current &&
+      (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)
+    ) {
       return;
     }
 
-    ws.current.onerror = (e) => console.error("WebSocket error", e);
+    const baseWs =
+      (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
 
-    ws.current.onmessage = (e) => {
-      const data = JSON.parse(e.data);
-      console.log(`📨 WebSocket message received:`, data);
-      
-      if (data.type === "chat.message") {
-        const msg: Message = data.message;
-        console.log(`💬 Processing chat message: ID=${msg.id}, Sender=${msg.sender}, Content="${msg.content}", CurrentUser=${user?.id}`);
+    const token = getCookie("access_token") ?? getCookie("mobile_access_token");
+    const url = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
 
-        // Prevent processing the same real message multiple times
-        if (processedRealMessages.current.has(msg.id)) {
-          console.log(`⚠️ Real message ${msg.id} already processed, skipping`);
-          return;
-        }
+    ws.current = new WebSocket(url);
 
-        let shouldUpdateThread = false;
-        let isOptimisticReplacement = false;
+    ws.current.onmessage = (event) => {
+      const data = JSON.parse(event.data);
 
-        setMessages((prev) => {
-          const threadMsgs = prev[msg.thread_id] || [];
-          
-          // Check if this exact message already exists (prevent duplicates)
-          const messageAlreadyExists = threadMsgs.some(m => m.id === msg.id);
-          if (messageAlreadyExists) {
-            console.log(`Message ${msg.id} already exists, skipping duplicate`);
-            return prev;
-          }
-          
-          // Find and remove matching optimistic message
-          let optimisticMessageRemoved = false;
-          let optimisticMessageId: string | null = null;
-          console.log(`🔍 Looking for matching optimistic message for real message ${msg.id} - content: "${msg.content}"`);
-          console.log(`📋 Current thread messages: ${threadMsgs.map(m => `${m.id}(${m.content.substring(0, 20)})`).join(', ')}`);
-          
-          // First pass: identify the optimistic message to remove
-          const matchingOptimistic = threadMsgs.find((m) => {
-            return m.id.toString().startsWith('temp_') && 
-                   m.content === msg.content &&
-                   pendingMessages.current.has(m.id.toString());
+      switch (data.type) {
+        case "chat.message": {
+          const msg: Message = data.message;
+
+          // Deduplicate by message ID
+          setMessages((prev) => {
+            const list = prev[msg.thread_id] ?? [];
+            if (list.some((m) => m.id === msg.id)) return prev;
+            return {
+              ...prev,
+              [msg.thread_id]: [...list, msg],
+            };
           });
-          
-          if (matchingOptimistic) {
-            optimisticMessageId = matchingOptimistic.id;
-            optimisticMessageRemoved = true;
-            isOptimisticReplacement = true;
-            pendingMessages.current.delete(optimisticMessageId);
-            console.log(`🎯 Found matching optimistic message ${optimisticMessageId} for real message ${msg.id}`);
-            console.log(`🔍 Match criteria: optimistic content="${matchingOptimistic.content}" === real content="${msg.content}" AND is pending`);
-            console.log(`✅ Replacing optimistic message ${optimisticMessageId} with real message ${msg.id}`);
-            console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
-          }
-          
-          // Second pass: build new message array
-          let updatedMessages = threadMsgs
-            .filter((m) => {
-              // Remove the specific optimistic message we identified
-              if (optimisticMessageId && m.id === optimisticMessageId) {
-                return false;
-              }
-              // Additional safety check: remove any message with same content and similar timestamp
-              // This helps prevent duplicates if the optimistic message matching fails
-              if (!optimisticMessageRemoved && 
-                  m.content === msg.content && 
-                  m.sender === msg.sender &&
-                  Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 5000) {
-                console.log(`🛡️ Safety filter: removing potential duplicate message ${m.id} (content: "${m.content}")`);
-                return false;
-              }
-              return true;
-            });
 
-          // Add the real message and sort by timestamp to maintain order
-          updatedMessages.push(msg);
-          updatedMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-          
-          if (!optimisticMessageRemoved) {
-            console.log(`ℹ️ No matching optimistic message found - this is a new incoming message`);
-            shouldUpdateThread = true;
-          }
-
-          console.log(`➕ Adding real message ${msg.id} to UI. Thread ${msg.thread_id} will have ${updatedMessages.length} messages`);
-          
-          // Mark this real message as processed
-          processedRealMessages.current.add(msg.id);
-          
-          return {
-            ...prev,
-            [msg.thread_id]: updatedMessages,
-          };
-        });
-
-        // Only update thread for genuinely new messages, not optimistic replacements
-        if (shouldUpdateThread) {
+          // Move thread to top of list
           setThreads((prev) => {
-            const threadsCopy = prev.map((t) => {
-              if (t.id !== msg.thread_id) return t;
-              
-              // Check if this is an incoming message (from someone else) or outgoing (from current user)
-              const isIncoming = user ? msg.sender !== user.id : true;
-              const isUnread = !msg.read_at;
-              
-              // Only increment unread count for incoming messages
-              // When user sends a message, don't treat their own message as unread
-              const shouldIncrement = isIncoming && isUnread;
-
-              console.log(`Thread update - Message from ${msg.sender}, Current user: ${user?.id}, isIncoming: ${isIncoming}, shouldIncrement: ${shouldIncrement}`);
-
-              return {
-                ...t,
-                updated_at: msg.created_at,
-                unread_count: t.unread_count + (shouldIncrement ? 1 : 0),
-              };
-            });
-
-            return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
+            const updated = prev.map((t) =>
+              t.id === msg.thread_id ? { ...t, updated_at: msg.created_at } : t
+            );
+            return updated.sort(
+              (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+            );
           });
-        } else {
-          console.log(`Skipping thread update for optimistic message replacement`);
+          break;
         }
-      }
 
-      if (data.type === "message.read") {
-        const { thread_id, message_ids, read_at } = data;
-
-        setMessages((prev) => {
-          if (!prev[thread_id]) return prev;
-
-          const updatedMessages = prev[thread_id].map((msg) =>
-            message_ids.includes(msg.id) ? { ...msg, read_at } : msg
-          );
-
-          return {
-            ...prev,
-            [thread_id]: updatedMessages,
-          };
-        });
-
-        setThreads((prev) =>
-          prev.map((t) =>
-            t.id === thread_id
-              ? { ...t, unread_count: Math.max(0, t.unread_count - message_ids.length) }
-              : t
-          )
-        );
-      }
-
-      if (data.type === "typing.indicator") {
-        const { thread_id, user_id, is_typing } = data;
-        
-        // Only show typing indicator if it's from another user
-        if (user && user_id !== user.id) {
-          setTypingUsers((prev) => ({
-            ...prev,
-            [thread_id]: is_typing,
-          }));
-
-          // Clear typing indicator after 3 seconds if no stop signal
-          if (is_typing) {
-            if (typingTimeouts.current[thread_id]) {
-              clearTimeout(typingTimeouts.current[thread_id]);
-            }
-            typingTimeouts.current[thread_id] = window.setTimeout(() => {
-              setTypingUsers((prev) => ({
-                ...prev,
-                [thread_id]: false,
-              }));
-              delete typingTimeouts.current[thread_id];
-            }, 3000);
-          } else {
-            if (typingTimeouts.current[thread_id]) {
-              clearTimeout(typingTimeouts.current[thread_id]);
-              delete typingTimeouts.current[thread_id];
-            }
-          }
+        case "message.read": {
+          const { thread_id, message_ids, read_at } = data;
+          setMessages((prev) => {
+            if (!prev[thread_id]) return prev;
+            return {
+              ...prev,
+              [thread_id]: prev[thread_id].map((m) =>
+                message_ids.includes(m.id) ? { ...m, read_at } : m
+              ),
+            };
+          });
+          break;
         }
-      }
 
-      if (data.type === "user.status") {
-        const { user_id, status } = data;
-        setUserStatuses((prev) => ({
-          ...prev,
-          [user_id]: status,
-        }));
-      }
-
-      if (data.type === "message.unsent") {
-        const { message_id, thread_id } = data;
-        setMessages((prev) => {
-          if (!prev[thread_id]) return prev;
-
-          const updatedMessages = prev[thread_id].map((msg) =>
-            msg.id === message_id 
-              ? { ...msg, content: "Message Unsent", is_unsent: true, unsent_at: new Date().toISOString() } 
-              : msg
-          );
-
-          return {
-            ...prev,
-            [thread_id]: updatedMessages,
-          };
-        });
-
-        // Update thread list to reflect the unsent message
-        setThreads((prev) => 
-          prev.map((thread) => {
-            if (thread.id === thread_id && thread.last_message?.id === message_id) {
-              return {
-                ...thread,
-                last_message: thread.last_message ? {
-                  ...thread.last_message,
-                  content: "Message Unsent"
-                } : null
-              };
-            }
-            return thread;
-          })
-        );
-      }
-    };
-
-    const ping = setInterval(() => {
-      if (ws.current?.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({ type: "ping" }));
-      }
-    }, 30000);
-
-    ws.current.onclose = () => {
-      clearInterval(ping);
-      console.warn("WebSocket closed, will retry on next action");
-      ws.current = null;
-    };
-  };
-
-  useEffect(() => {
-    apiClient.get<Thread[]>("chat/").then((res) => {
-      setThreads(res.data);
-    });
-    openSocket();
-    
-    // Clear processed messages when component mounts (page refresh)
-    processedRealMessages.current.clear();
-    pendingMessages.current.clear();
-  }, []);
-
-  // Clear processed messages periodically to prevent memory leaks
-  useEffect(() => {
-    const interval = setInterval(() => {
-      // Keep only the last 1000 processed message IDs
-      if (processedRealMessages.current.size > 1000) {
-        const entries = Array.from(processedRealMessages.current);
-        processedRealMessages.current.clear();
-        entries.slice(-500).forEach(id => processedRealMessages.current.add(id));
-        console.log('🧹 Cleaned up processed messages cache');
-      }
-    }, 300000); // Every 5 minutes
-
-    return () => clearInterval(interval);
-  }, []);
-
-  const getOrCreateThread = async (
-    sellerId: number,
-    propertyId: number,
-    title: string
-  ) => {
-    const existing = threads.find(
-      (t) => t.property === propertyId && (t.user1 === sellerId || t.user2 === sellerId)
-    );
-    if (existing) return existing.id;
-    const res = await apiClient.post<Thread>("chat/", {
-      recipient_id: sellerId,
-      property_id: propertyId,
-      title,
-    });
-    setThreads((prev) => [res.data, ...prev]);
-    return res.data.id;
-  };
-
-  const getOrCreateDmThread = async (userId: number) => {
-    // Check for existing DM thread
-    const existing = threads.find(
-      (t) => !t.property && ((t.user1 === userId && t.user2 === user?.id) || (t.user1 === user?.id && t.user2 === userId))
-    );
-    if (existing) return existing.id;
-    
-    const res = await apiClient.post<Thread>("chat/", {
-      recipient_id: userId,
-    });
-    setThreads((prev) => [res.data, ...prev]);
-    return res.data.id;
-  };
-
-  const sendMessage = (
-    threadId: string,
-    recipientId: number,
-    content: string,
-    propertyId?: number
-  ) => {
-    console.log(`🚀 SEND MESSAGE START - Content: "${content}", ThreadId: ${threadId}, RecipientId: ${recipientId}`);
-    console.log(`👤 Current user context: ${user ? `ID=${user.id}` : 'undefined'}`);
-    openSocket();
-
-    // Create optimistic message for immediate UI update
-    const optimisticMessage: Message = {
-      id: `temp_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`, // More unique temporary ID
-      thread_id: threadId,
-      property_id: propertyId || null,
-      sender: user?.id || 0,
-      recipient: recipientId,
-      content: content,
-      created_at: new Date().toISOString(),
-      read_at: null,
-      is_unsent: false,
-      unsent_at: null,
-    };
-
-    console.log(`📝 Created optimistic message: ${optimisticMessage.id} with sender: ${optimisticMessage.sender}`);
-
-    // Track this optimistic message
-    pendingMessages.current.add(optimisticMessage.id);
-    console.log(`📌 Added to pending messages. Current pending count: ${pendingMessages.current.size}`);
-    console.log(`🏷️ Optimistic message details: ID=${optimisticMessage.id}, Content="${optimisticMessage.content}", Sender=${optimisticMessage.sender}`);
-
-    // Add message optimistically to local state
-    setMessages((prev) => {
-      const threadMsgs = prev[threadId] || [];
-      console.log(`💾 Adding optimistic message to UI. Thread ${threadId} has ${threadMsgs.length} existing messages`);
-      return {
-        ...prev,
-        [threadId]: [...threadMsgs, optimisticMessage],
-      };
-    });
-
-    const payload: any = {
-      type: "chat.message",
-      recipient_id: recipientId,
-      content,
-    };
-    
-    // Only add property_id if it exists
-    if (propertyId) {
-      payload.property_id = propertyId;
-    }
-
-    const payloadString = JSON.stringify(payload);
-    
-    // Track if message was confirmed via WebSocket to avoid double-sending  
-    let fallbackTimeoutId: number | null = null;
-    let messageSent = false; // Prevent multiple sends
-
-    const attemptSend = () => {
-      console.log(`🔄 attemptSend() called - messageSent: ${messageSent}, WS state: ${ws.current?.readyState || 'null'}`);
-      
-      if (messageSent) {
-        console.log("⚠️ Message already sent, skipping duplicate send");
-        return;
-      }
-      
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        console.log(`📡 WebSocket READY - Sending message: ${payloadString}`);
-        ws.current.send(payloadString);
-        messageSent = true;
-        console.log(`✅ WebSocket message sent successfully, messageSent = ${messageSent}`);
-        
-        // Set up timeout only after sending via WebSocket
-        fallbackTimeoutId = window.setTimeout(() => {
-          console.log(`⏰ Timeout fired - checking if optimistic message ${optimisticMessage.id} still pending`);
-          // Check if optimistic message is still pending (not replaced by WebSocket response)
-          if (pendingMessages.current.has(optimisticMessage.id)) {
-            console.warn(`🔄 WebSocket send timeout, falling back to REST API for message: ${optimisticMessage.id}`);
-            sendViaRestAPI();
-          } else {
-            console.log(`✅ Optimistic message ${optimisticMessage.id} already processed, no REST API fallback needed`);
+        case "typing.indicator": {
+          const { thread_id, user_id, is_typing } = data;
+          if (user_id !== user?.id) {
+            setTypingUsers((prev) => ({ ...prev, [thread_id]: is_typing }));
           }
-        }, 3000);
-        console.log(`⏱️ Set fallback timeout with ID: ${fallbackTimeoutId}`);
-      } else {
-        console.warn(`❌ WebSocket not available (state: ${ws.current?.readyState || 'null'}), falling back to REST API`);
-        sendViaRestAPI();
+          break;
+        }
+
+        case "user.status": {
+          const { user_id, status } = data;
+          setUserStatuses((prev) => ({ ...prev, [user_id]: status }));
+          break;
+        }
+
+        case "message.unsent": {
+          const { message_id, thread_id } = data;
+          setMessages((prev) => {
+            if (!prev[thread_id]) return prev;
+            return {
+              ...prev,
+              [thread_id]: prev[thread_id].map((m) =>
+                m.id === message_id ? { ...m, content: "Message Unsent", is_unsent: true } : m
+              ),
+            };
+          });
+          break;
+        }
+
+        default:
+          break;
       }
     };
+  }, [user?.id]);
 
-    const sendViaRestAPI = async () => {
-      console.log(`🌐 sendViaRestAPI() called - messageSent: ${messageSent}`);
-      
-      if (messageSent) {
-        console.log("⚠️ Message already sent via WebSocket, skipping REST API");
-        return;
-      }
-      
-      messageSent = true;
-      console.log(`🔒 Set messageSent = true in REST API, preventing further sends`);
-      
-      // Clear timeout if it exists
-      if (fallbackTimeoutId) {
-        console.log(`🧹 Clearing fallback timeout ${fallbackTimeoutId}`);
-        clearTimeout(fallbackTimeoutId);
-        fallbackTimeoutId = null;
-      }
+  /* ------------------------------ Lifecycle ------------------------------- */
+  useEffect(() => {
+    apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
+    openSocket();
+  }, [openSocket]);
 
-      try {
-        console.log(`📤 Making REST API call to send message: "${content}"`);
-        const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
-          content: content,
-        });
-        
-        console.log(`📥 REST API response received - Message ID: ${response.data.id}`);
-        
-        // Replace optimistic message with real message from server
-        const realMessage: Message = {
-          id: response.data.id,
-          thread_id: threadId,
-          property_id: propertyId || null,
-          sender: user?.id || 0,
-          recipient: recipientId,
-          content: response.data.content,
-          created_at: response.data.created_at,
-          read_at: response.data.read_at,
-          is_unsent: response.data.is_unsent || false,
-          unsent_at: response.data.unsent_at || null,
-        };
-
-        setMessages((prev) => {
-          const threadMsgs = prev[threadId] || [];
-          
-          // Only proceed if this optimistic message is still pending
-          if (!pendingMessages.current.has(optimisticMessage.id)) {
-            console.log(`⚠️ Optimistic message ${optimisticMessage.id} already processed, skipping REST API response`);
-            return prev;
-          }
-
-          console.log(`🔄 Processing REST API response - replacing optimistic ${optimisticMessage.id} with real ${realMessage.id}`);
-
-          // Remove optimistic message and add real message
-          const filteredMsgs = threadMsgs.filter((m) => {
-            if (m.id === optimisticMessage.id) {
-              pendingMessages.current.delete(m.id);
-              console.log(`✅ REST API replacing optimistic message ${m.id} with real message ${realMessage.id}`);
-              console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
-              return false; // Remove optimistic message
-            }
-            return m.id !== realMessage.id; // Avoid duplicates
-          });
-
-          return {
-            ...prev,
-            [threadId]: [...filteredMsgs, realMessage],
-          };
-        });
-
-        console.log("✅ Message sent successfully via REST API");
-      } catch (error) {
-        console.error("❌ Failed to send message via REST API:", error);
-        // Mark optimistic message as failed
-        setMessages((prev) => {
-          const threadMsgs = prev[threadId] || [];
-          const updatedMsgs = threadMsgs.map((m) => {
-            if (m.id === optimisticMessage.id && pendingMessages.current.has(m.id)) {
-              pendingMessages.current.delete(m.id);
-              console.log(`❌ Marked optimistic message ${m.id} as failed`);
-              return { ...m, content: `❌ Failed to send: ${content}` };
-            }
-            return m;
-          });
-
-          return {
-            ...prev,
-            [threadId]: updatedMsgs,
-          };
-        });
-      }
-    };
-
-    console.log(`🔍 Checking WebSocket state - ws.current: ${ws.current ? 'exists' : 'null'}`);
-    
-    if (!ws.current) {
-      console.warn("❌ No WebSocket available, using REST API");
-      sendViaRestAPI();
-      return;
-    }
-
-    console.log(`📊 WebSocket readyState: ${ws.current.readyState} (0=CONNECTING, 1=OPEN, 2=CLOSING, 3=CLOSED)`);
-    
-    if (ws.current.readyState === WebSocket.OPEN) {
-      console.log("🟢 WebSocket is OPEN - calling attemptSend immediately");
-      attemptSend();
-    } else if (ws.current.readyState === WebSocket.CONNECTING) {
-      console.log("🟡 WebSocket is CONNECTING - adding event listener for open");
-      (ws.current as WebSocket).addEventListener("open", () => {
-        console.log("🔥 WebSocket opened via CONNECTING listener - calling attemptSend");
-        attemptSend();
-      }, { once: true });
-    } else {
-      console.log("🔴 WebSocket is CLOSED/CLOSING - creating new socket");
-      ws.current = null;
-      openSocket();
-      if (ws.current) {
-        console.log("🆕 New WebSocket created - adding event listener for open");
-        (ws.current as WebSocket).addEventListener("open", () => {
-          console.log("🔥 WebSocket opened via NEW socket listener - calling attemptSend");
-          attemptSend();
-        }, { once: true });
-      } else {
-        console.warn("❌ Failed to create new WebSocket - falling back to REST API");
-        sendViaRestAPI();
-      }
-    }
-
-    // Update thread timestamp optimistically
-    setThreads((prev) => {
-      const threadsCopy = prev.map((t) =>
-        t.id === threadId ? { ...t, updated_at: new Date().toISOString() } : t
+  /* --------------------------- Helper functions --------------------------- */
+  const getOrCreateThread = useCallback(
+    async (sellerId: number, propertyId: number | null, title?: string) => {
+      const existing = threads.find(
+        (t) => t.property === propertyId && (t.user1 === sellerId || t.user2 === sellerId)
       );
-      return threadsCopy.sort((a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime());
-    });
-    
-    console.log(`🏁 SEND MESSAGE END - Optimistic message ${optimisticMessage.id} setup complete`);
-  };
+      if (existing) return existing.id;
 
-  const markThreadRead = useCallback((threadId: string) => {
-    if (markReadTimeouts.current[threadId]) {
-      clearTimeout(markReadTimeouts.current[threadId]);
-    }
+      const res = await apiClient.post<Thread>("chat/", {
+        recipient_id: sellerId,
+        property_id: propertyId,
+        title,
+      });
+      setThreads((prev) => [res.data, ...prev]);
+      return res.data.id;
+    },
+    [threads]
+  );
 
-    setThreads((prev) =>
-      prev.map((t) => (t.id === threadId ? { ...t, unread_count: 0 } : t))
-    );
+  const getOrCreateDmThread = useCallback(
+    async (otherUserId: number) => {
+      const existing = threads.find(
+        (t) =>
+          !t.property &&
+          ((t.user1 === otherUserId && t.user2 === user?.id) ||
+            (t.user1 === user?.id && t.user2 === otherUserId))
+      );
+      if (existing) return existing.id;
 
-    setMessages((prev) => {
-      if (!prev[threadId]) return prev;
+      const res = await apiClient.post<Thread>("chat/", {
+        recipient_id: otherUserId,
+      });
+      setThreads((prev) => [res.data, ...prev]);
+      return res.data.id;
+    },
+    [threads, user?.id]
+  );
 
-      const updatedMessages = prev[threadId].map((msg) => {
-        if (!msg.read_at && msg.sender !== user?.id) {
-          return { ...msg, read_at: new Date().toISOString() };
-        }
-        return msg;
+  const sendMessage = useCallback(
+    async (
+      threadId: string,
+      recipientId: number,
+      content: string,
+      propertyId?: number
+    ) => {
+      // 1. Send via REST – simple and reliable; backend will broadcast on WebSocket
+      const res = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
+        content,
+        property_id: propertyId,
+        recipient_id: recipientId,
       });
 
+      // 2. Optimistically add the message immediately using server response (no temp IDs)
+      setMessages((prev) => {
+        const list = prev[threadId] ?? [];
+        if (list.some((m) => m.id === res.data.id)) return prev; // already present
+        return {
+          ...prev,
+          [threadId]: [...list, res.data],
+        };
+      });
+
+      // 3. Ensure socket connection is alive so future pushes are received
+      openSocket();
+    },
+    [openSocket]
+  );
+
+  const markThreadRead = useCallback((threadId: string) => {
+    setMessages((prev) => {
+      if (!prev[threadId]) return prev;
       return {
         ...prev,
-        [threadId]: updatedMessages,
+        [threadId]: prev[threadId].map((m) =>
+          !m.read_at && m.sender !== user?.id ? { ...m, read_at: new Date().toISOString() } : m
+        ),
       };
     });
-
-    markReadTimeouts.current[threadId] = window.setTimeout(() => {
-      apiClient
-        .post(`chat/${threadId}/mark_read/`)
-        .then((response) => {
-          console.log("Messages marked as read:", response.data);
-          delete markReadTimeouts.current[threadId];
-        })
-        .catch((error) => {
-          console.error("Failed to mark messages as read:", error);
-          delete markReadTimeouts.current[threadId];
-        });
-    }, 500);
-  }, []);
+    apiClient.post(`chat/${threadId}/mark_read/`).catch(() => {});
+  }, [user?.id]);
 
   const sendTypingStart = useCallback((threadId: string, recipientId: number) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: "typing.start",
-        thread_id: threadId,
-        recipient_id: recipientId,
-      }));
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(
+        JSON.stringify({ type: "typing.start", thread_id: threadId, recipient_id: recipientId })
+      );
     }
   }, []);
 
   const sendTypingStop = useCallback((threadId: string, recipientId: number) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: "typing.stop",
-        thread_id: threadId,
-        recipient_id: recipientId,
-      }));
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(
+        JSON.stringify({ type: "typing.stop", thread_id: threadId, recipient_id: recipientId })
+      );
     }
   }, []);
 
   const unsendMessage = useCallback(async (messageId: string) => {
-    try {
-      // Call the API to unsend the message
-      await apiClient.post(`chat/messages/${messageId}/unsend/`);
-      
-      // Also send via WebSocket for real-time updates
-      if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-        ws.current.send(JSON.stringify({
-          type: "message.unsend",
-          message_id: messageId,
-        }));
-      }
-    } catch (error) {
-      console.error("Failed to unsend message:", error);
-      throw error;
+    await apiClient.post(`chat/messages/${messageId}/unsend/`);
+    if (ws.current?.readyState === WebSocket.OPEN) {
+      ws.current.send(JSON.stringify({ type: "message.unsend", message_id: messageId }));
     }
   }, []);
 
-  return (
-    <ChatContext.Provider value={{ 
-      threads, 
-      messages, 
-      getOrCreateThread, 
-      getOrCreateDmThread,
-      sendMessage, 
-      unsendMessage,
-      markThreadRead, 
-      setMessages,
-      sendTypingStart,
-      sendTypingStop,
-      typingUsers,
-      userStatuses
-    }}>
-      {children}
-    </ChatContext.Provider>
-  );
+  /* -------------------------------------------------------------------------- */
+  /*                                 Provider                                   */
+  /* -------------------------------------------------------------------------- */
+
+  const value: ChatContextValue = {
+    threads,
+    messages,
+    setMessages,
+    getOrCreateThread,
+    getOrCreateDmThread,
+    sendMessage,
+    markThreadRead,
+    sendTypingStart,
+    sendTypingStop,
+    unsendMessage,
+    typingUsers,
+    userStatuses,
+  };
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
 };
+
+/* -------------------------------------------------------------------------- */
+/*                                   Hook                                      */
+/* -------------------------------------------------------------------------- */
 
 export const useChat = () => {
   const ctx = useContext(ChatContext);
-  if (!ctx) throw new Error("useChat must be within ChatProvider");
+  if (!ctx) {
+    throw new Error("useChat must be used within ChatProvider");
+  }
   return ctx;
 };
 
