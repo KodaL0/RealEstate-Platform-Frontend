@@ -49,6 +49,7 @@ export default function ChatThread() {
   const [isInitialLoading, setIsInitialLoading] = useState(false);
   const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [longPressActive, setLongPressActive] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
@@ -225,20 +226,27 @@ export default function ChatThread() {
     }
   };
 
-  // Long press handlers for mobile context menu
-  const handleLongPressStart = (messageId: string) => {
+  // Improved long press handlers for mobile context menu
+  const handleLongPressStart = (messageId: string, event: React.TouchEvent | React.MouseEvent) => {
+    // Prevent browser context menu
+    event.preventDefault();
+    
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
     }
     
+    // Show visual feedback immediately
+    setLongPressActive(messageId);
+    
     longPressTimerRef.current = window.setTimeout(() => {
       setSelectedMessage(messageId);
       setShowContextMenu(true);
-      // Vibrate on mobile devices
+      setLongPressActive(null);
+      // Gentle vibrate on mobile devices
       if (navigator.vibrate) {
-        navigator.vibrate(50);
+        navigator.vibrate([30]); // Shorter, more delicate vibration
       }
-    }, 500); // 500ms long press
+    }, 300); // Reduced to 300ms for more responsive feel
   };
 
   const handleLongPressEnd = () => {
@@ -246,11 +254,17 @@ export default function ChatThread() {
       clearTimeout(longPressTimerRef.current);
       longPressTimerRef.current = null;
     }
+    setLongPressActive(null);
   };
 
   const handleCloseContextMenu = () => {
     setShowContextMenu(false);
     setSelectedMessage(null);
+  };
+
+  // Handle context menu prevention
+  const handleContextMenu = (event: React.MouseEvent) => {
+    event.preventDefault(); // Prevent browser context menu
   };
 
   const formatTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -425,14 +439,16 @@ export default function ChatThread() {
                         transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
                         ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
                         ${message.is_unsent ? 'opacity-75' : ''}
+                        ${longPressActive === message.id ? 'scale-95 shadow-xl ring-2 ring-blue-300/50' : ''}
                         touch-manipulation select-text
                       `}
-                      onTouchStart={isOwn && !message.is_unsent ? () => handleLongPressStart(message.id) : undefined}
+                      onTouchStart={isOwn && !message.is_unsent ? (e) => handleLongPressStart(message.id, e) : undefined}
                       onTouchEnd={handleLongPressEnd}
                       onTouchCancel={handleLongPressEnd}
-                      onMouseDown={isOwn && !message.is_unsent ? () => handleLongPressStart(message.id) : undefined}
+                      onMouseDown={isOwn && !message.is_unsent ? (e) => handleLongPressStart(message.id, e) : undefined}
                       onMouseUp={handleLongPressEnd}
                       onMouseLeave={handleLongPressEnd}
+                      onContextMenu={handleContextMenu}
                     >
                       {/* Sender name for incoming messages */}
                       {!isOwn && showAvatar && (
@@ -445,16 +461,21 @@ export default function ChatThread() {
                       <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-slate-800'} ${message.is_unsent ? 'italic' : ''}`}>
                         {message.content}
                       </div>
+
+                      {/* Long press progress indicator */}
+                      {longPressActive === message.id && (
+                        <div className="long-press-progress"></div>
+                      )}
                       
-                      {/* Mobile-Optimized Unsend button for own messages (only if not already unsent) */}
+                      {/* Delicate Unsend button for desktop (hidden on touch devices) */}
                       {isOwn && !message.is_unsent && (
                         <button
                           onClick={() => handleUnsend(message.id)}
-                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500 hover:bg-red-600 focus:bg-red-600 text-white rounded-full p-1.5 sm:p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 min-w-[32px] min-h-[32px] sm:min-w-[24px] sm:min-h-[24px] flex items-center justify-center touch-manipulation active:scale-95"
-                          title="Unsend message"
-                          aria-label="Unsend this message"
+                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500/90 hover:bg-red-600 focus:bg-red-600 text-white rounded-full p-1.5 sm:p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300/60 focus:ring-offset-1 min-w-[28px] min-h-[28px] sm:min-w-[22px] sm:min-h-[22px] flex items-center justify-center touch-manipulation active:scale-90 hover:scale-110 backdrop-blur-sm border border-red-400/20"
+                          title="Delete message"
+                          aria-label="Delete this message"
                         >
-                          <X size={14} className="sm:w-3 sm:h-3" />
+                          <X size={12} className="sm:w-2.5 sm:h-2.5" />
                         </button>
                       )}
                       
@@ -552,38 +573,50 @@ export default function ChatThread() {
         </div>
       )}
 
-      {/* Mobile Context Menu for Message Actions */}
+      {/* Delicate Mobile Context Menu for Message Actions */}
       {showContextMenu && selectedMessage && (
-        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseContextMenu}>
-          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden min-w-[280px] max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
-              <h3 className="font-semibold text-slate-800 text-sm">Message Options</h3>
-              <p className="text-xs text-slate-500 mt-1">Choose an action for this message</p>
+        <div 
+          className="fixed inset-0 bg-black/10 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200" 
+          onClick={handleCloseContextMenu}
+        >
+          <div 
+            className="bg-white/95 backdrop-blur-xl rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200/50 overflow-hidden w-full sm:min-w-[320px] sm:max-w-sm sm:mx-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 ease-out" 
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Drag indicator for mobile */}
+            <div className="flex justify-center pt-3 pb-2 sm:hidden">
+              <div className="w-10 h-1 bg-slate-300 rounded-full"></div>
             </div>
-            <div className="py-2">
+            
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-slate-200/60 bg-slate-50/50">
+              <h3 className="font-semibold text-slate-800 text-base">Message Actions</h3>
+              <p className="text-sm text-slate-500 mt-0.5">What would you like to do?</p>
+            </div>
+            
+            {/* Actions */}
+            <div className="py-3">
               <button
                 onClick={() => handleUnsend(selectedMessage)}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 focus:bg-red-50 text-red-600 transition-colors focus:outline-none"
+                className="w-full px-5 py-4 flex items-center gap-4 hover:bg-red-50/80 active:bg-red-100/60 text-red-600 transition-all duration-150 focus:outline-none focus:bg-red-50/80 touch-manipulation"
               >
-                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
-                  <Trash2 size={16} />
+                <div className="w-10 h-10 bg-red-100/80 rounded-full flex items-center justify-center shadow-sm">
+                  <Trash2 size={18} className="text-red-600" />
                 </div>
-                <div className="text-left">
-                  <div className="font-medium text-sm">Unsend Message</div>
-                  <div className="text-xs text-red-500">Remove this message for everyone</div>
+                <div className="text-left flex-1">
+                  <div className="font-semibold text-base">Delete Message</div>
+                  <div className="text-sm text-red-500/80 mt-0.5">Remove for everyone</div>
                 </div>
               </button>
+            </div>
+            
+            {/* Cancel button */}
+            <div className="px-5 pb-5 pt-2">
               <button
                 onClick={handleCloseContextMenu}
-                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 focus:bg-slate-50 text-slate-600 transition-colors focus:outline-none"
+                className="w-full py-3 px-4 bg-slate-100/60 hover:bg-slate-200/60 active:bg-slate-200/80 text-slate-600 rounded-xl font-medium transition-all duration-150 focus:outline-none touch-manipulation"
               >
-                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
-                  <X size={16} />
-                </div>
-                <div className="text-left">
-                  <div className="font-medium text-sm">Cancel</div>
-                  <div className="text-xs text-slate-500">Close this menu</div>
-                </div>
+                Cancel
               </button>
             </div>
           </div>
