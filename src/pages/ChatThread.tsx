@@ -305,11 +305,11 @@ export default function ChatThread() {
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
-      {/* Enhanced Header */}
-      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-4 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
-        <div className="flex items-center space-x-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-blue-100">
-            <UserIcon size={16} className="text-white" />
+      {/* Enhanced Header - Mobile Optimized */}
+      <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
+        <div className="flex items-center space-x-3 sm:space-x-4">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-blue-100">
+            <UserIcon size={14} className="sm:w-4 sm:h-4 text-white" />
           </div>
           <div className="min-w-0 flex-1">
             {thread?.property ? (
@@ -317,49 +317,49 @@ export default function ChatThread() {
                 to={`/property/${propertyId}`}
                 className="block hover:text-blue-600 transition-colors group"
               >
-                <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors">
+                <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors text-sm sm:text-base">
                   {thread?.property_title || `Property #${propertyId}`}
                 </h2>
               </Link>
             ) : (
-              <h2 className="font-semibold text-slate-800 truncate">
+              <h2 className="font-semibold text-slate-800 truncate text-sm sm:text-base">
                 {thread?.other_username || 'Direct Message'}
               </h2>
             )}
-            <div className="flex items-center gap-2">
-              <p className="text-sm text-slate-500 truncate">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <p className="text-xs sm:text-sm text-slate-500 truncate">
                 {thread?.property ? 
                   `${thread.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}` :
                   'Direct Message'
                 }
               </p>
               <div className="flex items-center gap-1">
-                <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-                <span className="text-xs text-green-600 font-medium"></span>
+                <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
+                <span className="text-[10px] sm:text-xs text-green-600 font-medium"></span>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Messages Area */}
+      {/* Enhanced Messages Area - Mobile Optimized */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto px-4 py-6 space-y-6 min-h-0 scroll-smooth"
+        className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 min-h-0 scroll-smooth touch-pan-y"
       >
         <div ref={topSentinelRef} className="h-1" />
         
         {groupedMessages.map(({ label, items }) => (
-          <div key={label} className="space-y-4">
-            {/* Enhanced Date Separator */}
+          <div key={label} className="space-y-3 sm:space-y-4">
+            {/* Enhanced Date Separator - Mobile Optimized */}
             <div className="flex justify-center">
-              <div className="bg-white/80 backdrop-blur-sm text-slate-600 text-xs px-4 py-2 rounded-full font-medium shadow-sm border border-slate-200/50">
+              <div className="bg-white/80 backdrop-blur-sm text-slate-600 text-[10px] sm:text-xs px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-medium shadow-sm border border-slate-200/50">
                 {label}
               </div>
             </div>
             
-            {/* Messages */}
-            <div className="space-y-3">
+            {/* Messages - Mobile Optimized */}
+            <div className="space-y-2 sm:space-y-3">
               {items.map((message, idx) => {
                 const isOwn = message.sender === user?.id;
                 const showAvatar = idx === 0 || items[idx - 1]?.sender !== message.sender;
@@ -490,24 +490,25 @@ export default function ChatThread() {
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Enhanced Jump to Newest Button */}
+      {/* Enhanced Jump to Newest Button - Mobile Optimized */}
       {showJumpToNewest && (
-        <div className="absolute bottom-24 right-6 z-10">
+        <div className="absolute bottom-20 sm:bottom-24 right-3 sm:right-6 z-10">
           <button
             onClick={jumpToNewest}
-            className="bg-white/90 backdrop-blur-sm text-slate-600 hover:text-blue-600 pl-4 pr-3 py-3 rounded-full shadow-lg hover:shadow-xl border border-slate-200/50 hover:border-blue-200 transition-all duration-200 flex items-center gap-2 text-sm font-medium hover:scale-105 group"
+            className="bg-white/90 backdrop-blur-sm text-slate-600 hover:text-blue-600 pl-3 sm:pl-4 pr-2 sm:pr-3 py-2.5 sm:py-3 rounded-full shadow-lg hover:shadow-xl border border-slate-200/50 hover:border-blue-200 transition-all duration-200 flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium hover:scale-105 group touch-manipulation active:scale-95"
           >
-            <span>Jump to newest</span>
-            <div className="bg-blue-50 group-hover:bg-blue-100 rounded-full p-1 transition-colors">
-              <ChevronDown size={14} className="text-blue-600" />
+            <span className="hidden xs:inline">Jump to newest</span>
+            <span className="xs:hidden">New</span>
+            <div className="bg-blue-50 group-hover:bg-blue-100 rounded-full p-0.5 sm:p-1 transition-colors">
+              <ChevronDown size={12} className="sm:w-[14px] sm:h-[14px] text-blue-600" />
             </div>
           </button>
         </div>
       )}
 
-      {/* Enhanced Input Area */}
-      <div className="bg-white/90 backdrop-blur-sm border-t border-slate-200/60 px-4 py-4 flex-shrink-0">
-        <div className="flex items-end gap-3">
+      {/* Enhanced Input Area - Mobile Optimized */}
+      <div className="bg-white/90 backdrop-blur-sm border-t border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 safe-area-bottom">
+        <div className="flex items-end gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <textarea
               value={input}
@@ -515,46 +516,55 @@ export default function ChatThread() {
               onKeyDown={handleKeyDown}
               className="
                 w-full border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 
-                rounded-2xl px-4 py-3 pr-12 text-sm resize-none transition-all duration-200
+                rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm resize-none transition-all duration-200
                 focus:outline-none focus:ring-4 focus:ring-blue-500/20
                 placeholder-slate-400 bg-white/50 backdrop-blur-sm
-                min-h-[48px] max-h-[120px]
+                min-h-[44px] sm:min-h-[48px] max-h-[100px] sm:max-h-[120px]
+                touch-manipulation mobile-input
               "
               rows={1}
               placeholder="Type your message..."
               style={{
-                height: Math.min(Math.max(48, input.split("\n").length * 24 + 24), 120) + "px",
+                height: Math.min(Math.max(44, input.split("\n").length * 20 + 24), 100) + "px",
+                fontSize: "16px", // Prevents zoom on iOS
               }}
             />
-            {/* Character count or typing indicator could go here */}
+            {/* Mobile-optimized character count */}
+            {input.length > 800 && (
+              <div className="absolute -top-6 right-0 text-xs text-slate-400 bg-white/80 px-2 py-0.5 rounded">
+                {input.length}/1000
+              </div>
+            )}
           </div>
           
           <button
             onClick={handleSend}
             disabled={!input.trim() || !recipientId}
             className={`
-              p-3 rounded-full transition-all duration-200 flex-shrink-0 shadow-lg
+              p-2.5 sm:p-3 rounded-full transition-all duration-200 flex-shrink-0 shadow-lg
               focus:outline-none focus:ring-4 focus:ring-blue-500/20
+              min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px]
+              touch-manipulation active:scale-95
               ${input.trim() && recipientId
-                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:scale-105 active:scale-95" 
+                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:scale-105" 
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }
             `}
           >
-            <Send size={18} />
+            <Send size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
         </div>
         
-        {/* Enhanced Status Bar */}
-        <div className="flex justify-between items-center mt-3 text-xs text-slate-500">
-          <div className="flex items-center gap-4">
+        {/* Enhanced Status Bar - Mobile Optimized */}
+        <div className="flex justify-between items-center mt-2 sm:mt-3 text-xs text-slate-500">
+          <div className="flex items-center gap-2 sm:gap-4">
             <span className="hidden sm:inline">Press Enter to send • Shift + Enter for new line</span>
-            <span className="sm:hidden">Enter to send</span>
+            <span className="sm:hidden text-[10px]">Enter to send</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1.5">
-              <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-              <span className="font-medium text-green-600">{isOtherUserOnline ? 'Online' : 'Offline'}</span>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className="flex items-center gap-1 sm:gap-1.5">
+              <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
+              <span className="font-medium text-green-600 text-[10px] sm:text-xs">{isOtherUserOnline ? 'Online' : 'Offline'}</span>
             </div>
           </div>
         </div>
