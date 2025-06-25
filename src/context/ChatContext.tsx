@@ -39,6 +39,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const markReadTimeouts = useRef<Record<string, number>>({});
   const typingTimeouts = useRef<Record<string, number>>({});
   const pendingMessages = useRef<Set<string>>(new Set()); // Track pending optimistic messages
+  const processedRealMessages = useRef<Set<string>>(new Set()); // Track processed real messages to prevent duplicates
 
 
 
@@ -91,6 +92,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const msg: Message = data.message;
         console.log(`💬 Processing chat message: ID=${msg.id}, Sender=${msg.sender}, Content="${msg.content}", CurrentUser=${user?.id}`);
 
+        // Prevent processing the same real message multiple times
+        if (processedRealMessages.current.has(msg.id)) {
+          console.log(`⚠️ Real message ${msg.id} already processed, skipping`);
+          return;
+        }
+
         let shouldUpdateThread = false;
         let isOptimisticReplacement = false;
 
@@ -106,42 +113,64 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
           // Find and remove matching optimistic message
           let optimisticMessageRemoved = false;
+          let optimisticMessageId: string | null = null;
           console.log(`🔍 Looking for matching optimistic message for real message ${msg.id} - content: "${msg.content}"`);
           console.log(`📋 Current thread messages: ${threadMsgs.map(m => `${m.id}(${m.content.substring(0, 20)})`).join(', ')}`);
           
-          const filteredMsgs = threadMsgs.filter((m) => {
-            // Check if this is an optimistic message that matches the real one
-            if (m.id.toString().startsWith('temp_') && 
-                m.content === msg.content &&
-                pendingMessages.current.has(m.id.toString())) {
-              // Remove this optimistic message and track its removal
-              console.log(`🎯 Found matching optimistic message ${m.id} for real message ${msg.id}`);
-              console.log(`🔍 Match criteria: optimistic content="${m.content}" === real content="${msg.content}" AND is pending`);
-              pendingMessages.current.delete(m.id.toString());
-              optimisticMessageRemoved = true;
-              isOptimisticReplacement = true;
-              console.log(`✅ Replacing optimistic message ${m.id} with real message ${msg.id}`);
-              console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
-              return false;
-            }
-            // Keep all other messages
-            return true;
+          // First pass: identify the optimistic message to remove
+          const matchingOptimistic = threadMsgs.find((m) => {
+            return m.id.toString().startsWith('temp_') && 
+                   m.content === msg.content &&
+                   pendingMessages.current.has(m.id.toString());
           });
+          
+          if (matchingOptimistic) {
+            optimisticMessageId = matchingOptimistic.id;
+            optimisticMessageRemoved = true;
+            isOptimisticReplacement = true;
+            pendingMessages.current.delete(optimisticMessageId);
+            console.log(`🎯 Found matching optimistic message ${optimisticMessageId} for real message ${msg.id}`);
+            console.log(`🔍 Match criteria: optimistic content="${matchingOptimistic.content}" === real content="${msg.content}" AND is pending`);
+            console.log(`✅ Replacing optimistic message ${optimisticMessageId} with real message ${msg.id}`);
+            console.log(`📌 Removed from pending messages. Current pending count: ${pendingMessages.current.size}`);
+          }
+          
+          // Second pass: build new message array
+          let updatedMessages = threadMsgs
+            .filter((m) => {
+              // Remove the specific optimistic message we identified
+              if (optimisticMessageId && m.id === optimisticMessageId) {
+                return false;
+              }
+              // Additional safety check: remove any message with same content and similar timestamp
+              // This helps prevent duplicates if the optimistic message matching fails
+              if (!optimisticMessageRemoved && 
+                  m.content === msg.content && 
+                  m.sender === msg.sender &&
+                  Math.abs(new Date(m.created_at).getTime() - new Date(msg.created_at).getTime()) < 5000) {
+                console.log(`🛡️ Safety filter: removing potential duplicate message ${m.id} (content: "${m.content}")`);
+                return false;
+              }
+              return true;
+            });
+
+          // Add the real message and sort by timestamp to maintain order
+          updatedMessages.push(msg);
+          updatedMessages.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
           
           if (!optimisticMessageRemoved) {
             console.log(`ℹ️ No matching optimistic message found - this is a new incoming message`);
-          }
-
-          // If this is a new message (not replacing optimistic), we should update thread
-          if (!optimisticMessageRemoved) {
             shouldUpdateThread = true;
           }
 
-          // Add the real message
-          console.log(`➕ Adding real message ${msg.id} to UI. Thread ${msg.thread_id} will have ${filteredMsgs.length + 1} messages`);
+          console.log(`➕ Adding real message ${msg.id} to UI. Thread ${msg.thread_id} will have ${updatedMessages.length} messages`);
+          
+          // Mark this real message as processed
+          processedRealMessages.current.add(msg.id);
+          
           return {
             ...prev,
-            [msg.thread_id]: [...filteredMsgs, msg],
+            [msg.thread_id]: updatedMessages,
           };
         });
 
@@ -292,6 +321,25 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setThreads(res.data);
     });
     openSocket();
+    
+    // Clear processed messages when component mounts (page refresh)
+    processedRealMessages.current.clear();
+    pendingMessages.current.clear();
+  }, []);
+
+  // Clear processed messages periodically to prevent memory leaks
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Keep only the last 1000 processed message IDs
+      if (processedRealMessages.current.size > 1000) {
+        const entries = Array.from(processedRealMessages.current);
+        processedRealMessages.current.clear();
+        entries.slice(-500).forEach(id => processedRealMessages.current.add(id));
+        console.log('🧹 Cleaned up processed messages cache');
+      }
+    }, 300000); // Every 5 minutes
+
+    return () => clearInterval(interval);
   }, []);
 
   const getOrCreateThread = async (
@@ -355,6 +403,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // Track this optimistic message
     pendingMessages.current.add(optimisticMessage.id);
     console.log(`📌 Added to pending messages. Current pending count: ${pendingMessages.current.size}`);
+    console.log(`🏷️ Optimistic message details: ID=${optimisticMessage.id}, Content="${optimisticMessage.content}", Sender=${optimisticMessage.sender}`);
 
     // Add message optimistically to local state
     setMessages((prev) => {
