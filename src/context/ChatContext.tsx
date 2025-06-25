@@ -112,10 +112,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const filteredMsgs = threadMsgs.filter((m) => {
             // Check if this is an optimistic message that matches the real one
             if (m.id.toString().startsWith('temp_') && 
-                m.sender === msg.sender && 
-                m.content === msg.content) {
+                m.content === msg.content &&
+                pendingMessages.current.has(m.id.toString())) {
               // Remove this optimistic message and track its removal
               console.log(`🎯 Found matching optimistic message ${m.id} for real message ${msg.id}`);
+              console.log(`🔍 Match criteria: optimistic content="${m.content}" === real content="${msg.content}" AND is pending`);
               pendingMessages.current.delete(m.id.toString());
               optimisticMessageRemoved = true;
               isOptimisticReplacement = true;
@@ -332,6 +333,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     propertyId?: number
   ) => {
     console.log(`🚀 SEND MESSAGE START - Content: "${content}", ThreadId: ${threadId}, RecipientId: ${recipientId}`);
+    console.log(`👤 Current user context: ${user ? `ID=${user.id}` : 'undefined'}`);
     openSocket();
 
     // Create optimistic message for immediate UI update
@@ -348,7 +350,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       unsent_at: null,
     };
 
-    console.log(`📝 Created optimistic message: ${optimisticMessage.id}`);
+    console.log(`📝 Created optimistic message: ${optimisticMessage.id} with sender: ${optimisticMessage.sender}`);
 
     // Track this optimistic message
     pendingMessages.current.add(optimisticMessage.id);
