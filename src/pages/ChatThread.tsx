@@ -221,8 +221,15 @@ export default function ChatThread() {
   const handleUnsend = async (messageId: string) => {
     try {
       await unsendMessage(messageId);
+      
+      // Immediately update local state to remove the deleted message
+      setLocalMsgs(prevMessages => 
+        prevMessages.filter(msg => msg.id !== messageId)
+      );
+      
       setShowContextMenu(false);
       setSelectedMessage(null);
+      setHoveredMessage(null); // Also clear any hover state
     } catch (error) {
       console.error("Failed to unsend message:", error);
       // You might want to show a toast notification here
