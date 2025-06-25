@@ -308,13 +308,6 @@ export default function ChatThread() {
       {/* Enhanced Header */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-4 py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
         <div className="flex items-center space-x-4">
-          <button 
-            onClick={() => navigate('/chat')}
-            className="lg:hidden text-slate-600 hover:text-slate-800 hover:bg-slate-100 rounded-full p-2 transition-all duration-200"
-            aria-label="Back to messages"
-          >
-            <ArrowLeft size={18} />
-          </button>
           <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-blue-100">
             <UserIcon size={16} className="text-white" />
           </div>
