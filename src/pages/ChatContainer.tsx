@@ -29,6 +29,36 @@ function ChatEmptyState() {
   );
 }
 
+// Mobile Chat Thread Wrapper Component
+function MobileChatThread() {
+  const navigate = useNavigate();
+
+  const handleBackToInbox = () => {
+    navigate('/chat');
+  };
+
+  return (
+    <div className="w-full h-full bg-white flex flex-col">
+      {/* Mobile Chat Header with Back Button */}
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm">
+        <button 
+          onClick={handleBackToInbox}
+          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors -ml-2"
+          aria-label="Back to messages"
+        >
+          <ArrowLeft size={20} />
+        </button>
+        <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
+      </div>
+      
+      {/* Mobile Thread Content */}
+      <div className="flex-1 min-h-0">
+        <ChatThread />
+      </div>
+    </div>
+  );
+}
+
 export default function ChatContainer() {
   const location = useLocation();
   const navigate = useNavigate();
@@ -42,10 +72,9 @@ export default function ChatContainer() {
     return false;
   });
   
-  // Check if we're in a chat thread
-  const isInThread = location.pathname.includes('/chat/') && location.pathname.split('/').length > 2;
-
-  console.log('ChatContainer render:', { isMobile, isInThread, pathname: location.pathname });
+  // Better thread detection - check if we have a specific chat ID in the path
+  const pathParts = location.pathname.split('/').filter(Boolean);
+  const isInThread = pathParts.length >= 2 && pathParts[0] === 'chat' && pathParts[1] && pathParts[1] !== '';
 
   useEffect(() => {
     // Calculate navbar height dynamically
@@ -71,7 +100,6 @@ export default function ChatContainer() {
   useEffect(() => {
     const handleResize = () => {
       const currentIsMobile = window.innerWidth < 1024;
-      console.log('Resize detected:', { currentIsMobile, windowWidth: window.innerWidth });
       setIsMobile(currentIsMobile);
       
       if (!currentIsMobile) {
@@ -99,9 +127,6 @@ export default function ChatContainer() {
     }
   };
 
-  // Force mobile layout for debugging
-  const forceMobile = window.innerWidth < 1024;
-
   return (
     <div 
       className="fixed inset-0 flex flex-col bg-gray-50"
@@ -111,35 +136,13 @@ export default function ChatContainer() {
       }}
     >
       <div className="flex flex-1 min-h-0 relative">
-        {/* Always use mobile layout on mobile screens */}
-        {(isMobile || forceMobile) ? (
+        {/* Mobile Layout - Use Routes at the top level */}
+        {isMobile ? (
           <div className="w-full h-full">
-            {!isInThread ? (
-              /* Mobile Inbox View - Full Screen */
-              <div className="w-full h-full bg-white">
-                <ChatInbox />
-              </div>
-            ) : (
-              /* Mobile Thread View - Full Screen */
-              <div className="w-full h-full bg-white flex flex-col">
-                {/* Mobile Chat Header with Back Button */}
-                <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm">
-                  <button 
-                    onClick={handleBackToInbox}
-                    className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors -ml-2"
-                    aria-label="Back to messages"
-                  >
-                    <ArrowLeft size={20} />
-                  </button>
-                  <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
-                </div>
-                
-                {/* Mobile Thread Content */}
-                <div className="flex-1 min-h-0">
-                  <ChatThread />
-                </div>
-              </div>
-            )}
+            <Routes>
+              <Route path="/" element={<ChatInbox />} />
+              <Route path="/:id" element={<MobileChatThread />} />
+            </Routes>
           </div>
         ) : (
           /* Desktop Layout */
