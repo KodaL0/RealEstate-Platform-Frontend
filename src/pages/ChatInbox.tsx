@@ -91,13 +91,13 @@ export default function ChatInbox() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 w-full max-w-full sm:max-w-sm md:max-w-md lg:max-w-lg xl:max-w-xl">
-      {/* Enhanced Header with better spacing and hierarchy */}
-      <div className="bg-white border-b border-gray-200 px-4 py-4 flex-shrink-0">
-        <div className="flex items-center justify-between mb-4">
+    <div className="h-full flex flex-col bg-gray-50 w-full">
+      {/* Enhanced Header with better mobile spacing */}
+      <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0">
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
           <div className="flex-1 min-w-0">
-            <h1 className="text-xl font-bold text-gray-900 mb-1">Messages</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 mb-1">Messages</h1>
+            <p className="text-xs sm:text-sm text-gray-600">
               {currentThreads.length} conversation{currentThreads.length !== 1 ? 's' : ''}
               {currentThreads.filter(t => getUnreadCount(t.id) > 0).length > 0 && (
                 <span className="ml-2 text-blue-600 font-medium">
@@ -107,69 +107,72 @@ export default function ChatInbox() {
             </p>
           </div>
           <button 
-            className="bg-blue-500 text-white px-3 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
+            className="bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-1 sm:gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
             aria-label="Start new chat"
           >
-            <Plus size={16} />
-            <span className="hidden sm:inline">New Chat</span>
+            <Plus size={14} className="sm:w-4 sm:h-4" />
+            <span className="hidden xs:inline">New</span>
+            <span className="xs:hidden">+</span>
           </button>
         </div>
 
-        {/* Improved Tab Navigation with better responsive design */}
-        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-4">
+        {/* Improved Tab Navigation with better mobile design */}
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1 mb-3 sm:mb-4">
           <button
             onClick={() => setActiveTab('property')}
-            className={`flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
               activeTab === 'property'
                 ? 'bg-white text-blue-600 shadow-sm transform scale-[1.02]'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
             aria-pressed={activeTab === 'property'}
           >
-            <Home size={16} />
+            <Home size={14} className="sm:w-4 sm:h-4" />
             <span className="hidden xs:inline">Property</span>
-            <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+            <span className="xs:hidden">Prop</span>
+            <span className="bg-gray-200 text-gray-700 text-xs px-1 sm:px-1.5 py-0.5 rounded-full min-w-[16px] sm:min-w-[20px] text-center text-[10px] sm:text-xs">
               {propertyThreads.length}
             </span>
           </button>
           <button
             onClick={() => setActiveTab('dm')}
-            className={`flex-1 py-2.5 px-3 rounded-md text-sm font-medium transition-all duration-200 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
+            className={`flex-1 py-2 px-2 sm:px-3 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 flex items-center justify-center gap-1 sm:gap-2 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 ${
               activeTab === 'dm'
                 ? 'bg-white text-blue-600 shadow-sm transform scale-[1.02]'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
             aria-pressed={activeTab === 'dm'}
           >
-            <UserIcon size={16} />
+            <UserIcon size={14} className="sm:w-4 sm:h-4" />
             <span className="hidden xs:inline">Direct</span>
-            <span className="bg-gray-200 text-gray-700 text-xs px-1.5 py-0.5 rounded-full min-w-[20px] text-center">
+            <span className="xs:hidden">DM</span>
+            <span className="bg-gray-200 text-gray-700 text-xs px-1 sm:px-1.5 py-0.5 rounded-full min-w-[16px] sm:min-w-[20px] text-center text-[10px] sm:text-xs">
               {dmThreads.length}
             </span>
           </button>
         </div>
 
-        {/* Enhanced Search and Filter Bar */}
-        <div className="flex gap-3">
+        {/* Enhanced Search and Filter Bar - Mobile Optimized */}
+        <div className="flex gap-2 sm:gap-3">
           <div className="flex-1 relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Search size={16} className="text-gray-400" />
+            <div className="absolute inset-y-0 left-0 pl-2 sm:pl-3 flex items-center pointer-events-none">
+              <Search size={14} className="sm:w-4 sm:h-4 text-gray-400" />
             </div>
             <input
               type="text"
-              placeholder="Search conversations..."
+              placeholder="Search..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="w-full pl-8 sm:pl-10 pr-8 sm:pr-10 py-2 border border-gray-300 rounded-lg text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               aria-label="Search conversations"
             />
             {searchTerm && (
               <button
                 onClick={clearSearch}
-                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
+                className="absolute inset-y-0 right-0 pr-2 sm:pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors"
                 aria-label="Clear search"
               >
-                <X size={16} />
+                <X size={14} className="sm:w-4 sm:h-4" />
               </button>
             )}
           </div>
@@ -177,45 +180,45 @@ export default function ChatInbox() {
             <select
               value={filterType}
               onChange={(e) => setFilterType(e.target.value as 'all' | 'unread' | 'recent')}
-              className="appearance-none bg-white border border-gray-300 rounded-lg px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
+              className="appearance-none bg-white border border-gray-300 rounded-lg px-2 sm:px-3 py-2 pr-6 sm:pr-8 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200"
               aria-label="Filter conversations"
             >
               <option value="all">All</option>
               <option value="unread">Unread</option>
               <option value="recent">Recent</option>
             </select>
-            <div className="absolute inset-y-0 right-0 pr-2 flex items-center pointer-events-none">
-              <Filter size={14} className="text-gray-400" />
+            <div className="absolute inset-y-0 right-0 pr-1 sm:pr-2 flex items-center pointer-events-none">
+              <Filter size={12} className="sm:w-3.5 sm:h-3.5 text-gray-400" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Enhanced Messages List with improved scrolling and spacing */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-4 py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+      {/* Enhanced Messages List with mobile optimizations */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
         {filteredThreads.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="w-16 h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-4">
-              <MessageCircle size={24} className="text-gray-400" />
+          <div className="text-center py-12 sm:py-16">
+            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">
+              <MessageCircle size={20} className="sm:w-6 sm:h-6 text-gray-400" />
             </div>
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">
               {searchTerm ? 'No results found' : 'No conversations yet'}
             </h3>
-            <p className="text-sm text-gray-500 mb-4">
+            <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 px-4">
               {searchTerm 
                 ? 'Try adjusting your search terms or filters' 
                 : `Start a ${activeTab === 'property' ? 'property' : 'direct'} conversation`
               }
             </p>
             {!searchTerm && (
-              <button className="bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-600 transition-colors">
-                <Plus size={16} className="inline mr-2" />
+              <button className="bg-blue-500 text-white px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 transition-colors">
+                <Plus size={14} className="inline mr-1 sm:mr-2 sm:w-4 sm:h-4" />
                 Start Chatting
               </button>
             )}
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-1 sm:space-y-2">
             {filteredThreads.map(thread => {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
@@ -225,32 +228,32 @@ export default function ChatInbox() {
                 <Link
                   key={thread.id}
                   to={`/chat/${thread.id}`}
-                  className="block bg-white rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 p-4 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
+                  className="block bg-white rounded-lg sm:rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 p-3 sm:p-4 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98]"
                   tabIndex={0}
                   role="button"
                   aria-label={`Open chat with ${thread.other_username}${activeTab === 'property' ? ` about ${thread.property_title}` : ''}`}
                 >
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-start gap-2 sm:gap-3">
                     <div className="flex-shrink-0 relative">
                       {activeTab === 'property' ? (
                         thread.property_image ? (
                           <img
                             src={thread.property_image}
                             alt={thread.property_title || 'Property'}
-                            className="w-12 h-12 rounded-xl object-cover border-2 border-gray-100 group-hover:border-blue-200 transition-colors"
+                            className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-cover border-2 border-gray-100 group-hover:border-blue-200 transition-colors"
                           />
                         ) : (
-                          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-                            <Home size={20} className="text-white" />
+                          <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                            <Home size={16} className="sm:w-5 sm:h-5 text-white" />
                           </div>
                         )
                       ) : (
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
-                          <UserIcon size={20} className="text-white" />
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-lg sm:rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-all">
+                          <UserIcon size={16} className="sm:w-5 sm:h-5 text-white" />
                         </div>
                       )}
                       {unreadCount > 0 && (
-                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center shadow-sm">
+                        <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-sm">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </div>
                       )}
@@ -264,25 +267,25 @@ export default function ChatInbox() {
                               className="group/title"
                               title={thread.property_title || `Property #${thread.property}`}
                             >
-                              <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-sm">
+                              <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm">
                                 {thread.property_title || `Property #${thread.property}`}
                               </h3>
                             </div>
                           ) : (
                             <h3 
-                              className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-sm"
+                              className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm"
                               title={thread.other_username}
                             >
                               {thread.other_username}
                             </h3>
                           )}
-                          <p className="text-xs text-gray-500 truncate">
+                          <p className="text-[10px] sm:text-xs text-gray-500 truncate">
                             {activeTab === 'property' ? thread.other_username : 'Direct Message'}
                           </p>
                         </div>
                         {lastMessage && (
-                          <div className="flex items-center gap-1 text-xs text-gray-400 flex-shrink-0">
-                            <Clock size={12} />
+                          <div className="flex items-center gap-1 text-[10px] sm:text-xs text-gray-400 flex-shrink-0">
+                            <Clock size={10} className="sm:w-3 sm:h-3" />
                             <time dateTime={lastMessage.created_at}>
                               {formatTime(lastMessage.created_at || thread.updated_at || new Date().toISOString())}
                             </time>
@@ -290,22 +293,22 @@ export default function ChatInbox() {
                         )}
                       </div>
 
-                      <div className="mb-2">
+                      <div className="mb-1 sm:mb-2">
                         {lastMessage ? (
-                          <p className="text-sm text-gray-600 truncate">
+                          <p className="text-xs sm:text-sm text-gray-600 truncate">
                             <span className={`font-medium ${isOwnMessage ? 'text-blue-600' : 'text-gray-800'}`}>
                               {isOwnMessage ? 'You: ' : `${thread.other_username}: `}
                             </span>
                             <span>{lastMessage.content}</span>
                           </p>
                         ) : (
-                          <p className="text-sm text-gray-400 italic">No messages yet</p>
+                          <p className="text-xs sm:text-sm text-gray-400 italic">No messages yet</p>
                         )}
                       </div>
 
                       {activeTab === 'property' && thread.property_address && (
-                        <div className="flex items-center text-xs text-gray-400 gap-1" title={thread.property_address}>
-                          <MapPin size={12} className="flex-shrink-0" />
+                        <div className="flex items-center text-[10px] sm:text-xs text-gray-400 gap-1" title={thread.property_address}>
+                          <MapPin size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
                           <span className="truncate">{thread.property_address}</span>
                         </div>
                       )}

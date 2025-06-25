@@ -64,6 +64,35 @@ body,
   .hover\:scrollbar-thumb-gray-400:hover::-webkit-scrollbar-thumb {
     background-color: rgb(156 163 175);
   }
+
+  /* Mobile-friendly chat styles */
+  .chat-container {
+    @apply overflow-hidden;
+    touch-action: pan-y;
+  }
+
+  .chat-input {
+    @apply resize-none;
+    min-height: 40px;
+    max-height: 120px;
+  }
+
+  /* Mobile safe area support */
+  .mobile-safe-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .mobile-safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .mobile-safe-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .mobile-safe-right {
+    padding-right: env(safe-area-inset-right);
+  }
 }
 
 @layer utilities {
@@ -72,5 +101,87 @@ body,
     .xs\:inline {
       display: inline;
     }
+    
+    .xs\:hidden {
+      display: none;
+    }
+    
+    .xs\:block {
+      display: block;
+    }
+    
+    .xs\:flex {
+      display: flex;
+    }
+    
+    .xs\:text-sm {
+      font-size: 0.875rem;
+      line-height: 1.25rem;
+    }
+    
+    .xs\:text-xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    
+    .xs\:px-2 {
+      padding-left: 0.5rem;
+      padding-right: 0.5rem;
+    }
+    
+    .xs\:px-3 {
+      padding-left: 0.75rem;
+      padding-right: 0.75rem;
+    }
+  }
+
+  /* Very small screens (under 375px) */
+  @media (max-width: 374px) {
+    .xxs\:text-xs {
+      font-size: 0.75rem;
+      line-height: 1rem;
+    }
+    
+    .xxs\:px-1 {
+      padding-left: 0.25rem;
+      padding-right: 0.25rem;
+    }
+    
+    .xxs\:text-xxs {
+      font-size: 10px;
+    }
+  }
+
+  /* Touch-friendly tap targets */
+  .tap-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Improved focus styles for mobile */
+  .mobile-focus:focus {
+    outline: 2px solid rgb(59 130 246);
+    outline-offset: 2px;
+  }
+
+  /* Better text selection on mobile */
+  .select-text {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  .select-none {
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+  }
+
+  /* Smooth momentum scrolling on iOS */
+  .momentum-scroll {
+    -webkit-overflow-scrolling: touch;
+    overflow-scrolling: touch;
   }
 }

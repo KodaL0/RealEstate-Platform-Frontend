@@ -155,6 +155,21 @@ const Navbar: React.FC = () => {
             <Link to="/rent-vs-buy" onClick={() => setIsOpen(false)} className={`font-medium ${isActive("/rent-vs-buy") ? "text-blue-600" : "text-gray-700"}`}>Rent vs Buy Calculator</Link>
             {user ? (
               <>
+                <Link 
+                  to="/chat" 
+                  onClick={() => setIsOpen(false)} 
+                  className={`flex items-center justify-between font-medium ${location.pathname.startsWith("/chat") ? "text-blue-600" : "text-gray-700"}`}
+                >
+                  <div className="flex items-center">
+                    <MessageCircle className="h-4 w-4 mr-2" />
+                    Messages
+                  </div>
+                  {unreadTotal > 0 && (
+                    <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                      {unreadTotal > 99 ? '99+' : unreadTotal}
+                    </span>
+                  )}
+                </Link>
                 <Link to="/profile" onClick={() => setIsOpen(false)} className="font-medium text-gray-700">Profile</Link>
                 <Link to="/connections" onClick={() => setIsOpen(false)} className="flex items-center justify-between font-medium text-gray-700">
                   <div className="flex items-center">
