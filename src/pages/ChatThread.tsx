@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from "react-router-dom";
 import { useEffect, useState, useRef, useMemo } from "react";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown, X } from "lucide-react";
+import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown, X, Trash2 } from "lucide-react";
 import { Message } from "../types";
 import { apiClient } from "../config/api";
 import axios from "axios";
@@ -47,11 +47,14 @@ export default function ChatThread() {
   const [isFetchingMore, setIsFetchingMore] = useState(false);
   const [showJumpToNewest, setShowJumpToNewest] = useState(false);
   const [isInitialLoading, setIsInitialLoading] = useState(false);
+  const [selectedMessage, setSelectedMessage] = useState<string | null>(null);
+  const [showContextMenu, setShowContextMenu] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const currentFetchRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
+  const longPressTimerRef = useRef<number | null>(null);
 
   // Reset local state when thread changes
   useEffect(() => {
@@ -214,10 +217,40 @@ export default function ChatThread() {
   const handleUnsend = async (messageId: string) => {
     try {
       await unsendMessage(messageId);
+      setShowContextMenu(false);
+      setSelectedMessage(null);
     } catch (error) {
       console.error("Failed to unsend message:", error);
       // You might want to show a toast notification here
     }
+  };
+
+  // Long press handlers for mobile context menu
+  const handleLongPressStart = (messageId: string) => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+    }
+    
+    longPressTimerRef.current = window.setTimeout(() => {
+      setSelectedMessage(messageId);
+      setShowContextMenu(true);
+      // Vibrate on mobile devices
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+    }, 500); // 500ms long press
+  };
+
+  const handleLongPressEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleCloseContextMenu = () => {
+    setShowContextMenu(false);
+    setSelectedMessage(null);
   };
 
   const formatTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -307,35 +340,38 @@ export default function ChatThread() {
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
       {/* Enhanced Header - Mobile Optimized */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
-        <div className="flex items-center space-x-3 sm:space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
           <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg flex-shrink-0 ring-2 ring-blue-100">
             <UserIcon size={14} className="sm:w-4 sm:h-4 text-white" />
           </div>
-          <div className="min-w-0 flex-1">
+          <div className="min-w-0 flex-1 overflow-hidden">
             {thread?.property ? (
               <Link 
                 to={`/property/${propertyId}`}
                 className="block hover:text-blue-600 transition-colors group"
+                title={thread?.property_title || `Property #${propertyId}`}
               >
-                <h2 className="font-semibold text-slate-800 truncate group-hover:text-blue-600 transition-colors text-sm sm:text-base">
+                <h2 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base leading-tight mb-0.5 break-words line-clamp-2">
                   {thread?.property_title || `Property #${propertyId}`}
                 </h2>
               </Link>
             ) : (
-              <h2 className="font-semibold text-slate-800 truncate text-sm sm:text-base">
+              <h2 className="font-semibold text-slate-800 text-sm sm:text-base leading-tight mb-0.5 break-words line-clamp-2" title={thread?.other_username || 'Direct Message'}>
                 {thread?.other_username || 'Direct Message'}
               </h2>
             )}
-            <div className="flex items-center gap-1.5 sm:gap-2">
-              <p className="text-xs sm:text-sm text-slate-500 truncate">
+            <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+              <p className="text-xs sm:text-sm text-slate-500 truncate flex-shrink min-w-0">
                 {thread?.property ? 
                   `${thread.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}` :
                   'Direct Message'
                 }
               </p>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-                <span className="text-[10px] sm:text-xs text-green-600 font-medium"></span>
+                <span className="text-[10px] sm:text-xs text-green-600 font-medium hidden sm:inline">
+                  {isOtherUserOnline ? 'Online' : 'Offline'}
+                </span>
               </div>
             </div>
           </div>
@@ -376,19 +412,28 @@ export default function ChatThread() {
                     )}
                     
                     {/* Message Bubble */}
-                    <div className={`
-                      max-w-[75%] sm:max-w-md lg:max-w-lg xl:max-w-xl
-                      ${isOwn 
-                        ? message.is_unsent 
-                          ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25' 
-                          : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
-                        : 'bg-white border border-slate-200/60 shadow-sm'
-                      }
-                      rounded-2xl px-4 py-3 relative
-                      transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-                      ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
-                      ${message.is_unsent ? 'opacity-75' : ''}
-                    `}>
+                    <div 
+                      className={`
+                        max-w-[75%] sm:max-w-md lg:max-w-lg xl:max-w-xl
+                        ${isOwn 
+                          ? message.is_unsent 
+                            ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25' 
+                            : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+                          : 'bg-white border border-slate-200/60 shadow-sm'
+                        }
+                        rounded-2xl px-4 py-3 relative
+                        transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
+                        ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
+                        ${message.is_unsent ? 'opacity-75' : ''}
+                        touch-manipulation select-text
+                      `}
+                      onTouchStart={isOwn && !message.is_unsent ? () => handleLongPressStart(message.id) : undefined}
+                      onTouchEnd={handleLongPressEnd}
+                      onTouchCancel={handleLongPressEnd}
+                      onMouseDown={isOwn && !message.is_unsent ? () => handleLongPressStart(message.id) : undefined}
+                      onMouseUp={handleLongPressEnd}
+                      onMouseLeave={handleLongPressEnd}
+                    >
                       {/* Sender name for incoming messages */}
                       {!isOwn && showAvatar && (
                         <div className="text-xs font-medium text-slate-600 mb-1">
@@ -401,14 +446,15 @@ export default function ChatThread() {
                         {message.content}
                       </div>
                       
-                      {/* Unsend button for own messages (only if not already unsent) */}
+                      {/* Mobile-Optimized Unsend button for own messages (only if not already unsent) */}
                       {isOwn && !message.is_unsent && (
                         <button
                           onClick={() => handleUnsend(message.id)}
-                          className="absolute -top-2 -right-2 bg-red-500 hover:bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg"
+                          className="absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500 hover:bg-red-600 focus:bg-red-600 text-white rounded-full p-1.5 sm:p-1 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-all duration-200 shadow-lg hover:shadow-xl focus:outline-none focus:ring-2 focus:ring-red-300 focus:ring-offset-1 min-w-[32px] min-h-[32px] sm:min-w-[24px] sm:min-h-[24px] flex items-center justify-center touch-manipulation active:scale-95"
                           title="Unsend message"
+                          aria-label="Unsend this message"
                         >
-                          <X size={12} />
+                          <X size={14} className="sm:w-3 sm:h-3" />
                         </button>
                       )}
                       
@@ -503,6 +549,44 @@ export default function ChatThread() {
               <ChevronDown size={12} className="sm:w-[14px] sm:h-[14px] text-blue-600" />
             </div>
           </button>
+        </div>
+      )}
+
+      {/* Mobile Context Menu for Message Actions */}
+      {showContextMenu && selectedMessage && (
+        <div className="fixed inset-0 bg-black/20 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={handleCloseContextMenu}>
+          <div className="bg-white rounded-2xl shadow-xl border border-slate-200 overflow-hidden min-w-[280px] max-w-sm mx-auto" onClick={(e) => e.stopPropagation()}>
+            <div className="px-4 py-3 border-b border-slate-200 bg-slate-50">
+              <h3 className="font-semibold text-slate-800 text-sm">Message Options</h3>
+              <p className="text-xs text-slate-500 mt-1">Choose an action for this message</p>
+            </div>
+            <div className="py-2">
+              <button
+                onClick={() => handleUnsend(selectedMessage)}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-red-50 focus:bg-red-50 text-red-600 transition-colors focus:outline-none"
+              >
+                <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  <Trash2 size={16} />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-sm">Unsend Message</div>
+                  <div className="text-xs text-red-500">Remove this message for everyone</div>
+                </div>
+              </button>
+              <button
+                onClick={handleCloseContextMenu}
+                className="w-full px-4 py-3 flex items-center gap-3 hover:bg-slate-50 focus:bg-slate-50 text-slate-600 transition-colors focus:outline-none"
+              >
+                <div className="w-8 h-8 bg-slate-100 rounded-full flex items-center justify-center">
+                  <X size={16} />
+                </div>
+                <div className="text-left">
+                  <div className="font-medium text-sm">Cancel</div>
+                  <div className="text-xs text-slate-500">Close this menu</div>
+                </div>
+              </button>
+            </div>
+          </div>
         </div>
       )}
 
