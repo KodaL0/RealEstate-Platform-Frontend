@@ -28,12 +28,19 @@ export const apiClient = axios.create({
 // ─── Add this interceptor *before* your existing ones ───
 // It reads the access_token cookie and, if present, sets the Authorization header.
 apiClient.interceptors.request.use(cfg => {
-  // extract access_token from document.cookie
-  const token = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('access_token='))
-    ?.split('=')[1];
+  // More robust cookie extraction for mobile compatibility
+  const getCookieValue = (name: string): string | null => {
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [cookieName, ...cookieValueParts] = cookie.trim().split('=');
+      if (cookieName === name) {
+        return cookieValueParts.join('='); // Handle values with = signs
+      }
+    }
+    return null;
+  };
 
+  const token = getCookieValue('access_token');
   if (token) {
     cfg.headers = {
       ...cfg.headers,
@@ -41,17 +48,18 @@ apiClient.interceptors.request.use(cfg => {
     };
   }
 
-  // Also extract CSRF token if available
-  const csrfToken = document.cookie
-    .split('; ')
-    .find(row => row.startsWith('csrftoken='))
-    ?.split('=')[1];
-
+  // Try to get CSRF token if available, but don't fail if missing
+  const csrfToken = getCookieValue('csrftoken');
   if (csrfToken) {
     cfg.headers = {
       ...cfg.headers,
       'X-CSRFToken': csrfToken,
     };
+  }
+
+  // Add debug logging for mobile issues
+  if (!token) {
+    console.warn("Mobile debug - No access_token found in cookies:", document.cookie);
   }
 
   // then continue to your existing logging

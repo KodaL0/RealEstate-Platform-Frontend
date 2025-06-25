@@ -45,12 +45,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (ws.current && (ws.current.readyState === WebSocket.OPEN || ws.current.readyState === WebSocket.CONNECTING)) return;
 
     const baseWs = (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
-    const token = document.cookie.split("; ").find((c) => c.startsWith("access_token="))?.split("=")[1];
-    const wsUrl = token ? `${baseWs}/ws/chat/?token=${token}` : `${baseWs}/ws/chat/`;
+    
+    // More robust token extraction
+    const getCookieValue = (name: string): string | null => {
+      const cookies = document.cookie.split(';');
+      for (let cookie of cookies) {
+        const [cookieName, ...cookieValueParts] = cookie.trim().split('=');
+        if (cookieName === name) {
+          return cookieValueParts.join('='); // Handle values with = signs
+        }
+      }
+      return null;
+    };
+    
+    const token = getCookieValue('access_token');
+    const wsUrl = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
+
+    console.log("Mobile debug - Token found:", !!token);
+    console.log("Mobile debug - All cookies:", document.cookie);
+    console.log("Mobile debug - WS URL (without token):", baseWs + "/ws/chat/");
 
     try {
       ws.current = new WebSocket(wsUrl);
-      console.log("WS connecting to", ws.current.url);
+      console.log("WS connecting to", ws.current.url.replace(/token=[^&]*/, 'token=***'));
     } catch (err) {
       console.error("WebSocket creation failed", err);
       return;
