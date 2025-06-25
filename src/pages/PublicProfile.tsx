@@ -12,6 +12,7 @@ import PropertyCard from '../components/PropertyCard';
 import ReviewForm from '../components/ReviewForm';
 import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus, Review, ReviewStats, ReviewCategory, CanReviewResponse } from '../types';
 import api from '../config/api';
+import { useChat } from '../context/ChatContext';
 
 // Mock data for enhanced features (keeping some for features not yet implemented)
 const mockAnalytics = {
@@ -42,6 +43,7 @@ const formatDateOnly = (dateString: string) => {
 const PublicProfile: React.FC = () => {
   const { username } = useParams<{ username: string }>();
   const navigate = useNavigate();
+  const { getOrCreateDmThread } = useChat();
   
   const [profileData, setProfileData] = useState<PublicProfileData | null>(null);
   const [properties, setProperties] = useState<Property[]>([]);
@@ -983,10 +985,8 @@ const PublicProfile: React.FC = () => {
               <button 
                 onClick={async () => {
                   try {
-                    const response = await api.post('chat/', { 
-                      recipient_id: profileData.id 
-                    });
-                    navigate(`/chat/${response.data.id}`);
+                    const threadId = await getOrCreateDmThread(profileData.id);
+                    navigate(`/chat/${threadId}`);
                   } catch (error) {
                     console.error('Error creating DM thread:', error);
                   }

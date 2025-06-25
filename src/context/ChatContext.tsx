@@ -300,10 +300,79 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         console.log("WS sent", payloadString);
         ws.current.send(payloadString);
+      } else {
+        console.warn("WebSocket not available, falling back to REST API");
+        sendViaRestAPI();
       }
     };
 
-    if (!ws.current) return;
+    const sendViaRestAPI = async () => {
+      try {
+        const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
+          content: content,
+        });
+        
+        // Replace optimistic message with real message from server
+        const realMessage: Message = {
+          id: response.data.id,
+          thread_id: threadId,
+          property_id: propertyId || null,
+          sender: user?.id || 0,
+          recipient: recipientId,
+          content: response.data.content,
+          created_at: response.data.created_at,
+          read_at: response.data.read_at,
+          is_unsent: response.data.is_unsent || false,
+          unsent_at: response.data.unsent_at || null,
+        };
+
+        setMessages((prev) => {
+          const threadMsgs = prev[threadId] || [];
+          
+          // Remove optimistic message and add real message
+          const filteredMsgs = threadMsgs.filter((m) => {
+            if (m.id.toString().startsWith('temp_') && 
+                m.sender === realMessage.sender && 
+                m.content === realMessage.content) {
+              return false; // Remove optimistic message
+            }
+            return true;
+          });
+
+          return {
+            ...prev,
+            [threadId]: [...filteredMsgs, realMessage],
+          };
+        });
+
+        console.log("Message sent via REST API");
+      } catch (error) {
+        console.error("Failed to send message via REST API:", error);
+        // Mark optimistic message as failed
+        setMessages((prev) => {
+          const threadMsgs = prev[threadId] || [];
+          const updatedMsgs = threadMsgs.map((m) => {
+            if (m.id.toString().startsWith('temp_') && 
+                m.sender === user?.id && 
+                m.content === content) {
+              return { ...m, content: `❌ Failed to send: ${content}` };
+            }
+            return m;
+          });
+
+          return {
+            ...prev,
+            [threadId]: updatedMsgs,
+          };
+        });
+      }
+    };
+
+    if (!ws.current) {
+      console.warn("No WebSocket available, using REST API");
+      sendViaRestAPI();
+      return;
+    }
 
     if (ws.current.readyState === WebSocket.OPEN) {
       attemptSend();
@@ -314,6 +383,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       openSocket();
       if (ws.current) {
         (ws.current as WebSocket).addEventListener("open", attemptSend, { once: true });
+      } else {
+        // If WebSocket creation failed, fallback to REST API
+        sendViaRestAPI();
       }
     }
 

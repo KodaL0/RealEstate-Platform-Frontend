@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { 
   Users, UserPlus, UserCheck, UserX, Clock, Search, 
@@ -7,8 +8,11 @@ import {
 } from 'lucide-react';
 import { UserConnection, Connection } from '../types';
 import api from '../config/api';
+import { useChat } from '../context/ChatContext';
 
 const Connections: React.FC = () => {
+  const navigate = useNavigate();
+  const { getOrCreateDmThread } = useChat();
   const [activeTab, setActiveTab] = useState<'connections' | 'requests'>('connections');
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Connection[]>([]);
@@ -262,7 +266,14 @@ const Connections: React.FC = () => {
                       </div>
                       <div className="flex items-center space-x-2">
                         <button
-                          onClick={() => {/* Navigate to chat */}}
+                          onClick={async () => {
+                            try {
+                              const threadId = await getOrCreateDmThread(connection.user.id);
+                              navigate(`/chat/${threadId}`);
+                            } catch (error) {
+                              console.error('Error creating DM thread:', error);
+                            }
+                          }}
                           className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
                           title="Send message"
                         >
