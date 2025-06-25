@@ -361,11 +361,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // Track if message was confirmed via WebSocket to avoid double-sending  
     let fallbackTimeoutId: number | null = null;
+    let messageSent = false; // Prevent multiple sends
 
     const attemptSend = () => {
+      if (messageSent) {
+        console.log("Message already sent, skipping duplicate send");
+        return;
+      }
+      
       if (ws.current && ws.current.readyState === WebSocket.OPEN) {
         console.log("WS sent", payloadString);
         ws.current.send(payloadString);
+        messageSent = true;
         
         // Set up timeout only after sending via WebSocket
         fallbackTimeoutId = window.setTimeout(() => {
@@ -382,6 +389,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const sendViaRestAPI = async () => {
+      if (messageSent) {
+        console.log("Message already sent via WebSocket, skipping REST API");
+        return;
+      }
+      
+      messageSent = true;
+      
       // Clear timeout if it exists
       if (fallbackTimeoutId) {
         clearTimeout(fallbackTimeoutId);
