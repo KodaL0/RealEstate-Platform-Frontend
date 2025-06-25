@@ -32,12 +32,20 @@ function ChatEmptyState() {
 export default function ChatContainer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [navHeight, setNavHeight] = useState(64); // Default navbar height
+  const [navHeight, setNavHeight] = useState(64);
   const [showSidebar, setShowSidebar] = useState(true);
+  // Initialize mobile state based on current window size
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return window.innerWidth < 1024;
+    }
+    return false;
+  });
   
   // Check if we're in a chat thread
   const isInThread = location.pathname.includes('/chat/') && location.pathname.split('/').length > 2;
-  const isMobile = window.innerWidth < 1024; // lg breakpoint
+
+  console.log('ChatContainer render:', { isMobile, isInThread, pathname: location.pathname });
 
   useEffect(() => {
     // Calculate navbar height dynamically
@@ -59,18 +67,22 @@ export default function ChatContainer() {
     }
   }, []);
 
-  // Handle responsive behavior
+  // Handle responsive behavior with proper state management
   useEffect(() => {
     const handleResize = () => {
       const currentIsMobile = window.innerWidth < 1024;
+      console.log('Resize detected:', { currentIsMobile, windowWidth: window.innerWidth });
+      setIsMobile(currentIsMobile);
       
       if (!currentIsMobile) {
         // Desktop: always show sidebar
         setShowSidebar(true);
       }
-      // Mobile: don't change sidebar state on resize
     };
 
+    // Set initial state
+    handleResize();
+    
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, []);
@@ -87,6 +99,9 @@ export default function ChatContainer() {
     }
   };
 
+  // Force mobile layout for debugging
+  const forceMobile = window.innerWidth < 1024;
+
   return (
     <div 
       className="fixed inset-0 flex flex-col bg-gray-50"
@@ -96,17 +111,16 @@ export default function ChatContainer() {
       }}
     >
       <div className="flex flex-1 min-h-0 relative">
-        {/* Mobile Layout */}
-        {isMobile ? (
-          <>
-            {/* Mobile: Show inbox when not in thread, show thread when in thread */}
+        {/* Always use mobile layout on mobile screens */}
+        {(isMobile || forceMobile) ? (
+          <div className="w-full h-full">
             {!isInThread ? (
-              /* Mobile Inbox View */
+              /* Mobile Inbox View - Full Screen */
               <div className="w-full h-full bg-white">
                 <ChatInbox />
               </div>
             ) : (
-              /* Mobile Thread View */
+              /* Mobile Thread View - Full Screen */
               <div className="w-full h-full bg-white flex flex-col">
                 {/* Mobile Chat Header with Back Button */}
                 <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm">
@@ -122,13 +136,11 @@ export default function ChatContainer() {
                 
                 {/* Mobile Thread Content */}
                 <div className="flex-1 min-h-0">
-                  <Routes>
-                    <Route path="/:id" element={<ChatThread />} />
-                  </Routes>
+                  <ChatThread />
                 </div>
               </div>
             )}
-          </>
+          </div>
         ) : (
           /* Desktop Layout */
           <>

@@ -22,8 +22,6 @@ import RentVsBuyPage from "./pages/RentvsBuypage";
 import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import CookiePolicy from "./pages/CookiePolicy";
-import ChatPage from "./pages/ChatPage";
-import ChatThread from "./pages/ChatThread";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
@@ -60,7 +58,16 @@ function AppContent() {
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
-          <Route path="/chat/*" element={<ChatContainer />} />
+          
+          {/* Chat routes - Protected and handled by ChatContainer */}
+          <Route
+            path="/chat/*"
+            element={
+              <RequireAuth>
+                <ChatContainer />
+              </RequireAuth>
+            }
+          />
 
           {/* Protected */}
           <Route
@@ -111,18 +118,6 @@ function AppContent() {
               </RequireAuth>
             }
           />
-          <Route
-            path="/chat"
-            element={
-              <RequireAuth>
-                <ChatPage />
-              </RequireAuth>
-            }
-          >
-            <Route index element={<p className="p-8">Select a conversation</p>} />
-            <Route path=":id" element={<ChatThread />} />
-            <Route path="dm/:id" element={<ChatThread />} />
-          </Route>
 
           {/* Public profile route - must be last to avoid conflicts */}
           <Route path="/:username" element={<PublicProfile />} />
