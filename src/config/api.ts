@@ -40,7 +40,15 @@ apiClient.interceptors.request.use(cfg => {
     return null;
   };
 
-  const token = getCookieValue('access_token');
+  // Try access_token first, then mobile fallback
+  let token = getCookieValue('access_token');
+  if (!token) {
+    token = getCookieValue('mobile_access_token');
+    if (token) {
+      console.log('Using mobile_access_token fallback');
+    }
+  }
+
   if (token) {
     cfg.headers = {
       ...cfg.headers,

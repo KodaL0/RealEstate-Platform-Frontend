@@ -46,7 +46,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const baseWs = (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
     
-    // More robust token extraction
+    // More robust token extraction with mobile fallback
     const getCookieValue = (name: string): string | null => {
       const cookies = document.cookie.split(';');
       for (let cookie of cookies) {
@@ -58,7 +58,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return null;
     };
     
-    const token = getCookieValue('access_token');
+    // Try access_token first, then mobile fallback
+    let token = getCookieValue('access_token');
+    if (!token) {
+      token = getCookieValue('mobile_access_token');
+      if (token) {
+        console.log('WebSocket using mobile_access_token fallback');
+      }
+    }
     const wsUrl = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
 
     console.log("Mobile debug - Token found:", !!token);
