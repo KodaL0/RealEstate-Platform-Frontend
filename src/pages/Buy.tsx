@@ -21,7 +21,7 @@ interface SearchFiltersType {
   maxPrice?: string;
   bedrooms?: string;
   bathrooms?: string;
-  property_type?: string;
+  propertyType?: string;
   order?: string;
 }
 
@@ -68,7 +68,7 @@ const Buy = () => {
         if (searchFilters.maxPrice) qp.price_max = searchFilters.maxPrice;
         if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
         if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
-        if (searchFilters.property_type) qp.property_type = searchFilters.property_type;
+        if (searchFilters.propertyType) qp.propertyType = searchFilters.propertyType;
         if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching BUY with query params:", qp);
