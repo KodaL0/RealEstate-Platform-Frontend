@@ -87,7 +87,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       location: location || undefined,
       minPrice,
       maxPrice,
-      propertyType: propertyType === 'Any' ? undefined : propertyType,
+      propertyType: propertyType === 'Any' ? undefined : propertyType.toLowerCase(),
       bedrooms: parsedBedrooms,
       bathrooms: parsedBathrooms,
       forSale,
