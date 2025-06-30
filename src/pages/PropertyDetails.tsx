@@ -18,12 +18,31 @@ import ChatButton from "../components/ChatButton";
 
 /* ───────────────── helpers ───────────────── */
 
-async function geocodeAddress(address: string) {
-  const q = encodeURIComponent(address);
-  const res = await fetch(`https://nominatim.openstreetmap.org/search?q=${q}&format=json`);
-  const js = await res.json();
-  if (js?.length) return { lat: +js[0].lat, lng: +js[0].lon };
-  throw new Error('geocoding failed');
+// Mock coordinates for Cyprus properties
+const cyprusMockCoords = [
+  { lat: 35.1856, lng: 33.3823 }, // Nicosia
+  { lat: 34.7071, lng: 33.0226 }, // Limassol
+  { lat: 34.9229, lng: 33.6233 }, // Larnaca
+  { lat: 34.7720, lng: 32.4297 }, // Paphos
+  { lat: 34.9823, lng: 33.9851 }, // Ayia Napa
+  { lat: 35.3400, lng: 33.3190 }, // Famagusta
+];
+
+async function getMockCoordinates(address: string, propertyId?: number) {
+  // Use property ID or hash of address to get consistent coordinates
+  const index = propertyId ? propertyId % cyprusMockCoords.length : 
+    Math.abs(address.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % cyprusMockCoords.length;
+  
+  const coords = cyprusMockCoords[index];
+  
+  // Add small random offset for more realistic spread
+  const latOffset = (Math.random() - 0.5) * 0.02; // ~2km variation
+  const lngOffset = (Math.random() - 0.5) * 0.02;
+  
+  return {
+    lat: coords.lat + latOffset,
+    lng: coords.lng + lngOffset
+  };
 }
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
@@ -117,15 +136,15 @@ const PropertyDetails: React.FC = () => {
         const mapped = mapPropertyData(response.data);
         if (!isMounted) return;
         setProperty(mapped);
-        // Example: if API returns latitude/longitude, use them; else geocode:
+        // Use mock coordinates for Cyprus properties
         if (mapped.location) {
           try {
-            const result = await geocodeAddress(mapped.location);
+            const result = await getMockCoordinates(mapped.location, mapped.id);
             if (isMounted) {
               setCoords(result);
             }
           } catch (e) {
-            console.error('geocode fail', e);
+            console.error('mock coordinates fail', e);
           }
         }
         if (mapped.images.length > 0) {

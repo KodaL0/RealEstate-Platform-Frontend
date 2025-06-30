@@ -178,9 +178,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <option>Any</option>
               <option>House</option>
               <option>Apartment</option>
-              <option>Condo</option>
-              <option>Townhouse</option>
-              <option>Villa</option>
               <option>Land</option>
             </select>
           </div>
