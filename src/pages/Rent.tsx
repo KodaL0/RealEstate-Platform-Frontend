@@ -67,10 +67,7 @@ const Rent = () => {
         if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
         if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
         if (searchFilters.propertyType) qp.property_type = searchFilters.propertyType;
-        if (sortOption) qp.sort_by = sortOption;
-        if (sortOption === "price-asc" || sortOption === "price-desc") {
-          qp.order = sortOption === "price-asc" ? "asc" : "desc";
-        }
+        if (sortOption) qp.sort = sortOption;
         if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching RENT with query params:", qp);

@@ -60,7 +60,7 @@ const Buy = () => {
       try {
         const qp: Record<string, string> = {
           page_size: PAGE_SIZE.toString(),
-          sort_by: sortOption,
+          sort: sortOption,
         };
         if (searchFilters.search) qp.search = searchFilters.search;
         if (currentPage !== 1) qp.page = currentPage.toString();
@@ -69,9 +69,6 @@ const Buy = () => {
         if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
         if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
         if (searchFilters.property_type) qp.property_type = searchFilters.property_type;
-        if (sortOption === "price-asc" || sortOption === "price-desc") {
-          qp.order = sortOption === "price-asc" ? "asc" : "desc";
-        }
         if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching BUY with query params:", qp);
