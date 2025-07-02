@@ -59,6 +59,8 @@ export default function ChatThread() {
   const currentFetchRef = useRef<string | null>(null);
   const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
+  // Ref to the textarea so we can ensure it receives focus programmatically on mobile
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   // Reset local state when thread changes
   useEffect(() => {
@@ -385,6 +387,25 @@ export default function ChatThread() {
     return () => observer.disconnect();
   }, [nextUrl, isFetchingMore]);
 
+  /* ------------------------------------------------------------------ */
+  /*                    Mobile keyboard / typing indicator               */
+  /* ------------------------------------------------------------------ */
+
+  const handleInputFocus = () => {
+    if (id && recipientId) {
+      // Notify other user that we started typing
+      sendTypingStart(id, recipientId);
+    }
+    // Scroll the list so the latest messages are still visible when the keyboard slides in
+    setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }), 50);
+  };
+
+  const handleInputBlur = () => {
+    if (id && recipientId) {
+      sendTypingStop(id, recipientId);
+    }
+  };
+
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
       {/* Enhanced Header - Mobile Optimized */}
@@ -685,22 +706,25 @@ export default function ChatThread() {
         <div className="flex items-end gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <textarea
+              ref={inputRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={handleKeyDown}
+              onFocus={handleInputFocus}
+              onBlur={handleInputBlur}
               className="
-                w-full border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 
+                mobile-input w-full border-2 border-slate-200 hover:border-slate-300 focus:border-blue-500 
                 rounded-2xl px-3 sm:px-4 py-2.5 sm:py-3 pr-10 sm:pr-12 text-sm resize-none transition-all duration-200
                 focus:outline-none focus:ring-4 focus:ring-blue-500/20
-                placeholder-slate-400 bg-white/50 backdrop-blur-sm
+                placeholder-slate-400 bg-white
                 min-h-[44px] sm:min-h-[48px] max-h-[100px] sm:max-h-[120px]
-                touch-manipulation mobile-input
               "
+              inputMode="text"
+              enterKeyHint="send"
               rows={1}
               placeholder="Type your message..."
               style={{
                 height: Math.min(Math.max(44, input.split("\n").length * 20 + 24), 100) + "px",
-                fontSize: "16px", // Prevents zoom on iOS
               }}
             />
             {/* Mobile-optimized character count */}

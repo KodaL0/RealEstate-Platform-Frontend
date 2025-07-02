@@ -68,7 +68,7 @@ const Buy = () => {
         if (searchFilters.maxPrice) qp.price_max = searchFilters.maxPrice;
         if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
         if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
-        if (searchFilters.propertyType) qp.propertyType = searchFilters.propertyType;
+        if (searchFilters.propertyType) qp.property_type = searchFilters.propertyType;
         if (searchFilters.location) qp.location = searchFilters.location;
 
         console.log("Fetching BUY with query params:", qp);
