@@ -132,7 +132,7 @@ export default function ChatContainer() {
       className="fixed inset-0 flex flex-col bg-gray-50"
       style={{ 
         top: `${navHeight}px`,
-        height: `calc(100vh - ${navHeight}px)` 
+        height: `calc(100dvh - ${navHeight}px)` 
       }}
     >
       <div className="flex flex-1 min-h-0 relative">

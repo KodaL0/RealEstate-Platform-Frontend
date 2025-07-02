@@ -701,8 +701,11 @@ export default function ChatThread() {
         </div>
       )}
 
-      {/* Enhanced Input Area - Mobile Optimized */}
-      <div className="bg-white/90 backdrop-blur-sm border-t border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 safe-area-bottom">
+      {/* Enhanced Input Area – always visible (pinned on mobile) */}
+      <div
+        className="bg-white/95 border-t border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0 safe-area-bottom
+                   sticky bottom-0 z-20 shadow-[0_-1px_10px_rgba(0,0,0,0.04)]"
+      >
         <div className="flex items-end gap-2 sm:gap-3">
           <div className="flex-1 relative">
             <textarea
