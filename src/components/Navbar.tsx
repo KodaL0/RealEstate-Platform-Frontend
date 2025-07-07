@@ -322,7 +322,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link to="/login" className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg">
                 <UserPlus className="h-5 w-5" />
-                <span className="hidden sm:block font-medium">Sign In</span>
+                <span className="hidden sm:block font-medium">Sign In / Register</span>
               </Link>
             )}
           </div>
