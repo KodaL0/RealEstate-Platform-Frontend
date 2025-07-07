@@ -863,6 +863,19 @@ const PublicProfile: React.FC = () => {
                     </div>
                   )}
 
+                  {profileData?.phone && (
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Phone className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Phone</p>
+                        <p className="text-gray-600">{profileData.phone}</p>
+                      </div>
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                        <Copy className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
+                  )}
+
                   <div className="text-center py-4 text-gray-500">
                     <p className="text-sm">
                       For direct contact, use the "Message" button above or connect with this user.

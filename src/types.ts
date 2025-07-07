@@ -97,6 +97,7 @@ export interface PublicProfileData {
   office?: string;
   avatar?: string;
   website?: string;
+  phone?: string;
   // Property and connection data
   properties_count: number;
   published_properties: Property[];
