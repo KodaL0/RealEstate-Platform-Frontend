@@ -477,18 +477,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* Posts Section - Coming Soon */}
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <MessageCircle className="h-5 w-5 mr-2 text-gray-600" />
-                Posts & Updates
-              </h3>
-              <div className="text-center py-8">
-                <MessageCircle className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                <h4 className="text-xl font-semibold text-gray-900 mb-2">Posts Coming Soon</h4>
-                <p className="text-gray-600">User posts and updates will be available in a future update.</p>
-              </div>
-            </div>
+
           </div>
         );
 
@@ -815,79 +804,27 @@ const PublicProfile: React.FC = () => {
               </h3>
               
               <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Mail className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Email</p>
-                        <p className="text-gray-600">{enhancedProfile.email}</p>
-                      </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                        <Copy className="h-4 w-4 text-gray-500" />
-                      </button>
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                    <Mail className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Email</p>
+                      <p className="text-gray-600">{enhancedProfile.email}</p>
                     </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Phone className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Phone</p>
-                        <p className="text-gray-600">{enhancedProfile.phone}</p>
-                      </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                        <Copy className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <MapPin className="h-5 w-5 text-red-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Location</p>
-                        <p className="text-gray-600">{enhancedProfile.location}</p>
-                      </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                        <ExternalLink className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Globe className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Website</p>
-                        <p className="text-gray-600">{enhancedProfile.website}</p>
-                      </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                        <ExternalLink className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
+                    <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <Copy className="h-4 w-4 text-gray-500" />
+                    </button>
                   </div>
 
-                  <div className="space-y-4">
-                    <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <h4 className="font-semibold text-blue-900 mb-2">Business Hours</h4>
-                      <div className="space-y-1 text-sm text-blue-800">
-                        <p>Monday - Friday: 9:00 AM - 6:00 PM</p>
-                        <p>Saturday: 10:00 AM - 4:00 PM</p>
-                        <p>Sunday: By appointment only</p>
-                      </div>
+                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                    <Phone className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="font-medium text-gray-900">Phone</p>
+                      <p className="text-gray-600">{enhancedProfile.phone}</p>
                     </div>
-
-                    <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-                      <h4 className="font-semibold text-green-900 mb-2">Response Time</h4>
-                      <div className="text-sm text-green-800">
-                        <p>Average response: <span className="font-medium">{mockAnalytics.avgResponseTime}</span></p>
-                        <p>Response rate: <span className="font-medium">{mockAnalytics.responseRate}%</span></p>
-                      </div>
-                    </div>
-
-                    <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-                      <h4 className="font-semibold text-yellow-900 mb-2">Service Areas</h4>
-                      <div className="text-sm text-yellow-800">
-                        <p>• San Francisco, CA</p>
-                        <p>• San Mateo County</p>
-                        <p>• South Bay Area</p>
-                      </div>
-                    </div>
+                    <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <Copy className="h-4 w-4 text-gray-500" />
+                    </button>
                   </div>
                 </div>
               </div>

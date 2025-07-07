@@ -488,7 +488,7 @@ export default function ChatThread() {
                         ${isOwn 
                           ? message.is_unsent 
                             ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25' 
-                            : 'bg-gradient-to-br from-blue-500 to-blue-600 text-white shadow-lg shadow-blue-500/25'
+                            : 'bg-gradient-to-br from-blue-100 to-blue-200 text-slate-800 shadow-lg shadow-blue-100/25'
                           : 'bg-white border border-slate-200/60 shadow-sm'
                         }
                         rounded-2xl px-4 py-3 relative
@@ -525,7 +525,7 @@ export default function ChatThread() {
                       )}
                       
                       {/* Message content */}
-                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-white' : 'text-slate-800'} ${message.is_unsent ? 'italic' : ''}`}>
+                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-slate-800' : 'text-slate-800'} ${message.is_unsent ? 'italic' : ''}`}>
                         {message.content}
                       </div>
 
@@ -558,7 +558,7 @@ export default function ChatThread() {
                       )}
                       
                       {/* Time and status */}
-                      <div className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? 'text-blue-100' : 'text-slate-400'}`}>
+                      <div className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? 'text-slate-500' : 'text-slate-400'}`}>
                         <span>{formatTime(message.created_at)}</span>
                         {message.is_unsent && (
                           <span className="text-xs opacity-75">• Unsent</span>
@@ -568,15 +568,15 @@ export default function ChatThread() {
                             {/* Double check for read */}
                             {message.read_at ? (
                               <div className="flex">
-                                <svg className="w-3 h-3 text-blue-200 -mr-1" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-3 h-3 text-slate-500 -mr-1" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
-                                <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                                <svg className="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
                                   <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                                 </svg>
                               </div>
                             ) : (
-                              <svg className="w-3 h-3 text-blue-200" fill="currentColor" viewBox="0 0 20 20">
+                              <svg className="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
                                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                               </svg>
                             )}
@@ -747,7 +747,7 @@ export default function ChatThread() {
               min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px]
               touch-manipulation active:scale-95
               ${input.trim() && recipientId
-                ? "bg-gradient-to-br from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 hover:shadow-xl hover:scale-105" 
+                                        ? "bg-gradient-to-br from-blue-300 to-blue-400 text-white hover:from-blue-400 hover:to-blue-500 hover:shadow-xl hover:scale-105" 
                 : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }
             `}
