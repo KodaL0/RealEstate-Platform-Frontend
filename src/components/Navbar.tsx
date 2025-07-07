@@ -6,7 +6,6 @@ import { logout } from "../middleware/auth";
 import { useChat } from "../context/ChatContext";
 import { useConnections } from "../hooks/useConnections";
 import UserSearch from './UserSearch';
-import { RequireAuth } from './RequireAuth';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -79,14 +78,14 @@ const Navbar: React.FC = () => {
             </Link>
 
             {/* Desktop Search */}
-            <RequireAuth>
+            {user && (
               <div className="hidden md:block">
                 <UserSearch />
               </div>
-            </RequireAuth>
+            )}
 
             {/* Mobile Search Icon */}
-            <RequireAuth>
+            {user && (
               <button
                 onClick={toggleSearch}
                 className="md:hidden p-2 text-gray-700 hover:text-blue-600 transition-colors"
@@ -94,7 +93,7 @@ const Navbar: React.FC = () => {
               >
                 <Search className="h-5 w-5" />
               </button>
-            </RequireAuth>
+            )}
           </div>
 
           {/* Center Navigation Links */}
@@ -196,110 +195,17 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* Mobile Search Dropdown */}
-        {isSearchOpen && (
-          <RequireAuth>
-            <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-4 z-40">
-              <UserSearch />
-            </div>
-          </RequireAuth>
+        {isSearchOpen && user && (
+          <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-4 z-40">
+            <UserSearch />
+          </div>
         )}
 
         {/* Mobile Menu */}
         {isOpen && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white rounded-b-lg shadow-lg border-t border-gray-200 max-h-[calc(100vh-4rem)] overflow-y-auto">
             <div className="px-4 py-4 space-y-1">
-              <Link to="/" onClick={() => setIsOpen(false)} className={`block py-3 px-2 rounded-lg font-medium transition-colors ${isActive("/") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}>
-                Home
-              </Link>
-              <Link to="/buy" onClick={() => setIsOpen(false)} className={`block py-3 px-2 rounded-lg font-medium transition-colors ${isActive("/buy") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}>
-                Buy
-              </Link>
-              <Link to="/rent" onClick={() => setIsOpen(false)} className={`block py-3 px-2 rounded-lg font-medium transition-colors ${isActive("/rent") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}>
-                Rent
-              </Link>
-              
-              {/* Services Section */}
-              <div className="border-t border-gray-100 pt-2 mt-2">
-                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 py-1 mb-1">Services</div>
-                <Link to="/mortgage-calculator" onClick={() => setIsOpen(false)} className={`block py-3 px-2 rounded-lg font-medium transition-colors ${isActive("/mortgage-calculator") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}>
-                  Mortgage Calculator
-                </Link>
-                <Link to="/rent-vs-buy" onClick={() => setIsOpen(false)} className={`block py-3 px-2 rounded-lg font-medium transition-colors ${isActive("/rent-vs-buy") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}>
-                  Rent vs Buy Calculator
-                </Link>
-              </div>
-
-              {user ? (
-                <>
-                  {/* User Section */}
-                  <div className="border-t border-gray-100 pt-2 mt-2">
-                    <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide px-2 py-1 mb-1">Account</div>
-                    
-                    {/* Messages - Prominent placement */}
-                    <Link 
-                      to="/chat" 
-                      onClick={() => setIsOpen(false)} 
-                      className={`flex items-center justify-between py-3 px-2 rounded-lg font-medium transition-colors ${location.pathname.startsWith("/chat") ? "text-blue-600 bg-blue-50" : "text-gray-700 hover:bg-gray-50"}`}
-                    >
-                      <div className="flex items-center">
-                        <MessageCircle className="h-5 w-5 mr-3" />
-                        Messages
-                      </div>
-                      {unreadTotal > 0 && (
-                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {unreadTotal > 99 ? '99+' : unreadTotal}
-                        </span>
-                      )}
-                    </Link>
-                    
-                    <Link to="/profile" onClick={() => setIsOpen(false)} className="flex items-center py-3 px-2 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                      <User className="h-5 w-5 mr-3" />
-                      Profile
-                    </Link>
-                    
-                    <Link to="/connections" onClick={() => setIsOpen(false)} className="flex items-center justify-between py-3 px-2 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                      <div className="flex items-center">
-                        <Users className="h-5 w-5 mr-3" />
-                        Connections
-                      </div>
-                      {pendingRequestsCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {pendingRequestsCount}
-                        </span>
-                      )}
-                    </Link>
-                    
-                    <Link to="/my-listings" onClick={() => setIsOpen(false)} className="block py-3 px-2 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                      My Listings
-                    </Link>
-                    
-                    <Link to="/favourites" onClick={() => setIsOpen(false)} className="block py-3 px-2 rounded-lg font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                      Favourites
-                    </Link>
-                    
-                    <button 
-                      onClick={() => {
-                        handleLogout();
-                        setIsOpen(false);
-                      }} 
-                      className="w-full text-left py-3 px-2 rounded-lg font-medium text-red-600 hover:bg-red-50 transition-colors"
-                    >
-                      Logout
-                    </button>
-                  </div>
-                </>
-              ) : (
-                <div className="border-t border-gray-100 pt-2 mt-2">
-                  <Link 
-                    to="/login" 
-                    onClick={() => setIsOpen(false)} 
-                    className="flex items-center justify-center py-3 px-4 rounded-lg font-medium text-white bg-blue-600 hover:bg-blue-700 transition-colors"
-                  >
-                    <User className="h-5 w-5 mr-2" />
-                    Sign In / Register
-                  </Link>
-                </div>
-              )}
+              {/* keep your mobile menu code unchanged */}
             </div>
           </div>
         )}
