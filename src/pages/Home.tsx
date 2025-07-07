@@ -116,67 +116,99 @@ function Home() {
   return (
     <div className="bg-white">
       {/* ───────────── Hero Section ───────────── */}
-      <section className="relative h-[70vh] md:h-[75vh]">
-        <div className="absolute inset-0 animate-in fade-in duration-1000">
-          {/* Background image with CSS mask fade */}
+      <section className="relative min-h-[85vh] md:min-h-[90vh] bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 overflow-hidden">
+        {/* Background Elements */}
+        <div className="absolute inset-0">
+          {/* Background image with overlay */}
           <div
-            className="w-full h-full bg-cover bg-center"
+            className="absolute inset-0 bg-cover bg-center opacity-30"
             style={{
               backgroundImage:
                 "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80')",
-              WebkitMaskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
-              maskImage: "linear-gradient(to bottom, black 70%, transparent 100%)",
-              WebkitMaskSize: "100% 100%",
-              maskSize: "100% 100%",
-              WebkitMaskRepeat: "no-repeat",
-              maskRepeat: "no-repeat",
             }}
           />
-          {/* Dark overlay for readability */}
-          <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-black/60 pointer-events-none" />
+          {/* Gradient overlay */}
+          <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60" />
+          
+          {/* Decorative elements */}
+          <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
         </div>
-      
-        <div className="relative container mx-auto px-4 h-full flex flex-col justify-center animate-in slide-in-from-bottom duration-700">
-          <div className="max-w-3xl">
-            <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight animate-in slide-in-from-left duration-700 delay-200">
-              Find Your <span className="text-blue-400">Dream Home</span>
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 mb-6 md:mb-8 animate-in slide-in-from-left duration-700 delay-300">
-              Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
-            </p>
-      
-            <div className="bg-white/95 backdrop-blur-md p-4 md:p-5 rounded-xl shadow-2xl animate-in slide-in-from-left duration-700 delay-400">
-              <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-                <div className="flex-grow">
-                  <div className="relative">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                    <input
-                      type="text"
-                      placeholder="Enter an address, city, or ZIP code"
-                      className="w-full pl-10 pr-4 py-3.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                    />
+
+        {/* Content Container */}
+        <div className="relative z-10 container mx-auto px-4 sm:px-6 lg:px-8 h-full min-h-[85vh] md:min-h-[90vh] flex items-center">
+          <div className="w-full max-w-7xl mx-auto">
+            {/* Hero Content */}
+            <div className="text-center lg:text-left lg:max-w-3xl mb-8 lg:mb-12">
+              <motion.div
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight">
+                  Find Your{" "}
+                  <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                    Dream Home
+                  </span>
+                </h1>
+              </motion.div>
+              
+              <motion.p
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2 }}
+                className="text-lg sm:text-xl md:text-2xl text-white/90 mb-8 md:mb-10 max-w-2xl mx-auto lg:mx-0"
+              >
+                Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
+              </motion.p>
+            </div>
+
+            {/* Search Container - Rounded with white space on sides */}
+            <motion.div
+              initial={{ opacity: 0, y: 40 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="w-full max-w-5xl mx-auto"
+            >
+              <div className="bg-white/95 backdrop-blur-xl rounded-2xl lg:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 border border-white/20">
+                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+                  {/* Search Input */}
+                  <div className="flex-1">
+                    <div className="relative">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
+                      <input
+                        type="text"
+                        placeholder="Enter an address, city, or ZIP code"
+                        className="w-full pl-12 pr-4 py-4 lg:py-5 border border-gray-200 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 text-base lg:text-lg font-medium"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  
+                  {/* Action Buttons */}
+                  <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-shrink-0">
+                    <Link
+                      to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                      className="flex-1 lg:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
+                    >
+                      Buy
+                    </Link>
+                    <Link
+                      to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                      className="flex-1 lg:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
+                    >
+                      Rent
+                    </Link>
                   </div>
                 </div>
-                <div className="flex space-x-4">
-                  <Link
-                    to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                    className="flex-1 bg-blue-600 hover:bg-blue-700 text-white py-3.5 px-8 rounded-lg font-medium transition-colors shadow-md hover:shadow-lg active:scale-[0.98]"
-                  >
-                    Buy
-                  </Link>
-                  <Link
-                    to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                    className="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 px-8 rounded-lg font-medium transition-all shadow-md hover:shadow-lg active:scale-[0.98]"
-                  >
-                    Rent
-                  </Link>
-                </div>
               </div>
-            </div>
+            </motion.div>
           </div>
         </div>
+
+        {/* Bottom fade effect */}
+        <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-white to-transparent" />
       </section>
 
       {/* ───────────── Featured Properties ───────────── */}
@@ -305,7 +337,6 @@ function Home() {
           </div>
         </div>
       </section>
-
 
       {/* ───────────── CTA Section ───────────── */}
       <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
