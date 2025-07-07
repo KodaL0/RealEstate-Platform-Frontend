@@ -224,10 +224,10 @@ const Navbar: React.FC = () => {
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">
-            {/* Sidebar Toggle */}
+            {/* Desktop Sidebar Toggle */}
             <button
               onClick={toggleSidebar}
-              className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              className="hidden md:block p-2 hover:bg-gray-100 rounded-lg transition-colors"
               aria-label="Toggle sidebar"
             >
               <Menu className="h-6 w-6 text-gray-700" />
@@ -249,6 +249,15 @@ const Navbar: React.FC = () => {
 
           {/* Right Section */}
           <div className="flex items-center space-x-3">
+            {/* Mobile Sidebar Toggle - Only on mobile, positioned before other buttons */}
+            <button
+              onClick={toggleSidebar}
+              className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              aria-label="Toggle sidebar"
+            >
+              <Menu className="h-6 w-6 text-gray-700" />
+            </button>
+
             {/* Mobile Search */}
             {user && (
               <button
@@ -322,7 +331,7 @@ const Navbar: React.FC = () => {
             ) : (
               <Link to="/login" className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg">
                 <UserPlus className="h-5 w-5" />
-                <span className="hidden sm:block font-medium">Sign In / Register</span>
+                <span className="hidden sm:block font-medium">Sign In</span>
               </Link>
             )}
           </div>
