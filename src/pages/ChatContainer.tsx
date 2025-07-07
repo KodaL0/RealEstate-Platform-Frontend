@@ -50,26 +50,8 @@ function MobileChatThread() {
 export default function ChatContainer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [navHeight, setNavHeight] = useState(64);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
-
-  useEffect(() => {
-    const navEl = document.querySelector("nav");
-    if (navEl) {
-      const rect = navEl.getBoundingClientRect();
-      setNavHeight(rect.height);
-      if (window.ResizeObserver) {
-        const ro = new ResizeObserver(entries => {
-          for (let entry of entries) {
-            setNavHeight(entry.contentRect.height);
-          }
-        });
-        ro.observe(navEl);
-        return () => ro.disconnect();
-      }
-    }
-  }, []);
 
   useEffect(() => {
     const handleResize = () => {
@@ -87,13 +69,7 @@ export default function ChatContainer() {
   };
 
   return (
-    <div
-      className="absolute inset-0 flex flex-col bg-gray-50"
-      style={{
-        top: `${navHeight}px`,
-        height: `calc(100dvh - ${navHeight}px)`,
-      }}
-    >
+    <div className="min-h-[100vh] flex flex-col bg-gray-50">
       <div className="flex flex-1 min-h-0">
         {isMobile ? (
           <div className="w-full h-full">
@@ -110,7 +86,8 @@ export default function ChatContainer() {
               </div>
             </aside>
 
-            <main className="flex-1 flex flex-col min-h-0 bg-white">
+            <main className="flex-1 flex flex-col bg-white min-h-[calc(100vh-64px)]">
+              {/* header */}
               <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
                 <button 
                   onClick={toggleSidebar}
@@ -120,6 +97,8 @@ export default function ChatContainer() {
                 </button>
                 <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
               </div>
+
+              {/* chat content */}
               <div className="flex-1 overflow-hidden">
                 <Routes>
                   <Route path="/" element={<ChatEmptyState />} />
