@@ -413,9 +413,13 @@ const PublicProfile: React.FC = () => {
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
                 <User className="h-5 w-5 mr-2 text-blue-600" />
-                About {profileData?.username}
+                About {profileData?.name || profileData?.username}
               </h3>
-              <p className="text-gray-700 leading-relaxed mb-4">{enhancedProfile.bio}</p>
+              {profileData?.bio ? (
+                <p className="text-gray-700 leading-relaxed mb-4">{profileData.bio}</p>
+              ) : (
+                <p className="text-gray-500 italic">No bio available</p>
+              )}
               {/*
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <div>
@@ -805,26 +809,43 @@ const PublicProfile: React.FC = () => {
               
               <div className="space-y-6">
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Mail className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Email</p>
-                      <p className="text-gray-600">{enhancedProfile.email}</p>
+                  {profileData?.website && (
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <Globe className="h-5 w-5 text-blue-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Website</p>
+                        <a 
+                          href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 hover:text-blue-800"
+                        >
+                          {profileData.website}
+                        </a>
+                      </div>
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                        <Copy className="h-4 w-4 text-gray-500" />
+                      </button>
                     </div>
-                    <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                      <Copy className="h-4 w-4 text-gray-500" />
-                    </button>
-                  </div>
+                  )}
 
-                  <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                    <Phone className="h-5 w-5 text-green-600" />
-                    <div>
-                      <p className="font-medium text-gray-900">Phone</p>
-                      <p className="text-gray-600">{enhancedProfile.phone}</p>
+                  {profileData?.office && (
+                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
+                      <MapPin className="h-5 w-5 text-green-600" />
+                      <div>
+                        <p className="font-medium text-gray-900">Office</p>
+                        <p className="text-gray-600">{profileData.office}</p>
+                      </div>
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                        <Copy className="h-4 w-4 text-gray-500" />
+                      </button>
                     </div>
-                    <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
-                      <Copy className="h-4 w-4 text-gray-500" />
-                    </button>
+                  )}
+
+                  <div className="text-center py-4 text-gray-500">
+                    <p className="text-sm">
+                      For direct contact, use the "Message" button above or connect with this user.
+                    </p>
                   </div>
                 </div>
               </div>
@@ -895,14 +916,16 @@ const PublicProfile: React.FC = () => {
               </div>
               <div className="text-center md:text-left">
                 <div className="flex items-center space-x-2 mb-2">
-                  <h1 className="text-3xl font-bold text-white">{profileData.username}</h1>
-                  {enhancedProfile.verified && (
-                    <CheckCircle className="h-6 w-6 text-green-400" />
+                  <h1 className="text-3xl font-bold text-white">
+                    {profileData.name || profileData.username}
+                  </h1>
+                  {profileData.name && (
+                    <span className="text-white/70 text-lg">@{profileData.username}</span>
                   )}
                 </div>
                 <div className="flex items-center text-white/90 mb-2">
                   <MapPin className="h-4 w-4 mr-1" />
-                  <span>{enhancedProfile.location}</span>
+                  <span>{profileData?.location || 'Location not specified'}</span>
                 </div>
                 <div className="flex items-center space-x-4 text-white/90">
                   <div className="flex items-center">
@@ -911,7 +934,7 @@ const PublicProfile: React.FC = () => {
                   </div>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
-                    <span>Since {enhancedProfile.memberSince}</span>
+                    <span>Since {formatJoinDate(profileData.date_joined)}</span>
                   </div>
                 </div>
 
