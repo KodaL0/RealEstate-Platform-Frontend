@@ -116,11 +116,11 @@ function Home() {
   return (
     <div className="bg-white">
       {/* ───────────── Hero Section ───────────── */}
-      <section className="py-8 md:py-16 bg-gray-50">
+      <section className="py-4 md:py-8 bg-gray-50">
         {/* Container with padding for white space on sides */}
-        <div className="container mx-auto px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32">
+        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12">
           {/* Rounded hero container */}
-          <div className="relative min-h-[70vh] md:min-h-[80vh] bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
+          <div className="relative min-h-[50vh] md:min-h-[55vh] bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
             {/* Background Elements */}
             <div className="absolute inset-0">
               {/* Background image with overlay */}
@@ -140,16 +140,16 @@ function Home() {
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 h-full min-h-[70vh] md:min-h-[80vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
+            <div className="relative z-10 h-full min-h-[50vh] md:min-h-[55vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
               <div className="w-full max-w-7xl mx-auto">
                 {/* Hero Content */}
-                <div className="text-center lg:text-left lg:max-w-3xl mb-8 lg:mb-12">
+                <div className="text-center lg:text-left lg:max-w-3xl mb-6 lg:mb-8">
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8 }}
                   >
-                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-bold text-white mb-4 md:mb-6 leading-tight">
+                    <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4 leading-tight">
                       Find Your{" "}
                       <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
                         Dream Home
@@ -161,7 +161,7 @@ function Home() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-base sm:text-lg md:text-xl lg:text-2xl text-white/90 mb-8 md:mb-10 max-w-2xl mx-auto lg:mx-0"
+                    className="text-base sm:text-lg md:text-xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto lg:mx-0"
                   >
                     Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
                   </motion.p>
@@ -172,9 +172,9 @@ function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
-                  className="w-full max-w-4xl mx-auto"
+                  className="w-full max-w-5xl mx-auto"
                 >
-                  <div className="bg-white/95 backdrop-blur-xl rounded-2xl lg:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 border border-white/20">
+                  <div className="bg-white/95 backdrop-blur-xl rounded-2xl lg:rounded-3xl shadow-2xl p-4 sm:p-5 lg:p-6 border border-white/20">
                     <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
                       {/* Search Input */}
                       <div className="flex-1">
@@ -183,7 +183,7 @@ function Home() {
                           <input
                             type="text"
                             placeholder="Enter an address, city, or ZIP code"
-                            className="w-full pl-12 pr-4 py-4 lg:py-5 border border-gray-200 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 text-base lg:text-lg font-medium"
+                            className="w-full pl-12 pr-4 py-3.5 lg:py-4 border border-gray-200 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 text-base lg:text-lg font-medium"
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                           />
@@ -194,13 +194,13 @@ function Home() {
                       <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-shrink-0">
                         <Link
                           to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                          className="flex-1 lg:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
+                          className="flex-1 lg:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3.5 lg:py-4 px-6 lg:px-8 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
                         >
                           Buy
                         </Link>
                         <Link
                           to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                          className="flex-1 lg:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
+                          className="flex-1 lg:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-3.5 lg:py-4 px-6 lg:px-8 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
                         >
                           Rent
                         </Link>
