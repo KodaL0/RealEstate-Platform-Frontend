@@ -301,6 +301,8 @@ const api = {
     // Get review dashboard data for current user
     getDashboard: () =>
       apiGet('reviews/dashboard'),
+
+    getUserOverallRating: (userId: number) => apiGet(`reviews/users/${userId}/overall_rating`),
   },
 };
 

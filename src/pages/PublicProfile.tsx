@@ -58,6 +58,9 @@ const PublicProfile: React.FC = () => {
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
+  const [overallRating, setOverallRating] = useState<number | null>(null);
+  const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(null);
+  const [hasLoadedReviews, setHasLoadedReviews] = useState(false);
 
   // Enhanced profile data
   const enhancedProfile = {
@@ -131,10 +134,18 @@ const PublicProfile: React.FC = () => {
           const normalizedProps = profileData.published_properties.map(normalizePropertyData);
           setProperties(normalizedProps);
           
-          // Fetch reviews for this user
-          fetchReviews(profileData.id);
+          // Fetch lightweight overall rating
+          try {
+            const ratingResp = await api.reviews.getUserOverallRating(profileData.id);
+            const ratingData = ratingResp.data;
+            setOverallRating(ratingData.average_rating);
+            setOverallReviewsCount(ratingData.reviews_received_count);
+          } catch (ratingErr) {
+            console.error('Error fetching overall rating:', ratingErr);
+          }
           
-          // Check if current user can review this profile
+          // NOTE: We defer fetching full reviews until the Reviews tab is opened
+          // Check if current user can review this profile (needed on reviews tab)
           checkCanReview(profileData.id);
         } else {
           console.log('PublicProfile: Invalid response structure - no profile data found');
@@ -387,6 +398,7 @@ const PublicProfile: React.FC = () => {
       console.error('Error fetching reviews:', error);
     } finally {
       setIsLoadingReviews(false);
+      setHasLoadedReviews(true);
     }
   };
 
@@ -493,11 +505,11 @@ const PublicProfile: React.FC = () => {
                 <div className="text-gray-600 text-sm">Mutual Connections</div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-yellow-600">{enhancedProfile.averageRating}</div>
+                <div className="text-2xl font-bold text-yellow-600">{overallRating !== null ? overallRating.toFixed(1) : 'N/A'}</div>
                 <div className="text-gray-600 text-sm">Avg Rating</div>
               </div>
               <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-green-600">{enhancedProfile.totalReviews}</div>
+                <div className="text-2xl font-bold text-green-600">{overallReviewsCount ?? 'N/A'}</div>
                 <div className="text-gray-600 text-sm">Total Reviews</div>
               </div>
             </div>
@@ -566,12 +578,6 @@ const PublicProfile: React.FC = () => {
                     {reviewStats?.reviews_received_count || 0}
                   </div>
                   <p className="text-gray-600">Total Reviews</p>
-                </div>
-                <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">
-                    {enhancedProfile.responseRate}%
-                  </div>
-                  <p className="text-gray-600">Response Rate</p>
                 </div>
               </div>
 
@@ -892,6 +898,13 @@ const PublicProfile: React.FC = () => {
     }
   };
 
+  // Lazy-load reviews when the Reviews tab is opened
+  useEffect(() => {
+    if (activeTab === 'reviews' && profileData && !hasLoadedReviews) {
+      fetchReviews(profileData.id);
+    }
+  }, [activeTab, profileData, hasLoadedReviews]);
+
   if (isLoadingProfile) {
     return (
       <div className="pt-20 bg-gray-50 min-h-screen">
@@ -964,7 +977,7 @@ const PublicProfile: React.FC = () => {
                 <div className="flex items-center space-x-4 text-white/90">
                   <div className="flex items-center">
                     <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
-                    <span>{enhancedProfile.averageRating} ({enhancedProfile.totalReviews} reviews)</span>
+                    <span>{overallRating !== null ? overallRating.toFixed(1) : 'N/A'} ({overallReviewsCount ?? '0'} reviews)</span>
                   </div>
                   <div className="flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
