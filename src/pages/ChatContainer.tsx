@@ -1,4 +1,3 @@
-// src/pages/ChatContainer.tsx
 import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
 import ChatInbox from "./ChatInbox";
 import ChatThread from "./ChatThread";
@@ -7,7 +6,7 @@ import { ArrowLeft, Menu, MessageCircle } from "lucide-react";
 
 function ChatEmptyState() {
   return (
-    <div className="h-full flex items-center justify-center bg-gray-50 p-8">
+    <div className="flex-1 flex items-center justify-center bg-gray-50 p-8">
       <div className="text-center max-w-md">
         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <MessageCircle size={32} className="text-blue-500" />
@@ -30,24 +29,18 @@ function ChatEmptyState() {
 
 function MobileChatThread() {
   const navigate = useNavigate();
-
-  const handleBackToInbox = () => {
-    navigate('/chat');
-  };
-
   return (
-    <div className="w-full h-full bg-white flex flex-col">
-      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm">
-        <button
-          onClick={handleBackToInbox}
+    <div className="flex flex-col h-full bg-white">
+      <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 shadow-sm">
+        <button 
+          onClick={() => navigate("/chat")}
           className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors -ml-2"
-          aria-label="Back to messages"
         >
           <ArrowLeft size={20} />
         </button>
         <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
       </div>
-      <div className="flex-1 min-h-0">
+      <div className="flex-1 overflow-hidden">
         <ChatThread />
       </div>
     </div>
@@ -57,39 +50,51 @@ function MobileChatThread() {
 export default function ChatContainer() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [navHeight, setNavHeight] = useState(64);
   const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobile, setIsMobile] = useState(() => typeof window !== "undefined" && window.innerWidth < 1024);
 
-  const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return window.innerWidth < 1024;
+  useEffect(() => {
+    const navEl = document.querySelector("nav");
+    if (navEl) {
+      const rect = navEl.getBoundingClientRect();
+      setNavHeight(rect.height);
+      if (window.ResizeObserver) {
+        const ro = new ResizeObserver(entries => {
+          for (let entry of entries) {
+            setNavHeight(entry.contentRect.height);
+          }
+        });
+        ro.observe(navEl);
+        return () => ro.disconnect();
+      }
     }
-    return false;
-  });
-
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const isInThread = pathParts.length >= 2 && pathParts[0] === 'chat' && pathParts[1] && pathParts[1] !== '';
+  }, []);
 
   useEffect(() => {
     const handleResize = () => {
-      const currentIsMobile = window.innerWidth < 1024;
-      setIsMobile(currentIsMobile);
-      if (!currentIsMobile) setShowSidebar(true);
+      const mobile = window.innerWidth < 1024;
+      setIsMobile(mobile);
+      if (!mobile) setShowSidebar(true);
     };
-
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   const toggleSidebar = () => {
-    if (!isMobile) {
-      setShowSidebar(prev => !prev);
-    }
+    if (!isMobile) setShowSidebar(prev => !prev);
   };
 
   return (
-    <div className="pt-16 h-[calc(100vh-64px)] flex flex-col bg-gray-50">
-      <div className="flex flex-1 min-h-0 relative">
+    <div
+      className="absolute inset-0 flex flex-col bg-gray-50"
+      style={{
+        top: `${navHeight}px`,
+        height: `calc(100dvh - ${navHeight}px)`,
+      }}
+    >
+      <div className="flex flex-1 min-h-0">
         {isMobile ? (
           <div className="w-full h-full">
             <Routes>
@@ -99,29 +104,23 @@ export default function ChatContainer() {
           </div>
         ) : (
           <>
-            <aside className={`
-              w-80 border-r border-gray-200 bg-white flex-shrink-0 transition-all duration-300
-              ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
-            `}>
-              <div className="h-full flex flex-col">
-                <div className="flex-1 overflow-hidden">
-                  <ChatInbox />
-                </div>
+            <aside className={`w-80 border-r border-gray-200 bg-white flex-shrink-0 transition-transform duration-300 ${showSidebar ? "translate-x-0" : "-translate-x-full"}`}>
+              <div className="h-full overflow-hidden">
+                <ChatInbox />
               </div>
             </aside>
 
             <main className="flex-1 flex flex-col min-h-0 bg-white">
-              <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-                <button
+              <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3">
+                <button 
                   onClick={toggleSidebar}
-                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
-                  aria-label="Toggle messages sidebar"
+                  className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg"
                 >
                   <Menu size={20} />
                 </button>
                 <h1 className="text-lg font-semibold text-gray-900">Messages</h1>
               </div>
-              <div className="flex-1 flex flex-col min-h-0">
+              <div className="flex-1 overflow-hidden">
                 <Routes>
                   <Route path="/" element={<ChatEmptyState />} />
                   <Route path="/:id" element={<ChatThread />} />
