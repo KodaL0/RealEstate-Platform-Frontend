@@ -120,7 +120,7 @@ function Home() {
         {/* Container with padding for white space on sides */}
         <div className="mx-auto px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 max-w-none">
           {/* Rounded hero container */}
-          <div className="relative min-h-[45vh] md:min-h-[50vh] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
+          <div className="relative min-h-[55vh] md:min-h-[65vh] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
             {/* Background Elements */}
             <div className="absolute inset-0">
               {/* Background image with overlay */}
@@ -136,7 +136,7 @@ function Home() {
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 h-full min-h-[45vh] md:min-h-[50vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
+            <div className="relative z-10 h-full min-h-[55vh] md:min-h-[65vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
               <div className="w-full max-w-7xl mx-auto">
                 {/* Hero Content */}
                 <div className="text-center lg:text-left lg:max-w-3xl mb-6 lg:mb-8">
@@ -206,9 +206,6 @@ function Home() {
                 </motion.div>
               </div>
             </div>
-
-            {/* Bottom fade effect */}
-            <div className="absolute bottom-0 left-0 right-0 h-16 bg-gradient-to-t from-gray-50 to-transparent rounded-b-2xl md:rounded-b-3xl" />
           </div>
         </div>
       </section>
