@@ -129,11 +129,8 @@ export default function ChatContainer() {
 
   return (
     <div 
-      className="fixed inset-0 flex flex-col bg-gray-50"
-      style={{ 
-        top: `${navHeight}px`,
-        height: `calc(100dvh - ${navHeight}px)` 
-      }}
+      className="min-h-screen flex flex-col bg-gray-50"
+      style={{ paddingTop: `${navHeight}px` }}
     >
       <div className="flex flex-1 min-h-0 relative">
         {/* Mobile Layout - Use Routes at the top level */}
