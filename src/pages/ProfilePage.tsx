@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate } from 'react-router-dom';
 import { User as UserIcon, Save, MapPin, Phone, Building, Globe, Camera, FileText, Loader2 } from 'lucide-react';
-import { apiClient as authFetch } from '../middleware/auth';
+import api from '../config/api';
 
 interface ProfileData {
   name: string;
@@ -73,7 +73,7 @@ const ProfilePage: React.FC = () => {
     console.log('Loading profile data...');
     setIsLoadingProfile(true);
     try {
-      const response = await authFetch.get('/api/users/get_user/');
+      const response = await api.auth.getUser();
       console.log('Profile API response:', response);
       
       if (response.status === 200) {
@@ -228,7 +228,7 @@ const ProfilePage: React.FC = () => {
     
     try {
       console.log('Sending username update request:', { username: newUsername });
-      const response = await authFetch.put('/api/users/profile', { 
+      const response = await api.auth.updateProfile({ 
         username: newUsername
       });
       console.log('Username update response:', response);
@@ -273,7 +273,7 @@ const ProfilePage: React.FC = () => {
 
     try {
       console.log('Sending profile update request:', profileData);
-      const response = await authFetch.put('/api/users/profile', profileData);
+      const response = await api.auth.updateProfile(profileData);
       console.log('Profile update response:', response);
       
       if (response.status === 200) {

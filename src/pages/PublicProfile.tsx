@@ -92,16 +92,28 @@ const PublicProfile: React.FC = () => {
     }
 
     const fetchProfile = async () => {
+      console.log('PublicProfile: Starting to fetch profile data for username:', username);
       setIsLoadingProfile(true);
       setError(null);
       try {
         // Fetch profile data
+        console.log('PublicProfile: Calling api.auth.getPublicProfile with username:', username);
         const response = await api.auth.getPublicProfile(username);
+        console.log('PublicProfile: API response received:', response);
         const data = response.data;
+        console.log('PublicProfile: Response data:', data);
 
         if (data.status === 200 && data.profile) {
-          console.log('Profile data received:', data.profile);
-          console.log('Initial connection status from API:', data.profile.connection_status);
+          console.log('PublicProfile: Profile data received:', data.profile);
+          console.log('PublicProfile: Initial connection status from API:', data.profile.connection_status);
+          console.log('PublicProfile: Profile fields check:', {
+            name: data.profile.name,
+            bio: data.profile.bio,
+            location: data.profile.location,
+            office: data.profile.office,
+            avatar: data.profile.avatar,
+            website: data.profile.website
+          });
           
           // Set initial profile data
           let profileData = data.profile;
@@ -125,16 +137,25 @@ const PublicProfile: React.FC = () => {
           // Check if current user can review this profile
           checkCanReview(profileData.id);
         } else {
+          console.log('PublicProfile: Invalid response structure - no profile data found');
+          console.log('PublicProfile: Full response structure:', data);
           setError('Profile not found');
         }
       } catch (err: any) {
-        console.error('Error fetching profile:', err);
+        console.error('PublicProfile: Error fetching profile:', err);
+        console.error('PublicProfile: Error details:', {
+          message: err.message,
+          response: err.response?.data,
+          status: err.response?.status,
+          config: err.config
+        });
         if (err.response?.status === 404) {
           setError('Profile not found');
         } else {
           setError('Failed to load profile. Please try again.');
         }
       } finally {
+        console.log('PublicProfile: Profile loading completed');
         setIsLoadingProfile(false);
       }
     };
