@@ -15,19 +15,20 @@ interface ProfileData {
   website: string;
 }
 
-interface ProfileResponse {
-  id?: number;
-  name?: string;
-  bio?: string;
-  location?: string;
-  phone?: string;
-  office?: string;
-  avatar?: string;
-  website?: string;
-  is_complete?: boolean;
-  completion_percentage?: number;
-  user_username?: string;
-  user_email?: string;
+interface UserResponse {
+  user: {
+    id: number;
+    email: string;
+    username: string;
+    name?: string;
+    bio?: string;
+    location?: string;
+    phone?: string;
+    office?: string;
+    avatar?: string;
+    website?: string;
+    date_joined: string;
+  };
 }
 
 const ProfilePage: React.FC = () => {
@@ -55,11 +56,6 @@ const ProfilePage: React.FC = () => {
   const [profileError, setProfileError] = useState('');
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
-  const [completionStats, setCompletionStats] = useState<{
-    is_complete: boolean;
-    completion_percentage: number;
-    missing_fields: string[];
-  } | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -67,7 +63,6 @@ const ProfilePage: React.FC = () => {
     } else {
       setNewUsername(user.username ?? '');
       loadProfile();
-      loadCompletionStats();
     }
   }, [user, navigate]);
 
@@ -76,32 +71,25 @@ const ProfilePage: React.FC = () => {
     try {
       const response = await authFetch.get('/api/users/get_user/');
       if (response.status === 200) {
-        const profile = response.data as ProfileResponse;
+        const data = response.data as UserResponse;
+        const userData = data.user;
+        
         setProfileData({
-          name: profile.name || '',
-          bio: profile.bio || '',
-          location: profile.location || '',
-          phone: profile.phone || '',
-          office: profile.office || '',
-          avatar: profile.avatar || '',
-          website: profile.website || ''
+          name: userData.name || '',
+          bio: userData.bio || '',
+          location: userData.location || '',
+          phone: userData.phone || '',
+          office: userData.office || '',
+          avatar: userData.avatar || '',
+          website: userData.website || ''
         });
       }
     } catch (error: any) {
-      if (error.response?.status === 404) {
-        // Profile doesn't exist yet, keep empty form
-        console.log('Profile not found, will create new one');
-      } else {
-        setProfileError('Failed to load profile data');
-      }
+      console.error('Failed to load profile:', error);
+      setProfileError('Failed to load profile data');
     } finally {
       setIsLoadingProfile(false);
     }
-  };
-
-  const loadCompletionStats = async () => {
-    // compute completion locally or ignore
-    setCompletionStats(null);
   };
 
   if (!user) return null;
@@ -199,12 +187,14 @@ const ProfilePage: React.FC = () => {
     }
 
     try {
-      const response = await authFetch.put('/api/users/profile/', profileData);
+      const response = await authFetch.put('/api/users/profile', profileData);
       if (response.status === 200) {
         setProfileMessage('Profile updated successfully!');
+        // Update user context with new profile data
+        setUser({ ...user, ...profileData });
       }
     } catch (err: any) {
-      setProfileError(err.response?.data?.detail || 'Failed to update profile.');
+      setProfileError(err.response?.data?.error || 'Failed to update profile.');
     } finally {
       setIsSavingProfile(false);
     }
@@ -217,29 +207,6 @@ const ProfilePage: React.FC = () => {
           <UserIcon className="h-10 w-10 text-blue-600 mr-3" />
           <h1 className="text-3xl font-bold">Profile Management</h1>
         </div>
-
-        {/* Profile Completion Stats */}
-        {completionStats && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-sm font-medium text-gray-700">Profile Completion</span>
-              <span className="text-sm font-bold text-blue-600">
-                {completionStats.completion_percentage.toFixed(0)}%
-              </span>
-            </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
-              <div 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${completionStats.completion_percentage}%` }}
-              ></div>
-            </div>
-            {completionStats.missing_fields.length > 0 && (
-              <p className="text-xs text-gray-600 mt-2">
-                Missing: {completionStats.missing_fields.join(', ')}
-              </p>
-            )}
-          </div>
-        )}
 
         <div className="grid md:grid-cols-2 gap-8">
           {/* Username Section */}
@@ -355,6 +322,46 @@ const ProfilePage: React.FC = () => {
                   />
                 </div>
 
+                <div>
+                  <label className="block mb-1 font-medium text-gray-700">Bio</label>
+                  <textarea 
+                    value={profileData.bio}
+                    onChange={(e) => handleProfileChange('bio', e.target.value)}
+                    className="border border-gray-300 rounded w-full p-3 h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
+                    placeholder="Tell us about yourself..."
+                    maxLength={500}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">{profileData.bio.length}/500 characters</p>
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
+                    <Camera className="h-4 w-4 mr-1" />
+                    Avatar URL
+                  </label>
+                  <input 
+                    type="url" 
+                    value={profileData.avatar}
+                    onChange={(e) => handleProfileChange('avatar', e.target.value)}
+                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://example.com/avatar.jpg"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
+                    <Globe className="h-4 w-4 mr-1" />
+                    Website
+                  </label>
+                  <input 
+                    type="url" 
+                    value={profileData.website}
+                    onChange={(e) => handleProfileChange('website', e.target.value)}
+                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    placeholder="https://yourwebsite.com"
+                  />
+                </div>
+
                 <button 
                   type="submit" 
                   disabled={isSavingProfile}
@@ -374,55 +381,6 @@ const ProfilePage: React.FC = () => {
                 </button>
               </form>
             )}
-          </div>
-        </div>
-
-        {/* Extended Profile Section */}
-        <div className="mt-8 bg-gray-50 p-6 rounded-lg">
-          <h2 className="text-xl font-semibold mb-4">Additional Information</h2>
-          
-          <div className="grid md:grid-cols-2 gap-6">
-            <div>
-              <label className="block mb-1 font-medium text-gray-700">Bio</label>
-              <textarea 
-                value={profileData.bio}
-                onChange={(e) => handleProfileChange('bio', e.target.value)}
-                className="border border-gray-300 rounded w-full p-3 h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                placeholder="Tell us about yourself..."
-                maxLength={500}
-              />
-              <p className="text-xs text-gray-500 mt-1">{profileData.bio.length}/500 characters</p>
-            </div>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block mb-1 font-medium text-gray-700 flex items-center">
-                  <Camera className="h-4 w-4 mr-1" />
-                  Avatar URL
-                </label>
-                <input 
-                  type="url" 
-                  value={profileData.avatar}
-                  onChange={(e) => handleProfileChange('avatar', e.target.value)}
-                  className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://example.com/avatar.jpg"
-                />
-              </div>
-
-              <div>
-                <label className="block mb-1 font-medium text-gray-700 flex items-center">
-                  <Globe className="h-4 w-4 mr-1" />
-                  Website
-                </label>
-                <input 
-                  type="url" 
-                  value={profileData.website}
-                  onChange={(e) => handleProfileChange('website', e.target.value)}
-                  className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  placeholder="https://yourwebsite.com"
-                />
-              </div>
-            </div>
           </div>
         </div>
       </div>
