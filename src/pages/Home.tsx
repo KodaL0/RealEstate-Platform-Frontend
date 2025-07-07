@@ -118,7 +118,7 @@ function Home() {
       {/* ───────────── Hero Section ───────────── */}
       <section className="pt-20 md:pt-24 pb-4 md:pb-8 bg-gray-50">
         {/* Container with padding for white space on sides */}
-        <div className="container mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
+        <div className="mx-auto px-1 sm:px-2 md:px-3 lg:px-4 xl:px-6 max-w-none">
           {/* Rounded hero container */}
           <div className="relative min-h-[45vh] md:min-h-[50vh] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
             {/* Background Elements */}
