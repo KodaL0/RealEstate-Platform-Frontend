@@ -139,7 +139,7 @@ function Home() {
             <div className="relative z-10 h-full min-h-[55vh] md:min-h-[65vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
               <div className="w-full max-w-7xl mx-auto">
                 {/* Hero Content */}
-                <div className="text-center lg:text-left lg:max-w-3xl mb-6 lg:mb-8">
+                <div className="text-center mb-6 lg:mb-8">
                   <motion.div
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
@@ -157,7 +157,7 @@ function Home() {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
-                    className="text-base sm:text-lg md:text-xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto lg:mx-0"
+                    className="text-base sm:text-lg md:text-xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto"
                   >
                     Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
                   </motion.p>
