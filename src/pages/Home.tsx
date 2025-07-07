@@ -168,38 +168,67 @@ function Home() {
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.4 }}
-              className="w-full max-w-5xl mx-auto"
+              className="w-full"
             >
-              <div className="bg-white/95 backdrop-blur-xl rounded-2xl lg:rounded-3xl shadow-2xl p-4 sm:p-6 lg:p-8 border border-white/20">
-                <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
-                  {/* Search Input */}
-                  <div className="flex-1">
+              {/* Outer container with padding for white space */}
+              <div className="px-4 sm:px-8 md:px-16 lg:px-24 xl:px-32">
+                <div className="bg-white rounded-2xl md:rounded-3xl shadow-2xl p-4 sm:p-6 md:p-8 border border-gray-100">
+                  {/* Tab-like buttons */}
+                  <div className="flex mb-6">
+                    <button className="bg-blue-600 text-white px-6 py-2 rounded-l-lg font-medium">
+                      Πώληση
+                    </button>
+                    <button className="bg-gray-100 text-gray-700 px-6 py-2 rounded-r-lg font-medium hover:bg-gray-200 transition-colors">
+                      Ενοικίαση
+                    </button>
+                  </div>
+
+                  {/* Search Form */}
+                  <div className="space-y-4">
+                    {/* Main Search Input */}
                     <div className="relative">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 h-5 w-5" />
                       <input
                         type="text"
                         placeholder="Enter an address, city, or ZIP code"
-                        className="w-full pl-12 pr-4 py-4 lg:py-5 border border-gray-200 rounded-xl lg:rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 text-base lg:text-lg font-medium"
+                        className="w-full pl-12 pr-4 py-4 md:py-5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-900 placeholder-gray-500 text-base md:text-lg"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                       />
                     </div>
-                  </div>
-                  
-                  {/* Action Buttons */}
-                  <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-shrink-0">
-                    <Link
-                      to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                      className="flex-1 lg:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
-                    >
-                      Buy
-                    </Link>
-                    <Link
-                      to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
-                      className="flex-1 lg:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-4 lg:py-5 px-8 lg:px-10 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
-                    >
-                      Rent
-                    </Link>
+                    
+                    {/* Filters Row */}
+                    <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
+                      {/* Property Type Dropdown */}
+                      <div className="flex-1">
+                        <select className="w-full px-4 py-3 md:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 bg-white">
+                          <option>Property Type</option>
+                          <option>Apartment</option>
+                          <option>House</option>
+                          <option>Villa</option>
+                          <option>Office</option>
+                        </select>
+                      </div>
+                      
+                      {/* Budget Dropdown */}
+                      <div className="flex-1">
+                        <select className="w-full px-4 py-3 md:py-4 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all text-gray-700 bg-white">
+                          <option>Budget</option>
+                          <option>€0 - €200,000</option>
+                          <option>€200,000 - €500,000</option>
+                          <option>€500,000 - €1,000,000</option>
+                          <option>€1,000,000+</option>
+                        </select>
+                      </div>
+                      
+                      {/* Search Button */}
+                      <Link
+                        to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                        className="bg-orange-500 hover:bg-orange-600 text-white py-3 md:py-4 px-8 md:px-12 rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center whitespace-nowrap"
+                      >
+                        🔍 Search
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
