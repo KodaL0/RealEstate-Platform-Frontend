@@ -136,7 +136,7 @@ function Home() {
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 h-full min-h-[55vh] md:min-h-[65vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
+            <div className="relative z-10 h-full min-h-[55vh] md:min-h-[65vh] flex items-center px-8 sm:px-10 md:px-12 lg:px-16">
               <div className="w-full max-w-7xl mx-auto">
                 {/* Hero Content */}
                 <div className="text-center mb-6 lg:mb-8">
