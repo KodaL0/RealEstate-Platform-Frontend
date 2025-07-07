@@ -116,31 +116,27 @@ function Home() {
   return (
     <div className="bg-white">
       {/* ───────────── Hero Section ───────────── */}
-      <section className="py-4 md:py-8 bg-gray-50">
+      <section className="pt-20 md:pt-24 pb-4 md:pb-8 bg-gray-50">
         {/* Container with padding for white space on sides */}
-        <div className="container mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-12">
+        <div className="container mx-auto px-2 sm:px-3 md:px-4 lg:px-6 xl:px-8">
           {/* Rounded hero container */}
-          <div className="relative min-h-[50vh] md:min-h-[55vh] bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
+          <div className="relative min-h-[45vh] md:min-h-[50vh] rounded-2xl md:rounded-3xl overflow-hidden shadow-2xl">
             {/* Background Elements */}
             <div className="absolute inset-0">
               {/* Background image with overlay */}
               <div
-                className="absolute inset-0 bg-cover bg-center opacity-30 rounded-2xl md:rounded-3xl"
+                className="absolute inset-0 bg-cover bg-center rounded-2xl md:rounded-3xl"
                 style={{
                   backgroundImage:
                     "url('https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=2070&q=80')",
                 }}
               />
               {/* Gradient overlay */}
-              <div className="absolute inset-0 bg-gradient-to-b from-black/40 via-transparent to-black/60 rounded-2xl md:rounded-3xl" />
-              
-              {/* Decorative elements */}
-              <div className="absolute top-20 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
-              <div className="absolute bottom-20 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+              <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/50 rounded-2xl md:rounded-3xl" />
             </div>
 
             {/* Content Container */}
-            <div className="relative z-10 h-full min-h-[50vh] md:min-h-[55vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
+            <div className="relative z-10 h-full min-h-[45vh] md:min-h-[50vh] flex items-center px-6 sm:px-8 md:px-12 lg:px-16">
               <div className="w-full max-w-7xl mx-auto">
                 {/* Hero Content */}
                 <div className="text-center lg:text-left lg:max-w-3xl mb-6 lg:mb-8">
@@ -172,7 +168,7 @@ function Home() {
                   initial={{ opacity: 0, y: 40 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.8, delay: 0.4 }}
-                  className="w-full max-w-5xl mx-auto"
+                  className="w-full max-w-6xl mx-auto"
                 >
                   <div className="bg-white/95 backdrop-blur-xl rounded-2xl lg:rounded-3xl shadow-2xl p-4 sm:p-5 lg:p-6 border border-white/20">
                     <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
