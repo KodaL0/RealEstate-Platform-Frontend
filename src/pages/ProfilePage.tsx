@@ -432,34 +432,6 @@ const ProfilePage: React.FC = () => {
                   <p className="text-xs text-gray-500 mt-1">{profileData.bio.length}/500 characters</p>
                 </div>
 
-                <div>
-                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
-                    <Camera className="h-4 w-4 mr-1" />
-                    Avatar URL
-                  </label>
-                  <input 
-                    type="url" 
-                    value={profileData.avatar}
-                    onChange={(e) => handleProfileChange('avatar', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://example.com/avatar.jpg"
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
-                    <Globe className="h-4 w-4 mr-1" />
-                    Website
-                  </label>
-                  <input 
-                    type="url" 
-                    value={profileData.website}
-                    onChange={(e) => handleProfileChange('website', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="https://yourwebsite.com"
-                  />
-                </div>
-
                 <button 
                   type="submit" 
                   disabled={isSavingProfile}
