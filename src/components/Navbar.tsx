@@ -5,6 +5,8 @@ import { useUser } from "../context/UserContext";
 import { logout } from "../middleware/auth";
 import { useChat } from "../context/ChatContext";
 import { useConnections } from "../hooks/useConnections";
+import UserSearch from './UserSearch';
+import { RequireAuth } from './RequireAuth';
 
 const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -267,6 +269,13 @@ const Navbar: React.FC = () => {
             </div>
           </div>
         )}
+
+        {/* User Search */}
+        <RequireAuth>
+          <div className="hidden md:block absolute left-1/2 transform -translate-x-1/2 top-1/2 -translate-y-1/2 z-10">
+            <UserSearch />
+          </div>
+        </RequireAuth>
       </nav>
 
       {/* Mobile Floating Chat Button - Only show when user is logged in and not on chat page */}
