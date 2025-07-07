@@ -15,7 +15,7 @@ export default function ChatPage() {
       </div>
 
       {/* Main chat area: fill remaining width & height, flex column, internal scroll */}
-      <div className="flex-1 flex flex-col h-full overflow-hidden">
+      <div className="flex h-full overflow-hidden">
         {/* The Outlet will render ChatEmptyState or ChatThread */}
         <Outlet />
       </div>
