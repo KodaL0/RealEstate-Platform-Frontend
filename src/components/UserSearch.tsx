@@ -85,12 +85,12 @@ const UserSearch: React.FC = () => {
   };
 
   const handleUsernameClick = (username: string) => {
-    navigate(`/profile/${username}`);
+    navigate(`/${username}`);
     setIsOpen(false); // Close search dropdown
   };
 
   const handleProfileView = (username: string) => {
-    navigate(`/profile/${username}`);
+    navigate(`/${username}`);
     setIsOpen(false); // Close search dropdown
   };
 
