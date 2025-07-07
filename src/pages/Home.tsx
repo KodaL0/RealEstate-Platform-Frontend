@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
 import { Property } from "../types";
 import api from "../config/api";
+import UserSearch from '../components/UserSearch';
 
 const PAGE_SIZE = 12;   // cards per page
 const NAV_HEIGHT = 80;  // px – adjust to your fixed-navbar height
@@ -176,6 +177,13 @@ function Home() {
               </div>
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ───────────── User Search ───────────── */}
+      <section className="py-8 bg-white">
+        <div className="container mx-auto px-4 flex justify-center">
+          <UserSearch />
         </div>
       </section>
 

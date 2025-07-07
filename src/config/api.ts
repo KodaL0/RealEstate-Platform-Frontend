@@ -136,6 +136,7 @@ const api = {
     getUser:         ()        => apiGet('users/get_user'),
     updateProfile:   (d: any)  => apiPut('users/profile', d),
     getPublicProfile: (username: string) => apiGet(`users/profiles/${username}`),
+    searchUsers:     (q: string) => apiGet(`users/search`, { params: { q } }),
   },
 
   properties: {
