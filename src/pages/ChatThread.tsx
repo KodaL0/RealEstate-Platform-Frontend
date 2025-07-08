@@ -407,7 +407,7 @@ export default function ChatThread() {
   };
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0">
+    <div className="flex flex-col h-full bg-gradient-to-b from-slate-50 to-white min-h-0 overflow-hidden">
       {/* Enhanced Header - Mobile Optimized */}
       <div className="bg-white/90 backdrop-blur-sm border-b border-slate-200/60 px-3 sm:px-4 py-3 sm:py-4 flex items-center justify-between flex-shrink-0 shadow-sm">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 flex-1">
@@ -451,7 +451,7 @@ export default function ChatThread() {
       {/* Enhanced Messages Area - Mobile Optimized */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 min-h-0 scroll-smooth touch-pan-y"
+        className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 min-h-0 scroll-smooth touch-pan-y isolate chat-messages"
       >
         <div ref={topSentinelRef} className="h-1" />
         

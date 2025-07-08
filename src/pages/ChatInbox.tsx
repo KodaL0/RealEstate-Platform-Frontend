@@ -106,7 +106,7 @@ export default function ChatInbox() {
   }
 
   return (
-    <div className="h-full flex flex-col bg-gray-50 w-full">
+    <div className="h-full flex flex-col bg-gray-50 w-full overflow-hidden">
       {/* Enhanced Header with better mobile spacing */}
       <div className="bg-white border-b border-gray-200 px-3 sm:px-4 py-3 sm:py-4 flex-shrink-0">
         <div className="flex items-center justify-between mb-3 sm:mb-4">
@@ -210,7 +210,7 @@ export default function ChatInbox() {
       </div>
 
       {/* Enhanced Messages List with mobile optimizations */}
-      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden px-3 sm:px-4 py-3 sm:py-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 isolate chat-thread-list">
         {filteredThreads.length === 0 ? (
           <div className="text-center py-12 sm:py-16">
             <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3 sm:mb-4">

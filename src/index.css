@@ -394,3 +394,28 @@ body,
     }
   }
 }
+
+/* Chat scroll isolation */
+.chat-container {
+  isolation: isolate;
+}
+
+.chat-sidebar {
+  isolation: isolate;
+  contain: layout style paint;
+}
+
+.chat-main {
+  isolation: isolate;
+  contain: layout style paint;
+}
+
+.chat-messages {
+  isolation: isolate;
+  contain: layout style paint;
+}
+
+.chat-thread-list {
+  isolation: isolate;
+  contain: layout style paint;
+}
