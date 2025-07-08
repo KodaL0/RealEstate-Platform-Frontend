@@ -419,3 +419,13 @@ body,
   isolation: isolate;
   contain: layout style paint;
 }
+
+:root {
+  --navbar-height: 4rem;
+}
+
+@media (max-width: 640px) {
+  :root {
+    --navbar-height: 3.5rem;
+  }
+}

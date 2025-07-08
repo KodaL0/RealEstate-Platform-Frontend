@@ -62,7 +62,6 @@ function MobileChatThread() {
 export default function ChatContainer() {
   const location = useLocation();
   const navigate = useNavigate();
-  const [navHeight, setNavHeight] = useState(64);
   const [showSidebar, setShowSidebar] = useState(true);
   // Initialize mobile state based on current window size
   const [isMobile, setIsMobile] = useState(() => {
@@ -75,26 +74,6 @@ export default function ChatContainer() {
   // Better thread detection - check if we have a specific chat ID in the path
   const pathParts = location.pathname.split('/').filter(Boolean);
   const isInThread = pathParts.length >= 2 && pathParts[0] === 'chat' && pathParts[1] && pathParts[1] !== '';
-
-  useEffect(() => {
-    // Calculate navbar height dynamically
-    const navEl = document.querySelector("nav");
-    if (navEl) {
-      const rect = navEl.getBoundingClientRect();
-      setNavHeight(rect.height);
-
-      // Observe for size changes
-      if (window.ResizeObserver) {
-        const ro = new ResizeObserver(entries => {
-          for (let entry of entries) {
-            setNavHeight(entry.contentRect.height);
-          }
-        });
-        ro.observe(navEl);
-        return () => ro.unobserve(navEl);
-      }
-    }
-  }, []);
 
   // Handle responsive behavior with proper state management
   useEffect(() => {
@@ -129,10 +108,10 @@ export default function ChatContainer() {
 
   return (
     <div 
-      className="fixed inset-0 flex flex-col bg-gray-50 chat-container"
+      className="absolute inset-x-0 bottom-0 flex flex-col bg-gray-50 chat-container"
       style={{ 
-        top: `${navHeight}px`,
-        height: `calc(100dvh - ${navHeight}px)` 
+        top: 'var(--navbar-height)',
+        height: 'auto',
       }}
     >
       <div className="flex flex-1 min-h-0 relative">

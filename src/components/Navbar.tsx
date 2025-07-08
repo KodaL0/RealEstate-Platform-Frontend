@@ -220,7 +220,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="fixed w-full z-30 bg-white shadow-md pt-[env(safe-area-inset-top)] h-[calc(4rem+env(safe-area-inset-top))]">
+      <nav className="fixed w-full z-30 bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)' }}>
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">
