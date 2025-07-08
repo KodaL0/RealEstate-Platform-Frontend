@@ -116,7 +116,7 @@ const Navbar: React.FC = () => {
                   <h3 className="font-semibold text-gray-900" title={user.username}>
                     {user.username}
                   </h3>
-                  <p className="text-sm text-gray-500">Real Estate Professional</p>
+                  <p className="text-sm text-gray-500"></p>
                 </div>
               </div>
               
