@@ -18,7 +18,7 @@ const Navbar: React.FC = () => {
   const [scrolled, setScrolled] = useState(false);
   const { user, setUser } = useUser();
   const { threads } = useChat();
-  const { pendingRequestsCount } = useConnections(!!user);
+  const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
   const navigate = useNavigate();
 
@@ -73,7 +73,7 @@ const Navbar: React.FC = () => {
     { path: "/profile", label: "Profile", icon: User },
     { path: "/my-listings", label: "My Listings", icon: List },
     { path: "/favourites", label: "Favourites", icon: Star },
-    { path: "/connections", label: "Connections", icon: Users, badge: pendingRequestsCount },
+    { path: "/connections", label: "Connections", icon: Users, badge: totalConnectionsCount },
   ] : [];
 
   return (
@@ -306,9 +306,9 @@ const Navbar: React.FC = () => {
                         <Users className="h-4 w-4" />
                         <span>Connections</span>
                       </div>
-                      {pendingRequestsCount > 0 && (
+                      {totalConnectionsCount > 0 && (
                         <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                          {pendingRequestsCount}
+                          {totalConnectionsCount}
                         </span>
                       )}
                     </Link>
