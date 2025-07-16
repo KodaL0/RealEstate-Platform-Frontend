@@ -15,35 +15,8 @@ import { Property, PropertyImage } from '../types';
 import MapView from '../components/MapView';
 import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
+import { geocodeAddress } from '../components/geocode';
 
-/* ───────────────── helpers ───────────────── */
-
-// Mock coordinates for Cyprus properties
-const cyprusMockCoords = [
-  { lat: 35.1856, lng: 33.3823 }, // Nicosia
-  { lat: 34.7071, lng: 33.0226 }, // Limassol
-  { lat: 34.9229, lng: 33.6233 }, // Larnaca
-  { lat: 34.7720, lng: 32.4297 }, // Paphos
-  { lat: 34.9823, lng: 33.9851 }, // Ayia Napa
-  { lat: 35.3400, lng: 33.3190 }, // Famagusta
-];
-
-async function getMockCoordinates(address: string, propertyId?: number) {
-  // Use property ID or hash of address to get consistent coordinates
-  const index = propertyId ? propertyId % cyprusMockCoords.length : 
-    Math.abs(address.split('').reduce((a, b) => a + b.charCodeAt(0), 0)) % cyprusMockCoords.length;
-  
-  const coords = cyprusMockCoords[index];
-  
-  // Add small random offset for more realistic spread
-  const latOffset = (Math.random() - 0.5) * 0.02; // ~2km variation
-  const lngOffset = (Math.random() - 0.5) * 0.02;
-  
-  return {
-    lat: coords.lat + latOffset,
-    lng: coords.lng + lngOffset
-  };
-}
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
@@ -136,16 +109,24 @@ const PropertyDetails: React.FC = () => {
         const response = await api.properties.getById(numericId);
         const mapped = mapPropertyData(response.data);
         if (!isMounted) return;
-  
         setProperty(mapped);
   
-        // Use real latitude/longitude from the API
+        // ── COORDINATE LOGIC ───────────────────────────────────────
         if (mapped.latitude != null && mapped.longitude != null) {
-          setCoords({
-            lat: mapped.latitude,
-            lng: mapped.longitude
-          });
+          // 1) Use API‑provided coords if available
+          setCoords({ lat: mapped.latitude, lng: mapped.longitude });
+  
+        } else if (mapped.location) {
+          // 2) Otherwise forward‑geocode the human address
+          try {
+            const real = await geocodeAddress(mapped.location, user?.email);
+            if (isMounted) setCoords(real);
+          } catch (geoErr) {
+            console.error('Geocoding failed:', geoErr);
+            // coords remains null → shows "Location coordinates unavailable"
+          }
         }
+        // ───────────────────────────────────────────────────────────
   
         if (mapped.images.length > 0) {
           setActiveImage(0);
@@ -153,9 +134,9 @@ const PropertyDetails: React.FC = () => {
         }
   
       } catch (err) {
-        console.error("Failed to fetch property details:", err);
-        if (!isMounted) return;
-        setError('Failed to fetch property details. Please try again later.');
+        console.error('Failed to fetch property details:', err);
+        if (isMounted)
+          setError('Failed to fetch property details. Please try again later.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -165,7 +146,7 @@ const PropertyDetails: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [numericId, userLoading]);
+  }, [numericId, userLoading, user?.email]);
 
   const totalImages = property?.images.length ?? 0;
   const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
