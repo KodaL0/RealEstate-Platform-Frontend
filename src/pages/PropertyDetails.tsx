@@ -80,8 +80,8 @@ const mapPropertyData = (raw: any): Property => ({
   images: normaliseImages(raw?.images),
   is_favourite: raw?.is_favourite ?? false,
   // Add latitude/longitude if API returns them:
-  // latitude: raw?.latitude != null ? +raw.latitude : undefined,
-  // longitude: raw?.longitude != null ? +raw.longitude : undefined,
+  latitude: raw?.latitude != null ? +raw.latitude : undefined,
+  longitude: raw?.longitude != null ? +raw.longitude : undefined,
 });
 
 const amenityIcons: Record<string, JSX.Element> = {
@@ -129,28 +129,29 @@ const PropertyDetails: React.FC = () => {
   useEffect(() => {
     if (!numericId || userLoading) return;
     let isMounted = true;
+  
     const fetchProperty = async () => {
       setLoading(true);
       try {
         const response = await api.properties.getById(numericId);
         const mapped = mapPropertyData(response.data);
         if (!isMounted) return;
+  
         setProperty(mapped);
-        // Use mock coordinates for Cyprus properties
-        if (mapped.location) {
-          try {
-            const result = await getMockCoordinates(mapped.location, mapped.id);
-            if (isMounted) {
-              setCoords(result);
-            }
-          } catch (e) {
-            console.error('mock coordinates fail', e);
-          }
+  
+        // Use real latitude/longitude from the API
+        if (mapped.latitude != null && mapped.longitude != null) {
+          setCoords({
+            lat: mapped.latitude,
+            lng: mapped.longitude
+          });
         }
+  
         if (mapped.images.length > 0) {
           setActiveImage(0);
           setLightboxIdx(0);
         }
+  
       } catch (err) {
         console.error("Failed to fetch property details:", err);
         if (!isMounted) return;
@@ -159,6 +160,7 @@ const PropertyDetails: React.FC = () => {
         if (isMounted) setLoading(false);
       }
     };
+  
     fetchProperty();
     return () => {
       isMounted = false;
