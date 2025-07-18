@@ -22,6 +22,7 @@ interface SearchFiltersType {
   bedrooms?: string;
   bathrooms?: string;
   propertyType?: string;
+  country?: string;
 }
 
 const Rent = () => {
@@ -36,6 +37,7 @@ const Rent = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [selectedCountry, setSelectedCountry] = useState<'cyprus' | 'greece' | 'all'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
@@ -69,6 +71,7 @@ const Rent = () => {
         if (searchFilters.propertyType) qp.property_type = searchFilters.propertyType;
         if (sortOption) qp.sort = sortOption;
         if (searchFilters.location) qp.location = searchFilters.location;
+        if (searchFilters.country) qp.country = searchFilters.country;
 
         console.log("Fetching RENT with query params:", qp);
 
@@ -94,6 +97,16 @@ const Rent = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
+  // Update search filters when country changes
+  useEffect(() => {
+    const countryFilter = selectedCountry === 'all' ? undefined : selectedCountry;
+    setSearchFilters(prev => ({
+      ...prev,
+      country: countryFilter
+    }));
+    setCurrentPage(1);
+  }, [selectedCountry]);
+
   const displayed = properties;
 
   const handleSearch = (f: SearchFiltersType) => {
@@ -104,6 +117,10 @@ const Rent = () => {
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
     setCurrentPage(1);
+  };
+
+  const handleCountryChange = (country: 'cyprus' | 'greece' | 'all') => {
+    setSelectedCountry(country);
   };
 
   const goToPage = (p: number) => setCurrentPage(p);
@@ -118,43 +135,76 @@ const Rent = () => {
     { value: "oldest", label: "Oldest First" },
   ];
 
+  const countryOptions = [
+    { value: 'all', label: 'All Countries', flag: '🌍' },
+    { value: 'cyprus', label: 'Cyprus', flag: '🇨🇾' },
+    { value: 'greece', label: 'Greece', flag: '🇬🇷' },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white border-b border-gray-200 pt-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-8">
-            <div className="flex items-center justify-between">
-              <div>
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="mb-6 lg:mb-0">
                 <h1 className="text-3xl font-bold text-gray-900">Properties for Rent</h1>
                 <div className="flex items-center mt-2 text-gray-600">
                   <MapPin className="h-4 w-4 mr-2" />
                   <span>Find your perfect rental home</span>
                 </div>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setViewMode('grid')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'grid' 
-                        ? 'bg-white text-gray-900 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <Grid className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => setViewMode('list')}
-                    className={`p-2 rounded-md transition-colors ${
-                      viewMode === 'list' 
-                        ? 'bg-white text-gray-900 shadow-sm' 
-                        : 'text-gray-600 hover:text-gray-900'
-                    }`}
-                  >
-                    <List className="h-4 w-4" />
-                  </button>
+              
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+                {/* Country Filter */}
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">Country:</span>
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    {countryOptions.map((country) => (
+                      <button
+                        key={country.value}
+                        onClick={() => handleCountryChange(country.value as 'cyprus' | 'greece' | 'all')}
+                        className={`px-3 py-2 rounded-md transition-colors text-sm font-medium flex items-center space-x-2 ${
+                          selectedCountry === country.value 
+                            ? 'bg-white text-gray-900 shadow-sm' 
+                            : 'text-gray-600 hover:text-gray-900'
+                        }`}
+                      >
+                        <span className="text-base">{country.flag}</span>
+                        <span className="hidden sm:inline">{country.label}</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
+
+                {/* View Mode Toggle */}
+                <div className="flex items-center">
+                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">View:</span>
+                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                    <button
+                      onClick={() => setViewMode('grid')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'grid' 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <Grid className="h-4 w-4" />
+                    </button>
+                    <button
+                      onClick={() => setViewMode('list')}
+                      className={`p-2 rounded-md transition-colors ${
+                        viewMode === 'list' 
+                          ? 'bg-white text-gray-900 shadow-sm' 
+                          : 'text-gray-600 hover:text-gray-900'
+                      }`}
+                    >
+                      <List className="h-4 w-4" />
+                    </button>
+                  </div>
+                </div>
+
                 <button
                   onClick={() => setShowFilters(!showFilters)}
                   className="flex items-center px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
@@ -201,9 +251,16 @@ const Rent = () => {
                 <span className="text-gray-600">Loading properties...</span>
               </div>
             ) : (
-              <p className="text-gray-600">
-                <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> properties found
-              </p>
+              <div>
+                <p className="text-gray-600">
+                  <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> properties found
+                </p>
+                {selectedCountry !== 'all' && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Showing properties in {countryOptions.find(c => c.value === selectedCountry)?.label}
+                  </p>
+                )}
+              </div>
             )}
           </div>
           
@@ -284,6 +341,7 @@ const Rent = () => {
                 onClick={() => {
                   setSearchFilters({});
                   setSortOption("recommended");
+                  setSelectedCountry('all');
                   setShowFilters(false);
                 }}
                 className="px-6 py-3 bg-purple-600 hover:bg-purple-700 text-white rounded-lg font-medium transition-colors"
