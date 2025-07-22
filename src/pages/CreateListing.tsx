@@ -1,8 +1,8 @@
+// src/pages/CreateListing.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { format } from 'date-fns';
 
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
@@ -10,23 +10,24 @@ import { useUser } from '../context/UserContext';
 import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
 
-import Step1_UserType from './CreateListing/steps/Step1_UserType';
-import Step2_PropertyDetails from './CreateListing/steps/Step2_PropertyDetails';
-import Step3_Images from './CreateListing/steps/Step3_Images';
-import Step4_Contact from './CreateListing/steps/Step4_Contact';
+import Step1_UserType   from './CreateListing/steps/Step1_UserType';
+import Step2_Developer  from './CreateListing/steps/Step2_Developer';
+import Step2_OwnerAgent from './CreateListing/steps/Step2_OwnerAgent';
+import Step3_Images     from './CreateListing/steps/Step3_Images';
+import Step4_Contact    from './CreateListing/steps/Step4_Contact';
 
 import {
   DEFAULT_FORM_STATE,
   ListingForm,
-  COUNTRY_CODES
-} from '../types/listing';
+  COUNTRY_CODES,
+} from '../types';
 
-const WizardContent: React.FC<{
+/* ---------- WizardContent ---------- */
+type WizardProps = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   handleInputChange: (e: React.ChangeEvent<any>) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void> | void;
-  // images
   previewImages: string[];
   setPreviewImages: React.Dispatch<React.SetStateAction<string[]>>;
   primaryIndex: number;
@@ -37,19 +38,32 @@ const WizardContent: React.FC<{
   getInputProps: any;
   isDragActive: boolean;
   removeImage: (idx: number) => void;
-  // misc
   countryCode: string;
   setCountryCode: (v: string) => void;
   isSubmitting: boolean;
   isEditing: boolean;
-}> = (props) => {
+};
+
+const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
 
+  const step2 =
+    props.formData.userType === 'developer'
+      ? <Step2_Developer   formData={props.formData} setFormData={props.setFormData} onChange={props.handleInputChange} />
+      : <Step2_OwnerAgent  formData={props.formData} setFormData={props.setFormData} onChange={props.handleInputChange} />;
+
   const steps = [
-    <Step1_UserType  formData={props.formData} setFormData={props.setFormData} />,
-    <Step2_PropertyDetails {...props} />,
+    <Step1_UserType formData={props.formData} setFormData={props.setFormData} />,
+    step2,
     <Step3_Images {...props} />,
-    <Step4_Contact formData={props.formData} onChange={props.handleInputChange} countryCode={props.countryCode} setCountryCode={props.setCountryCode} isSubmitting={props.isSubmitting} isEditing={props.isEditing} />,
+    <Step4_Contact
+      formData={props.formData}
+      onChange={props.handleInputChange}
+      countryCode={props.countryCode}
+      setCountryCode={props.setCountryCode}
+      isSubmitting={props.isSubmitting}
+      isEditing={props.isEditing}
+    />,
   ];
 
   return (
@@ -60,6 +74,7 @@ const WizardContent: React.FC<{
   );
 };
 
+/* ---------- Main component ---------- */
 const CreateListing: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams<{ id?: string }>();
@@ -79,8 +94,8 @@ const CreateListing: React.FC = () => {
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
 
   const onDrop = useCallback((files: File[]) => {
-    setFormData(p => ({ ...p, images: [...p.images, ...files] }));
-    setPreviewImages(p => [...p, ...files.map(f => URL.createObjectURL(f))]);
+    setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
+    setPreviewImages((p: string[]) => [...p, ...files.map(f => URL.createObjectURL(f))]);
   }, []);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -91,21 +106,22 @@ const CreateListing: React.FC = () => {
   });
 
   const removeImage = (idx: number) => {
-    setFormData(p => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
+    setFormData((p: ListingForm) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
     if (idx < previewImages.length) URL.revokeObjectURL(previewImages[idx]);
-    setPreviewImages(p => p.filter((_, i) => i !== idx));
-    if (idx < existingImageIds.length) setExistingImageIds(p => p.filter((_, i) => i !== idx));
-    if (idx === primaryIndex) setPrimaryIndex(0); else if (idx < primaryIndex) setPrimaryIndex(i => i - 1);
+    setPreviewImages((p: string[]) => p.filter((_, i) => i !== idx));
+    setExistingImageIds((p: string[]) => p.filter((_, i) => i !== idx));
+    setPrimaryIndex((i: number) => (idx === i ? 0 : idx < i ? i - 1 : i));
   };
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
-    setFormData(prev => {
-      let updated: any = { ...prev, [name]: value };
+    setFormData((prev: ListingForm) => {
+      let updated: ListingForm = { ...prev, [name]: value } as ListingForm;
       if (name === 'propertyType') {
-        updated = value === 'land'
-          ? { ...updated, bedrooms: '0', bathrooms: '0', yearBuilt: '' }
-          : { ...updated, bedrooms: '',  bathrooms: '',  yearBuilt: '' };
+        updated =
+          value === 'land'
+            ? { ...updated, bedrooms: '0', bathrooms: '0', yearBuilt: '' }
+            : { ...updated, bedrooms: '', bathrooms: '', yearBuilt: '' };
       }
       return updated;
     });
@@ -115,7 +131,8 @@ const CreateListing: React.FC = () => {
   useEffect(() => {
     if (!isEditing || !id) return;
     setLoading(true);
-    api.properties.getUserProperty(username, Number(id))
+    api.properties
+      .getUserProperty(username, Number(id))
       .then(res => {
         const d = res.data;
         const imgs = d.images || [];
@@ -131,7 +148,10 @@ const CreateListing: React.FC = () => {
         let phone = d.contact_phone || '';
         let cc = countryCode;
         const m = phone.match(/^\+[\d]{1,4}/);
-        if (m) { cc = m[0]; phone = phone.replace(cc, '').trim(); }
+        if (m) {
+          cc = m[0];
+          phone = phone.replace(cc, '').trim();
+        }
         setCountryCode(cc);
 
         setFormData(prev => ({
@@ -168,7 +188,7 @@ const CreateListing: React.FC = () => {
         setError('Failed to load property data.');
         setLoading(false);
       });
-  }, [isEditing, id, username]);
+  }, [isEditing, id, username, countryCode]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -176,9 +196,13 @@ const CreateListing: React.FC = () => {
     setError('');
     try {
       const fd = new FormData();
+
+      // images
       if (formData.images.length) {
         const prim = Math.min(primaryIndex, formData.images.length - 1);
-        [formData.images[prim], ...formData.images.filter((_, i) => i !== prim)].forEach(f => fd.append('images[]', f));
+        [formData.images[prim], ...formData.images.filter((_, i) => i !== prim)].forEach(f =>
+          fd.append('images[]', f)
+        );
       }
       if (isEditing && previewImages.length) {
         previewImages.forEach((url, i) => {
@@ -190,10 +214,17 @@ const CreateListing: React.FC = () => {
       }
       fd.append('primary_is_first', 'true');
 
+      // other fields
       Object.entries(formData).forEach(([k, v]) => {
         if (k === 'images') return;
-        if (k === 'amenities') { (v as string[]).forEach(a => fd.append('amenities[]', a)); return; }
-        if (k === 'devUnits') { fd.append('devUnits', JSON.stringify(v)); return; }
+        if (k === 'amenities') {
+          (v as string[]).forEach(a => fd.append('amenities[]', a));
+          return;
+        }
+        if (k === 'devUnits') {
+          fd.append('devUnits', JSON.stringify(v));
+          return;
+        }
         if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
       });
 
@@ -221,8 +252,18 @@ const CreateListing: React.FC = () => {
     }
   };
 
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><p className="text-xl">Loading…</p></div>;
-  if (isEditing && !user) return <div className="min-h-screen flex items-center justify-center"><p className="text-xl">Loading user…</p></div>;
+  if (loading)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading…</p>
+      </div>
+    );
+  if (isEditing && !user)
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl">Loading user…</p>
+      </div>
+    );
 
   return (
     <ListingWizardProvider>
