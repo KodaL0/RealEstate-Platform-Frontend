@@ -1,5 +1,6 @@
 // src/types.ts
 
+/* ---------- Shared property/media types ---------- */
 export interface PropertyImage {
   image: string;
   is_primary: boolean;
@@ -11,6 +12,20 @@ export interface Owner {
   // add additional owner fields if needed
 }
 
+/* ---------- Wizard-specific additions ---------- */
+export type UserType = 'agent' | 'developer' | 'owner' | '';
+
+export interface DevUnitRow {
+  unitBlock: string;
+  beds: number | '';
+  baths: number | '';
+  internalArea: number | '';
+  verandaArea: number | '';
+  totalArea: number | '';
+  pool: boolean;
+}
+
+/* ---------- API Property model ---------- */
 export interface Property {
   id: string;
   title: string;
@@ -42,23 +57,21 @@ export interface Property {
   images: PropertyImage[];
 }
 
-// Utility function to normalize a single property object from API
+/* Normalize helper */
 export const normalizePropertyData = (property: any): Property => ({
   ...property,
-  price:         typeof property.price === 'string'   ? parseFloat(property.price)     : property.price,
-  area:          typeof property.area === 'string'    ? parseFloat(property.area)      : property.area,
-  bedrooms:      typeof property.bedrooms === 'string'? parseInt(property.bedrooms,10) : property.bedrooms,
-  bathrooms:     typeof property.bathrooms === 'string'? parseInt(property.bathrooms,10): property.bathrooms,
-  year_built:    typeof property.year_built === 'string'? parseInt(property.year_built,10): property.year_built,
-  parking_spaces:typeof property.parking_spaces === 'string'
-                    ? parseInt(property.parking_spaces,10)
-                    : property.parking_spaces,
-  lot_size:      typeof property.lot_size === 'string'  ? parseFloat(property.lot_size)  : property.lot_size,
-  floor_level:   typeof property.floor_level === 'string'? parseInt(property.floor_level,10)  : property.floor_level,
-  total_floors:  typeof property.total_floors === 'string'? parseInt(property.total_floors,10) : property.total_floors,
+  price:           typeof property.price === 'string'          ? parseFloat(property.price)           : property.price,
+  area:            typeof property.area === 'string'           ? parseFloat(property.area)            : property.area,
+  bedrooms:        typeof property.bedrooms === 'string'       ? parseInt(property.bedrooms, 10)      : property.bedrooms,
+  bathrooms:       typeof property.bathrooms === 'string'      ? parseInt(property.bathrooms, 10)     : property.bathrooms,
+  year_built:      typeof property.year_built === 'string'     ? parseInt(property.year_built, 10)    : property.year_built,
+  parking_spaces:  typeof property.parking_spaces === 'string' ? parseInt(property.parking_spaces,10) : property.parking_spaces,
+  lot_size:        typeof property.lot_size === 'string'       ? parseFloat(property.lot_size)        : property.lot_size,
+  floor_level:     typeof property.floor_level === 'string'    ? parseInt(property.floor_level, 10)   : property.floor_level,
+  total_floors:    typeof property.total_floors === 'string'   ? parseInt(property.total_floors, 10)  : property.total_floors,
 });
 
-// Interface for your listing form data
+/* ---------- Form model used by the wizard ---------- */
 export interface ListingForm {
   title: string;
   description: string;
@@ -83,14 +96,45 @@ export interface ListingForm {
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
+
+  // NEW for wizard
+  userType: UserType;
+  devUnits: DevUnitRow[];
 }
 
-// Types for profile, posts, and properties
+/* ---------- Dev amenities (optional helper list) ---------- */
+export const DEV_AMENITIES = [
+  { id: 'sea_view',              label: 'Sea View' },
+  { id: 'private_parking',       label: 'Private parking' },
+  { id: 'energy_efficient',      label: 'Energy-efficient design' },
+  { id: 'vrf_system',            label: 'VRF system' },
+  { id: 'thermal_insulation',    label: 'External Thermal insulation' },
+  { id: 'optionally_furnished',  label: 'Optionally furnished' },
+  { id: 'prestigious_project',   label: 'Prestigious, private project' },
+  { id: 'bosch_appliances',      label: 'Optional BOSCH kitchen appliances' },
+  { id: 'solar_boiler',          label: 'Solar-powered water boiler' },
+  { id: 'custom_interiors',      label: 'Customizable interiors' },
+  { id: 'gated_community',       label: 'Gated Community' },
+  { id: 'mountain_view',         label: 'Mountain view' },
+  { id: 'high_quality_flooring', label: 'High-quality flooring' },
+  { id: 'high_quality_fittings', label: 'High-quality fittings' },
+  { id: 'upgraded_tech',         label: 'High-quality and upgraded technology features' },
+  { id: 'security_systems',      label: 'Cutting-edge security systems' },
+  { id: 'photovoltaic',          label: 'Photovoltaic provisions' },
+  { id: 'custom_wardrobes',      label: 'Custom wardrobes and cabinets' },
+  { id: 'underfloor_heating',    label: 'Underfloor heating' },
+  { id: 'sustainable_design',    label: 'Sustainable Design/ Spacious Areas' },
+  { id: 'alarm_optional',        label: 'Alarm system (optional)' },
+  { id: 'private_pool',          label: 'Private swimming pool' },
+  { id: 'vrv_technology',        label: 'VRV technology' },
+  { id: 'comfort_design',        label: 'Comfort design/ modern living' },
+] as const;
+
+/* ---------- Profile / social / reviews ---------- */
 export interface PublicProfileData {
   id: number;
   username: string;
   date_joined: string;
-  // New profile fields (public)
   name?: string;
   bio?: string;
   location?: string;
@@ -98,7 +142,6 @@ export interface PublicProfileData {
   avatar?: string;
   website?: string;
   phone?: string;
-  // Property and connection data
   properties_count: number;
   published_properties: Property[];
   connections_count: number;
@@ -106,12 +149,12 @@ export interface PublicProfileData {
   mutual_connections_count: number;
 }
 
-// Chat system types
+/* Chat */
 export interface Thread {
   id: string;
   user1: number;
   user2: number;
-  property: number | null;  // Now nullable for DM threads
+  property: number | null;
   property_title: string;
   other_username: string;
   unread_count: number;
@@ -130,7 +173,7 @@ export interface Thread {
 export interface Message {
   id: string;
   thread_id: string;
-  property_id: number | null;  // Now nullable
+  property_id: number | null;
   sender: number;
   recipient: number;
   content: string;
@@ -141,6 +184,7 @@ export interface Message {
   unsent_at: string | null;
 }
 
+/* Connections */
 export interface Connection {
   id: string;
   from_user: number;
@@ -168,7 +212,7 @@ export interface ConnectionStatus {
   username: string;
 }
 
-// Review system types
+/* Reviews */
 export interface ReviewCategory {
   id: number;
   name: string;
@@ -219,12 +263,8 @@ export interface ReviewStats {
   reviews_received_count: number;
   reviews_given_count: number;
   average_rating: number;
-  rating_distribution: {
-    [key: string]: number; // "1": 5, "2": 10, etc.
-  };
-  category_averages: {
-    [categoryName: string]: number;
-  };
+  rating_distribution: { [key: string]: number };
+  category_averages: { [categoryName: string]: number };
   recent_reviews: Review[];
 }
 
