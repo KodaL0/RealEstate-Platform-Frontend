@@ -28,6 +28,8 @@ type WizardProps = {
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   handleInputChange: (e: React.ChangeEvent<any>) => void;
   handleSubmit: (e: React.FormEvent) => Promise<void> | void;
+
+  // images
   previewImages: string[];
   setPreviewImages: React.Dispatch<React.SetStateAction<string[]>>;
   primaryIndex: number;
@@ -38,19 +40,48 @@ type WizardProps = {
   getInputProps: any;
   isDragActive: boolean;
   removeImage: (idx: number) => void;
+
+  // misc
   countryCode: string;
   setCountryCode: (v: string) => void;
   isSubmitting: boolean;
   isEditing: boolean;
+
+  // step2 extras
+  availableFromDate?: Date;
+  setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  showCalendar?: boolean;
+  setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
+  setLocationCoords?: (v: { lat: number; lng: number } | null) => void;
 };
 
 const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
 
-  const step2 =
-    props.formData.userType === 'developer'
-      ? <Step2_Developer   formData={props.formData} setFormData={props.setFormData} onChange={props.handleInputChange} />
-      : <Step2_OwnerAgent  formData={props.formData} setFormData={props.setFormData} onChange={props.handleInputChange} />;
+const step2 =
+  props.formData.userType === 'developer' ? (
+    <Step2_Developer
+      formData={props.formData}
+      setFormData={props.setFormData}
+      onChange={props.handleInputChange}
+      availableFromDate={props.availableFromDate}
+      setAvailableFromDate={props.setAvailableFromDate!}
+      showCalendar={props.showCalendar!}
+      setShowCalendar={props.setShowCalendar!}
+      setLocationCoords={props.setLocationCoords!}
+    />
+  ) : (
+    <Step2_OwnerAgent
+      formData={props.formData}
+      setFormData={props.setFormData}
+      onChange={props.handleInputChange}
+      availableFromDate={props.availableFromDate}
+      setAvailableFromDate={props.setAvailableFromDate!}
+      showCalendar={props.showCalendar!}
+      setShowCalendar={props.setShowCalendar!}
+      setLocationCoords={props.setLocationCoords!}
+    />
+  );
 
   const steps = [
     <Step1_UserType formData={props.formData} setFormData={props.setFormData} />,
@@ -86,7 +117,7 @@ const CreateListing: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
-  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
