@@ -281,3 +281,87 @@ export interface ReviewDashboard {
   recent_reviews_received: Review[];
   recent_reviews_given: Review[];
 }
+
+// --- country codes used in Step4_Contact ---
+export const COUNTRY_CODES = [
+  { code: '+357', label: '🇨🇾' },
+  { code: '+1',   label: '🇺🇸' },
+  { code: '+44',  label: '🇬🇧' },
+  { code: '+30',  label: '🇬🇷' },
+  { code: '+49',  label: '🇩🇪' },
+  { code: '+33',  label: '🇫🇷' },
+  { code: '+39',  label: '🇮🇹' },
+  { code: '+61',  label: '🇦🇺' },
+  { code: '+91',  label: '🇮🇳' },
+];
+
+// --- default form state for wizard ---
+export const DEFAULT_FORM_STATE: ListingForm = {
+  title: '',
+  description: '',
+  price: '',
+  location: '',
+  propertyType: '',
+  bedrooms: '',
+  bathrooms: '',
+  area: '',
+  images: [],
+  amenities: [],
+  yearBuilt: '',
+  parkingSpaces: '',
+  lotSize: '',
+  propertyStatus: '',
+  energyRating: '',
+  constructionMaterial: '',
+  floorLevel: '',
+  totalFloors: '',
+  availableFrom: '',
+  contactPhone: '',
+  contactEmail: '',
+  virtualTourUrl: '',
+  videoUrl: '',
+  userType: '',
+  devUnits: [{
+    unitBlock: '',
+    beds: '',
+    baths: '',
+    internalArea: '',
+    verandaArea: '',
+    totalArea: '',
+    pool: false,
+  }],
+};
+
+export const PROPERTY_TYPES = [
+  { value: 'house',     label: 'House' },
+  { value: 'apartment', label: 'Apartment' },
+  { value: 'land',      label: 'Land' },
+];
+
+export const PROPERTY_STATUS = [
+  { value: 'forSale', label: 'For Sale' },
+  { value: 'forRent', label: 'For Rent' },
+];
+
+export const AMENITIES = [
+  { id: 'parking',     label: 'Parking',            category: 'Exterior' },
+  { id: 'pool',        label: 'Swimming Pool',      category: 'Exterior' },
+  { id: 'gym',         label: 'Gym',                category: 'Community' },
+  { id: 'security',    label: 'Security System',    category: 'Safety' },
+  { id: 'ac',          label: 'Air Conditioning',   category: 'Climate' },
+  { id: 'heating',     label: 'Central Heating',    category: 'Climate' },
+  { id: 'laundry',     label: 'Laundry Facilities', category: 'Interior' },
+  { id: 'pets',        label: 'Pet Friendly',       category: 'Policy' },
+  { id: 'furnished',   label: 'Furnished',          category: 'Interior' },
+  { id: 'balcony',     label: 'Balcony',            category: 'Exterior' },
+  { id: 'storage',     label: 'Storage Space',      category: 'Interior' },
+  { id: 'wifi',        label: 'High-Speed Internet',category: 'Utilities' },
+  { id: 'dishwasher',  label: 'Dishwasher',         category: 'Appliances' },
+  { id: 'elevator',    label: 'Elevator',           category: 'Building' },
+  { id: 'fireplace',   label: 'Fireplace',          category: 'Interior' },
+  { id: 'garden',      label: 'Garden',             category: 'Exterior' },
+  { id: 'roofDeck',    label: 'Roof Deck',          category: 'Exterior' },
+  { id: 'doorman',     label: 'Doorman',            category: 'Security' },
+  { id: 'garage',      label: 'Garage',             category: 'Parking' },
+  { id: 'waterfront',  label: 'Waterfront',         category: 'Location' },
+];
