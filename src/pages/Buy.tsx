@@ -9,7 +9,7 @@ import { MapPin, Filter, Grid, List, ChevronLeft, ChevronRight } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/PropertyCard";
-import { normalizePropertyData, Property } from "../types";
+import { normalizePropertyData, Property, COUNTRY_OPTIONS } from "../types";
 import api from "../config/api";
 
 const PAGE_SIZE = 10;
@@ -38,7 +38,7 @@ const Buy = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCountry, setSelectedCountry] = useState<'cyprus' | 'greece' | 'all'>('all');
+  const [selectedCountry, setSelectedCountry] = useState<'Cyprus' | 'Greece' | 'all'>('all');
   const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
@@ -120,7 +120,7 @@ const Buy = () => {
     setCurrentPage(1);
   };
 
-  const handleCountryChange = (country: 'cyprus' | 'greece' | 'all') => {
+  const handleCountryChange = (country: 'Cyprus' | 'Greece' | 'all') => {
     setSelectedCountry(country);
   };
 
@@ -138,8 +138,8 @@ const Buy = () => {
 
   const countryOptions = [
     { value: 'all', label: 'All Countries', flag: '🌍' },
-    { value: 'cyprus', label: 'Cyprus', flag: '🇨🇾' },
-    { value: 'greece', label: 'Greece', flag: '🇬🇷' },
+    { value: 'Cyprus', label: '🇨🇾 Cyprus', flag: '🇨🇾' },
+    { value: 'Greece', label: '🇬🇷 Greece', flag: '🇬🇷' },
   ];
 
   return (
@@ -165,7 +165,7 @@ const Buy = () => {
                     {countryOptions.map((country) => (
                       <button
                         key={country.value}
-                        onClick={() => handleCountryChange(country.value as 'cyprus' | 'greece' | 'all')}
+                        onClick={() => handleCountryChange(country.value as 'Cyprus' | 'Greece' | 'all')}
                         className={`px-3 py-2 rounded-md transition-colors text-sm font-medium flex items-center space-x-2 ${
                           selectedCountry === country.value 
                             ? 'bg-white text-gray-900 shadow-sm' 
