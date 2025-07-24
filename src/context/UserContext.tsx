@@ -7,6 +7,16 @@ type User = {
   id: number;
   username: string;
   email: string;
+  name?: string;
+  bio?: string;
+  location?: string;
+  phone?: string;
+  office?: string;
+  avatar?: string;
+  website?: string;
+  email_verified?: boolean;
+  email_verified_at?: string;
+  date_joined?: string;
 };
 
 // Define the context type
@@ -38,7 +48,16 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       
       // Handle different response structures
       if (data) {
-        if (data.user && data.user.user) {
+        // Response from fetchUser: {user: {...}, authenticated: true}
+        if (data.authenticated !== undefined) {
+          if (data.user) {
+            console.log("Setting user from authenticated response", data.user);
+            setUser(data.user);
+          } else {
+            console.log("Authenticated response but no user");
+            setUser(null);
+          }
+        } else if (data.user && data.user.user) {
           // Nested structure: {user: {status: 200, user: {...}}}
           console.log("Setting user from data.user.user", data.user.user);
           setUser(data.user.user);
@@ -46,14 +65,10 @@ export const UserProvider = ({ children }: UserProviderProps) => {
           // Direct user in data.user: {user: {id, email, username}}
           console.log("Setting user from data.user", data.user);
           setUser(data.user);
-        } else if (data.status && data.status === 200 && data.data && data.data.user) {
-          // Response has nested structure: {status:200, data:{user:{...}}}
-          console.log("Setting user from data.data.user", data.data.user);
-          setUser(data.data.user);
-        } else if (data.id && data.username && data.email) {
+        } else if ((data as any).id && (data as any).username && (data as any).email) {
           // Direct user object
           console.log("Setting user from direct data", data);
-          setUser(data);
+          setUser(data as unknown as User);
         } else {
           console.log("No valid user data found in response:", data);
           setUser(null);

@@ -1,5 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, useLocation } from "react-router-dom";
 import { useEffect } from "react";
+import { Toaster } from 'react-hot-toast';
 
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
@@ -25,6 +26,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
+import { EmailVerification } from "./components/EmailVerification";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -53,6 +55,7 @@ function AppContent() {
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/oauth/callback" element={<OAuthCallback />} />
+          <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/terms" element={<TermsandConditions />} />
           <Route path="/cookies" element={<CookiePolicy />} />
@@ -126,6 +129,18 @@ function AppContent() {
 
       {/* Only show footer when NOT on chat routes */}
       {!isChatRoute && <Footer />}
+      
+      {/* Toast Notifications */}
+      <Toaster 
+        position="top-right"
+        toastOptions={{
+          duration: 4000,
+          style: {
+            background: '#363636',
+            color: '#fff',
+          },
+        }}
+      />
     </div>
   );
 }
