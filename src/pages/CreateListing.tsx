@@ -191,6 +191,13 @@ const CreateListing: React.FC = () => {
           description: d.description || '',
           price: d.price?.toString() || '',
           location: d.location || '',
+          country: d.country || 'Cyprus',
+          region: d.region || '',
+          city: d.city || '',
+          postal_code: d.postal_code || '',
+          street: d.street || '',
+          latitude: d.latitude?.toString() || '',
+          longitude: d.longitude?.toString() || '',
           propertyType: d.property_type || '',
           bedrooms: d.bedrooms?.toString() || '',
           bathrooms: d.bathrooms?.toString() || '',
@@ -260,7 +267,12 @@ const CreateListing: React.FC = () => {
       });
 
       fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
-      if (locationCoords) {
+      
+      // Use coordinates from form data if available, otherwise from locationCoords state
+      if (formData.latitude && formData.longitude) {
+        fd.set('latitude', formData.latitude);
+        fd.set('longitude', formData.longitude);
+      } else if (locationCoords) {
         fd.append('latitude', String(locationCoords.lat));
         fd.append('longitude', String(locationCoords.lng));
       }

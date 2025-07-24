@@ -76,7 +76,17 @@ export interface ListingForm {
   title: string;
   description: string;
   price: string;
-  location: string;
+  
+  // Location fields (legacy and structured)
+  location: string; // Legacy field for backward compatibility
+  country: string; // Required field for structured location
+  region: string;
+  city: string;
+  postal_code: string;
+  street: string;
+  latitude: string;
+  longitude: string;
+  
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -295,12 +305,25 @@ export const COUNTRY_CODES = [
   { code: '+91',  label: '🇮🇳' },
 ];
 
+// --- country options for property location ---
+export const COUNTRY_OPTIONS = [
+  { value: 'Cyprus', label: '🇨🇾 Cyprus' },
+  { value: 'Greece', label: '🇬🇷 Greece' },
+];
+
 // --- default form state for wizard ---
 export const DEFAULT_FORM_STATE: ListingForm = {
   title: '',
   description: '',
   price: '',
   location: '',
+  country: 'Cyprus', // Default to Cyprus
+  region: '',
+  city: '',
+  postal_code: '',
+  street: '',
+  latitude: '',
+  longitude: '',
   propertyType: '',
   bedrooms: '',
   bathrooms: '',

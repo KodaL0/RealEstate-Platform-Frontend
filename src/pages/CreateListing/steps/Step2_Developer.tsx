@@ -19,6 +19,7 @@ import {
   ListingForm,
   DevUnitRow,
   DEV_AMENITIES,
+  COUNTRY_OPTIONS,
 } from '../../../types';
 
 import LocationAutocomplete from '../../LocationAutocomplete';
@@ -86,7 +87,7 @@ const Step2_Developer: React.FC<Props> = ({
     }));
 
   /* ---------- Validation ---------- */
-  const baseValid = formData.title.trim() && formData.description.trim() && formData.location.trim();
+  const baseValid = formData.title.trim() && formData.description.trim() && formData.country && formData.location.trim();
   const tableValid = formData.devUnits.length > 0 && formData.devUnits.every(r => r.unitBlock.trim());
   const valid = baseValid && tableValid;
 
@@ -124,25 +125,94 @@ const Step2_Developer: React.FC<Props> = ({
               />
             </div>
 
+            {/* Country */}
+            <div>
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Country <span className="text-red-500">*</span>
+              </label>
+              <div className="relative">
+                <select
+                  name="country"
+                  value={formData.country}
+                  onChange={onChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white appearance-none"
+                >
+                  <option value="" disabled>Select country</option>
+                  {COUNTRY_OPTIONS.map(c => (
+                    <option key={c.value} value={c.value}>{c.label}</option>
+                  ))}
+                </select>
+                <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6">
             {/* Location */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
-                Location <span className="text-red-500">*</span>
+                Address <span className="text-red-500">*</span>
               </label>
               <div className="relative">
                 <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" size={18} />
                 <LocationAutocomplete
                   value={formData.location}
                   onChange={(val: string) => setFormData(f => ({ ...f, location: val }))}
-                  onSelect={(addr: string, lat: number, lng: number) => {
-                    setFormData(f => ({ ...f, location: addr }));
+                  onSelect={(addr: string, lat: number, lng: number, structuredData?: any) => {
+                    setFormData(f => ({ 
+                      ...f, 
+                      location: addr,
+                      latitude: lat.toString(),
+                      longitude: lng.toString(),
+                      ...(structuredData && {
+                        country: structuredData.country || f.country,
+                        region: structuredData.region || '',
+                        city: structuredData.city || '',
+                        postal_code: structuredData.postal_code || '',
+                        street: structuredData.street || ''
+                      })
+                    }));
                     setLocationCoords({ lat, lng });
                   }}
+                  selectedCountry={formData.country}
                   placeholder="Type address…"
                   inputClassName="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                 />
               </div>
             </div>
+
+            {/* Structured Location Details */}
+            {(formData.city || formData.region || formData.postal_code) && (
+              <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <h4 className="text-sm font-semibold text-blue-800 mb-3">Location Details</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                  {formData.city && (
+                    <div>
+                      <span className="text-blue-600 font-medium">City:</span> {formData.city}
+                    </div>
+                  )}
+                  {formData.region && (
+                    <div>
+                      <span className="text-blue-600 font-medium">Region:</span> {formData.region}
+                    </div>
+                  )}
+                  {formData.postal_code && (
+                    <div>
+                      <span className="text-blue-600 font-medium">Postal Code:</span> {formData.postal_code}
+                    </div>
+                  )}
+                  {formData.street && (
+                    <div>
+                      <span className="text-blue-600 font-medium">Street:</span> {formData.street}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Description */}
