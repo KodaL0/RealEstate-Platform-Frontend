@@ -136,8 +136,14 @@ export async function logout() {
 export async function fetchUser() {
   try {
     const response = await api.auth.getUser();
+    console.log("fetchUser raw response:", response.data);
+    
+    // Backend returns: { status: 200, user: {...} }
+    // We need to extract the user data from response.data.user
+    const userData = response.data.user || response.data;
+    
     return { 
-      user: response.data,
+      user: userData,
       authenticated: true
     };
   } catch (error: any) {

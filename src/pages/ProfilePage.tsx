@@ -32,7 +32,7 @@ interface UserResponse {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, setUser, refreshUser } = useUser();
+  const { user, setUser, refreshUser, updateUserData } = useUser();
   const navigate = useNavigate();
   
   // Username state
@@ -243,11 +243,10 @@ const ProfilePage: React.FC = () => {
       if (response.status === 200) {
         console.log('Username updated successfully');
         setUsernameMessage('Username updated successfully!');
-        setUser({ ...user, username: newUsername });
-        setValidationError('');
         
-        // Refresh user context to ensure consistency
-        await refreshUser();
+        // Update user context locally with new username
+        updateUserData({ username: newUsername });
+        setValidationError('');
       }
     } catch (err: any) {
       console.error('Username update failed:', err);
@@ -289,13 +288,9 @@ const ProfilePage: React.FC = () => {
       if (response.status === 200) {
         console.log('Profile updated successfully');
         setProfileMessage('Profile updated successfully!');
-        // Update user context with new profile data
-        const updatedUser = { ...user, ...profileData };
-        console.log('Updating user context:', updatedUser);
-        setUser(updatedUser);
         
-        // Refresh user context to ensure consistency
-        await refreshUser();
+        // Update user context locally with new profile data
+        updateUserData(profileData);
       }
     } catch (err: any) {
       console.error('Profile update failed:', err);

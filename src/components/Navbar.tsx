@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, setUser, refreshUser } = useUser();
+  const { user, setUser, refreshUser, updateUserData } = useUser();
   const { threads } = useChat();
   const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
@@ -28,25 +28,11 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Refresh user data when component mounts to ensure username is current
-  useEffect(() => {
-    if (user) {
-      console.log('Navbar: Refreshing user data to ensure username is current');
-      refreshUser();
-    }
-  }, []); // Only run once on mount
-
   useEffect(() => {
     setIsOpen(false);
     setIsSearchOpen(false);
     setIsSidebarOpen(false);
-    
-    // Refresh user data on route changes to ensure username is current
-    if (user) {
-      console.log('Navbar: Route changed, refreshing user data');
-      refreshUser();
-    }
-  }, [location.pathname, user]);
+  }, [location.pathname]);
 
   const isActive = (path: string) => location.pathname === path;
   const toggleMenu = () => setIsOpen(prev => !prev);
@@ -75,12 +61,7 @@ const Navbar: React.FC = () => {
   const unreadTotal = threads.reduce((sum, t) => sum + t.unread_count, 0);
   const isOnChatPage = location.pathname.startsWith('/chat');
 
-  // Log username state for debugging
-  console.log('Navbar render - User state:', {
-    hasUser: !!user,
-    username: user?.username,
-    email: user?.email
-  });
+
 
   const navigationItems = [
     { path: "/", label: "Home", icon: Home },

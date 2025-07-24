@@ -25,6 +25,7 @@ interface UserContextType {
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isLoading: boolean;
   refreshUser: () => Promise<void>;
+  updateUserData: (userData: Partial<User>) => void;
 }
 
 // Create the context
@@ -46,34 +47,12 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       const data = await apiFetchUser();
       console.log("UserContext: Response from fetchUser:", data);
       
-      // Handle different response structures
-      if (data) {
-        // Response from fetchUser: {user: {...}, authenticated: true}
-        if (data.authenticated !== undefined) {
-          if (data.user) {
-            console.log("Setting user from authenticated response", data.user);
-            setUser(data.user);
-          } else {
-            console.log("Authenticated response but no user");
-            setUser(null);
-          }
-        } else if (data.user && data.user.user) {
-          // Nested structure: {user: {status: 200, user: {...}}}
-          console.log("Setting user from data.user.user", data.user.user);
-          setUser(data.user.user);
-        } else if (data.user && (data.user.id || data.user.email)) {
-          // Direct user in data.user: {user: {id, email, username}}
-          console.log("Setting user from data.user", data.user);
-          setUser(data.user);
-        } else if ((data as any).id && (data as any).username && (data as any).email) {
-          // Direct user object
-          console.log("Setting user from direct data", data);
-          setUser(data as unknown as User);
-        } else {
-          console.log("No valid user data found in response:", data);
-          setUser(null);
-        }
+      // fetchUser now returns: {user: {...}, authenticated: true}
+      if (data && data.authenticated && data.user) {
+        console.log("Setting user from fetchUser response:", data.user);
+        setUser(data.user);
       } else {
+        console.log("No valid user data found in response");
         setUser(null);
       }
     } catch (error) {
@@ -89,12 +68,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     await fetchUser();
   };
 
+  // Update user data without fetching from server (for local updates)
+  const updateUserData = (userData: Partial<User>) => {
+    if (user) {
+      setUser({ ...user, ...userData });
+    }
+  };
+
   useEffect(() => {
     fetchUser();
   }, []);
 
   return (
-    <UserContext.Provider value={{ user, setUser, isLoading, refreshUser }}>
+    <UserContext.Provider value={{ user, setUser, isLoading, refreshUser, updateUserData }}>
       {children}
     </UserContext.Provider>
   );
