@@ -31,7 +31,7 @@ export const EmailVerification: React.FC = () => {
 
     setIsVerifying(true);
     try {
-      const response = await api.post('users/verify-email', { token });
+      const response = await api.auth.verifyEmail({ token });
       
       if (response.status === 200) {
         setVerificationStatus('success');
@@ -69,11 +69,17 @@ export const EmailVerification: React.FC = () => {
 
   const handleResendVerification = async () => {
     try {
-      // This would need to be implemented on the backend
-      await api.post('users/resend-verification');
+      await api.auth.resendVerification();
       toast.success('Verification email sent! Please check your inbox.');
-    } catch (error) {
-      toast.error('Failed to resend verification email');
+    } catch (error: any) {
+      console.error('Resend verification error:', error);
+      if (error.response?.data?.error) {
+        toast.error(error.response.data.error);
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Failed to resend verification email');
+      }
     }
   };
 
