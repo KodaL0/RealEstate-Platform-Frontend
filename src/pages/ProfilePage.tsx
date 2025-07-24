@@ -32,7 +32,7 @@ interface UserResponse {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, setUser } = useUser();
+  const { user, setUser, refreshUser } = useUser();
   const navigate = useNavigate();
   
   // Username state
@@ -64,6 +64,7 @@ const ProfilePage: React.FC = () => {
       navigate('/auth');
     } else {
       console.log('Setting initial username:', user.username);
+      // Set initial username from UserContext, but it will be updated by loadProfile
       setNewUsername(user.username ?? '');
       loadProfile();
     }
@@ -80,6 +81,12 @@ const ProfilePage: React.FC = () => {
         const data = response.data as UserResponse;
         const userData = data.user;
         console.log('User data received:', userData);
+        
+        // Update username from API response (this is the key fix!)
+        if (userData.username) {
+          console.log('Setting username from API:', userData.username);
+          setNewUsername(userData.username);
+        }
         
         const profileDataToSet = {
           name: userData.name || '',
@@ -238,6 +245,9 @@ const ProfilePage: React.FC = () => {
         setUsernameMessage('Username updated successfully!');
         setUser({ ...user, username: newUsername });
         setValidationError('');
+        
+        // Refresh user context to ensure consistency
+        await refreshUser();
       }
     } catch (err: any) {
       console.error('Username update failed:', err);
@@ -283,6 +293,9 @@ const ProfilePage: React.FC = () => {
         const updatedUser = { ...user, ...profileData };
         console.log('Updating user context:', updatedUser);
         setUser(updatedUser);
+        
+        // Refresh user context to ensure consistency
+        await refreshUser();
       }
     } catch (err: any) {
       console.error('Profile update failed:', err);
