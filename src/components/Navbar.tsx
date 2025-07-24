@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, setUser } = useUser();
+  const { user, setUser, refreshUser } = useUser();
   const { threads } = useChat();
   const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
@@ -28,11 +28,25 @@ const Navbar: React.FC = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // Refresh user data when component mounts to ensure username is current
+  useEffect(() => {
+    if (user) {
+      console.log('Navbar: Refreshing user data to ensure username is current');
+      refreshUser();
+    }
+  }, []); // Only run once on mount
+
   useEffect(() => {
     setIsOpen(false);
     setIsSearchOpen(false);
     setIsSidebarOpen(false);
-  }, [location.pathname]);
+    
+    // Refresh user data on route changes to ensure username is current
+    if (user) {
+      console.log('Navbar: Route changed, refreshing user data');
+      refreshUser();
+    }
+  }, [location.pathname, user]);
 
   const isActive = (path: string) => location.pathname === path;
   const toggleMenu = () => setIsOpen(prev => !prev);
@@ -60,6 +74,13 @@ const Navbar: React.FC = () => {
 
   const unreadTotal = threads.reduce((sum, t) => sum + t.unread_count, 0);
   const isOnChatPage = location.pathname.startsWith('/chat');
+
+  // Log username state for debugging
+  console.log('Navbar render - User state:', {
+    hasUser: !!user,
+    username: user?.username,
+    email: user?.email
+  });
 
   const navigationItems = [
     { path: "/", label: "Home", icon: Home },
@@ -113,8 +134,8 @@ const Navbar: React.FC = () => {
                   <User className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900" title={user.username}>
-                    {user.username}
+                  <h3 className="font-semibold text-gray-900" title={user.username || user.email}>
+                    {user.username || user.email || 'User'}
                   </h3>
                   <p className="text-sm text-gray-500"></p>
                 </div>
@@ -288,8 +309,8 @@ const Navbar: React.FC = () => {
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4" />
                   </div>
-                  <span className="hidden sm:block font-medium truncate max-w-[120px]" title={user.username}>
-                    {user.username}
+                  <span className="hidden sm:block font-medium truncate max-w-[120px]" title={user.username || user.email}>
+                    {user.username || user.email || 'User'}
                   </span>
                   <ChevronDown className="h-4 w-4 hidden sm:block" />
                 </button>
