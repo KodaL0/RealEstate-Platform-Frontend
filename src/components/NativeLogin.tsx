@@ -32,7 +32,6 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
@@ -42,28 +41,28 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = 'Email required';
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = 'Invalid email';
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = 'Password required';
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
+      newErrors.password = 'Min 8 characters';
     }
 
     if (!isLogin) {
       if (!formData.username) {
-        newErrors.username = 'Username is required';
+        newErrors.username = 'Username required';
       } else if (formData.username.length < 3) {
-        newErrors.username = 'Username must be at least 3 characters';
+        newErrors.username = 'Min 3 characters';
       }
 
       if (!formData.password2) {
-        newErrors.password2 = 'Please confirm your password';
+        newErrors.password2 = 'Confirm password';
       } else if (formData.password !== formData.password2) {
-        newErrors.password2 = 'Passwords do not match';
+        newErrors.password2 = 'Passwords don\'t match';
       }
     }
 
@@ -88,40 +87,33 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         if (response.status === 200) {
           toast.success('Login successful!');
           
-          // Update user context
           if (response.user) {
             setUser(response.user);
           }
           
-          // Call onSuccess callback if provided
           if (onSuccess) {
             onSuccess();
           } else {
-            // Default behavior: redirect to intended page or home
             const from = location.state?.from?.pathname || '/';
             navigate(from, { replace: true });
           }
         } else if (response.status === 403 && response.error?.includes('Email not verified')) {
-          // Handle email verification required
-          toast.error('Please verify your email before logging in');
+          toast.error('Please verify your email');
           setErrors({ 
-            general: 'Email verification required. Check your inbox for the verification email and click the link to activate your account.' 
+            general: 'Check your email for verification link' 
           });
         } else {
           toast.error(response.error || 'Login failed');
           setErrors({ general: response.error || 'Login failed' });
         }
       } else {
-        // Registration - use single password field as backend expects
         response = await register(formData.username, formData.email, formData.password);
         
         if (response.status === 201) {
-          toast.success('Registration successful! Please check your email to verify your account.');
+          toast.success('Account created! Check your email');
           setErrors({ 
-            general: `Registration successful! A verification email has been sent to ${response.email || formData.email}. Please check your inbox and click the verification link to activate your account before logging in.` 
+            general: `Verification email sent to ${response.email || formData.email}` 
           });
-          // Don't auto-login - user needs to verify email first
-          // Clear form after successful registration
           setFormData({
             email: '',
             password: '',
@@ -129,9 +121,7 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             password2: ''
           });
         } else {
-          // Handle specific registration errors
           if (response.details) {
-            // Backend validation errors
             const backendErrors: Record<string, string> = {};
             if (response.details.email) {
               backendErrors.email = Array.isArray(response.details.email) 
@@ -158,7 +148,6 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     } catch (error: any) {
       console.error('Auth error:', error);
       
-      // Handle specific error cases
       if (error.response?.data?.detail) {
         setErrors({ general: error.response.data.detail });
         toast.error(error.response.data.detail);
@@ -166,8 +155,8 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         setErrors({ general: error.response.data.error });
         toast.error(error.response.data.error);
       } else {
-        setErrors({ general: 'An unexpected error occurred' });
-        toast.error('An unexpected error occurred');
+        setErrors({ general: 'An error occurred' });
+        toast.error('An error occurred');
       }
     } finally {
       setIsLoading(false);
@@ -189,18 +178,18 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 w-full max-w-md mx-auto">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-gray-900">
+    <div className="bg-white rounded-lg shadow-lg p-4 w-full">
+      <div className="text-center mb-4">
+        <h2 className="text-xl font-bold text-gray-900">
           {isLogin ? 'Sign In' : 'Create Account'}
         </h2>
-        <p className="text-gray-600 mt-2">
-          {isLogin ? 'Welcome back! Please sign in to your account.' : 'Join PropertPro today!'}
+        <p className="text-sm text-gray-600 mt-1">
+          {isLogin ? 'Welcome back!' : 'Join PropertPro'}
         </p>
       </div>
 
       {/* Native Auth Form */}
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3">
         {!isLogin && (
           <div>
             <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
@@ -212,10 +201,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
               name="username"
               value={formData.username}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                 errors.username ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Enter your username"
+              placeholder="Username"
               disabled={isLoading}
             />
             {errors.username && (
@@ -234,10 +223,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             name="email"
             value={formData.email}
             onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
               errors.email ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your email"
+            placeholder="Email"
             disabled={isLoading}
           />
           {errors.email && (
@@ -255,10 +244,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             name="password"
             value={formData.password}
             onChange={handleInputChange}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+            className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
               errors.password ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="Enter your password"
+            placeholder="Password"
             disabled={isLoading}
           />
           {errors.password && (
@@ -277,10 +266,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
               name="password2"
               value={formData.password2}
               onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
                 errors.password2 ? 'border-red-500' : 'border-gray-300'
               }`}
-              placeholder="Confirm your password"
+              placeholder="Confirm password"
               disabled={isLoading}
             />
             {errors.password2 && (
@@ -290,8 +279,8 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         )}
 
         {errors.general && (
-          <div className={`text-sm p-3 rounded ${
-            errors.general.includes('Registration successful') 
+          <div className={`text-sm p-2 rounded-lg ${
+            errors.general.includes('Verification email sent') 
               ? 'text-green-700 bg-green-50 border border-green-200' 
               : 'text-red-500 bg-red-50 border border-red-200'
           }`}>
@@ -299,16 +288,16 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
           </div>
         )}
 
-        <div className="flex space-x-3">
+        <div className="flex space-x-2">
           <button
             type="submit"
             disabled={isLoading}
-            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="flex-1 bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm font-medium"
           >
             {isLoading ? (
               <div className="flex items-center justify-center">
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                {isLogin ? 'Signing in...' : 'Creating account...'}
+                <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
+                {isLogin ? 'Signing in...' : 'Creating...'}
               </div>
             ) : (
               isLogin ? 'Sign In' : 'Create Account'
@@ -320,7 +309,7 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
               type="button"
               onClick={handleCancel}
               disabled={isLoading}
-              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors text-sm"
             >
               Cancel
             </button>
@@ -329,14 +318,14 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
       </form>
 
       {/* Toggle between login/register */}
-      <div className="mt-6 text-center">
-        <p className="text-sm text-gray-600">
+      <div className="mt-4 text-center">
+        <p className="text-base text-gray-600">
           {isLogin ? "Don't have an account? " : "Already have an account? "}
           <button
             type="button"
             onClick={handleToggleMode}
             disabled={isLoading}
-            className="text-blue-600 hover:text-blue-500 font-medium disabled:opacity-50"
+            className="text-blue-600 hover:text-blue-500 font-semibold disabled:opacity-50 text-base"
           >
             {isLogin ? 'Sign up' : 'Sign in'}
           </button>

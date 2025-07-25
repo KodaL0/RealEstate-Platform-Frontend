@@ -18,7 +18,6 @@ export const AuthPage: React.FC = () => {
   };
 
   const handleNativeSuccess = () => {
-    // Redirect to intended page or home
     const from = location.state?.from?.pathname || '/';
     navigate(from, { replace: true });
   };
@@ -27,7 +26,6 @@ export const AuthPage: React.FC = () => {
     setAuthMode('native');
   };
 
-  // If user is already authenticated, redirect
   if (user) {
     const from = location.state?.from?.pathname || '/';
     navigate(from, { replace: true });
@@ -36,19 +34,13 @@ export const AuthPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-blue-100 flex flex-col justify-center items-center px-4">
-      <div className="w-full max-w-md">
+      <div className="w-full max-w-sm">
         {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center items-center space-x-3 mb-4">
-            <Building2 className="h-8 w-8 text-blue-600" />
-            <span className="text-3xl font-bold text-gray-800">PROPERTPRO</span>
+        <div className="text-center mb-6">
+          <div className="flex justify-center items-center space-x-2 mb-3">
+            <Building2 className="h-6 w-6 text-blue-600" />
+            <span className="text-2xl font-bold text-gray-800">PROPERTPRO</span>
           </div>
-          <h1 className="text-2xl font-extrabold text-gray-900">
-            Welcome to PropertPro
-          </h1>
-          <p className="text-gray-600 mt-2">
-            Choose your preferred sign-in method
-          </p>
         </div>
 
         {/* Auth Options */}
@@ -57,46 +49,36 @@ export const AuthPage: React.FC = () => {
             {/* Native Login Component */}
             <NativeLogin onSuccess={handleNativeSuccess} />
             
-            {/* Divider */}
-            <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-300" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-blue-50 text-gray-500">Or continue with</span>
-              </div>
-            </div>
-
             {/* Google OAuth Button */}
             <button
               type="button"
               onClick={() => setAuthMode('google')}
-              className="w-full flex items-center justify-center border border-gray-300 rounded-md py-3 text-sm font-medium
-                         text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-md hover:shadow-lg"
+              className="w-full flex items-center justify-center border border-gray-300 rounded-lg py-3 text-sm font-medium
+                         text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-sm hover:shadow-md mt-4"
             >
-              <SiGoogle className="h-5 w-5 mr-3 text-[#4285F4]" />
+              <SiGoogle className="h-4 w-4 mr-2 text-[#4285F4]" />
               Continue with Google
             </button>
           </>
         ) : (
           /* Google OAuth Mode */
           <div className="bg-white rounded-lg shadow-lg p-6">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <div className="text-center mb-4">
+              <h2 className="text-lg font-semibold text-gray-900 mb-1">
                 Sign in with Google
               </h2>
-              <p className="text-gray-600">
-                You'll be redirected to Google to complete your sign-in
+              <p className="text-sm text-gray-600">
+                Redirecting to Google...
               </p>
             </div>
             
             <button
               type="button"
               onClick={handleGoogleLogin}
-              className="w-full flex items-center justify-center border border-gray-300 rounded-md py-3 text-sm font-medium
-                         text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-md hover:shadow-lg mb-4"
+              className="w-full flex items-center justify-center border border-gray-300 rounded-lg py-3 text-sm font-medium
+                         text-gray-700 bg-white hover:bg-blue-50 transition-all duration-150 shadow-sm hover:shadow-md mb-3"
             >
-              <SiGoogle className="h-5 w-5 mr-3 text-[#4285F4]" />
+              <SiGoogle className="h-4 w-4 mr-2 text-[#4285F4]" />
               Continue with Google
             </button>
             
@@ -105,7 +87,7 @@ export const AuthPage: React.FC = () => {
               onClick={handleBackToOptions}
               className="w-full text-gray-600 hover:text-gray-800 text-sm font-medium"
             >
-              ← Back to sign-in options
+              ← Back to options
             </button>
           </div>
         )}
