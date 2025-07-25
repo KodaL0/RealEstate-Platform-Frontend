@@ -76,17 +76,7 @@ export interface ListingForm {
   title: string;
   description: string;
   price: string;
-  
-  // Location fields (legacy and structured)
-  location: string; // Legacy field for backward compatibility
-  country: string; // Required field for structured location
-  region: string;
-  city: string;
-  postal_code: string;
-  street: string;
-  latitude: string;
-  longitude: string;
-  
+  location: string;
   propertyType: string;
   bedrooms: string;
   bathrooms: string;
@@ -106,6 +96,15 @@ export interface ListingForm {
   contactEmail: string;
   virtualTourUrl?: string;
   videoUrl?: string;
+
+  // Location fields
+  country: string;
+  latitude?: string;
+  longitude?: string;
+  region?: string;
+  city?: string;
+  postal_code?: string;
+  street?: string;
 
   // NEW for wizard
   userType: UserType;
@@ -305,10 +304,17 @@ export const COUNTRY_CODES = [
   { code: '+91',  label: '🇮🇳' },
 ];
 
-// --- country options for property location ---
+// --- country options used in property forms ---
 export const COUNTRY_OPTIONS = [
   { value: 'Cyprus', label: '🇨🇾 Cyprus' },
   { value: 'Greece', label: '🇬🇷 Greece' },
+  { value: 'United States', label: '🇺🇸 United States' },
+  { value: 'United Kingdom', label: '🇬🇧 United Kingdom' },
+  { value: 'Germany', label: '🇩🇪 Germany' },
+  { value: 'France', label: '🇫🇷 France' },
+  { value: 'Italy', label: '🇮🇹 Italy' },
+  { value: 'Australia', label: '🇦🇺 Australia' },
+  { value: 'India', label: '🇮🇳 India' },
 ];
 
 // --- default form state for wizard ---
@@ -317,13 +323,6 @@ export const DEFAULT_FORM_STATE: ListingForm = {
   description: '',
   price: '',
   location: '',
-  country: 'Cyprus', // Default to Cyprus
-  region: '',
-  city: '',
-  postal_code: '',
-  street: '',
-  latitude: '',
-  longitude: '',
   propertyType: '',
   bedrooms: '',
   bathrooms: '',
@@ -343,6 +342,7 @@ export const DEFAULT_FORM_STATE: ListingForm = {
   contactEmail: '',
   virtualTourUrl: '',
   videoUrl: '',
+  country: '',
   userType: '',
   devUnits: [{
     unitBlock: '',
