@@ -150,7 +150,10 @@ function Home() {
                       <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
                         Real Estate
                       </span>{" "}
-                      in Cyprus & Greece
+                      in{" "}
+                      <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
+                        Cyprus & Greece
+                      </span>
                     </h1>
                   </motion.div>
 
@@ -163,6 +166,7 @@ function Home() {
                     Explore listings, compare projects, and connect directly with sellers.
                   </motion.p>
                 </div>
+
 
                 {/* Search Container */}
                 <motion.div
