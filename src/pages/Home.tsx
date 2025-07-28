@@ -146,20 +146,21 @@ function Home() {
                     transition={{ duration: 0.8 }}
                   >
                     <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-3 md:mb-4 leading-tight">
-                      Find Your{" "}
+                      Your Hub for{" "}
                       <span className="bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">
-                        Dream Home
-                      </span>
+                        Real Estate
+                      </span>{" "}
+                      in Cyprus & Greece
                     </h1>
                   </motion.div>
-                  
+
                   <motion.p
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.8, delay: 0.2 }}
                     className="text-base sm:text-lg md:text-xl text-white/90 mb-6 md:mb-8 max-w-2xl mx-auto"
                   >
-                    Discover the perfect property that matches your lifestyle and aspirations with our exclusive listings.
+                    Explore listings, compare projects, and connect directly with sellers.
                   </motion.p>
                 </div>
 
