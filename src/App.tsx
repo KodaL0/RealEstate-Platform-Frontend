@@ -67,7 +67,7 @@ function AppContent() {
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
-          <Route path="/developers" element={<Developers />} />
+          <Route path="/developer" element={<Developers />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
           <Route path="developer/:id" element={<DeveloperDetail />} />
           
