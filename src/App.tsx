@@ -29,7 +29,7 @@ import Connections from "./pages/Connections";
 
 import { EmailVerification } from "./components/EmailVerification";
 import Developers from "./pages/Developers";
-import ProjectDetail from "./pages/ProjectDetail";
+import DeveloperProjects from "./pages/DeveloperProjects";
 import DeveloperDetail from "./pages/DeveloperDetail";
 
 
@@ -68,7 +68,7 @@ function AppContent() {
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/developers" element={<Developers />} />
-          <Route path="/project/:id" element={<ProjectDetail />} />
+          <Route path="/projects/:id" element={<DeveloperProjects />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
           
           {/* Chat routes - Protected and handled by ChatContainer */}
