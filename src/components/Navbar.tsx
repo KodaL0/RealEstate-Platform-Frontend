@@ -16,7 +16,7 @@ const Navbar: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const { user, setUser } = useUser();
+  const { user, setUser, refreshUser, updateUserData } = useUser();
   const { threads } = useChat();
   const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
@@ -60,6 +60,8 @@ const Navbar: React.FC = () => {
 
   const unreadTotal = threads.reduce((sum, t) => sum + t.unread_count, 0);
   const isOnChatPage = location.pathname.startsWith('/chat');
+
+
 
   const navigationItems = [
     { path: "/", label: "Home", icon: Home },
@@ -113,8 +115,8 @@ const Navbar: React.FC = () => {
                   <User className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900" title={user.username}>
-                    {user.username}
+                  <h3 className="font-semibold text-gray-900" title={user.username || user.email}>
+                    {user.username || user.email || 'User'}
                   </h3>
                   <p className="text-sm text-gray-500"></p>
                 </div>
@@ -288,8 +290,8 @@ const Navbar: React.FC = () => {
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4" />
                   </div>
-                  <span className="hidden sm:block font-medium truncate max-w-[120px]" title={user.username}>
-                    {user.username}
+                  <span className="hidden sm:block font-medium truncate max-w-[120px]" title={user.username || user.email}>
+                    {user.username || user.email || 'User'}
                   </span>
                   <ChevronDown className="h-4 w-4 hidden sm:block" />
                 </button>

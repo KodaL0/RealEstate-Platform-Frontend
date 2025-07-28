@@ -97,6 +97,15 @@ export interface ListingForm {
   virtualTourUrl?: string;
   videoUrl?: string;
 
+  // Location fields
+  country: string;
+  latitude?: string;
+  longitude?: string;
+  region?: string;
+  city?: string;
+  postal_code?: string;
+  street?: string;
+
   // NEW for wizard
   userType: UserType;
   devUnits: DevUnitRow[];
@@ -295,6 +304,12 @@ export const COUNTRY_CODES = [
   { code: '+91',  label: '🇮🇳' },
 ];
 
+// --- country options used in property forms ---
+export const COUNTRY_OPTIONS = [
+  { value: 'Cyprus', label: '🇨🇾 Cyprus' },
+  { value: 'Greece', label: '🇬🇷 Greece' },
+];
+
 // --- default form state for wizard ---
 export const DEFAULT_FORM_STATE: ListingForm = {
   title: '',
@@ -320,6 +335,7 @@ export const DEFAULT_FORM_STATE: ListingForm = {
   contactEmail: '',
   virtualTourUrl: '',
   videoUrl: '',
+  country: '',
   userType: '',
   devUnits: [{
     unitBlock: '',

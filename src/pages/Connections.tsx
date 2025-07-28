@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import { 
-  Users, UserPlus, UserCheck, UserX, Clock, Search, 
-  CheckCircle, XCircle, MessageCircle, Calendar, Trash2,
-  Filter, RefreshCw, Bell, User
+  Users, UserPlus, Clock, Search, 
+  CheckCircle, XCircle, MessageCircle, Trash2,
+  Bell, User
 } from 'lucide-react';
 import { UserConnection, Connection } from '../types';
 import api from '../config/api';
@@ -19,11 +18,6 @@ const Connections: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [error, setError] = useState<string | null>(null);
-
-  const tabs = [
-    { id: 'connections', label: 'My Connections', icon: Users },
-    { id: 'requests', label: 'Pending Requests', icon: Bell },
-  ];
 
   useEffect(() => {
     fetchData();
@@ -42,7 +36,7 @@ const Connections: React.FC = () => {
       setPendingRequests(requestsRes.data);
     } catch (error) {
       console.error('Error fetching connections:', error);
-      setError('Failed to load connections. Please try again.');
+      setError('Failed to load connections.');
     } finally {
       setIsLoading(false);
     }
@@ -51,31 +45,42 @@ const Connections: React.FC = () => {
   const handleAcceptRequest = async (connectionId: string) => {
     try {
       await api.connections.acceptRequest(connectionId);
-      await fetchData(); // Refresh data
+      const acceptedRequest = pendingRequests.find(req => req.id === connectionId);
+      if (acceptedRequest) {
+        const newConnection: UserConnection = {
+          connection_id: connectionId,
+          user: {
+            id: parseInt(acceptedRequest.from_user.toString()),
+            username: acceptedRequest.from_user_username,
+            date_joined: acceptedRequest.created_at
+          },
+          connected_since: new Date().toISOString()
+        };
+        setConnections(prev => [...prev, newConnection]);
+        setPendingRequests(prev => prev.filter(req => req.id !== connectionId));
+      }
     } catch (error) {
       console.error('Error accepting request:', error);
-      setError('Failed to accept connection request.');
+      setError('Failed to accept request.');
     }
   };
 
   const handleRejectRequest = async (connectionId: string) => {
     try {
       await api.connections.rejectRequest(connectionId);
-      await fetchData(); // Refresh data
+      setPendingRequests(prev => prev.filter(req => req.id !== connectionId));
     } catch (error) {
       console.error('Error rejecting request:', error);
-      setError('Failed to reject connection request.');
+      setError('Failed to reject request.');
     }
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!confirm('Are you sure you want to remove this connection?')) {
-      return;
-    }
+    if (!confirm('Remove this connection?')) return;
     
     try {
       await api.connections.disconnect(connectionId);
-      await fetchData(); // Refresh data
+      setConnections(prev => prev.filter(conn => conn.connection_id !== connectionId));
     } catch (error) {
       console.error('Error disconnecting:', error);
       setError('Failed to remove connection.');
@@ -90,266 +95,232 @@ const Connections: React.FC = () => {
     req.from_user_username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    });
-  };
-
   if (isLoading) {
     return (
-      <div className="pt-20 bg-gray-50 min-h-screen">
-        <div className="container mx-auto px-4 py-12">
-          <div className="flex justify-center items-center h-64">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
-          </div>
+      <div className="min-h-screen bg-gray-50 pt-16">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-blue-500"></div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="pt-20 bg-gray-50 min-h-screen">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gray-50 pt-16">
+      <div className="max-w-md mx-auto h-[calc(100vh-4rem)] flex flex-col">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">My Connections</h1>
-          <p className="text-gray-600">Manage your professional network and connection requests</p>
+        <div className="bg-white border-b border-gray-200 px-4 py-4 flex-shrink-0">
+          <h1 className="text-xl font-bold text-gray-900 text-center">Connections</h1>
+          <p className="text-sm text-gray-600 mt-1 text-center">
+            {connections.length} connected • {pendingRequests.length} pending
+          </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-blue-100 rounded-full">
-                <Users className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {connections.length}
-                </h3>
-                <p className="text-gray-600">Total Connections</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-yellow-100 rounded-full">
-                <Clock className="h-6 w-6 text-yellow-600" />
-              </div>
-              <div className="ml-4">
-                <h3 className="text-lg font-semibold text-gray-900">
-                  {pendingRequests.length}
-                </h3>
-                <p className="text-gray-600">Pending Requests</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-white p-6 rounded-xl shadow-md">
-            <div className="flex items-center">
-              <div className="p-3 bg-green-100 rounded-full">
-                <RefreshCw className="h-6 w-6 text-green-600" />
-              </div>
-              <div className="ml-4">
-                <button
-                  onClick={fetchData}
-                  className="text-lg font-semibold text-blue-600 hover:text-blue-800"
-                >
-                  Refresh
-                </button>
-                <p className="text-gray-600">Update Data</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Error Message */}
+        {/* Error */}
         {error && (
-          <div className="mb-6 p-4 bg-red-100 border border-red-400 text-red-700 rounded-lg">
+          <div className="mx-4 mt-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm flex-shrink-0">
             {error}
-            <button
-              onClick={() => setError(null)}
-              className="float-right text-red-600 hover:text-red-800"
-            >
-              <XCircle className="h-4 w-4" />
-            </button>
+            <button onClick={() => setError(null)} className="float-right">×</button>
           </div>
         )}
 
         {/* Tabs */}
-        <div className="bg-white rounded-xl shadow-md">
-          <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
-              {tabs.map((tab) => {
-                const IconComponent = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id as 'connections' | 'requests')}
-                    className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
-                      activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-2">
-                      <IconComponent className="h-4 w-4" />
-                      <span>{tab.label}</span>
-                      {tab.id === 'requests' && pendingRequests.length > 0 && (
-                        <span className="ml-2 px-2 py-1 text-xs bg-red-500 text-white rounded-full">
-                          {pendingRequests.length}
-                        </span>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </nav>
+        <div className="bg-white border-b border-gray-200 flex-shrink-0">
+          <div className="flex">
+            <button
+              onClick={() => setActiveTab('connections')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 ${
+                activeTab === 'connections'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-1">
+                <Users className="h-4 w-4" />
+                <span>Connections</span>
+              </div>
+            </button>
+            <button
+              onClick={() => setActiveTab('requests')}
+              className={`flex-1 py-3 text-sm font-medium border-b-2 relative ${
+                activeTab === 'requests'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500'
+              }`}
+            >
+              <div className="flex items-center justify-center space-x-1">
+                <Bell className="h-4 w-4" />
+                <span>Requests</span>
+                {pendingRequests.length > 0 && (
+                  <span className="absolute -top-1 -right-1 h-5 w-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
+                    {pendingRequests.length}
+                  </span>
+                )}
+              </div>
+            </button>
           </div>
+        </div>
 
-          {/* Search */}
-          <div className="p-6 border-b border-gray-200">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <input
-                type="text"
-                placeholder={`Search ${activeTab === 'connections' ? 'connections' : 'requests'}...`}
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
+        {/* Search */}
+        <div className="bg-white px-4 py-3 border-b border-gray-200 flex-shrink-0">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <input
+              type="text"
+              placeholder={`Search ${activeTab === 'connections' ? 'connections' : 'requests'}...`}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+            />
           </div>
+        </div>
 
-          {/* Content */}
-          <div className="p-6">
-            {activeTab === 'connections' ? (
-              <div className="space-y-4">
-                {filteredConnections.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Users className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+        {/* Content */}
+        <div className="flex-1 overflow-hidden">
+          {activeTab === 'connections' ? (
+            <div className="h-full flex flex-col">
+              {filteredConnections.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center px-4">
+                  <div className="text-center">
+                    <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {searchTerm ? 'No connections found' : 'No connections yet'}
                     </h3>
-                    <p className="text-gray-600">
-                      {searchTerm 
-                        ? 'Try adjusting your search terms'
-                        : 'Start connecting with other professionals to grow your network'
-                      }
+                    <p className="text-sm text-gray-600">
+                      {searchTerm ? 'Try adjusting your search' : 'Start connecting with others'}
                     </p>
                   </div>
-                ) : (
-                  filteredConnections.map((connection) => (
-                    <motion.div
-                      key={connection.connection_id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-blue-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {connection.user.username}
-                          </h4>
-                          <div className="flex items-center text-gray-600 text-sm">
-                            <Calendar className="h-4 w-4 mr-1" />
-                            Connected since {formatDate(connection.connected_since)}
+                </div>
+              ) : (
+                <>
+                  {/* Results count */}
+                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      {filteredConnections.length} connection{filteredConnections.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  
+                  {/* Scrollable list */}
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="px-4 py-2 space-y-2">
+                      {filteredConnections.map((connection) => (
+                        <div
+                          key={connection.connection_id}
+                          className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center space-x-3 min-w-0 flex-1">
+                              <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                                <User className="h-5 w-5 text-white" />
+                              </div>
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-semibold text-gray-900 text-sm truncate">
+                                  {connection.user.username}
+                                </h4>
+                                <p className="text-xs text-gray-600 truncate">
+                                  Connected {new Date(connection.connected_since).toLocaleDateString()}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center space-x-1 flex-shrink-0">
+                              <button
+                                onClick={async () => {
+                                  try {
+                                    const threadId = await getOrCreateDmThread(connection.user.id);
+                                    navigate(`/chat/${threadId}`);
+                                  } catch (error) {
+                                    console.error('Error creating DM thread:', error);
+                                  }
+                                }}
+                                className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
+                                title="Message"
+                              >
+                                <MessageCircle className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDisconnect(connection.connection_id)}
+                                className="p-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                                title="Remove"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={async () => {
-                            try {
-                              const threadId = await getOrCreateDmThread(connection.user.id);
-                              navigate(`/chat/${threadId}`);
-                            } catch (error) {
-                              console.error('Error creating DM thread:', error);
-                            }
-                          }}
-                          className="p-2 text-blue-600 hover:bg-blue-100 rounded-lg transition-colors"
-                          title="Send message"
-                        >
-                          <MessageCircle className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDisconnect(connection.connection_id)}
-                          className="p-2 text-red-600 hover:bg-red-100 rounded-lg transition-colors"
-                          title="Remove connection"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {filteredRequests.length === 0 ? (
-                  <div className="text-center py-12">
-                    <Bell className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <div className="h-full flex flex-col">
+              {filteredRequests.length === 0 ? (
+                <div className="flex-1 flex items-center justify-center px-4">
+                  <div className="text-center">
+                    <Bell className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
                       {searchTerm ? 'No requests found' : 'No pending requests'}
                     </h3>
-                    <p className="text-gray-600">
-                      {searchTerm 
-                        ? 'Try adjusting your search terms'
-                        : 'You have no pending connection requests at the moment'
-                      }
+                    <p className="text-sm text-gray-600">
+                      {searchTerm ? 'Try adjusting your search' : 'All caught up!'}
                     </p>
                   </div>
-                ) : (
-                  filteredRequests.map((request) => (
-                    <motion.div
-                      key={request.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      className="flex items-center justify-between p-4 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
-                    >
-                      <div className="flex items-center space-x-4">
-                        <div className="w-12 h-12 bg-yellow-100 rounded-full flex items-center justify-center">
-                          <User className="h-6 w-6 text-yellow-600" />
-                        </div>
-                        <div>
-                          <h4 className="font-semibold text-gray-900">
-                            {request.from_user_username}
-                          </h4>
-                          <div className="flex items-center text-gray-600 text-sm">
-                            <Clock className="h-4 w-4 mr-1" />
-                            Requested {formatDate(request.created_at)}
+                </div>
+              ) : (
+                <>
+                  {/* Results count */}
+                  <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
+                    <p className="text-sm text-gray-600">
+                      {filteredRequests.length} pending request{filteredRequests.length !== 1 ? 's' : ''}
+                    </p>
+                  </div>
+                  
+                  {/* Scrollable list */}
+                  <div className="flex-1 overflow-y-auto">
+                    <div className="px-4 py-2 space-y-2">
+                      {filteredRequests.map((request) => (
+                        <div
+                          key={request.id}
+                          className="bg-white rounded-lg p-3 shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
+                        >
+                          <div className="flex items-center space-x-3 mb-3">
+                            <div className="w-10 h-10 bg-gradient-to-br from-yellow-400 to-orange-500 rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                              <User className="h-5 w-5 text-white" />
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <h4 className="font-semibold text-gray-900 text-sm truncate">
+                                {request.from_user_username}
+                              </h4>
+                              <p className="text-xs text-gray-600 truncate">
+                                Requested {new Date(request.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() => handleAcceptRequest(request.id)}
+                              className="flex-1 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg text-sm font-medium flex items-center justify-center space-x-1 shadow-sm hover:from-green-600 hover:to-green-700 transition-all"
+                            >
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Accept</span>
+                            </button>
+                            <button
+                              onClick={() => handleRejectRequest(request.id)}
+                              className="flex-1 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg text-sm font-medium flex items-center justify-center space-x-1 shadow-sm hover:from-red-600 hover:to-red-700 transition-all"
+                            >
+                              <XCircle className="h-3 w-3" />
+                              <span>Reject</span>
+                            </button>
                           </div>
                         </div>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={() => handleAcceptRequest(request.id)}
-                          className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors flex items-center"
-                        >
-                          <CheckCircle className="h-4 w-4 mr-2" />
-                          Accept
-                        </button>
-                        <button
-                          onClick={() => handleRejectRequest(request.id)}
-                          className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors flex items-center"
-                        >
-                          <XCircle className="h-4 w-4 mr-2" />
-                          Reject
-                        </button>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>

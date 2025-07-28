@@ -32,7 +32,7 @@ interface UserResponse {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, setUser } = useUser();
+  const { user, setUser, refreshUser, updateUserData } = useUser();
   const navigate = useNavigate();
   
   // Username state
@@ -64,6 +64,7 @@ const ProfilePage: React.FC = () => {
       navigate('/auth');
     } else {
       console.log('Setting initial username:', user.username);
+      // Set initial username from UserContext, but it will be updated by loadProfile
       setNewUsername(user.username ?? '');
       loadProfile();
     }
@@ -80,6 +81,12 @@ const ProfilePage: React.FC = () => {
         const data = response.data as UserResponse;
         const userData = data.user;
         console.log('User data received:', userData);
+        
+        // Update username from API response (this is the key fix!)
+        if (userData.username) {
+          console.log('Setting username from API:', userData.username);
+          setNewUsername(userData.username);
+        }
         
         const profileDataToSet = {
           name: userData.name || '',
@@ -236,7 +243,9 @@ const ProfilePage: React.FC = () => {
       if (response.status === 200) {
         console.log('Username updated successfully');
         setUsernameMessage('Username updated successfully!');
-        setUser({ ...user, username: newUsername });
+        
+        // Update user context locally with new username
+        updateUserData({ username: newUsername });
         setValidationError('');
       }
     } catch (err: any) {
@@ -279,10 +288,9 @@ const ProfilePage: React.FC = () => {
       if (response.status === 200) {
         console.log('Profile updated successfully');
         setProfileMessage('Profile updated successfully!');
-        // Update user context with new profile data
-        const updatedUser = { ...user, ...profileData };
-        console.log('Updating user context:', updatedUser);
-        setUser(updatedUser);
+        
+        // Update user context locally with new profile data
+        updateUserData(profileData);
       }
     } catch (err: any) {
       console.error('Profile update failed:', err);

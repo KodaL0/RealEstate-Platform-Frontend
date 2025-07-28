@@ -242,17 +242,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const getOrCreateDmThread = useCallback(
     async (otherUserId: number) => {
+      // Look for existing DM thread (no property)
       const existing = threads.find(
         (t) =>
           !t.property &&
           ((t.user1 === otherUserId && t.user2 === user?.id) ||
             (t.user1 === user?.id && t.user2 === otherUserId))
       );
-      if (existing) return existing.id;
+      if (existing) {
+        console.log('Found existing DM thread:', existing.id);
+        return existing.id;
+      }
 
+      console.log('Creating new DM thread with user:', otherUserId);
       const res = await apiClient.post<Thread>("chat/", {
         recipient_id: otherUserId,
+        // Explicitly not passing property_id to ensure it's a DM thread
       });
+      console.log('Created DM thread:', res.data);
       setThreads((prev) => [res.data, ...prev]);
       return res.data.id;
     },

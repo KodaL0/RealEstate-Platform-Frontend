@@ -137,6 +137,8 @@ const api = {
     updateProfile:   (d: any)  => apiPut('users/profile', d),
     getPublicProfile: (username: string) => apiGet(`users/profiles/${username}`),
     searchUsers:     (q: string) => apiGet(`users/search`, { params: { q } }),
+    verifyEmail:     (d: any) => apiPost('users/verify-email', d),
+    resendVerification: ()     => apiPost('users/resend-verification'),
   },
 
   properties: {

@@ -36,8 +36,13 @@ export async function login(email: string, password: string) {
     console.log("Attempting login with email:", email);
     const response = await api.auth.login({ email, password });
     console.log("Login successful, received response:", response.status);
+    
     // Backend's /users/login endpoint is expected to set access_token and refresh_token cookies.
-    return { status: response.status, ...response.data };
+    return { 
+      status: response.status, 
+      user: response.data.user,
+      message: response.data.message || 'Login successful'
+    };
   } catch (error: any) {
     console.error("Login Error:", error);
     
@@ -65,22 +70,31 @@ export async function login(email: string, password: string) {
 /**
  * Register a new user.
  */
-export async function register(username: string, email: string, password1: string, password2: string) {
+export async function register(username: string, email: string, password: string) {
   try {
     // Convert username to lowercase before sending to backend
     const lowercaseUsername = username.toLowerCase();
     
     const response = await api.auth.register({ 
-      username: lowercaseUsername, email, password1, password2 
+      username: lowercaseUsername, 
+      email, 
+      password  // Note: single password field, not password1/password2
     });
-    return { status: response.status, ...response.data };
+    
+    return { 
+      status: response.status, 
+      message: response.data.message || 'Registration successful',
+      email: response.data.email,
+      email_sent: response.data.email_sent
+    };
   } catch (error: any) {
     console.error("Registration Error:", error);
     
     if (error.response) {
       return { 
         status: error.response.status,
-        error: error.response.data.detail || error.response.data.error || "Registration failed" 
+        error: error.response.data.error || error.response.data.detail || "Registration failed",
+        details: error.response.data.details
       };
     } else if (error.request) {
       return { status: 0, error: "No response from server" };
@@ -122,8 +136,14 @@ export async function logout() {
 export async function fetchUser() {
   try {
     const response = await api.auth.getUser();
+    console.log("fetchUser raw response:", response.data);
+    
+    // Backend returns: { status: 200, user: {...} }
+    // We need to extract the user data from response.data.user
+    const userData = response.data.user || response.data;
+    
     return { 
-      user: response.data,
+      user: userData,
       authenticated: true
     };
   } catch (error: any) {
