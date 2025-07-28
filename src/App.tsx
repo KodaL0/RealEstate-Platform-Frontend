@@ -69,7 +69,7 @@ function AppContent() {
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/developer" element={<Developers />} />
           <Route path="/project/:id" element={<ProjectDetail />} />
-          <Route path="developer/:id" element={<DeveloperDetail />} />
+          <Route path="/developer/:id" element={<DeveloperDetail />} />
           
           {/* Chat routes - Protected and handled by ChatContainer */}
           <Route
