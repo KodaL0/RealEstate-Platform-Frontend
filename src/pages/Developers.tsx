@@ -453,7 +453,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
     : "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex";
 
   return (
-    <Link to={`/developers/${developer.id}`} className={cardClass}>
+    <Link to={`/developer/${developer.id}`} className={cardClass}>
       <div className={viewMode === 'grid' ? "" : "w-1/3 flex-shrink-0"}>
         <div className="relative h-48 overflow-hidden">
           <img
