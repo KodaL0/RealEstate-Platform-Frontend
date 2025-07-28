@@ -13,7 +13,7 @@ const OPTIONS: { value: UserType; label: string; icon: React.ReactNode; descript
     value: 'agent', 
     label: 'Real Estate Agent', 
     icon: <User className="w-5 h-5" />,
-    description: 'Licensed professional helping clients buy/sell properties'
+    description: 'Licensed professional helping clients Buy/Sell/Rent properties'
   },
   { 
     value: 'developer', 
@@ -25,7 +25,7 @@ const OPTIONS: { value: UserType; label: string; icon: React.ReactNode; descript
     value: 'owner', 
     label: 'Property Owner', 
     icon: <Home className="w-5 h-5" />,
-    description: 'Individual owner looking to sell their property'
+    description: 'Individual owner looking to Sell/Rent their property'
   },
 ];
 

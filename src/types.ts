@@ -365,3 +365,93 @@ export const AMENITIES = [
   { id: 'garage',      label: 'Garage',             category: 'Parking' },
   { id: 'waterfront',  label: 'Waterfront',         category: 'Location' },
 ];
+
+export interface Developer {
+  id: string;
+  name: string;
+  logo?: string;
+  description: string;
+  established?: number;
+  location: string;
+  country: 'Cyprus' | 'Greece';
+  website?: string;
+  email?: string;
+  phone?: string;
+  totalProjects: number;
+  activeProjects: number;
+  completedProjects: number;
+  specialties: string[];
+  rating?: number;
+  reviewCount?: number;
+  image?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Project {
+  id: string;
+  developerId: string;
+  name: string;
+  description: string;
+  location: string;
+  country: 'Cyprus' | 'Greece';
+  status: 'planning' | 'construction' | 'completed' | 'available';
+  startDate?: string;
+  completionDate?: string;
+  totalUnits: number;
+  availableUnits: number;
+  priceRange: {
+    min: number;
+    max: number;
+    currency: string;
+  };
+  propertyTypes: string[];
+  amenities: string[];
+  images: string[];
+  mainImage?: string;
+  coordinates?: {
+    lat: number;
+    lng: number;
+  };
+  features: string[];
+  floorPlans?: {
+    id: string;
+    name: string;
+    bedrooms: number;
+    bathrooms: number;
+    area: number;
+    price: number;
+    image?: string;
+  }[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ProjectAmenity {
+  id: string;
+  name: string;
+  icon: string;
+  category: 'recreation' | 'security' | 'convenience' | 'wellness' | 'outdoor';
+}
+
+export const AMENITY_CATEGORIES = {
+  recreation: 'Recreation',
+  security: 'Security',
+  convenience: 'Convenience',
+  wellness: 'Wellness',
+  outdoor: 'Outdoor'
+} as const;
+
+export const PROJECT_STATUS_LABELS = {
+  planning: 'Planning',
+  construction: 'Under Construction',
+  completed: 'Completed',
+  available: 'Available'
+} as const;
+
+export const PROJECT_STATUS_COLORS = {
+  planning: 'bg-yellow-100 text-yellow-800',
+  construction: 'bg-blue-100 text-blue-800',
+  completed: 'bg-green-100 text-green-800',
+  available: 'bg-purple-100 text-purple-800'
+} as const;

@@ -25,6 +25,7 @@ import CookiePolicy from "./pages/CookiePolicy";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
+import Developers from "./pages/Developers";
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -58,6 +59,7 @@ function AppContent() {
           <Route path="/cookies" element={<CookiePolicy />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
+          <Route path="/developer" element={<Developers />} />
           
           {/* Chat routes - Protected and handled by ChatContainer */}
           <Route
