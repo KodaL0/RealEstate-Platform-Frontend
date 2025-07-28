@@ -26,11 +26,11 @@ import CookiePolicy from "./pages/CookiePolicy";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
-<<<<<<< HEAD
-import Developers from "./pages/Developers";
-=======
+
 import { EmailVerification } from "./components/EmailVerification";
->>>>>>> 7775139eff53c45953587ff593a4601b3a01a8aa
+import Developers from "./pages/Developers";
+
+
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
