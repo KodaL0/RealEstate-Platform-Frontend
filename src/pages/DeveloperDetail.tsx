@@ -499,7 +499,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
   };
 
   return (
-    <Link to={`/projects/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+    <Link to={`/project/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       <div className="relative h-64 overflow-hidden">
         <img
           src={project.mainImage || project.images[0]}
