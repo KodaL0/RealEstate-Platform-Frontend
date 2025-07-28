@@ -308,13 +308,6 @@ export const COUNTRY_CODES = [
 export const COUNTRY_OPTIONS = [
   { value: 'Cyprus', label: '🇨🇾 Cyprus' },
   { value: 'Greece', label: '🇬🇷 Greece' },
-  { value: 'United States', label: '🇺🇸 United States' },
-  { value: 'United Kingdom', label: '🇬🇧 United Kingdom' },
-  { value: 'Germany', label: '🇩🇪 Germany' },
-  { value: 'France', label: '🇫🇷 France' },
-  { value: 'Italy', label: '🇮🇹 Italy' },
-  { value: 'Australia', label: '🇦🇺 Australia' },
-  { value: 'India', label: '🇮🇳 India' },
 ];
 
 // --- default form state for wizard ---
