@@ -31,6 +31,7 @@ import { EmailVerification } from "./components/EmailVerification";
 import Developers from "./pages/Developers";
 import DeveloperProjects from "./pages/DeveloperProjects";
 import DeveloperDetail from "./pages/DeveloperDetail";
+import ProjectDetail from "./pages/ProjectDetail";
 
 
 
@@ -68,8 +69,9 @@ function AppContent() {
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/developers" element={<Developers />} />
-          <Route path="/projects/:id" element={<DeveloperProjects />} />
+          <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
+          <Route path="/projects" element={<DeveloperProjects />} />
           
           {/* Chat routes - Protected and handled by ChatContainer */}
           <Route
