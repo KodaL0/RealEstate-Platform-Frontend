@@ -138,8 +138,8 @@ const Buy = () => {
 
   const countryOptions = [
     { value: 'all', label: 'All Countries', flag: '🌍' },
-    { value: 'Cyprus', label: '🇨🇾 Cyprus', flag: '🇨🇾' },
-    { value: 'Greece', label: '🇬🇷 Greece', flag: '🇬🇷' },
+    { value: 'Cyprus', label: 'Cyprus', flag: '🇨🇾' },
+    { value: 'Greece', label: 'Greece', flag: '🇬🇷' },
   ];
 
   return (
