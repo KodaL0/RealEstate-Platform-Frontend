@@ -73,6 +73,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     ? Number(area).toLocaleString()
     : area;
 
+  const countryDisplay = (country: string) => {
+    switch (country) {
+      case 'Cyprus':
+        return '🇨🇾 Cyprus';
+      case 'Greece':
+        return '🇬🇷 Greece';
+      default:
+        return country;
+    }
+  };
+  
   return (
     <div
       className={`
@@ -110,6 +121,16 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         </Link>
 
         <div className="absolute top-4 left-4 flex space-x-2">
+          {/* Country Bubble with Flag */}
+          <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold flex items-center space-x-1">
+            <span>
+              {property.country === 'Greece' && '🇬🇷 Greece'}
+              {property.country === 'Cyprus' && '🇨🇾 Cyprus'}
+              {property.country !== 'Greece' && property.country !== 'Cyprus' && property.country}
+            </span>
+          </span>
+        
+          {/* For Sale / For Rent */}
           <span
             className={`
               px-3 py-1 rounded-full text-xs font-semibold
@@ -118,6 +139,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           >
             {isForSale ? 'For Sale' : 'For Rent'}
           </span>
+        
+          {/* Property Type */}
           <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
             {property_type.charAt(0).toUpperCase() + property_type.slice(1)}
           </span>
