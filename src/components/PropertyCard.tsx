@@ -122,7 +122,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         <div className="absolute top-4 left-4 flex space-x-2">
           {/* Country Bubble with Flag */}
-          <span className="px-3 py-1 rounded-full bg-indigo-600 text-white text-xs font-semibold flex items-center space-x-1">
+          <span
+            className={`
+              px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center space-x-1
+              ${property.country === 'Greece' ? 'bg-blue-600' : ''}
+              ${property.country === 'Cyprus' ? 'bg-orange-500' : ''}
+            `}
+          >
             <span>
               {property.country === 'Greece' && '🇬🇷 Greece'}
               {property.country === 'Cyprus' && '🇨🇾 Cyprus'}
