@@ -58,35 +58,30 @@ const Buy = () => {
     const fetchProperties = async () => {
       setIsLoading(true);
       setError(null);
-
+  
+      const qp: Record<string, string> = {
+        page:      currentPage.toString(),   // ← always send this
+        page_size: PAGE_SIZE.toString(),
+        sort:      sortOption,
+      };
+  
+      if (searchFilters.search)        qp.search        = searchFilters.search;
+      if (searchFilters.minPrice)      qp.price_min     = searchFilters.minPrice;
+      if (searchFilters.maxPrice)      qp.price_max     = searchFilters.maxPrice;
+      if (searchFilters.bedrooms)      qp.bedrooms      = searchFilters.bedrooms;
+      if (searchFilters.bathrooms)     qp.bathrooms     = searchFilters.bathrooms;
+      if (searchFilters.propertyType)  qp.property_type = searchFilters.propertyType;
+      if (searchFilters.location)      qp.location      = searchFilters.location;
+      if (searchFilters.country)       qp.country       = searchFilters.country;
+  
       try {
-        const qp: Record<string, string> = {
-          page_size: PAGE_SIZE.toString(),
-          sort: sortOption,
-        };
-        if (searchFilters.search) qp.search = searchFilters.search;
-        if (currentPage !== 1) qp.page = currentPage.toString();
-        if (searchFilters.minPrice) qp.price_min = searchFilters.minPrice;
-        if (searchFilters.maxPrice) qp.price_max = searchFilters.maxPrice;
-        if (searchFilters.bedrooms) qp.bedrooms = searchFilters.bedrooms;
-        if (searchFilters.bathrooms) qp.bathrooms = searchFilters.bathrooms;
-        if (searchFilters.propertyType) qp.property_type = searchFilters.propertyType;
-        if (searchFilters.location) qp.location = searchFilters.location;
-        if (searchFilters.country) qp.country = searchFilters.country;
-
-        console.log("Fetching BUY with query params:", qp);
-
         const paginatedData = await api.properties.buy(qp);
-        console.log("BUY pagination data:", paginatedData);
-
         const resultsArr = paginatedData.results || [];
         const normalized = resultsArr.map(normalizePropertyData);
-
+  
         setProperties(normalized);
-        
-        const totalCount = paginatedData.count || 0;
-        setTotalCount(totalCount);
-        setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
+        setTotalCount(paginatedData.count || 0);
+        setTotalPages(Math.ceil((paginatedData.count||0) / PAGE_SIZE));
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
         setError("Failed to fetch properties. Please try again.");
@@ -94,6 +89,10 @@ const Buy = () => {
         setIsLoading(false);
       }
     };
+
+  fetchProperties();
+}, [sortOption, searchFilters, currentPage]);
+
 
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
