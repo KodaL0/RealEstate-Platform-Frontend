@@ -59,26 +59,27 @@ const Buy = () => {
       setIsLoading(true);
       setError(null);
   
-      // switch to limit/offset pagination
-      const qp: Record<string,string> = {
-        limit:  PAGE_SIZE.toString(),                          // items per “page”
-        offset: ((currentPage - 1) * PAGE_SIZE).toString(),    // how many to skip
-        sort:   sortOption,
+      const qp: Record<string, string> = {
+        page_size: PAGE_SIZE.toString(),
       };
       if (searchFilters.search)        qp.search        = searchFilters.search;
+      if (currentPage !== 1)           qp.page          = currentPage.toString();
       if (searchFilters.minPrice)      qp.price_min     = searchFilters.minPrice;
       if (searchFilters.maxPrice)      qp.price_max     = searchFilters.maxPrice;
       if (searchFilters.bedrooms)      qp.bedrooms      = searchFilters.bedrooms;
       if (searchFilters.bathrooms)     qp.bathrooms     = searchFilters.bathrooms;
       if (searchFilters.propertyType)  qp.property_type = searchFilters.propertyType;
+      if (sortOption)                  qp.sort          = sortOption;
       if (searchFilters.location)      qp.location      = searchFilters.location;
       if (searchFilters.country)       qp.country       = searchFilters.country;
   
-      console.log("→ requesting BUY with qp:", qp);
+      console.log("Fetching BUY with query params:", qp);
   
       try {
         const paginatedData = await api.properties.buy(qp);
-        const normalized   = (paginatedData.results || []).map(normalizePropertyData);
+        console.log("BUY pagination data:", paginatedData);
+  
+        const normalized = (paginatedData.results || []).map(normalizePropertyData);
         setProperties(normalized);
         setTotalCount(paginatedData.count || 0);
         setTotalPages(Math.ceil((paginatedData.count || 0) / PAGE_SIZE));
@@ -92,6 +93,7 @@ const Buy = () => {
   
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
+
 
   // Update search filters when country changes
   useEffect(() => {
