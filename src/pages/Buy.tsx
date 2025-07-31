@@ -60,11 +60,10 @@ const Buy = () => {
       setError(null);
   
       const qp: Record<string, string> = {
-        page:      currentPage.toString(),   // ← always send this
+        page:      currentPage.toString(),
         page_size: PAGE_SIZE.toString(),
         sort:      sortOption,
       };
-  
       if (searchFilters.search)        qp.search        = searchFilters.search;
       if (searchFilters.minPrice)      qp.price_min     = searchFilters.minPrice;
       if (searchFilters.maxPrice)      qp.price_max     = searchFilters.maxPrice;
@@ -76,23 +75,19 @@ const Buy = () => {
   
       try {
         const paginatedData = await api.properties.buy(qp);
-        const resultsArr = paginatedData.results || [];
-        const normalized = resultsArr.map(normalizePropertyData);
-  
+        const normalized   = (paginatedData.results || []).map(normalizePropertyData);
         setProperties(normalized);
         setTotalCount(paginatedData.count || 0);
-        setTotalPages(Math.ceil((paginatedData.count||0) / PAGE_SIZE));
-      } catch (err) {
-        console.error("Error fetching BUY properties:", err);
+        setTotalPages(Math.ceil((paginatedData.count || 0) / PAGE_SIZE));
+      } catch {
         setError("Failed to fetch properties. Please try again.");
       } finally {
         setIsLoading(false);
       }
     };
-
+  
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
-
 
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
