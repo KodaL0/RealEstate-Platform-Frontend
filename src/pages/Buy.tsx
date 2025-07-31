@@ -89,9 +89,6 @@ const Buy = () => {
     fetchProperties();
   }, [sortOption, searchFilters, currentPage]);
 
-    fetchProperties();
-  }, [sortOption, searchFilters, currentPage]);
-
   // Update search filters when country changes
   useEffect(() => {
     const countryFilter = selectedCountry === 'all' ? undefined : selectedCountry;
