@@ -72,6 +72,8 @@ const Buy = () => {
       if (searchFilters.propertyType)  qp.property_type = searchFilters.propertyType;
       if (searchFilters.location)      qp.location      = searchFilters.location;
       if (searchFilters.country)       qp.country       = searchFilters.country;
+
+      console.log("→ fetchProperties qp:", qp);
   
       try {
         const paginatedData = await api.properties.buy(qp);
