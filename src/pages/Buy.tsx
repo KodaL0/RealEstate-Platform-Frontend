@@ -90,8 +90,8 @@ const Buy = () => {
       }
     };
 
-  fetchProperties();
-}, [sortOption, searchFilters, currentPage]);
+    fetchProperties();
+  }, [sortOption, searchFilters, currentPage]);
 
 
     fetchProperties();
