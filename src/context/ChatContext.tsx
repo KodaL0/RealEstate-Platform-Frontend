@@ -219,7 +219,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ws.current.close();
       }
     };
-  }, [openSocket]);
+  }, []); // Remove openSocket dependency to prevent infinite re-renders
 
   /* --------------------------- Helper functions --------------------------- */
   const getOrCreateThread = useCallback(
