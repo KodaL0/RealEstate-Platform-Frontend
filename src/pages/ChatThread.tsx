@@ -437,12 +437,25 @@ export default function ChatThread() {
               </Link>
             )}
             <div className="flex items-center gap-1 sm:gap-2 min-w-0">
-              <p className="text-xs sm:text-sm text-slate-500 truncate flex-shrink min-w-0">
-                {thread?.property ? 
-                  `${thread.other_username ? `${thread.other_username}` : `Property ID: ${propertyId}`}` :
-                  'Direct Message'
-                }
-              </p>
+              {thread?.property ? (
+                thread.other_username ? (
+                  <Link 
+                    to={`/${thread.other_username}`}
+                    className="text-xs sm:text-sm text-slate-500 hover:text-blue-600 transition-colors truncate flex-shrink min-w-0"
+                    title={`View ${thread.other_username}'s profile`}
+                  >
+                    {thread.other_username}
+                  </Link>
+                ) : (
+                  <p className="text-xs sm:text-sm text-slate-500 truncate flex-shrink min-w-0">
+                    Property ID: {propertyId}
+                  </p>
+                )
+              ) : (
+                <p className="text-xs sm:text-sm text-slate-500 truncate flex-shrink min-w-0">
+                  Direct Message
+                </p>
+              )}
               <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
                 <span className="text-[10px] sm:text-xs text-green-600 font-medium hidden sm:inline">
