@@ -427,7 +427,7 @@ export default function ChatThread() {
               </Link>
             ) : (
               <Link 
-                to={`/profile/${thread?.other_username}`}
+                to={`/${thread?.other_username}`}
                 className="block hover:text-blue-600 transition-colors group"
                 title={`View ${thread?.other_username}'s profile`}
               >
