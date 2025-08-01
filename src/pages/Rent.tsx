@@ -95,7 +95,7 @@ const Rent = () => {
     };
 
     fetchProperties();
-  }, [sortOption, searchFilters, currentPage]);
+  }, [sortOption, searchFilters.search, searchFilters.minPrice, searchFilters.maxPrice, searchFilters.bedrooms, searchFilters.bathrooms, searchFilters.propertyType, searchFilters.location, searchFilters.country, currentPage]);
 
   // Update search filters when country changes
   useEffect(() => {
