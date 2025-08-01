@@ -108,6 +108,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case "chat.message": {
           const msg: Message = data.message;
 
+          // Skip processing if this is our own message (prevent echo processing)
+          if (msg.sender === user?.id) {
+            console.log('Skipping own message echo:', msg.id);
+            break;
+          }
+
           // Deduplicate by message ID
           setMessages((prev) => {
             const list = prev[msg.thread_id] ?? [];
@@ -122,12 +128,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setThreads((prev) => {
             const updated = prev.map((t) => {
               if (t.id === msg.thread_id) {
-                // If the message is from another user, increment unread count
-                const shouldIncrementUnread = msg.sender !== user?.id;
+                // This is a message from another user, increment unread count
                 return {
                   ...t,
                   updated_at: msg.created_at,
-                  unread_count: shouldIncrementUnread ? (t.unread_count || 0) + 1 : t.unread_count,
+                  unread_count: (t.unread_count || 0) + 1,
                 };
               }
               return t;
@@ -285,6 +290,45 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // Ensure the socket is (re)opened
       openSocket();
 
+      // Create optimistic message for immediate UI update
+      const optimisticMessage: Message = {
+        id: `temp_${Date.now()}_${Math.random()}`, // Temporary ID
+        thread_id: threadId,
+        property_id: propertyId || null,
+        sender: user?.id || 0,
+        recipient: recipientId,
+        content,
+        created_at: new Date().toISOString(),
+        read_at: null,
+        is_unsent: false,
+      };
+
+      // Add optimistic message to UI immediately
+      setMessages((prev) => {
+        const list = prev[threadId] ?? [];
+        return {
+          ...prev,
+          [threadId]: [...list, optimisticMessage],
+        };
+      });
+
+      // Update thread timestamp (but don't increment unread count for own messages)
+      setThreads((prev) => {
+        const updated = prev.map((t) => {
+          if (t.id === threadId) {
+            return {
+              ...t,
+              updated_at: optimisticMessage.created_at,
+              // Don't increment unread_count for own messages
+            };
+          }
+          return t;
+        });
+        return updated.sort(
+          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+        );
+      });
+
       const payload: any = {
         type: "chat.message",
         recipient_id: recipientId,
@@ -295,11 +339,34 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = JSON.stringify(payload);
 
       const sendViaRest = async () => {
-        await apiClient.post<Message>(`chat/${threadId}/messages/`, {
-          content,
-          property_id: propertyId,
-          recipient_id: recipientId,
-        });
+        try {
+          const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
+            content,
+            property_id: propertyId,
+            recipient_id: recipientId,
+          });
+          
+          // Replace optimistic message with real message from server
+          setMessages((prev) => {
+            const list = prev[threadId] ?? [];
+            return {
+              ...prev,
+              [threadId]: list.map((msg) => 
+                msg.id === optimisticMessage.id ? response.data : msg
+              ),
+            };
+          });
+        } catch (error) {
+          console.error('Failed to send message:', error);
+          // Remove optimistic message on error
+          setMessages((prev) => {
+            const list = prev[threadId] ?? [];
+            return {
+              ...prev,
+              [threadId]: list.filter((msg) => msg.id !== optimisticMessage.id),
+            };
+          });
+        }
       };
 
       if (!ws.current) {
@@ -325,7 +392,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           void sendViaRest();
       }
     },
-    [openSocket]
+    [openSocket, user?.id]
   );
 
   const markThreadRead = useCallback((threadId: string) => {
