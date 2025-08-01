@@ -118,11 +118,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             };
           });
 
-          // Move thread to top of list
+          // Move thread to top of list and update unread count
           setThreads((prev) => {
-            const updated = prev.map((t) =>
-              t.id === msg.thread_id ? { ...t, updated_at: msg.created_at } : t
-            );
+            const updated = prev.map((t) => {
+              if (t.id === msg.thread_id) {
+                // If the message is from another user, increment unread count
+                const shouldIncrementUnread = msg.sender !== user?.id;
+                return {
+                  ...t,
+                  updated_at: msg.created_at,
+                  unread_count: shouldIncrementUnread ? (t.unread_count || 0) + 1 : t.unread_count,
+                };
+              }
+              return t;
+            });
             return updated.sort(
               (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
             );
@@ -329,8 +338,28 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ),
       };
     });
+    
+    // Update threads state to reflect the new unread count
+    setThreads((prev) => {
+      return prev.map((thread) => {
+        if (thread.id === threadId) {
+          // Calculate new unread count based on unread messages
+          const threadMessages = messages[threadId] || [];
+          const newUnreadCount = threadMessages.filter(
+            (msg) => msg.sender !== user?.id && !msg.read_at
+          ).length;
+          
+          return {
+            ...thread,
+            unread_count: newUnreadCount,
+          };
+        }
+        return thread;
+      });
+    });
+    
     apiClient.post(`chat/${threadId}/mark_read/`).catch(() => {});
-  }, [user?.id]);
+  }, [user?.id, messages]);
 
   const sendTypingStart = useCallback((threadId: string, recipientId: number) => {
     if (ws.current?.readyState === WebSocket.OPEN) {

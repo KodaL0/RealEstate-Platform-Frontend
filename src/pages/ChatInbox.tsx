@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { useState, useEffect } from "react";
-import { Search, MessageCircle, Clock, MapPin, Home, Plus, Filter, User as UserIcon, X } from "lucide-react";
+import { Search, MessageCircle, Clock, MapPin, Home, Plus, Filter, User as UserIcon, X, Circle } from "lucide-react";
 
 export default function ChatInbox() {
   const { threads, messages } = useChat();
@@ -61,7 +61,14 @@ export default function ChatInbox() {
     return null;
   };
 
+  // Use server unread_count for consistency with notification system
   const getUnreadCount = (threadId: string) => {
+    const thread = threads.find((t) => t.id === threadId);
+    return thread?.unread_count || 0;
+  };
+
+  // Alternative method using local messages state (for debugging)
+  const getLocalUnreadCount = (threadId: string) => {
     const threadMessages = messages[threadId] || [];
     return threadMessages.filter(
       msg => msg.sender !== user?.id && !msg.read_at
@@ -238,12 +245,17 @@ export default function ChatInbox() {
               const lastMessage = getLastMessage(thread.id);
               const isOwnMessage = lastMessage?.sender === user?.id;
               const unreadCount = getUnreadCount(thread.id);
+              const hasUnread = unreadCount > 0;
 
               return (
                 <Link
                   key={thread.id}
                   to={`/chat/${thread.id}`}
-                  className="block bg-white rounded-lg sm:rounded-xl border border-gray-200 hover:shadow-lg hover:border-gray-300 p-3 sm:p-4 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98]"
+                  className={`block rounded-lg sm:rounded-xl border p-3 sm:p-4 transition-all duration-200 group focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 active:scale-[0.98] ${
+                    hasUnread 
+                      ? 'bg-blue-50 border-blue-200 hover:bg-blue-100 hover:border-blue-300 shadow-sm' 
+                      : 'bg-white border-gray-200 hover:shadow-lg hover:border-gray-300'
+                  }`}
                   tabIndex={0}
                   role="button"
                   aria-label={`Open chat with ${thread.other_username}${activeTab === 'property' ? ` about ${thread.property_title}` : ''}`}
@@ -267,7 +279,7 @@ export default function ChatInbox() {
                           <UserIcon size={16} className="sm:w-5 sm:h-5 text-white" />
                         </div>
                       )}
-                      {unreadCount > 0 && (
+                      {hasUnread && (
                         <div className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] sm:text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center shadow-sm">
                           {unreadCount > 9 ? '9+' : unreadCount}
                         </div>
@@ -282,13 +294,17 @@ export default function ChatInbox() {
                               className="group/title"
                               title={thread.property_title || `Property #${thread.property}`}
                             >
-                              <h3 className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm">
+                              <h3 className={`font-semibold truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm ${
+                                hasUnread ? 'text-gray-900' : 'text-gray-900'
+                              }`}>
                                 {thread.property_title || `Property #${thread.property}`}
                               </h3>
                             </div>
                           ) : (
                             <h3 
-                              className="font-semibold text-gray-900 truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm"
+                              className={`font-semibold truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm ${
+                                hasUnread ? 'text-gray-900' : 'text-gray-900'
+                              }`}
                               title={thread.other_username}
                             >
                               {thread.other_username}
@@ -310,8 +326,10 @@ export default function ChatInbox() {
 
                       <div className="mb-1 sm:mb-2">
                         {lastMessage ? (
-                          <p className="text-xs sm:text-sm text-gray-600 truncate">
-                            <span className={`font-medium ${isOwnMessage ? 'text-blue-600' : 'text-gray-800'}`}>
+                          <p className={`text-xs sm:text-sm truncate ${
+                            hasUnread ? 'text-gray-800 font-medium' : 'text-gray-600'
+                          }`}>
+                            <span className={`font-medium ${isOwnMessage ? 'text-blue-600' : hasUnread ? 'text-gray-900' : 'text-gray-800'}`}>
                               {isOwnMessage ? 'You: ' : `${thread.other_username}: `}
                             </span>
                             <span>{lastMessage.content}</span>
@@ -325,6 +343,16 @@ export default function ChatInbox() {
                         <div className="flex items-center text-[10px] sm:text-xs text-gray-400 gap-1" title={thread.property_address}>
                           <MapPin size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
                           <span className="truncate">{thread.property_address}</span>
+                        </div>
+                      )}
+
+                      {/* Unread indicator dot */}
+                      {hasUnread && (
+                        <div className="flex items-center gap-1 mt-1">
+                          <Circle size={8} className="text-blue-500 fill-current" />
+                          <span className="text-[10px] sm:text-xs text-blue-600 font-medium">
+                            {unreadCount} unread message{unreadCount !== 1 ? 's' : ''}
+                          </span>
                         </div>
                       )}
                     </div>
