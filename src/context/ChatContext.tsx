@@ -108,12 +108,53 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case "chat.message": {
           const msg: Message = data.message;
 
-          // Skip processing if this is our own message (prevent echo processing)
+          // Handle our own messages (to replace optimistic messages)
           if (msg.sender === user?.id) {
-            console.log('Skipping own message echo:', msg.id);
+            console.log('Processing own message from server:', msg.id);
+            
+            // Replace any optimistic message with the real one
+            setMessages((prev) => {
+              const list = prev[msg.thread_id] ?? [];
+              const hasOptimistic = list.some((m) => m.id.startsWith('temp_'));
+              
+              if (hasOptimistic) {
+                // Replace optimistic message with real message
+                return {
+                  ...prev,
+                  [msg.thread_id]: list.map((m) => 
+                    m.id.startsWith('temp_') ? msg : m
+                  ),
+                };
+              } else {
+                // No optimistic message to replace, just add if not already present
+                if (list.some((m) => m.id === msg.id)) return prev;
+                return {
+                  ...prev,
+                  [msg.thread_id]: [...list, msg],
+                };
+              }
+            });
+            
+            // Update thread timestamp but don't increment unread count for own messages
+            setThreads((prev) => {
+              const updated = prev.map((t) => {
+                if (t.id === msg.thread_id) {
+                  return {
+                    ...t,
+                    updated_at: msg.created_at,
+                    // Don't increment unread_count for own messages
+                  };
+                }
+                return t;
+              });
+              return updated.sort(
+                (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+              );
+            });
             break;
           }
 
+          // Handle messages from other users
           // Deduplicate by message ID
           setMessages((prev) => {
             const list = prev[msg.thread_id] ?? [];

@@ -426,9 +426,15 @@ export default function ChatThread() {
                 </h2>
               </Link>
             ) : (
-              <h2 className="font-semibold text-slate-800 text-sm sm:text-base leading-tight mb-0.5 break-words line-clamp-2" title={thread?.other_username || 'Direct Message'}>
-                {thread?.other_username || 'Direct Message'}
-              </h2>
+              <Link 
+                to={`/profile/${thread?.other_username}`}
+                className="block hover:text-blue-600 transition-colors group"
+                title={`View ${thread?.other_username}'s profile`}
+              >
+                <h2 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base leading-tight mb-0.5 break-words line-clamp-2">
+                  {thread?.other_username || 'Direct Message'}
+                </h2>
+              </Link>
             )}
             <div className="flex items-center gap-1 sm:gap-2 min-w-0">
               <p className="text-xs sm:text-sm text-slate-500 truncate flex-shrink min-w-0">
