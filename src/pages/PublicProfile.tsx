@@ -61,6 +61,14 @@ const PublicProfile: React.FC = () => {
   const [overallRating, setOverallRating] = useState<number | null>(null);
   const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(null);
   const [hasLoadedReviews, setHasLoadedReviews] = useState(false);
+  
+  // Cache connection data to avoid repeated API calls
+  const [connectionCache, setConnectionCache] = useState<{
+    connections: any[];
+    pendingSent: any[];
+    pendingReceived: any[];
+    lastUpdated: number;
+  } | null>(null);
 
   // Enhanced profile data
   const enhancedProfile = {
@@ -188,13 +196,44 @@ const PublicProfile: React.FC = () => {
     return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
   };
 
+  // Cache connection data for 30 seconds to avoid repeated API calls
+  const getConnectionData = async () => {
+    const now = Date.now();
+    const cacheExpiry = 30000; // 30 seconds
+    
+    if (connectionCache && (now - connectionCache.lastUpdated) < cacheExpiry) {
+      return connectionCache;
+    }
+    
+    try {
+      const [connectionsRes, pendingSentRes, pendingReceivedRes] = await Promise.all([
+        api.connections.getMyConnections(),
+        api.connections.getPendingSentRequests(),
+        api.connections.getPendingRequests()
+      ]);
+      
+      const newCache = {
+        connections: connectionsRes.data,
+        pendingSent: pendingSentRes.data,
+        pendingReceived: pendingReceivedRes.data,
+        lastUpdated: now
+      };
+      
+      setConnectionCache(newCache);
+      return newCache;
+    } catch (error) {
+      console.error('Error fetching connection data:', error);
+      return connectionCache; // Return old cache if available
+    }
+  };
+
   const checkActualConnectionStatus = async (targetUsername: string): Promise<string> => {
     try {
-      // Check if user is in our accepted connections
-      const connectionsResponse = await api.connections.getMyConnections();
-      const myConnections = connectionsResponse.data;
+      // Use cached connection data to avoid repeated API calls
+      const connectionData = await getConnectionData();
       
-      const isConnected = myConnections.some((conn: any) => 
+      // Check if user is in our accepted connections
+      const isConnected = connectionData.connections.some((conn: any) => 
         conn.user.username === targetUsername
       );
       
@@ -204,10 +243,7 @@ const PublicProfile: React.FC = () => {
       }
       
       // Check if we have a pending request TO this user (requests we sent)
-      const pendingSentResponse = await api.connections.getPendingSentRequests();
-      const pendingSentRequests = pendingSentResponse.data;
-      
-      const hasPendingSentToThem = pendingSentRequests.some((req: any) => 
+      const hasPendingSentToThem = connectionData.pendingSent.some((req: any) => 
         req.to_user_username === targetUsername
       );
       
@@ -217,10 +253,7 @@ const PublicProfile: React.FC = () => {
       }
       
       // Check if we have a pending request FROM this user (requests sent to us)
-      const pendingResponse = await api.connections.getPendingRequests();
-      const pendingRequests = pendingResponse.data;
-      
-      const hasPendingFromThem = pendingRequests.some((req: any) => 
+      const hasPendingFromThem = connectionData.pendingReceived.some((req: any) => 
         req.from_user_username === targetUsername
       );
       
@@ -242,6 +275,9 @@ const PublicProfile: React.FC = () => {
     
     try {
       console.log('Refreshing connection status...');
+      
+      // Invalidate connection cache to get fresh data
+      setConnectionCache(null);
       
       // First get the latest status from the API
       const response = await api.auth.getPublicProfile(username!);
@@ -297,6 +333,9 @@ const PublicProfile: React.FC = () => {
         setProfileData(prev => prev ? {...prev, connection_status: 'pending_sent'} : null);
         console.log('Optimistically updated to pending_sent');
         
+        // Invalidate connection cache since we made a change
+        setConnectionCache(null);
+        
         // Don't refresh immediately - let the optimistic update persist
         // The user will see "Request Sent" which is accurate
         console.log('Keeping optimistic pending_sent status - not refreshing immediately');
@@ -310,6 +349,9 @@ const PublicProfile: React.FC = () => {
         // Optimistically update to connected
         setProfileData(prev => prev ? {...prev, connection_status: 'connected'} : null);
         console.log('Optimistically updated to connected');
+        
+        // Invalidate connection cache since we made a change
+        setConnectionCache(null);
         
         // Add a delay and then refresh to confirm
         await new Promise(resolve => setTimeout(resolve, 1000));
