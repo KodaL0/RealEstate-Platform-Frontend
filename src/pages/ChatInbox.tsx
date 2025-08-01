@@ -20,20 +20,32 @@ export default function ChatInbox() {
 
   useEffect(() => {
     let filtered = [...currentThreads];
+    
+    // Always sort by most recent message first (most relevant)
+    filtered = filtered.sort((a, b) => {
+      const aLastMessage = getLastMessage(a.id);
+      const bLastMessage = getLastMessage(b.id);
+      
+      // Use the most recent timestamp available
+      const aTimestamp = aLastMessage?.created_at || a.updated_at || new Date(0).toISOString();
+      const bTimestamp = bLastMessage?.created_at || b.updated_at || new Date(0).toISOString();
+      
+      return new Date(bTimestamp).getTime() - new Date(aTimestamp).getTime();
+    });
+    
     if (searchTerm) {
       filtered = filtered.filter(thread =>
         thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    
     switch (filterType) {
       case 'unread':
         filtered = filtered.filter(t => getUnreadCount(t.id) > 0);
         break;
       case 'recent':
-        filtered = filtered.sort((a, b) =>
-          new Date(b.updated_at || '').getTime() - new Date(a.updated_at || '').getTime()
-        );
+        // Already sorted by most recent, no additional sorting needed
         break;
     }
     setFilteredThreads(filtered);
