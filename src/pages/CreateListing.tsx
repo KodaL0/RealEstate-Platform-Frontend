@@ -83,23 +83,38 @@ const step2 =
     />
   );
 
-  const steps = [
-    <Step1_UserType formData={props.formData} setFormData={props.setFormData} />,
-    step2,
-    <Step3_Images {...props} />,
-    <Step4_Contact
-      formData={props.formData}
-      onChange={props.handleInputChange}
-      countryCode={props.countryCode}
-      setCountryCode={props.setCountryCode}
-      isSubmitting={props.isSubmitting}
-      isEditing={props.isEditing}
-    />,
-  ];
+  const steps = props.isEditing 
+    ? [
+        // When editing, skip step 1 (User Type) and start from step 2
+        step2,
+        <Step3_Images {...props} />,
+        <Step4_Contact
+          formData={props.formData}
+          onChange={props.handleInputChange}
+          countryCode={props.countryCode}
+          setCountryCode={props.setCountryCode}
+          isSubmitting={props.isSubmitting}
+          isEditing={props.isEditing}
+        />,
+      ]
+    : [
+        // When creating, include all steps
+        <Step1_UserType formData={props.formData} setFormData={props.setFormData} />,
+        step2,
+        <Step3_Images {...props} />,
+        <Step4_Contact
+          formData={props.formData}
+          onChange={props.handleInputChange}
+          countryCode={props.countryCode}
+          setCountryCode={props.setCountryCode}
+          isSubmitting={props.isSubmitting}
+          isEditing={props.isEditing}
+        />,
+      ];
 
   return (
     <form onSubmit={props.handleSubmit} noValidate>
-      <ProgressBar />
+      <ProgressBar isEditing={props.isEditing} />
       <div className="mt-6">{steps[currentStep]}</div>
     </form>
   );
@@ -323,7 +338,7 @@ const CreateListing: React.FC = () => {
     );
 
   return (
-    <ListingWizardProvider>
+    <ListingWizardProvider initialStep={isEditing ? 0 : 0} totalSteps={isEditing ? 3 : 4}>
       <div className="min-h-screen bg-gray-50 pt-24 pb-12">
         <div className="container mx-auto px-6 max-w-6xl">
           {error && (

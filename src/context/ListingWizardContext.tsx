@@ -16,9 +16,8 @@ export const useListingWizard = () => {
   return c;
 };
 
-export const ListingWizardProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [currentStep, setCurrentStep] = useState(0);
-  const totalSteps = 4;
+export const ListingWizardProvider: React.FC<{ children: ReactNode; initialStep?: number; totalSteps?: number }> = ({ children, initialStep = 0, totalSteps = 4 }) => {
+  const [currentStep, setCurrentStep] = useState(initialStep);
   const next = () => setCurrentStep(s => Math.min(s + 1, totalSteps - 1));
   const back = () => setCurrentStep(s => Math.max(s - 1, 0));
   const goto = (n: number) => setCurrentStep(Math.max(0, Math.min(n, totalSteps - 1)));

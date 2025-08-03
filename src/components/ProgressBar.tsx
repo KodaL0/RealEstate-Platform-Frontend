@@ -3,15 +3,26 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { useListingWizard } from '../context/ListingWizardContext';
 
-const STEPS = [
+const CREATE_STEPS = [
   { id: 0, name: 'User Type' },
   { id: 1, name: 'Details' },
   { id: 2, name: 'Images' },
   { id: 3, name: 'Contact' },
 ];
 
-const ProgressBar: React.FC = () => {
-  const { currentStep, goto } = useListingWizard();
+const EDIT_STEPS = [
+  { id: 0, name: 'Details' },
+  { id: 1, name: 'Images' },
+  { id: 2, name: 'Contact' },
+];
+
+interface ProgressBarProps {
+  isEditing?: boolean;
+}
+
+const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false }) => {
+  const { currentStep, goto, totalSteps } = useListingWizard();
+  const STEPS = isEditing ? EDIT_STEPS : CREATE_STEPS;
 
   return (
     <div className="w-full py-6">
@@ -72,12 +83,12 @@ const ProgressBar: React.FC = () => {
       {/* Mobile */}
       <div className="sm:hidden">
         <div className="text-center text-sm font-medium text-gray-500">
-          Step {currentStep + 1} of {STEPS.length}: {STEPS[currentStep].name}
+          Step {currentStep + 1} of {totalSteps}: {STEPS[currentStep].name}
         </div>
         <div className="mt-4 w-full bg-gray-200 rounded-full h-2.5">
           <div
             className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-in-out"
-            style={{ width: `${((currentStep + 1) / STEPS.length) * 100}%` }}
+            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
           />
         </div>
       </div>
