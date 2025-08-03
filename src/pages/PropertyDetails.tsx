@@ -7,11 +7,13 @@ import {
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
   X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator,
+  TreePine, Glasses, Palette, Crown, Baby, Thermometer, Zap,
+  Umbrella, Utensils, Wheelchair, Bell, Satellite, Eye,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
-import { Property, PropertyImage } from '../types';
+import { Property, PropertyImage, AMENITIES } from '../types';
 import MapView from '../components/MapView';
 import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
@@ -58,26 +60,77 @@ const mapPropertyData = (raw: any): Property => ({
 });
 
 const amenityIcons: Record<string, JSX.Element> = {
-  parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
-  gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
-  security: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
-  ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
-  laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
+  // Building & Infrastructure
+  elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  internal_staircase: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  secure_door: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
+  manned_reception: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
+  attic: <Home className="h-5 w-5 mr-3 text-emerald-600" />,
+  facade: <Building2 className="h-5 w-5 mr-3 text-emerald-600" />,
+  corner: <MapPin className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Interior Features
+  frames_wooden: <TreePine className="h-5 w-5 mr-3 text-emerald-600" />,
+  floor_marble: <Square className="h-5 w-5 mr-3 text-emerald-600" />,
+  single_glass: <Glasses className="h-5 w-5 mr-3 text-emerald-600" />,
+  bright: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
+  airy: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
+  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
   furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
-  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />,
   storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
+  painted: <Palette className="h-5 w-5 mr-3 text-emerald-600" />,
+  luxury_home: <Crown className="h-5 w-5 mr-3 text-emerald-600" />,
+  playroom: <Baby className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Climate & Comfort
+  underfloor_heating: <Thermometer className="h-5 w-5 mr-3 text-emerald-600" />,
+  air_conditioning: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
+  solar_water_heating: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
+  night_power: <Zap className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Exterior & Outdoor
+  garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
+  swimming_pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
+  awning: <Umbrella className="h-5 w-5 mr-3 text-emerald-600" />,
+  built_in_bbq: <Utensils className="h-5 w-5 mr-3 text-emerald-600" />,
+  window_screens: <Glasses className="h-5 w-5 mr-3 text-emerald-600" />,
+  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Parking & Access
+  parking_space: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  access_disabled: <Wheelchair className="h-5 w-5 mr-3 text-emerald-600" />,
+  ev_charging: <Zap className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Security & Safety
+  alarm: <Bell className="h-5 w-5 mr-3 text-emerald-600" />,
+  security_system: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
+  doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Utilities & Technology
+  satellite_receiver: <Satellite className="h-5 w-5 mr-3 text-emerald-600" />,
   wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
   dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
-  elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
-  garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
-  roofDeck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
-  doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
-  garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Location & Views
+  residential_zone: <MapPin className="h-5 w-5 mr-3 text-emerald-600" />,
+  view: <Eye className="h-5 w-5 mr-3 text-emerald-600" />,
   waterfront: <Anchor className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Community & Shared
+  gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
+  pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
+  roof_deck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Policy & Lifestyle
+  pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
+  
+  // Legacy amenities
+  parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
+  ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
+  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
+  
   default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
@@ -460,14 +513,41 @@ const PropertyDetails: React.FC = () => {
               {property.amenities.length > 0 && (
                 <div className="bg-white p-6 rounded-xl shadow-sm mb-8">
                   <h2 className="text-xl font-bold mb-4">Amenities</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {property.amenities.map((a, i) => (
-                      <div key={i} className="flex items-center">
-                        {amenityIcons[a] ?? amenityIcons.default}
-                        <span>{a}</span>
+                  
+                  {/* Group amenities by category */}
+                  {(() => {
+                    const categorizedAmenities: { [category: string]: string[] } = {};
+                    
+                    property.amenities.forEach(amenityId => {
+                      const amenity = AMENITIES.find(a => a.id === amenityId);
+                      if (amenity) {
+                        const category = amenity.category;
+                        if (!categorizedAmenities[category]) {
+                          categorizedAmenities[category] = [];
+                        }
+                        categorizedAmenities[category].push(amenityId);
+                      }
+                    });
+                    
+                    return Object.entries(categorizedAmenities).map(([category, amenityIds]) => (
+                      <div key={category} className="mb-6 last:mb-0">
+                        <h3 className="text-lg font-semibold text-gray-800 mb-3 border-b border-gray-200 pb-2">
+                          {category}
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                          {amenityIds.map((amenityId, i) => {
+                            const amenity = AMENITIES.find(a => a.id === amenityId);
+                            return amenity ? (
+                              <div key={i} className="flex items-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                {amenityIcons[amenityId] ?? amenityIcons.default}
+                                <span className="text-sm font-medium text-gray-700">{amenity.label}</span>
+                              </div>
+                            ) : null;
+                          })}
+                        </div>
                       </div>
-                    ))}
-                  </div>
+                    ));
+                  })()}
                 </div>
               )}
 
