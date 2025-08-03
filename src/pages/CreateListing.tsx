@@ -48,11 +48,11 @@ type WizardProps = {
   isEditing: boolean;
 
   // step2 extras
-  availableFromDate?: Date;
-  setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
-  showCalendar?: boolean;
-  setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
-  setLocationCoords?: (v: { lat: number; lng: number } | null) => void;
+  availableFromDate: Date | undefined;
+  setAvailableFromDate: React.Dispatch<React.SetStateAction<Date | undefined>>;
+  showCalendar: boolean;
+  setShowCalendar: React.Dispatch<React.SetStateAction<boolean>>;
+  setLocationCoords: (v: { lat: number; lng: number } | null) => void;
 };
 
 const WizardContent: React.FC<WizardProps> = (props) => {
@@ -65,10 +65,10 @@ const step2 =
       setFormData={props.setFormData}
       onChange={props.handleInputChange}
       availableFromDate={props.availableFromDate}
-      setAvailableFromDate={props.setAvailableFromDate!}
-      showCalendar={props.showCalendar!}
-      setShowCalendar={props.setShowCalendar!}
-      setLocationCoords={props.setLocationCoords!}
+      setAvailableFromDate={props.setAvailableFromDate}
+      showCalendar={props.showCalendar}
+      setShowCalendar={props.setShowCalendar}
+      setLocationCoords={props.setLocationCoords}
     />
   ) : (
     <Step2_OwnerAgent
@@ -76,10 +76,10 @@ const step2 =
       setFormData={props.setFormData}
       onChange={props.handleInputChange}
       availableFromDate={props.availableFromDate}
-      setAvailableFromDate={props.setAvailableFromDate!}
-      showCalendar={props.showCalendar!}
-      setShowCalendar={props.setShowCalendar!}
-      setLocationCoords={props.setLocationCoords!}
+      setAvailableFromDate={props.setAvailableFromDate}
+      showCalendar={props.showCalendar}
+      setShowCalendar={props.setShowCalendar}
+      setLocationCoords={props.setLocationCoords}
     />
   );
 
@@ -117,12 +117,16 @@ const CreateListing: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState<ListingForm>(DEFAULT_FORM_STATE);
-  const [locationCoords] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [primaryIndex, setPrimaryIndex] = useState(0);
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
+  
+  // Step 2 date picker states
+  const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(undefined);
+  const [showCalendar, setShowCalendar] = useState(false);
 
   const onDrop = useCallback((files: File[]) => {
     setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
@@ -218,6 +222,14 @@ const CreateListing: React.FC = () => {
           videoUrl: d.video_url || '',
           images: [],
         }));
+
+        // Set available from date if it exists
+        if (d.available_from) {
+          const date = new Date(d.available_from);
+          if (!isNaN(date.getTime())) {
+            setAvailableFromDate(date);
+          }
+        }
 
         setLoading(false);
       })
@@ -337,6 +349,11 @@ const CreateListing: React.FC = () => {
             setCountryCode={setCountryCode}
             isSubmitting={isSubmitting}
             isEditing={isEditing}
+            availableFromDate={availableFromDate}
+            setAvailableFromDate={setAvailableFromDate}
+            showCalendar={showCalendar}
+            setShowCalendar={setShowCalendar}
+            setLocationCoords={setLocationCoords}
           />
         </div>
       </div>
