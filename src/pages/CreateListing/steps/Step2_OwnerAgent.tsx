@@ -70,6 +70,27 @@ const Step2_OwnerAgent: React.FC<Props> = ({
         : [...f.amenities, id],
     }));
 
+  const handleDateSelect = React.useCallback((date: Date | undefined) => {
+    try {
+      if (date) {
+        setAvailableFromDate(date);
+        setFormData(f => ({
+          ...f,
+          availableFrom: format(date, 'yyyy-MM-dd'),
+        }));
+      } else {
+        setAvailableFromDate(undefined);
+        setFormData(f => ({
+          ...f,
+          availableFrom: '',
+        }));
+      }
+      setShowCalendar(false);
+    } catch (error) {
+      console.error('Error in handleDateSelect:', error);
+    }
+  }, [setAvailableFromDate, setFormData, setShowCalendar]);
+
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto">
       {/* Header */}
@@ -395,20 +416,27 @@ const Step2_OwnerAgent: React.FC<Props> = ({
 
             {showCalendar && (
               <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4">
-                <DayPicker
-                  mode="single"
-                  selected={availableFromDate}
-                  onSelect={(date) => {
-                    setAvailableFromDate(date);
-                    setFormData(f => ({
-                      ...f,
-                      availableFrom: date ? format(date, 'yyyy-MM-dd') : '',
-                    }));
-                    setShowCalendar(false);
-                  }}
-                  disabled={{ before: new Date() }}
-                  className="rdp-custom"
-                />
+                <div className="mb-4">
+                  <input
+                    type="date"
+                    value={availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : ''}
+                    onChange={(e) => {
+                      const date = e.target.value ? new Date(e.target.value) : undefined;
+                      handleDateSelect(date);
+                    }}
+                    min={format(new Date(), 'yyyy-MM-dd')}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  />
+                </div>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setShowCalendar(false)}
+                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                  >
+                    Close
+                  </button>
+                </div>
               </div>
             )}
           </div>

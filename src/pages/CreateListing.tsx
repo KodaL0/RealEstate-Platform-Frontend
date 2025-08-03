@@ -128,6 +128,8 @@ const CreateListing: React.FC = () => {
   const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(undefined);
   const [showCalendar, setShowCalendar] = useState(false);
 
+
+
   const onDrop = useCallback((files: File[]) => {
     setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
     setPreviewImages((p: string[]) => [...p, ...files.map(f => URL.createObjectURL(f))]);
