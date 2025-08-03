@@ -107,7 +107,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 30000); // 30 s
 
     ws.current.onmessage = (event) => {
+      console.log('=== WEBSOCKET MESSAGE RECEIVED ===');
+      console.log('Raw event data:', event.data);
+      
       const data = JSON.parse(event.data);
+      console.log('Parsed data:', data);
+      console.log('Message type:', data.type);
 
       switch (data.type) {
         case "chat.message": {
@@ -258,18 +263,25 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     ws.current.onerror = (err) => {
+      console.log('=== WEBSOCKET ERROR ===');
       console.warn("WebSocket error", err);
       isReconnectingRef.current = false;
       setConnectionStatus('error');
     };
 
     ws.current.onopen = () => {
+      console.log('=== WEBSOCKET CONNECTED ===');
       console.log("WebSocket connected successfully");
       isReconnectingRef.current = false;
       setConnectionStatus('connected');
     };
 
     ws.current.onclose = async (event) => {
+      console.log('=== WEBSOCKET CLOSED ===');
+      console.log('Close event:', event);
+      console.log('Close code:', event.code);
+      console.log('Close reason:', event.reason);
+      
       clearInterval(pingInterval);
       ws.current = null;
       isReconnectingRef.current = false;
@@ -497,9 +509,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!ws.current) {
         // No socket – fallback immediately
+        console.log('=== NO WEBSOCKET - USING REST FALLBACK ===');
         void sendViaRest();
         return;
       }
+
+      console.log('=== WEBSOCKET STATE CHECK ===');
+      console.log('WebSocket exists:', !!ws.current);
+      console.log('WebSocket readyState:', ws.current.readyState);
+      console.log('WebSocket URL:', ws.current.url);
 
       switch (ws.current.readyState) {
         case WebSocket.OPEN:
