@@ -80,6 +80,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('New user type:', typeof user?.id);
   }, [user]);
 
+  // Track message count changes for debugging
+  useEffect(() => {
+    console.log('=== MESSAGE COUNT CHANGED ===');
+    Object.entries(messages).forEach(([threadId, messageList]) => {
+      console.log(`Thread ${threadId}: ${messageList.length} messages`);
+    });
+  }, [messages]);
+
   /* ---------------------------- WebSocket setup --------------------------- */
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
@@ -146,6 +154,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.log('Current user ID (ref):', currentUserIdRef.current, 'Type:', typeof currentUserIdRef.current);
           console.log('Sender comparison (context):', msg.sender === user?.id);
           console.log('Sender comparison (ref):', msg.sender === currentUserIdRef.current);
+          console.log('Messages in thread BEFORE processing:', messages[msg.thread_id]?.length || 0);
 
           // Handle our own messages (to replace optimistic messages)
           // Use the ref for reliable user ID comparison
@@ -216,13 +225,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
               );
             });
-            break;
-          } else {
-            console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
-            console.log('Message is from another user, processing normally');
+            return; // Exit early - don't process as "other user" message
           }
 
           // Handle messages from other users
+          console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
+          console.log('Message is from another user, processing normally');
+          
           // Deduplicate by message ID
           setMessages((prev) => {
             const list = prev[msg.thread_id] ?? [];
