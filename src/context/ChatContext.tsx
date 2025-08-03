@@ -36,6 +36,7 @@ interface ChatContextValue {
   unsendMessage: (messageId: string) => Promise<void>;
   typingUsers: Record<string, boolean>;
   userStatuses: Record<number, "online" | "offline">;
+  recalculateUnreadCounts: () => void;
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -645,6 +646,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiClient.post(`chat/${threadId}/mark_read/`).catch(() => {});
   }, [user?.id, messages]);
 
+  // Function to recalculate unread counts for all threads
+  const recalculateUnreadCounts = useCallback(() => {
+    setThreads((prev) => {
+      return prev.map((thread) => {
+        const threadMessages = messages[thread.id] || [];
+        const newUnreadCount = threadMessages.filter(
+          (msg) => msg.sender !== user?.id && !msg.read_at
+        ).length;
+        
+        return {
+          ...thread,
+          unread_count: newUnreadCount,
+        };
+      });
+    });
+  }, [messages, user?.id]);
+
   const sendTypingStart = useCallback((threadId: string, recipientId: number) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(
@@ -685,6 +703,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     unsendMessage,
     typingUsers,
     userStatuses,
+    recalculateUnreadCounts,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

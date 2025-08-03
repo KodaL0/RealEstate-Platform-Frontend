@@ -17,7 +17,7 @@ const Navbar: React.FC = () => {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const { user, setUser, refreshUser, updateUserData } = useUser();
-  const { threads } = useChat();
+  const { threads, recalculateUnreadCounts } = useChat();
   const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,6 +33,15 @@ const Navbar: React.FC = () => {
     setIsSearchOpen(false);
     setIsSidebarOpen(false);
   }, [location.pathname]);
+
+  // Refresh notifications when user enters a chat thread
+  useEffect(() => {
+    if (location.pathname.startsWith('/chat/') && user) {
+      // Force a refresh of the chat context when entering a specific chat thread
+      // This will update the notification count as messages are marked as read
+      recalculateUnreadCounts();
+    }
+  }, [location.pathname, user, recalculateUnreadCounts]);
 
   const isActive = (path: string) => location.pathname === path;
   const toggleMenu = () => setIsOpen(prev => !prev);
@@ -61,6 +70,18 @@ const Navbar: React.FC = () => {
   const unreadTotal = threads.reduce((sum, t) => sum + t.unread_count, 0);
   const isOnChatPage = location.pathname.startsWith('/chat');
 
+  // Count unread threads instead of total unread messages
+  const unreadThreadsCount = threads.filter(t => t.unread_count > 0).length;
+  
+  // Use unread threads count for notifications (max 1 per thread)
+  const notificationCount = unreadThreadsCount;
+
+  // Handle chat link click to refresh notifications
+  const handleChatClick = () => {
+    setIsSidebarOpen(false);
+    // Recalculate unread counts to refresh notifications
+    recalculateUnreadCounts();
+  };
 
 
   const navigationItems = [
@@ -127,13 +148,13 @@ const Navbar: React.FC = () => {
                 <Link
                   to="/chat"
                   className="flex-1 flex items-center justify-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg transition-colors"
-                  onClick={() => setIsSidebarOpen(false)}
+                  onClick={handleChatClick}
                 >
                   <MessageCircle className="h-4 w-4" />
                   <span className="text-sm">Messages</span>
-                  {unreadTotal > 0 && (
+                  {notificationCount > 0 && (
                     <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                      {unreadTotal}
+                      {notificationCount}
                     </span>
                   )}
                 </Link>
@@ -273,11 +294,11 @@ const Navbar: React.FC = () => {
 
             {/* Messages */}
             {user && (
-              <Link to="/chat" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors">
+              <Link to="/chat" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={handleChatClick}>
                 <MessageCircle className="h-5 w-5 text-gray-700" />
-                {unreadTotal > 0 && (
+                {notificationCount > 0 && (
                   <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                    {unreadTotal > 9 ? '9+' : unreadTotal}
+                    {notificationCount > 9 ? '9+' : notificationCount}
                   </span>
                 )}
               </Link>

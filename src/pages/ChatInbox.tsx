@@ -87,6 +87,11 @@ export default function ChatInbox() {
     ).length;
   };
 
+  // Get total unread threads count (for notification consistency)
+  const getTotalUnreadThreads = () => {
+    return threads.filter(t => t.unread_count > 0).length;
+  };
+
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();

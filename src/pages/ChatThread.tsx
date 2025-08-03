@@ -39,7 +39,7 @@ function waitForStableHeight(element: HTMLElement, timeout = 500): Promise<void>
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { threads, messages, setMessages, sendMessage, unsendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses } = useChat();
+  const { threads, messages, setMessages, sendMessage, unsendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses, recalculateUnreadCounts } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -134,8 +134,12 @@ export default function ChatThread() {
   
     if (unreadFromOthers.length > 0) {
       markThreadRead(id);
+      // Recalculate unread counts after marking as read to update notifications
+      setTimeout(() => {
+        recalculateUnreadCounts();
+      }, 100);
     }
-  }, [id, messages, user?.id, markThreadRead]);
+  }, [id, messages, user?.id, markThreadRead, recalculateUnreadCounts]);
 
   useEffect(() => {
     if (!id) return;
