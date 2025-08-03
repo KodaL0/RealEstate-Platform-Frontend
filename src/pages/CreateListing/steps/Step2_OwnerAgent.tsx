@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CalendarIcon,
   MapPin,
@@ -50,8 +50,61 @@ const Step2_OwnerAgent: React.FC<Props> = ({
 }) => {
   const { next, back } = useListingWizard();
   
+  // Helper function to find amenity by ID
+  const findAmenityById = (amenityId: string) => {
+    // Clean the amenity ID (trim whitespace and convert to lowercase for comparison)
+    const cleanAmenityId = amenityId.trim().toLowerCase();
+    
+    // First try to find in current AMENITIES (case-insensitive)
+    let amenity = AMENITIES.find(a => a.id.toLowerCase() === cleanAmenityId);
+    
+    // If not found, check legacy mappings
+    if (!amenity) {
+      const legacyMappings: { [key: string]: string } = {
+        // Common legacy amenity ID mappings
+        'Attic': 'attic',
+        'Pet Friendly': 'pets', 
+        'High-Speed Internet': 'wifi',
+        'Swimming Pool': 'swimming_pool', // Map to exterior swimming pool
+        // Add more mappings as needed
+      };
+      
+      const mappedId = legacyMappings[amenityId];
+      if (mappedId) {
+        amenity = AMENITIES.find(a => a.id === mappedId);
+      }
+    }
+    
+    return amenity;
+  };
+  
   // State for active amenities category
-  const [activeCategory, setActiveCategory] = useState(AMENITIES[0]?.category || 'Building & Infrastructure');
+  const [activeCategory, setActiveCategory] = useState(() => {
+    // If editing and there are selected amenities, find the category with the most selected amenities
+    if (formData.amenities.length > 0) {
+      const categoryCounts: { [key: string]: number } = {};
+      
+      // Count amenities by category
+      formData.amenities.forEach(amenityId => {
+        const amenity = AMENITIES.find(a => a.id === amenityId);
+        if (amenity) {
+          categoryCounts[amenity.category] = (categoryCounts[amenity.category] || 0) + 1;
+        }
+      });
+      
+      // Find the category with the most selected amenities
+      const categoryKeys = Object.keys(categoryCounts);
+      if (categoryKeys.length > 0) {
+        const mostSelectedCategory = categoryKeys.reduce((a, b) => 
+          categoryCounts[a] > categoryCounts[b] ? a : b
+        );
+        return mostSelectedCategory;
+      }
+    }
+    
+    const defaultCategory = AMENITIES[0]?.category || 'Building & Infrastructure';
+    return defaultCategory;
+  });
 
   const valid =
     formData.title.trim() &&
@@ -63,12 +116,34 @@ const Step2_OwnerAgent: React.FC<Props> = ({
     formData.location.trim();
 
   const toggleAmenity = (id: string) =>
-    setFormData((f: ListingForm) => ({
-      ...f,
-      amenities: f.amenities.includes(id)
-        ? f.amenities.filter((x: string) => x !== id)
-        : [...f.amenities, id],
-    }));
+    setFormData((f: ListingForm) => {
+      // Check if this amenity is already selected (using findAmenityById for proper matching)
+      const isCurrentlySelected = f.amenities.some(amenityId => {
+        const foundAmenity = findAmenityById(amenityId);
+        return foundAmenity && foundAmenity.id === id;
+      });
+      
+      if (isCurrentlySelected) {
+        // Remove the amenity (remove all matching IDs)
+        const updatedAmenities = f.amenities.filter(amenityId => {
+          const foundAmenity = findAmenityById(amenityId);
+          return !foundAmenity || foundAmenity.id !== id;
+        });
+        return { ...f, amenities: updatedAmenities };
+      } else {
+        // Add the amenity
+        const updatedAmenities = [...f.amenities, id];
+        return { ...f, amenities: updatedAmenities };
+      }
+    });
+
+  const removeAmenity = (amenityIdToRemove: string) =>
+    setFormData((f: ListingForm) => {
+      // Remove the specific amenity ID from the array
+      const updatedAmenities = f.amenities.filter(id => id !== amenityIdToRemove);
+      
+      return { ...f, amenities: updatedAmenities };
+    });
 
   const handleDateSelect = React.useCallback((date: Date | undefined) => {
     try {
@@ -130,8 +205,42 @@ const Step2_OwnerAgent: React.FC<Props> = ({
     return isFieldFilled(value) ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white';
   };
 
+  // Track if this is the initial load (for editing)
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
+  // Update active category when amenities are loaded (for editing) - only run once
+  useEffect(() => {
+    // Only auto-switch categories on initial load when editing
+    if (!hasInitialized && formData.amenities.length > 0) {
+      const categoryCounts: { [key: string]: number } = {};
+      
+      // Count amenities by category
+      formData.amenities.forEach(amenityId => {
+        const amenity = findAmenityById(amenityId);
+        if (amenity) {
+          categoryCounts[amenity.category] = (categoryCounts[amenity.category] || 0) + 1;
+        }
+      });
+      
+      // Find the category with the most selected amenities
+      const categoryKeys = Object.keys(categoryCounts);
+      if (categoryKeys.length > 0) {
+        const mostSelectedCategory = categoryKeys.reduce((a, b) => 
+          categoryCounts[a] > categoryCounts[b] ? a : b
+        );
+        
+        if (mostSelectedCategory && mostSelectedCategory !== activeCategory) {
+          setActiveCategory(mostSelectedCategory);
+        }
+      }
+      
+      // Mark as initialized so this doesn't run again
+      setHasInitialized(true);
+    }
+  }, [formData.amenities, hasInitialized, activeCategory]);
+
   return (
-    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto">
+    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto pb-8">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
@@ -460,7 +569,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             </label>
             <button
               type="button"
-              onClick={() => setShowCalendar(v => !v)}
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowCalendar(v => !v);
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left transition-all duration-200 hover:border-gray-400"
             >
               <div className="flex items-center justify-between">
@@ -488,7 +601,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                 <div className="flex justify-end">
                   <button
                     type="button"
-                    onClick={() => setShowCalendar(false)}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setShowCalendar(false);
+                    }}
                     className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
                   >
                     Close
@@ -514,55 +631,104 @@ const Step2_OwnerAgent: React.FC<Props> = ({
           </h3>
           
           {/* Category Tabs */}
-          <div className="mb-6">
-            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
-              {Array.from(new Set(AMENITIES.map(a => a.category))).map(category => (
-                <button
-                  key={category}
-                  onClick={() => setActiveCategory(category)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                    activeCategory === category
-                      ? 'bg-blue-500 text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
-              ))}
+          <div className="mb-6" style={{ position: 'relative', zIndex: 5 }}>
+
+            
+            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4" style={{ position: 'relative', zIndex: 5 }}>
+              {(() => {
+                const categories = Array.from(new Set(AMENITIES.map(a => a.category)));
+                
+                return categories.map(category => {
+                  // Count selected amenities in this category
+                  const selectedCount = formData.amenities.filter(amenityId => {
+                    const amenity = findAmenityById(amenityId);
+                    return amenity && amenity.category === category;
+                  }).length;
+                  
+                  return (
+                    <button
+                      key={category}
+                      type="button"
+                                          onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setActiveCategory(category);
+                    }}
+
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative cursor-pointer z-10 ${
+                        activeCategory === category
+                          ? 'bg-blue-500 text-white shadow-md'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                      style={{ position: 'relative', zIndex: 10 }}
+                    >
+                      {category}
+                      {selectedCount > 0 && (
+                        <span className={`ml-2 inline-flex items-center justify-center w-5 h-5 text-xs font-bold rounded-full ${
+                          activeCategory === category
+                            ? 'bg-white text-blue-500'
+                            : 'bg-green-500 text-white'
+                        }`}>
+                          {selectedCount}
+                        </span>
+                      )}
+                    </button>
+                  );
+                });
+              })()}
             </div>
           </div>
           
           {/* Amenities Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {AMENITIES.filter(a => a.category === activeCategory).map(a => (
-              <label key={a.id} className="group flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200">
-                <div className="relative">
-                  <input
-                    type="checkbox"
-                    checked={formData.amenities.includes(a.id)}
-                    onChange={() => toggleAmenity(a.id)}
-                    className="sr-only"
-                  />
-                  <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
-                    formData.amenities.includes(a.id)
-                      ? 'bg-blue-500 border-blue-500'
-                      : 'bg-white border-gray-300 group-hover:border-blue-400'
+            {(() => {
+              const filteredAmenities = AMENITIES.filter(a => a.category === activeCategory);
+              return filteredAmenities.map(a => {
+                // Check if this amenity is selected using the findAmenityById function
+                const isSelected = formData.amenities.some(amenityId => {
+                  const foundAmenity = findAmenityById(amenityId);
+                  return foundAmenity && foundAmenity.id === a.id;
+                });
+                
+                return (
+                  <label key={a.id} className={`group flex items-start space-x-3 p-3 rounded-lg border cursor-pointer transition-all duration-200 ${
+                    isSelected
+                      ? 'border-green-300 bg-green-50 hover:border-green-400'
+                      : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
                   }`}>
-                    {formData.amenities.includes(a.id) && (
-                      <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="currentColor" viewBox="0 0 20 20">
-                        <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                      </svg>
-                    )}
-                  </div>
-                </div>
-                <span className="text-sm font-medium text-gray-700 group-hover:text-blue-700 transition-colors duration-200">
-                  {a.label}
-                </span>
-              </label>
-            ))}
+                    <div className="relative">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleAmenity(a.id)}
+                        className="sr-only"
+                      />
+                      <div className={`w-5 h-5 rounded border-2 transition-all duration-200 ${
+                        isSelected
+                          ? 'bg-green-500 border-green-500'
+                          : 'bg-white border-gray-300 group-hover:border-blue-400'
+                      }`}>
+                        {isSelected && (
+                          <svg className="w-3 h-3 text-white absolute top-0.5 left-0.5" fill="currentColor" viewBox="0 0 20 20">
+                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                          </svg>
+                        )}
+                      </div>
+                    </div>
+                    <span className={`text-sm font-medium transition-colors duration-200 ${
+                      isSelected
+                        ? 'text-green-700 group-hover:text-green-800'
+                        : 'text-gray-700 group-hover:text-blue-700'
+                    }`}>
+                      {a.label}
+                    </span>
+                  </label>
+                );
+              });
+            })()}
           </div>
           
-          {/* Selected Amenities Summary */}
+                    {/* Selected Amenities Summary */}
           {formData.amenities.length > 0 && (
             <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
               <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
@@ -573,7 +739,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
               </h4>
               <div className="flex flex-wrap gap-2">
                 {formData.amenities.map(amenityId => {
-                  const amenity = AMENITIES.find(a => a.id === amenityId);
+                  const amenity = findAmenityById(amenityId);
                   return amenity ? (
                     <span
                       key={amenityId}
@@ -582,13 +748,35 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                       {amenity.label}
                       <button
                         type="button"
-                        onClick={() => toggleAmenity(amenityId)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeAmenity(amenityId);
+                        }}
                         className="ml-2 text-green-600 hover:text-green-800 transition-colors"
                       >
                         ×
                       </button>
                     </span>
-                  ) : null;
+                  ) : (
+                    <span
+                      key={amenityId}
+                      className="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full border border-yellow-200"
+                    >
+                      {amenityId} {/* Show the ID directly instead of "Unknown:" */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          removeAmenity(amenityId);
+                        }}
+                        className="ml-2 text-yellow-600 hover:text-yellow-800 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  );
                 })}
               </div>
             </div>
@@ -600,7 +788,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
       <div className="flex justify-between items-center mt-10 pt-6 border-t border-gray-200">
         <button 
           type="button" 
-          onClick={back} 
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            back();
+          }}
           className="group inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
         >
           <ChevronLeft className="w-5 h-5 mr-2 transition-transform duration-200 group-hover:-translate-x-1" />
@@ -610,7 +802,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
         <button
           type="button"
           disabled={!valid}
-          onClick={next}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            next();
+          }}
           className={`group relative px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform ${
             valid
               ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'

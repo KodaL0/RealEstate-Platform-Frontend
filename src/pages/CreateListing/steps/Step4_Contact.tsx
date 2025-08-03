@@ -24,7 +24,7 @@ const Step4_Contact: React.FC<Props> = ({
   const valid = formData.contactEmail.trim() && formData.contactPhone.trim();
 
   return (
-    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-4xl mx-auto">
+    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-4xl mx-auto pb-8">
       {/* Header */}
       <div className="text-center mb-8">
         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-green-500 to-blue-600 rounded-full mb-4">

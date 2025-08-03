@@ -20,6 +20,7 @@ import {
   DEFAULT_FORM_STATE,
   ListingForm,
   COUNTRY_CODES,
+  AMENITIES,
 } from '../types';
 
 /* ---------- WizardContent ---------- */
@@ -113,9 +114,13 @@ const step2 =
       ];
 
   return (
-    <form onSubmit={props.handleSubmit} noValidate>
-      <ProgressBar isEditing={props.isEditing} />
-      <div className="mt-6">{steps[currentStep]}</div>
+    <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
+      <div className="flex-shrink-0">
+        <ProgressBar isEditing={props.isEditing} />
+      </div>
+      <div className="flex-1 overflow-y-auto mt-6">
+        {steps[currentStep]}
+      </div>
     </form>
   );
 };
@@ -206,6 +211,43 @@ const CreateListing: React.FC = () => {
         }
         setCountryCode(cc);
 
+        // Normalize amenities to handle legacy IDs
+        const normalizeAmenities = (amenities: string[]) => {
+          const legacyMappings: { [key: string]: string } = {
+            'Attic': 'attic',
+            'Pet Friendly': 'pets', 
+            'High-Speed Internet': 'wifi',
+            'Swimming Pool': 'swimming_pool', // Map to exterior swimming pool
+            // Add more mappings as needed
+          };
+          
+          return amenities.map(amenityId => {
+            // Check if this is a legacy ID that needs mapping
+            const mappedId = legacyMappings[amenityId];
+            if (mappedId) {
+              return mappedId;
+            }
+            return amenityId;
+          });
+        };
+        
+        const normalizedAmenities = normalizeAmenities(d.amenities || []);
+        
+        // Deduplicate amenities that might be the same but have different IDs
+        const deduplicatedAmenities = normalizedAmenities.filter((amenityId, index, array) => {
+          const amenity = AMENITIES.find(a => a.id === amenityId);
+          if (!amenity) return true; // Keep if not found (will be handled by findAmenityById)
+          
+          // Check if this amenity label already exists in the array
+          const firstIndex = array.findIndex(id => {
+            const foundAmenity = AMENITIES.find(a => a.id === id);
+            return foundAmenity && foundAmenity.label === amenity.label;
+          });
+          
+          // Only keep the first occurrence of each amenity label
+          return firstIndex === index;
+        });
+        
         setFormData(prev => ({
           ...prev,
           title: d.title || '',
@@ -223,7 +265,7 @@ const CreateListing: React.FC = () => {
           bedrooms: d.bedrooms?.toString() || '',
           bathrooms: d.bathrooms?.toString() || '',
           area: d.area?.toString() || '',
-          amenities: d.amenities || [],
+          amenities: deduplicatedAmenities,
           yearBuilt: d.year_built?.toString() || '',
           parkingSpaces: d.parking_spaces?.toString() || '',
           lotSize: d.lot_size?.toString() || '',
@@ -339,39 +381,41 @@ const CreateListing: React.FC = () => {
 
   return (
     <ListingWizardProvider initialStep={isEditing ? 0 : 0} totalSteps={isEditing ? 3 : 4}>
-      <div className="min-h-screen bg-gray-50 pt-24 pb-12">
-        <div className="container mx-auto px-6 max-w-6xl">
+      <div className="fixed inset-0 bg-gray-50 pt-24 pb-12">
+        <div className="h-full container mx-auto px-6 max-w-6xl flex flex-col">
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 flex-shrink-0">
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}
 
-          <WizardContent
-            formData={formData}
-            setFormData={setFormData}
-            handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
-            previewImages={previewImages}
-            setPreviewImages={setPreviewImages}
-            primaryIndex={primaryIndex}
-            setPrimaryIndex={setPrimaryIndex}
-            existingImageIds={existingImageIds}
-            setExistingImageIds={setExistingImageIds}
-            getRootProps={getRootProps}
-            getInputProps={getInputProps}
-            isDragActive={isDragActive}
-            removeImage={removeImage}
-            countryCode={countryCode}
-            setCountryCode={setCountryCode}
-            isSubmitting={isSubmitting}
-            isEditing={isEditing}
-            availableFromDate={availableFromDate}
-            setAvailableFromDate={setAvailableFromDate}
-            showCalendar={showCalendar}
-            setShowCalendar={setShowCalendar}
-            setLocationCoords={setLocationCoords}
-          />
+          <div className="flex-1 overflow-hidden">
+            <WizardContent
+              formData={formData}
+              setFormData={setFormData}
+              handleInputChange={handleInputChange}
+              handleSubmit={handleSubmit}
+              previewImages={previewImages}
+              setPreviewImages={setPreviewImages}
+              primaryIndex={primaryIndex}
+              setPrimaryIndex={setPrimaryIndex}
+              existingImageIds={existingImageIds}
+              setExistingImageIds={setExistingImageIds}
+              getRootProps={getRootProps}
+              getInputProps={getInputProps}
+              isDragActive={isDragActive}
+              removeImage={removeImage}
+              countryCode={countryCode}
+              setCountryCode={setCountryCode}
+              isSubmitting={isSubmitting}
+              isEditing={isEditing}
+              availableFromDate={availableFromDate}
+              setAvailableFromDate={setAvailableFromDate}
+              showCalendar={showCalendar}
+              setShowCalendar={setShowCalendar}
+              setLocationCoords={setLocationCoords}
+            />
+          </div>
         </div>
       </div>
     </ListingWizardProvider>

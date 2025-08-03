@@ -387,6 +387,7 @@ export const AMENITIES = [
   // Climate & Comfort
   { id: 'underfloor_heating', label: 'Underfloor Heating', category: 'Climate & Comfort' },
   { id: 'air_conditioning', label: 'Air Conditioning', category: 'Climate & Comfort' },
+  { id: 'central_heating', label: 'Central Heating', category: 'Climate & Comfort' },
   { id: 'solar_water_heating', label: 'Solar Water Heating', category: 'Climate & Comfort' },
   { id: 'night_power', label: 'Night Power', category: 'Climate & Comfort' },
   
@@ -427,11 +428,6 @@ export const AMENITIES = [
   
   // Policy & Lifestyle
   { id: 'pets', label: 'Pet Friendly', category: 'Policy & Lifestyle' },
-  
-  // Legacy amenities (keeping for backward compatibility)
-  { id: 'parking', label: 'Parking', category: 'Legacy' },
-  { id: 'ac', label: 'Air Conditioning', category: 'Legacy' },
-  { id: 'heating', label: 'Central Heating', category: 'Legacy' },
 ];
 
 export interface Developer {
