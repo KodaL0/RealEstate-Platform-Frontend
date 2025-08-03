@@ -115,36 +115,48 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           // Handle our own messages (to replace optimistic messages)
           if (msg.sender === user?.id) {
-            console.log('Processing own message from server:', msg.id);
+            console.log('=== PROCESSING OWN MESSAGE FROM SERVER ===');
+            console.log('Message ID:', msg.id);
+            console.log('Thread ID:', msg.thread_id);
+            console.log('Content:', msg.content);
             
             // Replace any optimistic message with the real one
             setMessages((prev) => {
               const list = prev[msg.thread_id] ?? [];
+              console.log('Current messages in thread:', list.map(m => ({ id: m.id, content: m.content })));
               
               // Check if we already have this exact message (prevent duplicates)
               if (list.some((m) => m.id === msg.id)) {
-                console.log('Message already exists, skipping duplicate');
+                console.log('❌ Message already exists, skipping duplicate');
                 return prev;
               }
               
               // Find and replace optimistic message, or add new message
-              const hasOptimistic = list.some((m) => m.id.startsWith('temp_'));
+              const optimisticMessages = list.filter((m) => m.id.startsWith('temp_'));
+              const hasOptimistic = optimisticMessages.length > 0;
+              
+              console.log('Optimistic messages found:', optimisticMessages.length);
+              console.log('Optimistic message IDs:', optimisticMessages.map(m => m.id));
               
               if (hasOptimistic) {
-                console.log('Replacing optimistic message with real message');
+                console.log('✅ Replacing optimistic message with real message');
                 // Replace optimistic message with real message
+                const newList = list.map((m) => 
+                  m.id.startsWith('temp_') ? msg : m
+                );
+                console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
-                  [msg.thread_id]: list.map((m) => 
-                    m.id.startsWith('temp_') ? msg : m
-                  ),
+                  [msg.thread_id]: newList,
                 };
               } else {
-                console.log('Adding new message (no optimistic message to replace)');
+                console.log('⚠️ Adding new message (no optimistic message to replace)');
                 // No optimistic message to replace, just add the new message
+                const newList = [...list, msg];
+                console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
-                  [msg.thread_id]: [...list, msg],
+                  [msg.thread_id]: newList,
                 };
               }
             });
@@ -400,12 +412,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unsent_at: null,
       };
 
+      console.log('=== CREATING OPTIMISTIC MESSAGE ===');
+      console.log('Optimistic message ID:', optimisticMessage.id);
+      console.log('Thread ID:', threadId);
+      console.log('Content:', content);
+
       // Add optimistic message to UI immediately
       setMessages((prev) => {
         const list = prev[threadId] ?? [];
+        console.log('Adding optimistic message to thread. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
+        const newList = [...list, optimisticMessage];
+        console.log('New message list with optimistic:', newList.map(m => ({ id: m.id, content: m.content })));
         return {
           ...prev,
-          [threadId]: [...list, optimisticMessage],
+          [threadId]: newList,
         };
       });
 
@@ -436,6 +456,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = JSON.stringify(payload);
 
       const sendViaRest = async () => {
+        console.log('=== SENDING VIA REST API ===');
+        console.log('Thread ID:', threadId);
+        console.log('Content:', content);
         try {
           const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
             content,
@@ -443,21 +466,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             recipient_id: recipientId,
           });
           
+          console.log('✅ REST API success. Response:', response.data);
+          
           // Replace optimistic message with real message from server
           setMessages((prev) => {
             const list = prev[threadId] ?? [];
+            console.log('Replacing optimistic message via REST. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
+            const newList = list.map((msg) => 
+              msg.id === optimisticMessage.id ? response.data : msg
+            );
+            console.log('New message list after REST replacement:', newList.map(m => ({ id: m.id, content: m.content })));
             return {
               ...prev,
-              [threadId]: list.map((msg) => 
-                msg.id === optimisticMessage.id ? response.data : msg
-              ),
+              [threadId]: newList,
             };
           });
         } catch (error) {
-          console.error('Failed to send message:', error);
+          console.error('❌ REST API failed:', error);
           // Remove optimistic message on error
           setMessages((prev) => {
             const list = prev[threadId] ?? [];
+            console.log('Removing optimistic message due to REST API error');
             return {
               ...prev,
               [threadId]: list.filter((msg) => msg.id !== optimisticMessage.id),
@@ -476,13 +505,20 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case WebSocket.OPEN:
           // WebSocket is open - send via WebSocket only
           // The server will send the message back to confirm, which will replace the optimistic message
+          console.log('=== SENDING VIA WEBSOCKET ===');
+          console.log('WebSocket state: OPEN');
+          console.log('Sending payload:', json);
           ws.current.send(json);
           break;
         case WebSocket.CONNECTING:
           // WebSocket is connecting - wait for it to open then send
+          console.log('=== WEBSOCKET CONNECTING - WAITING ===');
+          console.log('WebSocket state: CONNECTING');
           ws.current.addEventListener(
             "open",
             () => {
+              console.log('=== WEBSOCKET OPENED - SENDING ===');
+              console.log('Sending payload:', json);
               ws.current?.send(json);
             },
             { once: true }
@@ -490,6 +526,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
         default:
           // WebSocket is closed or in error state - use REST fallback
+          console.log('=== USING REST API FALLBACK ===');
+          console.log('WebSocket state:', ws.current.readyState);
           void sendViaRest();
       }
     },
