@@ -8,7 +8,7 @@ import {
   Flower, Sun, UserCheck, Anchor,
   X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator,
   TreePine, Glasses, Palette, Crown, Baby, Thermometer, Zap,
-  Umbrella, Utensils, Wheelchair, Bell, Satellite, Eye,
+  Umbrella, Utensils, Bell, Satellite, Eye, Home, Building2, Accessibility,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
@@ -99,7 +99,7 @@ const amenityIcons: Record<string, JSX.Element> = {
   // Parking & Access
   parking_space: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
   garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  access_disabled: <Wheelchair className="h-5 w-5 mr-3 text-emerald-600" />,
+  access_disabled: <Accessibility className="h-5 w-5 mr-3 text-emerald-600" />,
   ev_charging: <Zap className="h-5 w-5 mr-3 text-emerald-600" />,
   
   // Security & Safety
