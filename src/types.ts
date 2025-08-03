@@ -362,26 +362,76 @@ export const PROPERTY_STATUS = [
 ];
 
 export const AMENITIES = [
-  { id: 'parking',     label: 'Parking',            category: 'Exterior' },
-  { id: 'pool',        label: 'Swimming Pool',      category: 'Exterior' },
-  { id: 'gym',         label: 'Gym',                category: 'Community' },
-  { id: 'security',    label: 'Security System',    category: 'Safety' },
-  { id: 'ac',          label: 'Air Conditioning',   category: 'Climate' },
-  { id: 'heating',     label: 'Central Heating',    category: 'Climate' },
-  { id: 'laundry',     label: 'Laundry Facilities', category: 'Interior' },
-  { id: 'pets',        label: 'Pet Friendly',       category: 'Policy' },
-  { id: 'furnished',   label: 'Furnished',          category: 'Interior' },
-  { id: 'balcony',     label: 'Balcony',            category: 'Exterior' },
-  { id: 'storage',     label: 'Storage Space',      category: 'Interior' },
-  { id: 'wifi',        label: 'High-Speed Internet',category: 'Utilities' },
-  { id: 'dishwasher',  label: 'Dishwasher',         category: 'Appliances' },
-  { id: 'elevator',    label: 'Elevator',           category: 'Building' },
-  { id: 'fireplace',   label: 'Fireplace',          category: 'Interior' },
-  { id: 'garden',      label: 'Garden',             category: 'Exterior' },
-  { id: 'roofDeck',    label: 'Roof Deck',          category: 'Exterior' },
-  { id: 'doorman',     label: 'Doorman',            category: 'Security' },
-  { id: 'garage',      label: 'Garage',             category: 'Parking' },
-  { id: 'waterfront',  label: 'Waterfront',         category: 'Location' },
+  // Building & Infrastructure
+  { id: 'elevator', label: 'Elevator', category: 'Building & Infrastructure' },
+  { id: 'internal_staircase', label: 'Internal Staircase', category: 'Building & Infrastructure' },
+  { id: 'secure_door', label: 'Secure Door', category: 'Building & Infrastructure' },
+  { id: 'manned_reception', label: 'Manned Reception', category: 'Building & Infrastructure' },
+  { id: 'attic', label: 'Attic', category: 'Building & Infrastructure' },
+  { id: 'facade', label: 'Facade', category: 'Building & Infrastructure' },
+  { id: 'corner', label: 'Corner', category: 'Building & Infrastructure' },
+  
+  // Interior Features
+  { id: 'frames_wooden', label: 'Wooden Frames', category: 'Interior Features' },
+  { id: 'floor_marble', label: 'Marble Floor', category: 'Interior Features' },
+  { id: 'single_glass', label: 'Single Glass', category: 'Interior Features' },
+  { id: 'bright', label: 'Bright', category: 'Interior Features' },
+  { id: 'airy', label: 'Airy', category: 'Interior Features' },
+  { id: 'fireplace', label: 'Fireplace', category: 'Interior Features' },
+  { id: 'furnished', label: 'Furnished', category: 'Interior Features' },
+  { id: 'storage', label: 'Storage Space', category: 'Interior Features' },
+  { id: 'painted', label: 'Painted', category: 'Interior Features' },
+  { id: 'luxury_home', label: 'Luxury Home', category: 'Interior Features' },
+  { id: 'playroom', label: 'Playroom', category: 'Interior Features' },
+  
+  // Climate & Comfort
+  { id: 'underfloor_heating', label: 'Underfloor Heating', category: 'Climate & Comfort' },
+  { id: 'air_conditioning', label: 'Air Conditioning', category: 'Climate & Comfort' },
+  { id: 'solar_water_heating', label: 'Solar Water Heating', category: 'Climate & Comfort' },
+  { id: 'night_power', label: 'Night Power', category: 'Climate & Comfort' },
+  
+  // Exterior & Outdoor
+  { id: 'garden', label: 'Garden', category: 'Exterior & Outdoor' },
+  { id: 'swimming_pool', label: 'Swimming Pool', category: 'Exterior & Outdoor' },
+  { id: 'awning', label: 'Awning', category: 'Exterior & Outdoor' },
+  { id: 'built_in_bbq', label: 'Built-in BBQ', category: 'Exterior & Outdoor' },
+  { id: 'window_screens', label: 'Window Screens', category: 'Exterior & Outdoor' },
+  { id: 'balcony', label: 'Balcony', category: 'Exterior & Outdoor' },
+  
+  // Parking & Access
+  { id: 'parking_space', label: 'Parking Space', category: 'Parking & Access' },
+  { id: 'garage', label: 'Garage', category: 'Parking & Access' },
+  { id: 'access_disabled', label: 'Access for People with Disabilities', category: 'Parking & Access' },
+  { id: 'ev_charging', label: 'Charging Facilities for Electric Car', category: 'Parking & Access' },
+  
+  // Security & Safety
+  { id: 'alarm', label: 'Alarm', category: 'Security & Safety' },
+  { id: 'security_system', label: 'Security System', category: 'Security & Safety' },
+  { id: 'doorman', label: 'Doorman', category: 'Security & Safety' },
+  
+  // Utilities & Technology
+  { id: 'satellite_receiver', label: 'Satellite Receiver', category: 'Utilities & Technology' },
+  { id: 'wifi', label: 'High-Speed Internet', category: 'Utilities & Technology' },
+  { id: 'dishwasher', label: 'Dishwasher', category: 'Utilities & Technology' },
+  { id: 'laundry', label: 'Laundry Facilities', category: 'Utilities & Technology' },
+  
+  // Location & Views
+  { id: 'residential_zone', label: 'Residential Zone', category: 'Location & Views' },
+  { id: 'view', label: 'View', category: 'Location & Views' },
+  { id: 'waterfront', label: 'Waterfront', category: 'Location & Views' },
+  
+  // Community & Shared
+  { id: 'gym', label: 'Gym', category: 'Community & Shared' },
+  { id: 'pool', label: 'Swimming Pool', category: 'Community & Shared' },
+  { id: 'roof_deck', label: 'Roof Deck', category: 'Community & Shared' },
+  
+  // Policy & Lifestyle
+  { id: 'pets', label: 'Pet Friendly', category: 'Policy & Lifestyle' },
+  
+  // Legacy amenities (keeping for backward compatibility)
+  { id: 'parking', label: 'Parking', category: 'Legacy' },
+  { id: 'ac', label: 'Air Conditioning', category: 'Legacy' },
+  { id: 'heating', label: 'Central Heating', category: 'Legacy' },
 ];
 
 export interface Developer {

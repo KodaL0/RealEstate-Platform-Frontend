@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   CalendarIcon,
   MapPin,
@@ -49,6 +49,9 @@ const Step2_OwnerAgent: React.FC<Props> = ({
   setLocationCoords,
 }) => {
   const { next, back } = useListingWizard();
+  
+  // State for active amenities category
+  const [activeCategory, setActiveCategory] = useState(AMENITIES[0]?.category || 'Building & Infrastructure');
 
   const valid =
     formData.title.trim() &&
@@ -411,15 +414,35 @@ const Step2_OwnerAgent: React.FC<Props> = ({
           </div>
         </div>
 
-        {/* Amenities Card */}
+        {/* Enhanced Amenities Card */}
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Property Amenities
           </h3>
           
+          {/* Category Tabs */}
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
+              {Array.from(new Set(AMENITIES.map(a => a.category))).map(category => (
+                <button
+                  key={category}
+                  onClick={() => setActiveCategory(category)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                    activeCategory === category
+                      ? 'bg-blue-500 text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {category}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Amenities Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {AMENITIES.map(a => (
+            {AMENITIES.filter(a => a.category === activeCategory).map(a => (
               <label key={a.id} className="group flex items-start space-x-3 p-3 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 cursor-pointer transition-all duration-200">
                 <div className="relative">
                   <input
@@ -446,6 +469,35 @@ const Step2_OwnerAgent: React.FC<Props> = ({
               </label>
             ))}
           </div>
+          
+          {/* Selected Amenities Summary */}
+          {formData.amenities.length > 0 && (
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+              <h4 className="text-sm font-semibold text-blue-800 mb-2">
+                Selected Amenities ({formData.amenities.length})
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {formData.amenities.map(amenityId => {
+                  const amenity = AMENITIES.find(a => a.id === amenityId);
+                  return amenity ? (
+                    <span
+                      key={amenityId}
+                      className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                    >
+                      {amenity.label}
+                      <button
+                        type="button"
+                        onClick={() => toggleAmenity(amenityId)}
+                        className="ml-2 text-blue-600 hover:text-blue-800"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

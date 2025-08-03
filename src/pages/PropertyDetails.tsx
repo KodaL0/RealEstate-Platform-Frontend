@@ -45,7 +45,7 @@ const mapPropertyData = (raw: any): Property => ({
   virtual_tour_url: raw?.virtual_tour_url ?? '',
   video_url: raw?.video_url ?? '',
   amenities: raw?.amenities ?? [],
-  additional_features: raw?.additional_features ?? [],
+  
   owner: raw?.owner ?? null,
   is_published: raw?.is_published ?? false,
   created_at: raw?.created_at ?? '',
