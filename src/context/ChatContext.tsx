@@ -120,9 +120,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // Replace any optimistic message with the real one
             setMessages((prev) => {
               const list = prev[msg.thread_id] ?? [];
+              
+              // Check if we already have this exact message (prevent duplicates)
+              if (list.some((m) => m.id === msg.id)) {
+                console.log('Message already exists, skipping duplicate');
+                return prev;
+              }
+              
+              // Find and replace optimistic message, or add new message
               const hasOptimistic = list.some((m) => m.id.startsWith('temp_'));
               
               if (hasOptimistic) {
+                console.log('Replacing optimistic message with real message');
                 // Replace optimistic message with real message
                 return {
                   ...prev,
@@ -131,8 +140,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   ),
                 };
               } else {
-                // No optimistic message to replace, just add if not already present
-                if (list.some((m) => m.id === msg.id)) return prev;
+                console.log('Adding new message (no optimistic message to replace)');
+                // No optimistic message to replace, just add the new message
                 return {
                   ...prev,
                   [msg.thread_id]: [...list, msg],
