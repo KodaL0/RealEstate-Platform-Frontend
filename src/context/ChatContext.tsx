@@ -66,11 +66,33 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const [userStatuses, setUserStatuses] = useState<Record<number, "online" | "offline">>({});
 
+  // Debug user context
+  console.log('=== CHAT PROVIDER USER CONTEXT ===');
+  console.log('User:', user);
+  console.log('User ID:', user?.id);
+  console.log('User type:', typeof user?.id);
+
+  // Track user context changes
+  useEffect(() => {
+    console.log('=== USER CONTEXT CHANGED ===');
+    console.log('New user:', user);
+    console.log('New user ID:', user?.id);
+    console.log('New user type:', typeof user?.id);
+  }, [user]);
+
   /* ---------------------------- WebSocket setup --------------------------- */
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isReconnectingRef = useRef(false);
+  const currentUserIdRef = useRef<number | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+
+  // Update current user ID ref when user changes
+  useEffect(() => {
+    currentUserIdRef.current = user?.id || null;
+    console.log('=== UPDATED CURRENT USER ID REF ===');
+    console.log('New current user ID:', currentUserIdRef.current);
+  }, [user?.id]);
 
   const openSocket = useCallback(() => {
     // Prevent multiple simultaneous reconnection attempts
@@ -120,13 +142,18 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
           console.log('=== PROCESSING CHAT MESSAGE ===');
           console.log('Message sender ID:', msg.sender, 'Type:', typeof msg.sender);
-          console.log('Current user ID:', user?.id, 'Type:', typeof user?.id);
-          console.log('Sender comparison:', msg.sender === user?.id);
-          console.log('Sender comparison (strict):', msg.sender === user?.id);
-          console.log('Sender comparison (loose):', msg.sender == user?.id);
+          console.log('Current user ID (context):', user?.id, 'Type:', typeof user?.id);
+          console.log('Current user ID (ref):', currentUserIdRef.current, 'Type:', typeof currentUserIdRef.current);
+          console.log('Sender comparison (context):', msg.sender === user?.id);
+          console.log('Sender comparison (ref):', msg.sender === currentUserIdRef.current);
 
           // Handle our own messages (to replace optimistic messages)
-          if (msg.sender === user?.id) {
+          // Use the ref for reliable user ID comparison
+          const isOwnMessage = msg.sender === currentUserIdRef.current;
+          
+          console.log('Is own message:', isOwnMessage);
+
+          if (isOwnMessage) {
             console.log('=== PROCESSING OWN MESSAGE FROM SERVER ===');
             console.log('Message ID:', msg.id);
             console.log('Thread ID:', msg.thread_id);
