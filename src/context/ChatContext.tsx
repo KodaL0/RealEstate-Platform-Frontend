@@ -70,6 +70,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const ws = useRef<WebSocket | null>(null);
   const reconnectTimeoutRef = useRef<number | null>(null);
   const isReconnectingRef = useRef(false);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
 
   const openSocket = useCallback(() => {
     // Prevent multiple simultaneous reconnection attempts
@@ -85,12 +86,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     isReconnectingRef.current = true;
+    setConnectionStatus('connecting');
 
     const baseWs =
       (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
 
     const token = getCookie("access_token") ?? getCookie("mobile_access_token");
     const url = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
+
+    console.log(`Attempting WebSocket connection to: ${url}`);
+    console.log(`Token present: ${!!token}`);
 
     ws.current = new WebSocket(url);
 
@@ -169,7 +174,6 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setThreads((prev) => {
             const updated = prev.map((t) => {
               if (t.id === msg.thread_id) {
-                // This is a message from another user, increment unread count
                 return {
                   ...t,
                   updated_at: msg.created_at,
@@ -235,17 +239,59 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ws.current.onerror = (err) => {
       console.warn("WebSocket error", err);
       isReconnectingRef.current = false;
+      setConnectionStatus('error');
     };
 
     ws.current.onopen = () => {
       console.log("WebSocket connected successfully");
       isReconnectingRef.current = false;
+      setConnectionStatus('connected');
     };
 
-    ws.current.onclose = () => {
+    ws.current.onclose = async (event) => {
       clearInterval(pingInterval);
       ws.current = null;
       isReconnectingRef.current = false;
+      setConnectionStatus('disconnected');
+
+      // Check if this might be a token expiration issue
+      if (event.code === 4001 || event.code === 1008) {
+        console.log("WebSocket closed due to authentication issue, attempting token refresh...");
+        
+        try {
+          // Attempt to refresh the token
+          const refreshToken = getCookie("refresh_token");
+          if (refreshToken) {
+            const response = await fetch("/api/users/refresh/", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ refresh: refreshToken }),
+            });
+            
+            if (response.ok) {
+              const data = await response.json();
+              // The new tokens should be set as cookies by the backend
+              console.log("Token refreshed successfully, reconnecting...");
+              
+              // Clear any existing reconnect timeout
+              if (reconnectTimeoutRef.current) {
+                clearTimeout(reconnectTimeoutRef.current);
+              }
+              
+              // Reconnect immediately with new token
+              reconnectTimeoutRef.current = window.setTimeout(() => {
+                console.log("Reconnecting with refreshed token...");
+                openSocket();
+              }, 1000);
+              return;
+            }
+          }
+        } catch (error) {
+          console.warn("Token refresh failed:", error);
+        }
+      }
 
       // Clear any existing reconnect timeout
       if (reconnectTimeoutRef.current) {
@@ -342,6 +388,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         created_at: new Date().toISOString(),
         read_at: null,
         is_unsent: false,
+        unsent_at: null,
       };
 
       // Add optimistic message to UI immediately
