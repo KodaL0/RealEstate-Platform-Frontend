@@ -155,7 +155,23 @@ export default function ChatThread() {
       const seen = new Set(prev.map((m) => m.id));
       const merged = [...prev];
       threadMessages.forEach((m) => {
-        if (!seen.has(m.id)) merged.push(m);
+        if (!seen.has(m.id)) {
+          // Check if this is a real message that should replace an optimistic one
+          const optimisticIndex = merged.findIndex(
+            (existing) => 
+              existing.id.startsWith('temp_') && 
+              existing.content === m.content && 
+              existing.sender === m.sender
+          );
+          
+          if (optimisticIndex !== -1) {
+            // Replace optimistic message with real message
+            merged[optimisticIndex] = m;
+          } else {
+            // Add new message
+            merged.push(m);
+          }
+        }
       });
       return merged;
     });

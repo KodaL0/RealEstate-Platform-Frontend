@@ -85,6 +85,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     console.log('=== MESSAGE COUNT CHANGED ===');
     Object.entries(messages).forEach(([threadId, messageList]) => {
       console.log(`Thread ${threadId}: ${messageList.length} messages`);
+      // Log the last few messages to see if there are duplicates
+      const lastMessages = messageList.slice(-3);
+      console.log('Last 3 messages:', lastMessages.map(m => ({ id: m.id, content: m.content, isOptimistic: m.id.startsWith('temp_') })));
     });
   }, [messages]);
 
@@ -179,6 +182,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return prev;
               }
               
+              // Also check for content duplicates to prevent double rendering
+              const contentDuplicates = list.filter((m) => m.content === msg.content && m.sender === msg.sender);
+              if (contentDuplicates.length > 0) {
+                console.log('❌ Content duplicate found, skipping:', contentDuplicates.map(m => ({ id: m.id, content: m.content })));
+                return prev;
+              }
+              
               // Find and replace optimistic message, or add new message
               const optimisticMessages = list.filter((m) => m.id.startsWith('temp_'));
               const hasOptimistic = optimisticMessages.length > 0;
@@ -188,10 +198,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               if (hasOptimistic) {
                 console.log('✅ Replacing optimistic message with real message');
-                // Replace optimistic message with real message
-                const newList = list.map((m) => 
-                  m.id.startsWith('temp_') ? msg : m
-                );
+                // Replace only the optimistic message that matches the content
+                const newList = list.map((m) => {
+                  if (m.id.startsWith('temp_') && m.content === msg.content) {
+                    console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
+                    return msg;
+                  }
+                  return m;
+                });
                 console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
