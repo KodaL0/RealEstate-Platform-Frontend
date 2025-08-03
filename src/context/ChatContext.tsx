@@ -118,6 +118,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         case "chat.message": {
           const msg: Message = data.message;
 
+          console.log('=== PROCESSING CHAT MESSAGE ===');
+          console.log('Message sender ID:', msg.sender, 'Type:', typeof msg.sender);
+          console.log('Current user ID:', user?.id, 'Type:', typeof user?.id);
+          console.log('Sender comparison:', msg.sender === user?.id);
+          console.log('Sender comparison (strict):', msg.sender === user?.id);
+          console.log('Sender comparison (loose):', msg.sender == user?.id);
+
           // Handle our own messages (to replace optimistic messages)
           if (msg.sender === user?.id) {
             console.log('=== PROCESSING OWN MESSAGE FROM SERVER ===');
@@ -183,6 +190,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               );
             });
             break;
+          } else {
+            console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
+            console.log('Message is from another user, processing normally');
           }
 
           // Handle messages from other users
