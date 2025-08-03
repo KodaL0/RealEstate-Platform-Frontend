@@ -1,4 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
+import './PublicProfile.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
   Calendar, Home, User, AlertCircle, MessageCircle, Heart, Edit, 
@@ -533,26 +534,26 @@ const PublicProfile: React.FC = () => {
              
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-blue-600">{profileData?.properties_count || 0}</div>
-                <div className="text-gray-600 text-sm">Active Listings</div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+                <div className="text-xl sm:text-2xl font-bold text-blue-600">{profileData?.properties_count || 0}</div>
+                <div className="text-gray-600 text-xs sm:text-sm">Active Listings</div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-pink-600">{profileData?.connections_count || 0}</div>
-                <div className="text-gray-600 text-sm">Connections</div>
+              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+                <div className="text-xl sm:text-2xl font-bold text-pink-600">{profileData?.connections_count || 0}</div>
+                <div className="text-gray-600 text-xs sm:text-sm">Connections</div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-indigo-600">{profileData?.mutual_connections_count || 0}</div>
-                <div className="text-gray-600 text-sm">Mutual Connections</div>
+              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center sm:col-span-1 col-span-2">
+                <div className="text-xl sm:text-2xl font-bold text-indigo-600">{profileData?.mutual_connections_count || 0}</div>
+                <div className="text-gray-600 text-xs sm:text-sm">Mutual Connections</div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-yellow-600">{overallRating !== null ? overallRating.toFixed(1) : 'N/A'}</div>
-                <div className="text-gray-600 text-sm">Avg Rating</div>
+              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+                <div className="text-xl sm:text-2xl font-bold text-yellow-600">{overallRating !== null ? overallRating.toFixed(1) : 'N/A'}</div>
+                <div className="text-gray-600 text-xs sm:text-sm">Avg Rating</div>
               </div>
-              <div className="bg-white p-4 rounded-xl shadow-md text-center">
-                <div className="text-2xl font-bold text-green-600">{overallReviewsCount ?? 'N/A'}</div>
-                <div className="text-gray-600 text-sm">Total Reviews</div>
+              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+                <div className="text-xl sm:text-2xl font-bold text-green-600">{overallReviewsCount ?? 'N/A'}</div>
+                <div className="text-gray-600 text-xs sm:text-sm">Total Reviews</div>
               </div>
             </div>
 
@@ -578,7 +579,7 @@ const PublicProfile: React.FC = () => {
                   <p className="text-gray-600">This user has no published listings yet.</p>
                 </div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   {properties.map((property, index) => (
                     <motion.div
                       key={property.id}
@@ -605,21 +606,21 @@ const PublicProfile: React.FC = () => {
                 Reviews & Ratings
               </h3>
               
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">
+                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                     {reviewStats?.average_rating?.toFixed(1) || '0.0'}
                   </div>
                   <div className="flex justify-center mb-2">
                     {renderStarRating(reviewStats?.average_rating || 0, 'md')}
                   </div>
-                  <p className="text-gray-600">Overall Rating</p>
+                  <p className="text-gray-600 text-sm sm:text-base">Overall Rating</p>
                 </div>
                 <div className="text-center">
-                  <div className="text-4xl font-bold text-gray-900 mb-2">
+                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                     {reviewStats?.reviews_received_count || 0}
                   </div>
-                  <p className="text-gray-600">Total Reviews</p>
+                  <p className="text-gray-600 text-sm sm:text-base">Total Reviews</p>
                 </div>
               </div>
 
@@ -664,50 +665,50 @@ const PublicProfile: React.FC = () => {
                 </div>
               ) : (
                 reviews.map((review) => (
-                <div key={review.id} className="bg-white p-6 rounded-2xl shadow-md">
-                  <div className="flex items-start space-x-4">
-                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                      <span className="text-blue-600 font-semibold">
+                <div key={review.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-md">
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                      <span className="text-blue-600 font-semibold text-sm sm:text-base">
                         {review.reviewer.username.substring(0, 2).toUpperCase()}
                       </span>
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center space-x-3">
-                          <h4 className="font-semibold text-gray-900">{review.reviewer.username}</h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-1 sm:space-y-0">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">{review.reviewer.username}</h4>
                           {review.is_verified && (
                             <div className="flex items-center text-green-600">
-                              <CheckCircle className="h-4 w-4 mr-1" />
+                              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                               <span className="text-xs">Verified</span>
                             </div>
                           )}
                         </div>
-                        <span className="text-gray-500 text-sm">{formatDateOnly(review.created_at)}</span>
+                        <span className="text-gray-500 text-xs sm:text-sm">{formatDateOnly(review.created_at)}</span>
                       </div>
                       {review.title && (
-                        <h5 className="font-medium text-gray-900 mb-2">{review.title}</h5>
+                        <h5 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">{review.title}</h5>
                       )}
                       <div className="flex items-center mb-3">
                         {renderStarRating(review.overall_rating)}
-                        <span className="ml-2 text-sm text-gray-600">({review.overall_rating}/5)</span>
+                        <span className="ml-2 text-xs sm:text-sm text-gray-600">({review.overall_rating}/5)</span>
                       </div>
-                      <p className="text-gray-700 mb-3">{review.content}</p>
+                      <p className="text-gray-700 mb-3 text-sm sm:text-base">{review.content}</p>
                       {review.interaction_context && (
-                        <p className="text-sm text-gray-500 mb-3 italic">Context: {review.interaction_context}</p>
+                        <p className="text-xs sm:text-sm text-gray-500 mb-3 italic">Context: {review.interaction_context}</p>
                       )}
-                      <div className="flex items-center space-x-4 text-sm text-gray-500">
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
                         <button 
                           onClick={() => handleToggleHelpful(review.id, true)}
-                          className="flex items-center hover:text-blue-600"
+                          className="flex items-center hover:text-blue-600 p-1"
                         >
-                          <ThumbsUp className="h-4 w-4 mr-1" />
+                          <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Helpful ({review.helpful_count})
                         </button>
                         <button 
                           onClick={() => handleReportReview(review.id)}
-                          className="flex items-center hover:text-red-600"
+                          className="flex items-center hover:text-red-600 p-1"
                         >
-                          <Flag className="h-4 w-4 mr-1" />
+                          <Flag className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
                           Report
                         </button>
                       </div>
@@ -876,56 +877,56 @@ const PublicProfile: React.FC = () => {
                 Contact Information
               </h3>
               
-              <div className="space-y-6">
-                <div className="space-y-4">
+              <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-3 sm:space-y-4">
                   {profileData?.website && (
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Globe className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Website</p>
+                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <Globe className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">Website</p>
                         <a 
                           href={profileData.website.startsWith('http') ? profileData.website : `https://${profileData.website}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800"
+                          className="text-blue-600 hover:text-blue-800 text-sm sm:text-base break-all"
                         >
                           {profileData.website}
                         </a>
                       </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0">
                         <Copy className="h-4 w-4 text-gray-500" />
                       </button>
                     </div>
                   )}
 
                   {profileData?.office && (
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <MapPin className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Office</p>
-                        <p className="text-gray-600">{profileData.office}</p>
+                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <MapPin className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">Office</p>
+                        <p className="text-gray-600 text-sm sm:text-base">{profileData.office}</p>
                       </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0">
                         <Copy className="h-4 w-4 text-gray-500" />
                       </button>
                     </div>
                   )}
 
                   {profileData?.phone && (
-                    <div className="flex items-center space-x-3 p-4 bg-gray-50 rounded-lg">
-                      <Phone className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="font-medium text-gray-900">Phone</p>
-                        <p className="text-gray-600">{profileData.phone}</p>
+                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <Phone className="h-5 w-5 text-green-600 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-gray-900 text-sm sm:text-base">Phone</p>
+                        <p className="text-gray-600 text-sm sm:text-base">{profileData.phone}</p>
                       </div>
-                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <button className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0">
                         <Copy className="h-4 w-4 text-gray-500" />
                       </button>
                     </div>
                   )}
 
                   <div className="text-center py-4 text-gray-500">
-                    <p className="text-sm">
+                    <p className="text-xs sm:text-sm">
                       For direct contact, use the "Message" button above or connect with this user.
                     </p>
                   </div>
@@ -991,32 +992,33 @@ const PublicProfile: React.FC = () => {
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
       {/* Profile Header */}
-      <section className="py-8 bg-gradient-to-r from-blue-600 to-indigo-600">
+      <section className="py-6 sm:py-8 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="container mx-auto px-4">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col md:flex-row items-center justify-between"
+            className="flex flex-col items-center space-y-6"
           >
-            <div className="flex items-center space-x-6 mb-4 md:mb-0">
-              <div className="w-24 h-24 bg-white rounded-full flex items-center justify-center shadow-lg">
-                <User className="h-12 w-12 text-blue-600" />
+            {/* Profile Info */}
+            <div className="flex flex-col items-center text-center">
+              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
+                <User className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600" />
               </div>
-              <div className="text-center md:text-left">
-                <div className="flex items-center space-x-2 mb-2">
-                  <h1 className="text-3xl font-bold text-white">
+              <div className="space-y-2">
+                <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2">
+                  <h1 className="text-2xl sm:text-3xl font-bold text-white">
                     {profileData.name || profileData.username}
                   </h1>
                   {profileData.name && (
-                    <span className="text-white/70 text-lg">@{profileData.username}</span>
+                    <span className="text-white/70 text-base sm:text-lg">@{profileData.username}</span>
                   )}
                 </div>
-                <div className="flex items-center text-white/90 mb-2">
+                <div className="flex items-center justify-center text-white/90 text-sm sm:text-base">
                   <MapPin className="h-4 w-4 mr-1" />
                   <span>{profileData?.location || 'Location not specified'}</span>
                 </div>
-                <div className="flex items-center space-x-4 text-white/90">
+                <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 text-white/90 text-sm sm:text-base">
                   <div className="flex items-center">
                     <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
                     <span>{overallRating !== null ? overallRating.toFixed(1) : 'N/A'} ({overallReviewsCount ?? '0'} reviews)</span>
@@ -1026,11 +1028,11 @@ const PublicProfile: React.FC = () => {
                     <span>Since {formatJoinDate(profileData.date_joined)}</span>
                   </div>
                 </div>
-
               </div>
             </div>
             
-            <div className="flex space-x-3">
+            {/* Action Buttons */}
+            <div className="flex flex-wrap justify-center gap-3 w-full max-w-md">
               <button 
                 onClick={async () => {
                   try {
@@ -1040,7 +1042,7 @@ const PublicProfile: React.FC = () => {
                     console.error('Error creating DM thread:', error);
                   }
                 }}
-                className="px-6 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center"
+                className="flex-1 min-w-[120px] px-4 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center text-sm sm:text-base"
               >
                 <Send className="h-4 w-4 mr-2" />
                 Message
@@ -1050,7 +1052,7 @@ const PublicProfile: React.FC = () => {
               {canReview?.can_review && (
                 <button 
                   onClick={() => setShowReviewForm(true)}
-                  className="px-6 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors flex items-center"
+                  className="flex-1 min-w-[120px] px-4 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center text-sm sm:text-base"
                 >
                   <Star className="h-4 w-4 mr-2" />
                   Write Review
@@ -1060,7 +1062,7 @@ const PublicProfile: React.FC = () => {
               <button 
                 onClick={handleConnectionAction}
                 disabled={isConnecting || profileData?.connection_status === 'connected' || profileData?.connection_status === 'pending_sent'}
-                className={`px-6 py-3 font-semibold rounded-lg transition-colors flex items-center ${
+                className={`flex-1 min-w-[120px] px-4 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base ${
                   profileData?.connection_status === 'connected'
                     ? 'bg-green-500 text-white cursor-default'
                     : profileData?.connection_status === 'pending_sent'
@@ -1075,8 +1077,9 @@ const PublicProfile: React.FC = () => {
                 ) : (
                   React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })
                 )}
-                                {isConnecting ? 'Processing...' : getConnectionButtonText()}
+                {isConnecting ? 'Processing...' : getConnectionButtonText()}
               </button>
+              
               <button className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors">
                 <Bookmark className="h-4 w-4" />
               </button>
@@ -1086,10 +1089,35 @@ const PublicProfile: React.FC = () => {
       </section>
 
       {/* Main Content with Sidebar */}
-      <div className="container mx-auto px-4 py-8">
-        <div className="flex flex-col lg:flex-row gap-8">
-          {/* Sidebar */}
-          <div className="lg:w-1/4">
+      <div className="container mx-auto px-4 py-6 sm:py-8">
+        {/* Mobile Tab Navigation */}
+        <div className="lg:hidden mb-6">
+          <div className="bg-white rounded-xl shadow-md p-2">
+            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
+              {sidebarTabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`flex-shrink-0 flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-colors min-w-[80px] ${
+                      activeTab === tab.id
+                        ? 'bg-blue-100 text-blue-600 font-medium'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                    <span className="text-xs">{tab.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
+          {/* Desktop Sidebar */}
+          <div className="hidden lg:block lg:w-1/4">
             <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
               <nav className="space-y-2">
                 {sidebarTabs.map((tab) => {
@@ -1114,7 +1142,7 @@ const PublicProfile: React.FC = () => {
           </div>
 
           {/* Main Content */}
-          <div className="lg:w-3/4">
+          <div className="w-full lg:w-3/4">
             <motion.div
               key={activeTab}
               initial={{ opacity: 0, y: 20 }}
