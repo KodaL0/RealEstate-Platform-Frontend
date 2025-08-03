@@ -474,9 +474,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       switch (ws.current.readyState) {
         case WebSocket.OPEN:
+          // WebSocket is open - send via WebSocket only
+          // The server will send the message back to confirm, which will replace the optimistic message
           ws.current.send(json);
           break;
         case WebSocket.CONNECTING:
+          // WebSocket is connecting - wait for it to open then send
           ws.current.addEventListener(
             "open",
             () => {
@@ -486,6 +489,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           );
           break;
         default:
+          // WebSocket is closed or in error state - use REST fallback
           void sendViaRest();
       }
     },
