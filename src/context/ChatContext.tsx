@@ -67,28 +67,28 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [userStatuses, setUserStatuses] = useState<Record<number, "online" | "offline">>({});
 
   // Debug user context
-  console.log('=== CHAT PROVIDER USER CONTEXT ===');
-  console.log('User:', user);
-  console.log('User ID:', user?.id);
-  console.log('User type:', typeof user?.id);
+  // console.log('=== CHAT PROVIDER USER CONTEXT ===');
+  // console.log('User:', user);
+  // console.log('User ID:', user?.id);
+  // console.log('User type:', typeof user?.id);
 
   // Track user context changes
   useEffect(() => {
-    console.log('=== USER CONTEXT CHANGED ===');
-    console.log('New user:', user);
-    console.log('New user ID:', user?.id);
-    console.log('New user type:', typeof user?.id);
+    // console.log('=== USER CONTEXT CHANGED ===');
+    // console.log('New user:', user);
+    // console.log('New user ID:', user?.id);
+    // console.log('New user type:', typeof user?.id);
   }, [user]);
 
   // Track message count changes for debugging
   useEffect(() => {
-    console.log('=== MESSAGE COUNT CHANGED ===');
-    Object.entries(messages).forEach(([threadId, messageList]) => {
-      console.log(`Thread ${threadId}: ${messageList.length} messages`);
-      // Log the last few messages to see if there are duplicates
-      const lastMessages = messageList.slice(-3);
-      console.log('Last 3 messages:', lastMessages.map(m => ({ id: m.id, content: m.content, isOptimistic: m.id.startsWith('temp_') })));
-    });
+    // console.log('=== MESSAGE COUNT CHANGED ===');
+    // Object.entries(messages).forEach(([threadId, messageList]) => {
+    //   console.log(`Thread ${threadId}: ${messageList.length} messages`);
+    //   // Log the last few messages to see if there are duplicates
+    //   const lastMessages = messageList.slice(-3);
+    //   console.log('Last 3 messages:', lastMessages.map(m => ({ id: m.id, content: m.content, isOptimistic: m.id.startsWith('temp_') })));
+    // });
   }, [messages]);
 
   /* ---------------------------- WebSocket setup --------------------------- */
@@ -101,8 +101,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Update current user ID ref when user changes
   useEffect(() => {
     currentUserIdRef.current = user?.id || null;
-    console.log('=== UPDATED CURRENT USER ID REF ===');
-    console.log('New current user ID:', currentUserIdRef.current);
+    // console.log('=== UPDATED CURRENT USER ID REF ===');
+    // console.log('New current user ID:', currentUserIdRef.current);
   }, [user?.id]);
 
   const openSocket = useCallback(() => {
@@ -127,8 +127,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const token = getCookie("access_token") ?? getCookie("mobile_access_token");
     const url = token ? `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}` : `${baseWs}/ws/chat/`;
 
-    console.log(`Attempting WebSocket connection to: ${url}`);
-    console.log(`Token present: ${!!token}`);
+    // console.log(`Attempting WebSocket connection to: ${url}`);
+    // console.log(`Token present: ${!!token}`);
 
     ws.current = new WebSocket(url);
 
@@ -140,52 +140,52 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }, 30000); // 30 s
 
     ws.current.onmessage = (event) => {
-      console.log('=== WEBSOCKET MESSAGE RECEIVED ===');
-      console.log('Raw event data:', event.data);
+      // console.log('=== WEBSOCKET MESSAGE RECEIVED ===');
+      // console.log('Raw event data:', event.data);
       
       const data = JSON.parse(event.data);
-      console.log('Parsed data:', data);
-      console.log('Message type:', data.type);
+      // console.log('Parsed data:', data);
+      // console.log('Message type:', data.type);
 
       switch (data.type) {
         case "chat.message": {
           const msg: Message = data.message;
 
-          console.log('=== PROCESSING CHAT MESSAGE ===');
-          console.log('Message sender ID:', msg.sender, 'Type:', typeof msg.sender);
-          console.log('Current user ID (context):', user?.id, 'Type:', typeof user?.id);
-          console.log('Current user ID (ref):', currentUserIdRef.current, 'Type:', typeof currentUserIdRef.current);
-          console.log('Sender comparison (context):', msg.sender === user?.id);
-          console.log('Sender comparison (ref):', msg.sender === currentUserIdRef.current);
-          console.log('Messages in thread BEFORE processing:', messages[msg.thread_id]?.length || 0);
+          // console.log('=== PROCESSING CHAT MESSAGE ===');
+          // console.log('Message sender ID:', msg.sender, 'Type:', typeof msg.sender);
+          // console.log('Current user ID (context):', user?.id, 'Type:', typeof user?.id);
+          // console.log('Current user ID (ref):', currentUserIdRef.current, 'Type:', typeof currentUserIdRef.current);
+          // console.log('Sender comparison (context):', msg.sender === user?.id);
+          // console.log('Sender comparison (ref):', msg.sender === currentUserIdRef.current);
+          // console.log('Messages in thread BEFORE processing:', messages[msg.thread_id]?.length || 0);
 
           // Handle our own messages (to replace optimistic messages)
           // Use the ref for reliable user ID comparison
           const isOwnMessage = msg.sender === currentUserIdRef.current;
           
-          console.log('Is own message:', isOwnMessage);
+          // console.log('Is own message:', isOwnMessage);
 
           if (isOwnMessage) {
-            console.log('=== PROCESSING OWN MESSAGE FROM SERVER ===');
-            console.log('Message ID:', msg.id);
-            console.log('Thread ID:', msg.thread_id);
-            console.log('Content:', msg.content);
+            // console.log('=== PROCESSING OWN MESSAGE FROM SERVER ===');
+            // console.log('Message ID:', msg.id);
+            // console.log('Thread ID:', msg.thread_id);
+            // console.log('Content:', msg.content);
             
             // Replace any optimistic message with the real one
             setMessages((prev) => {
               const list = prev[msg.thread_id] ?? [];
-              console.log('Current messages in thread:', list.map(m => ({ id: m.id, content: m.content })));
+              // console.log('Current messages in thread:', list.map(m => ({ id: m.id, content: m.content })));
               
               // Check if we already have this exact message (prevent duplicates)
               if (list.some((m) => m.id === msg.id)) {
-                console.log('❌ Message already exists, skipping duplicate');
+                // console.log('❌ Message already exists, skipping duplicate');
                 return prev;
               }
               
               // Also check for content duplicates to prevent double rendering
               const contentDuplicates = list.filter((m) => m.content === msg.content && m.sender === msg.sender);
               if (contentDuplicates.length > 0) {
-                console.log('❌ Content duplicate found, skipping:', contentDuplicates.map(m => ({ id: m.id, content: m.content })));
+                // console.log('❌ Content duplicate found, skipping:', contentDuplicates.map(m => ({ id: m.id, content: m.content })));
                 return prev;
               }
               
@@ -193,29 +193,29 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               const optimisticMessages = list.filter((m) => m.id.startsWith('temp_'));
               const hasOptimistic = optimisticMessages.length > 0;
               
-              console.log('Optimistic messages found:', optimisticMessages.length);
-              console.log('Optimistic message IDs:', optimisticMessages.map(m => m.id));
+              // console.log('Optimistic messages found:', optimisticMessages.length);
+              // console.log('Optimistic message IDs:', optimisticMessages.map(m => m.id));
               
               if (hasOptimistic) {
-                console.log('✅ Replacing optimistic message with real message');
+                // console.log('✅ Replacing optimistic message with real message');
                 // Replace only the optimistic message that matches the content
                 const newList = list.map((m) => {
                   if (m.id.startsWith('temp_') && m.content === msg.content) {
-                    console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
+                    // console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
                     return msg;
                   }
                   return m;
                 });
-                console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
+                // console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
                   [msg.thread_id]: newList,
                 };
               } else {
-                console.log('⚠️ Adding new message (no optimistic message to replace)');
+                // console.log('⚠️ Adding new message (no optimistic message to replace)');
                 // No optimistic message to replace, just add the new message
                 const newList = [...list, msg];
-                console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
+                // console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
                   [msg.thread_id]: newList,
@@ -243,8 +243,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           }
 
           // Handle messages from other users
-          console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
-          console.log('Message is from another user, processing normally');
+          // console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
+          // console.log('Message is from another user, processing normally');
           
           // Deduplicate by message ID
           setMessages((prev) => {
@@ -323,24 +323,24 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     ws.current.onerror = (err) => {
-      console.log('=== WEBSOCKET ERROR ===');
-      console.warn("WebSocket error", err);
+      // console.log('=== WEBSOCKET ERROR ===');
+      // console.warn("WebSocket error", err);
       isReconnectingRef.current = false;
       setConnectionStatus('error');
     };
 
     ws.current.onopen = () => {
-      console.log('=== WEBSOCKET CONNECTED ===');
-      console.log("WebSocket connected successfully");
+      // console.log('=== WEBSOCKET CONNECTED ===');
+      // console.log("WebSocket connected successfully");
       isReconnectingRef.current = false;
       setConnectionStatus('connected');
     };
 
     ws.current.onclose = async (event) => {
-      console.log('=== WEBSOCKET CLOSED ===');
-      console.log('Close event:', event);
-      console.log('Close code:', event.code);
-      console.log('Close reason:', event.reason);
+      // console.log('=== WEBSOCKET CLOSED ===');
+      // console.log('Close event:', event);
+      // console.log('Close code:', event.code);
+      // console.log('Close reason:', event.reason);
       
       clearInterval(pingInterval);
       ws.current = null;
@@ -349,7 +349,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Check if this might be a token expiration issue
       if (event.code === 4001 || event.code === 1008) {
-        console.log("WebSocket closed due to authentication issue, attempting token refresh...");
+        // console.log("WebSocket closed due to authentication issue, attempting token refresh...");
         
         try {
           // Attempt to refresh the token
@@ -366,7 +366,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             if (response.ok) {
               const data = await response.json();
               // The new tokens should be set as cookies by the backend
-              console.log("Token refreshed successfully, reconnecting...");
+              // console.log("Token refreshed successfully, reconnecting...");
               
               // Clear any existing reconnect timeout
               if (reconnectTimeoutRef.current) {
@@ -375,14 +375,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               
               // Reconnect immediately with new token
               reconnectTimeoutRef.current = window.setTimeout(() => {
-                console.log("Reconnecting with refreshed token...");
+                // console.log("Reconnecting with refreshed token...");
                 openSocket();
               }, 1000);
               return;
             }
           }
         } catch (error) {
-          console.warn("Token refresh failed:", error);
+          // console.warn("Token refresh failed:", error);
         }
       }
 
@@ -393,7 +393,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Attempt a simple reconnect after a short delay
       reconnectTimeoutRef.current = window.setTimeout(() => {
-        console.log("Re-opening WebSocket after close…");
+        // console.log("Re-opening WebSocket after close…");
         openSocket();
       }, 5000); // Increased delay to 5 seconds to avoid rate limiting
     };
@@ -444,16 +444,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             (t.user1 === user?.id && t.user2 === otherUserId))
       );
       if (existing) {
-        console.log('Found existing DM thread:', existing.id);
+        // console.log('Found existing DM thread:', existing.id);
         return existing.id;
       }
 
-      console.log('Creating new DM thread with user:', otherUserId);
+      // console.log('Creating new DM thread with user:', otherUserId);
       const res = await apiClient.post<Thread>("chat/", {
         recipient_id: otherUserId,
         // Explicitly not passing property_id to ensure it's a DM thread
       });
-      console.log('Created DM thread:', res.data);
+      // console.log('Created DM thread:', res.data);
       setThreads((prev) => [res.data, ...prev]);
       return res.data.id;
     },
@@ -484,17 +484,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         unsent_at: null,
       };
 
-      console.log('=== CREATING OPTIMISTIC MESSAGE ===');
-      console.log('Optimistic message ID:', optimisticMessage.id);
-      console.log('Thread ID:', threadId);
-      console.log('Content:', content);
+      // console.log('=== CREATING OPTIMISTIC MESSAGE ===');
+      // console.log('Optimistic message ID:', optimisticMessage.id);
+      // console.log('Thread ID:', threadId);
+      // console.log('Content:', content);
 
       // Add optimistic message to UI immediately
       setMessages((prev) => {
         const list = prev[threadId] ?? [];
-        console.log('Adding optimistic message to thread. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
+        // console.log('Adding optimistic message to thread. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
         const newList = [...list, optimisticMessage];
-        console.log('New message list with optimistic:', newList.map(m => ({ id: m.id, content: m.content })));
+        // console.log('New message list with optimistic:', newList.map(m => ({ id: m.id, content: m.content })));
         return {
           ...prev,
           [threadId]: newList,
@@ -528,9 +528,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const json = JSON.stringify(payload);
 
       const sendViaRest = async () => {
-        console.log('=== SENDING VIA REST API ===');
-        console.log('Thread ID:', threadId);
-        console.log('Content:', content);
+        // console.log('=== SENDING VIA REST API ===');
+        // console.log('Thread ID:', threadId);
+        // console.log('Content:', content);
         try {
           const response = await apiClient.post<Message>(`chat/${threadId}/messages/`, {
             content,
@@ -538,27 +538,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             recipient_id: recipientId,
           });
           
-          console.log('✅ REST API success. Response:', response.data);
+          // console.log('✅ REST API success. Response:', response.data);
           
           // Replace optimistic message with real message from server
           setMessages((prev) => {
             const list = prev[threadId] ?? [];
-            console.log('Replacing optimistic message via REST. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
+            // console.log('Replacing optimistic message via REST. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
             const newList = list.map((msg) => 
               msg.id === optimisticMessage.id ? response.data : msg
             );
-            console.log('New message list after REST replacement:', newList.map(m => ({ id: m.id, content: m.content })));
+            // console.log('New message list after REST replacement:', newList.map(m => ({ id: m.id, content: m.content })));
             return {
               ...prev,
               [threadId]: newList,
             };
           });
         } catch (error) {
-          console.error('❌ REST API failed:', error);
+          // console.error('❌ REST API failed:', error);
           // Remove optimistic message on error
           setMessages((prev) => {
             const list = prev[threadId] ?? [];
-            console.log('Removing optimistic message due to REST API error');
+            // console.log('Removing optimistic message due to REST API error');
             return {
               ...prev,
               [threadId]: list.filter((msg) => msg.id !== optimisticMessage.id),
@@ -569,34 +569,34 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (!ws.current) {
         // No socket – fallback immediately
-        console.log('=== NO WEBSOCKET - USING REST FALLBACK ===');
+        // console.log('=== NO WEBSOCKET - USING REST FALLBACK ===');
         void sendViaRest();
         return;
       }
 
-      console.log('=== WEBSOCKET STATE CHECK ===');
-      console.log('WebSocket exists:', !!ws.current);
-      console.log('WebSocket readyState:', ws.current.readyState);
-      console.log('WebSocket URL:', ws.current.url);
+      // console.log('=== WEBSOCKET STATE CHECK ===');
+      // console.log('WebSocket exists:', !!ws.current);
+      // console.log('WebSocket readyState:', ws.current.readyState);
+      // console.log('WebSocket URL:', ws.current.url);
 
       switch (ws.current.readyState) {
         case WebSocket.OPEN:
           // WebSocket is open - send via WebSocket only
           // The server will send the message back to confirm, which will replace the optimistic message
-          console.log('=== SENDING VIA WEBSOCKET ===');
-          console.log('WebSocket state: OPEN');
-          console.log('Sending payload:', json);
+          // console.log('=== SENDING VIA WEBSOCKET ===');
+          // console.log('WebSocket state: OPEN');
+          // console.log('Sending payload:', json);
           ws.current.send(json);
           break;
         case WebSocket.CONNECTING:
           // WebSocket is connecting - wait for it to open then send
-          console.log('=== WEBSOCKET CONNECTING - WAITING ===');
-          console.log('WebSocket state: CONNECTING');
+          // console.log('=== WEBSOCKET CONNECTING - WAITING ===');
+          // console.log('WebSocket state: CONNECTING');
           ws.current.addEventListener(
             "open",
             () => {
-              console.log('=== WEBSOCKET OPENED - SENDING ===');
-              console.log('Sending payload:', json);
+              // console.log('=== WEBSOCKET OPENED - SENDING ===');
+              // console.log('Sending payload:', json);
               ws.current?.send(json);
             },
             { once: true }
@@ -604,8 +604,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           break;
         default:
           // WebSocket is closed or in error state - use REST fallback
-          console.log('=== USING REST API FALLBACK ===');
-          console.log('WebSocket state:', ws.current.readyState);
+          // console.log('=== USING REST API FALLBACK ===');
+          // console.log('WebSocket state:', ws.current.readyState);
           void sendViaRest();
       }
     },
