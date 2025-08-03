@@ -107,6 +107,32 @@ const Step2_Developer: React.FC<Props> = ({
     }
   }, [setAvailableFromDate, setFormData, setShowCalendar]);
 
+  // Helper functions to check if sections are filled
+  const isBasicInfoFilled = () => {
+    return formData.title.trim() && 
+           formData.description.trim() && 
+           formData.country && 
+           formData.location.trim();
+  };
+
+  const isUnitsFilled = () => {
+    return formData.devUnits.length > 0 && formData.devUnits.every(r => r.unitBlock.trim());
+  };
+
+  const isAmenitiesFilled = () => {
+    return formData.amenities.length > 0;
+  };
+
+  // Helper function to check if a field is filled
+  const isFieldFilled = (value: string | number | undefined) => {
+    return value !== undefined && value !== null && value !== '';
+  };
+
+  // Helper function to get field status class
+  const getFieldStatusClass = (value: string | number | undefined) => {
+    return isFieldFilled(value) ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white';
+  };
+
   /* ---------- Validation ---------- */
   const baseValid = formData.title.trim() && formData.description.trim() && formData.country && formData.location.trim();
   const tableValid = formData.devUnits.length > 0 && formData.devUnits.every(r => r.unitBlock.trim());
@@ -125,10 +151,17 @@ const Step2_Developer: React.FC<Props> = ({
 
       <div className="space-y-8">
         {/* Basic Information Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isBasicInfoFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Basic Information
+            {isBasicInfoFilled() && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✓ Complete
+              </span>
+            )}
           </h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -298,11 +331,18 @@ const Step2_Developer: React.FC<Props> = ({
         </div>
 
         {/* Units Table Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isUnitsFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-xl font-semibold text-gray-800 flex items-center">
               <Building2 className="w-5 h-5 mr-2 text-blue-600" />
               Units Configuration
+              {isUnitsFilled() && (
+                <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                  ✓ Complete ({formData.devUnits.length} units)
+                </span>
+              )}
             </h3>
             <button
               type="button"
@@ -435,10 +475,17 @@ const Step2_Developer: React.FC<Props> = ({
         </div>
 
         {/* Amenities Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isAmenitiesFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Project Amenities
+            {isAmenitiesFilled() && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✓ Complete ({formData.amenities.length} selected)
+              </span>
+            )}
           </h3>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -469,6 +516,38 @@ const Step2_Developer: React.FC<Props> = ({
               </label>
             ))}
           </div>
+          
+          {/* Selected Amenities Summary */}
+          {formData.amenities.length > 0 && (
+            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
+                Selected Amenities ({formData.amenities.length})
+              </h4>
+              <div className="flex flex-wrap gap-2">
+                {formData.amenities.map(amenityId => {
+                  const amenity = DEV_AMENITIES.find(a => a.id === amenityId);
+                  return amenity ? (
+                    <span
+                      key={amenityId}
+                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full border border-green-200"
+                    >
+                      {amenity.label}
+                      <button
+                        type="button"
+                        onClick={() => toggleAmenity(amenityId)}
+                        className="ml-2 text-green-600 hover:text-green-800 transition-colors"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ) : null;
+                })}
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

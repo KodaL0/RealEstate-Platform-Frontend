@@ -91,6 +91,45 @@ const Step2_OwnerAgent: React.FC<Props> = ({
     }
   }, [setAvailableFromDate, setFormData, setShowCalendar]);
 
+  // Helper functions to check if sections are filled
+  const isBasicInfoFilled = () => {
+    return formData.title.trim() && 
+           formData.description.trim() && 
+           formData.price && 
+           formData.propertyType && 
+           formData.propertyStatus && 
+           formData.country && 
+           formData.location.trim();
+  };
+
+  const isPropertyDetailsFilled = () => {
+    return formData.bedrooms || 
+           formData.bathrooms || 
+           formData.area || 
+           formData.yearBuilt || 
+           formData.parkingSpaces || 
+           formData.lotSize || 
+           formData.energyRating || 
+           formData.constructionMaterial || 
+           formData.floorLevel || 
+           formData.totalFloors || 
+           availableFromDate;
+  };
+
+  const isAmenitiesFilled = () => {
+    return formData.amenities.length > 0;
+  };
+
+  // Helper function to check if a field is filled
+  const isFieldFilled = (value: string | number | undefined) => {
+    return value !== undefined && value !== null && value !== '';
+  };
+
+  // Helper function to get field status class
+  const getFieldStatusClass = (value: string | number | undefined) => {
+    return isFieldFilled(value) ? 'border-green-300 bg-green-50' : 'border-gray-300 bg-white';
+  };
+
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto">
       {/* Header */}
@@ -104,10 +143,17 @@ const Step2_OwnerAgent: React.FC<Props> = ({
 
       <div className="space-y-8">
         {/* Basic Information Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isBasicInfoFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Building2 className="w-5 h-5 mr-2 text-blue-600" />
             Basic Information
+            {isBasicInfoFilled() && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✓ Complete
+              </span>
+            )}
           </h3>
           
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -121,7 +167,9 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                 value={formData.title}
                 onChange={onChange}
                 placeholder="e.g., Luxurious Waterfront Penthouse"
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                  getFieldStatusClass(formData.title)
+                }`}
               />
             </div>
 
@@ -137,7 +185,9 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                   name="price"
                   value={formData.price}
                   onChange={onChange}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                  className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 ${
+                    getFieldStatusClass(formData.price)
+                  }`}
                   min={0}
                   step="0.01"
                   placeholder="0.00"
@@ -250,10 +300,17 @@ const Step2_OwnerAgent: React.FC<Props> = ({
         </div>
 
         {/* Property Specifications Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isPropertyDetailsFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Property Specifications
+            {isPropertyDetailsFilled() && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✓ Complete
+              </span>
+            )}
           </h3>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -443,10 +500,17 @@ const Step2_OwnerAgent: React.FC<Props> = ({
         </div>
 
         {/* Enhanced Amenities Card */}
-        <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100">
+        <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
+          isAmenitiesFilled() ? 'border-green-300 bg-green-50' : 'border-gray-100'
+        }`}>
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Property Amenities
+            {isAmenitiesFilled() && (
+              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                ✓ Complete ({formData.amenities.length} selected)
+              </span>
+            )}
           </h3>
           
           {/* Category Tabs */}
@@ -500,8 +564,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
           
           {/* Selected Amenities Summary */}
           {formData.amenities.length > 0 && (
-            <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-              <h4 className="text-sm font-semibold text-blue-800 mb-2">
+            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
+              <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
+                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                </svg>
                 Selected Amenities ({formData.amenities.length})
               </h4>
               <div className="flex flex-wrap gap-2">
@@ -510,13 +577,13 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                   return amenity ? (
                     <span
                       key={amenityId}
-                      className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full"
+                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full border border-green-200"
                     >
                       {amenity.label}
                       <button
                         type="button"
                         onClick={() => toggleAmenity(amenityId)}
-                        className="ml-2 text-blue-600 hover:text-blue-800"
+                        className="ml-2 text-green-600 hover:text-green-800 transition-colors"
                       >
                         ×
                       </button>
