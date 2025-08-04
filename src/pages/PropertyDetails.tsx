@@ -29,6 +29,7 @@ const mapPropertyData = (raw: any): Property => ({
   description: raw?.description ?? '',
   price: raw?.price ? +raw.price : 0,
   location: raw?.location ?? '',
+  country: raw?.country ?? '',
   property_type: raw?.property_type ?? '',
   bedrooms: raw?.bedrooms ?? 0,
   bathrooms: raw?.bathrooms ? +raw.bathrooms : 0,
@@ -485,10 +486,10 @@ const PropertyDetails: React.FC = () => {
                   {property.lot_size && (
                     <div className="flex items-center text-gray-700">
                       <Ruler className="h-5 w-5 mr-2 text-gray-500" />
-                      <span>{parseInt(property.lot_size, 10)} m² lot</span>
+                      <span>{property.lot_size} m² lot</span>
                     </div>
                   )}
-                  {property.floor_level && (
+                  {property.floor_level !== undefined && (
                     <div className="flex items-center text-gray-700">
                       <Layers className="h-5 w-5 mr-2 text-gray-500" />
                       <span>{formatOrdinal(property.floor_level)} Floor</span>
@@ -518,14 +519,30 @@ const PropertyDetails: React.FC = () => {
                   {(() => {
                     const categorizedAmenities: { [category: string]: string[] } = {};
                     
-                    property.amenities.forEach(amenityId => {
-                      const amenity = AMENITIES.find(a => a.id === amenityId);
+                    property.amenities.forEach(amenityItem => {
+                      // Handle both ID strings and label strings (for backward compatibility)
+                      const amenityId = typeof amenityItem === 'string' ? amenityItem : amenityItem;
+                      
+                      // First try to find by ID
+                      let amenity = AMENITIES.find(a => a.id === amenityId);
+                      
+                      // If not found by ID, try to find by label (fallback for old data)
+                      if (!amenity) {
+                        amenity = AMENITIES.find(a => a.label === amenityId);
+                      }
+                      
                       if (amenity) {
                         const category = amenity.category;
                         if (!categorizedAmenities[category]) {
                           categorizedAmenities[category] = [];
                         }
-                        categorizedAmenities[category].push(amenityId);
+                        categorizedAmenities[category].push(amenity.id);
+                      } else {
+                        // If still not found, create an "Other" category for unknown amenities
+                        if (!categorizedAmenities['Other']) {
+                          categorizedAmenities['Other'] = [];
+                        }
+                        categorizedAmenities['Other'].push(amenityId);
                       }
                     });
                     
@@ -542,7 +559,13 @@ const PropertyDetails: React.FC = () => {
                                 {amenityIcons[amenityId] ?? amenityIcons.default}
                                 <span className="text-sm font-medium text-gray-700">{amenity.label}</span>
                               </div>
-                            ) : null;
+                            ) : (
+                              // Fallback for unknown amenities
+                              <div key={i} className="flex items-center p-2 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                                {amenityIcons.default}
+                                <span className="text-sm font-medium text-gray-700">{amenityId}</span>
+                              </div>
+                            );
                           })}
                         </div>
                       </div>
@@ -597,8 +620,8 @@ const PropertyDetails: React.FC = () => {
 
                       {/* Chat button */}
                       <ChatButton
-                        sellerId={property.owner.id}
-                        propertyId={property.id}
+                        sellerId={Number(property.owner.id)}
+                        propertyId={Number(property.id)}
                         title={property.title}
                       />
                     </div>

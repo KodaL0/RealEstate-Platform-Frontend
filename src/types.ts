@@ -56,6 +56,10 @@ export interface Property {
   created_at: string;
   updated_at: string;
   images: PropertyImage[];
+  // Additional fields that may be present in API responses
+  latitude?: number;
+  longitude?: number;
+  is_favourite?: boolean;
 }
 
 /* Normalize helper */

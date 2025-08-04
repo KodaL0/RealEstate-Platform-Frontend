@@ -20,7 +20,6 @@ import {
   DEFAULT_FORM_STATE,
   ListingForm,
   COUNTRY_CODES,
-  AMENITIES,
 } from '../types';
 
 /* ---------- WizardContent ---------- */
@@ -211,43 +210,6 @@ const CreateListing: React.FC = () => {
         }
         setCountryCode(cc);
 
-        // Normalize amenities to handle legacy IDs
-        const normalizeAmenities = (amenities: string[]) => {
-          const legacyMappings: { [key: string]: string } = {
-            'Attic': 'attic',
-            'Pet Friendly': 'pets', 
-            'High-Speed Internet': 'wifi',
-            'Swimming Pool': 'swimming_pool', // Map to exterior swimming pool
-            // Add more mappings as needed
-          };
-          
-          return amenities.map(amenityId => {
-            // Check if this is a legacy ID that needs mapping
-            const mappedId = legacyMappings[amenityId];
-            if (mappedId) {
-              return mappedId;
-            }
-            return amenityId;
-          });
-        };
-        
-        const normalizedAmenities = normalizeAmenities(d.amenities || []);
-        
-        // Deduplicate amenities that might be the same but have different IDs
-        const deduplicatedAmenities = normalizedAmenities.filter((amenityId, index, array) => {
-          const amenity = AMENITIES.find(a => a.id === amenityId);
-          if (!amenity) return true; // Keep if not found (will be handled by findAmenityById)
-          
-          // Check if this amenity label already exists in the array
-          const firstIndex = array.findIndex(id => {
-            const foundAmenity = AMENITIES.find(a => a.id === id);
-            return foundAmenity && foundAmenity.label === amenity.label;
-          });
-          
-          // Only keep the first occurrence of each amenity label
-          return firstIndex === index;
-        });
-        
         setFormData(prev => ({
           ...prev,
           title: d.title || '',
@@ -265,7 +227,7 @@ const CreateListing: React.FC = () => {
           bedrooms: d.bedrooms?.toString() || '',
           bathrooms: d.bathrooms?.toString() || '',
           area: d.area?.toString() || '',
-          amenities: deduplicatedAmenities,
+          amenities: d.amenities || [],
           yearBuilt: d.year_built?.toString() || '',
           parkingSpaces: d.parking_spaces?.toString() || '',
           lotSize: d.lot_size?.toString() || '',
