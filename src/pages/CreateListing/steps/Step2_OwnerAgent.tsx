@@ -641,11 +641,6 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                     <div key={category} className="bg-white rounded-xl border border-gray-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-gray-800">{category}</h4>
-                        {selectedCount > 0 && (
-                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
-                            {selectedCount} selected
-                          </span>
-                        )}
                       </div>
                       
                       <div className="grid grid-cols-1 gap-3">
