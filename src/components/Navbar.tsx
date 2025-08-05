@@ -368,23 +368,7 @@ const Navbar: React.FC = () => {
         )}
       </nav>
 
-      {/* Floating Chat Button for Mobile */}
-      {user && !isOnChatPage && (
-        <Link
-          to="/chat"
-          className="fixed bottom-6 right-6 w-14 h-14 bg-gradient-to-r from-blue-500 to-indigo-600 text-white rounded-full shadow-lg hover:from-blue-600 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 z-30 flex items-center justify-center md:hidden"
-          aria-label="Open messages"
-        >
-          <div className="relative">
-            <MessageCircle size={24} />
-            {unreadTotal > 0 && (
-              <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-                {unreadTotal > 9 ? '9+' : unreadTotal}
-              </span>
-            )}
-          </div>
-        </Link>
-      )}
+
     </>
   );
 };

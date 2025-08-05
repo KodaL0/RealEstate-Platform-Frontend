@@ -2,27 +2,30 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// Environment configuration
+const isDevelopment = process.env.NODE_ENV === 'development';
+
 export default defineConfig({
   plugins: [react()],
   server: {
-    proxy: {
+    proxy: isDevelopment ? {
       '/api': {
-        target: 'https://api.propertpro.com',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
         rewrite: path => path.replace(/^\/api/, '/api'),
       },
       '/oauth': {
-        target: 'https://api.propertpro.com',
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
-      '/accounts': {                    // ← add this
-        target: 'https://api.propertpro.com',
+      '/accounts': {
+        target: 'http://127.0.0.1:8000',
         changeOrigin: true,
-        secure: true,
+        secure: false,
       },
-    },
+    } : undefined,
   },
   optimizeDeps: {
     include: ["@vercel/analytics/react"],

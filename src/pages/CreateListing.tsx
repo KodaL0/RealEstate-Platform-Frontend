@@ -57,6 +57,7 @@ type WizardProps = {
 
 const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
+  const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
 const step2 =
   props.formData.userType === 'developer' ? (
@@ -115,10 +116,12 @@ const step2 =
   return (
     <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
       <div className="flex-shrink-0">
-        <ProgressBar isEditing={props.isEditing} />
+        <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
       </div>
-      <div className="flex-1 overflow-y-auto mt-6">
-        {steps[currentStep]}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 px-2">
+        <div className="w-full">
+          {steps[currentStep]}
+        </div>
       </div>
     </form>
   );
@@ -343,10 +346,10 @@ const CreateListing: React.FC = () => {
 
   return (
     <ListingWizardProvider initialStep={isEditing ? 0 : 0} totalSteps={isEditing ? 3 : 4}>
-      <div className="fixed inset-0 bg-gray-50 pt-24 pb-12">
-        <div className="h-full container mx-auto px-6 max-w-6xl flex flex-col">
+      <div className="fixed inset-0 bg-gray-50 pt-24">
+        <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6 flex-shrink-0">
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
               <p className="text-sm text-red-700">{error}</p>
             </div>
           )}

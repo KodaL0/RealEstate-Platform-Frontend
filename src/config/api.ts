@@ -1,5 +1,6 @@
 // src/config/api.ts
 import axios from 'axios';
+import environment from './environment';
 
 type RequestConfig = {
   headers?: Record<string,string>;
@@ -8,12 +9,12 @@ type RequestConfig = {
   [k:string]: any;
 };
 
-const API_HOST = 'https://api.propertpro.com';
+// Use environment configuration for automatic URL switching
+const API_HOST = environment.baseUrl;
 const API_BASE = `${API_HOST}/api`;
 
-const baseURL = import.meta.env.PROD
-  ? API_BASE
-  : '/api';
+// In development, use proxy; in production, use full URL
+const baseURL = environment.useProxy ? '/api' : API_BASE;
 
 export const apiClient = axios.create({
   baseURL,

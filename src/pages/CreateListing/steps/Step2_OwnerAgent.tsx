@@ -240,14 +240,14 @@ const Step2_OwnerAgent: React.FC<Props> = ({
   }, [formData.amenities, hasInitialized, activeCategory]);
 
   return (
-    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto pb-8">
+    <section className="bg-gradient-to-br from-white to-gray-50 p-6 lg:p-8 rounded-2xl shadow-xl border border-gray-100 w-full pb-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-4">
-          <Home className="w-8 h-8 text-white" />
+      <div className="text-center mb-4">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-2">
+          <Home className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Property Details</h2>
-        <p className="text-gray-600 text-lg">Tell us about your property</p>
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Property Details</h2>
+        <p className="text-gray-600 text-sm">Tell us about your property</p>
       </div>
 
       <div className="space-y-8">
@@ -422,7 +422,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             )}
           </h3>
           
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Property Type */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -623,23 +623,100 @@ const Step2_OwnerAgent: React.FC<Props> = ({
           <h3 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <Home className="w-5 h-5 mr-2 text-blue-600" />
             Property Amenities
-            {isAmenitiesFilled() && (
-              <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                ✓ Complete ({formData.amenities.length} selected)
-              </span>
-            )}
           </h3>
           
-          {/* Category Tabs */}
-          <div className="mb-6" style={{ position: 'relative', zIndex: 5 }}>
-
+          {/* Mobile: Fixed Category Selector + Scrollable Amenities */}
+          <div className="md:hidden">
+            {/* Fixed Category Selector */}
+            <div className="sticky top-0 bg-white z-10 pb-4 mb-4 border-b border-gray-200">
+              <div className="flex gap-2 overflow-x-auto pb-2 amenity-category-scroll" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                <style>{`
+                  .amenity-category-scroll::-webkit-scrollbar {
+                    display: none;
+                  }
+                `}</style>
+                {(() => {
+                  const categories = Array.from(new Set(AMENITIES.map(a => a.category)));
+                  return categories.map(category => {
+                    const selectedCount = formData.amenities.filter(amenityId => {
+                      const amenity = findAmenityById(amenityId);
+                      return amenity && amenity.category === category;
+                    }).length;
+                    
+                    return (
+                      <button
+                        key={category}
+                        type="button"
+                        onClick={() => setActiveCategory(category)}
+                        className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-center min-w-max ${
+                          activeCategory === category
+                            ? 'border-blue-500 bg-blue-50 shadow-md'
+                            : 'border-gray-200 bg-white hover:border-gray-300'
+                        }`}
+                      >
+                                              <div className="text-sm font-semibold text-gray-800">
+                        {category}
+                      </div>
+                      </button>
+                    );
+                  });
+                })()}
+              </div>
+            </div>
             
-            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4" style={{ position: 'relative', zIndex: 5 }}>
+            {/* Mobile: Amenities Grid */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3">
+              {(() => {
+                const filteredAmenities = AMENITIES.filter(a => a.category === activeCategory);
+                return filteredAmenities.map(a => {
+                  const isSelected = formData.amenities.some(amenityId => {
+                    const foundAmenity = findAmenityById(amenityId);
+                    return foundAmenity && foundAmenity.id === a.id;
+                  });
+                  
+                  return (
+                    <button
+                      key={a.id}
+                      type="button"
+                      onClick={() => toggleAmenity(a.id)}
+                      className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
+                        isSelected
+                          ? 'border-green-500 bg-green-50 shadow-sm'
+                          : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex flex-col items-center space-y-2">
+                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                          isSelected
+                            ? 'bg-green-500 border-green-500'
+                            : 'border-gray-300'
+                        }`}>
+                          {isSelected && (
+                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                            </svg>
+                          )}
+                        </div>
+                        <span className={`text-xs font-medium ${
+                          isSelected ? 'text-green-700' : 'text-gray-700'
+                        }`}>
+                          {a.label}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+
+          {/* Desktop: Category Tabs */}
+          <div className="hidden md:block mb-6">
+            <div className="flex flex-wrap gap-2 border-b border-gray-200 pb-4">
               {(() => {
                 const categories = Array.from(new Set(AMENITIES.map(a => a.category)));
                 
                 return categories.map(category => {
-                  // Count selected amenities in this category
                   const selectedCount = formData.amenities.filter(amenityId => {
                     const amenity = findAmenityById(amenityId);
                     return amenity && amenity.category === category;
@@ -649,18 +726,12 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                     <button
                       key={category}
                       type="button"
-                                          onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setActiveCategory(category);
-                    }}
-
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative cursor-pointer z-10 ${
+                      onClick={() => setActiveCategory(category)}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                         activeCategory === category
                           ? 'bg-blue-500 text-white shadow-md'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
-                      style={{ position: 'relative', zIndex: 10 }}
                     >
                       {category}
                       {selectedCount > 0 && (
@@ -679,8 +750,8 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             </div>
           </div>
           
-          {/* Amenities Grid */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          {/* Desktop: Amenities Grid */}
+          <div className="hidden md:grid md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-4">
             {(() => {
               const filteredAmenities = AMENITIES.filter(a => a.category === activeCategory);
               return filteredAmenities.map(a => {
@@ -728,59 +799,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             })()}
           </div>
           
-                    {/* Selected Amenities Summary */}
-          {formData.amenities.length > 0 && (
-            <div className="mt-6 p-4 bg-green-50 rounded-lg border border-green-200">
-              <h4 className="text-sm font-semibold text-green-800 mb-3 flex items-center">
-                <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                </svg>
-                Selected Amenities ({formData.amenities.length})
-              </h4>
-              <div className="flex flex-wrap gap-2">
-                {formData.amenities.map(amenityId => {
-                  const amenity = findAmenityById(amenityId);
-                  return amenity ? (
-                    <span
-                      key={amenityId}
-                      className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-xs font-medium rounded-full border border-green-200"
-                    >
-                      {amenity.label}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeAmenity(amenityId);
-                        }}
-                        className="ml-2 text-green-600 hover:text-green-800 transition-colors"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ) : (
-                    <span
-                      key={amenityId}
-                      className="inline-flex items-center px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full border border-yellow-200"
-                    >
-                      {amenityId} {/* Show the ID directly instead of "Unknown:" */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          removeAmenity(amenityId);
-                        }}
-                        className="ml-2 text-yellow-600 hover:text-yellow-800 transition-colors"
-                      >
-                        ×
-                      </button>
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
+          
         </div>
       </div>
 
@@ -826,18 +845,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-center text-sm text-gray-500">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          </div>
-          <span className="ml-3">Step 2 of 4</span>
-        </div>
-      </div>
+
     </section>
   );
 };
