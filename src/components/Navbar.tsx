@@ -15,18 +15,13 @@ const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [scrolled, setScrolled] = useState(false);
   const { user, setUser, refreshUser, updateUserData } = useUser();
   const { threads, recalculateUnreadCounts } = useChat();
   const { pendingRequestsCount, totalConnectionsCount } = useConnections(!!user);
   const location = useLocation();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 10);
-    window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
-  }, []);
+
 
   useEffect(() => {
     setIsOpen(false);
@@ -243,7 +238,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="fixed w-full z-[9999] bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)' }}>
+      <nav className="fixed w-full z-[9999] bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)', transform: 'none !important', transition: 'none !important' }}>
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">
