@@ -9,7 +9,7 @@ export const environment = {
     },
     // Production: Use production backend
     production: {
-      baseUrl: 'http://127.0.0.1:8000',
+      baseUrl: 'https://api.propertpro.com',
       useProxy: false,
     },
   },
@@ -30,11 +30,21 @@ export const environment = {
   
   // Get base URL for current environment
   get baseUrl() {
+    // Allow override via environment variable
+    const envBaseUrl = import.meta.env.VITE_API_BASE_URL;
+    if (envBaseUrl) {
+      return envBaseUrl;
+    }
     return this.currentApi.baseUrl;
   },
   
   // Check if we should use proxy
   get useProxy() {
+    // Allow override via environment variable
+    const envUseProxy = import.meta.env.VITE_USE_PROXY;
+    if (envUseProxy !== undefined) {
+      return envUseProxy === 'true';
+    }
     return this.currentApi.useProxy;
   },
 };
