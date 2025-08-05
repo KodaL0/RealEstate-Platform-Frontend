@@ -17,10 +17,37 @@ export const useListingWizard = () => {
 };
 
 export const ListingWizardProvider: React.FC<{ children: ReactNode; initialStep?: number; totalSteps?: number }> = ({ children, initialStep = 0, totalSteps = 4 }) => {
-  const [currentStep, setCurrentStep] = useState(initialStep);
-  const next = () => setCurrentStep(s => Math.min(s + 1, totalSteps - 1));
-  const back = () => setCurrentStep(s => Math.max(s - 1, 0));
-  const goto = (n: number) => setCurrentStep(Math.max(0, Math.min(n, totalSteps - 1)));
+  // Initialize current step from localStorage or initialStep
+  const [currentStep, setCurrentStep] = useState(() => {
+    const saved = localStorage.getItem('createListing_currentStep');
+    if (saved) {
+      try {
+        const step = parseInt(saved, 10);
+        return Math.max(0, Math.min(step, totalSteps - 1));
+      } catch (e) {
+        console.warn('Failed to parse saved step:', e);
+      }
+    }
+    return initialStep;
+  });
+  
+  const next = () => {
+    const newStep = Math.min(currentStep + 1, totalSteps - 1);
+    setCurrentStep(newStep);
+    localStorage.setItem('createListing_currentStep', newStep.toString());
+  };
+  
+  const back = () => {
+    const newStep = Math.max(currentStep - 1, 0);
+    setCurrentStep(newStep);
+    localStorage.setItem('createListing_currentStep', newStep.toString());
+  };
+  
+  const goto = (n: number) => {
+    const newStep = Math.max(0, Math.min(n, totalSteps - 1));
+    setCurrentStep(newStep);
+    localStorage.setItem('createListing_currentStep', newStep.toString());
+  };
 
   return (
     <Ctx.Provider value={{ currentStep, totalSteps, next, back, goto }}>
