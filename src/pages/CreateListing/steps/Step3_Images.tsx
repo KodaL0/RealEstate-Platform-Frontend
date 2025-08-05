@@ -30,12 +30,12 @@ const Step3_Images: React.FC<Props> = ({
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto pb-8">
       {/* Header */}
-      <div className="text-center mb-8">
-        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full mb-4">
-          <Camera className="w-8 h-8 text-white" />
+      <div className="text-center mb-4">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-2">
+          <Camera className="w-5 h-5 text-white" />
         </div>
-        <h2 className="text-3xl font-bold text-gray-800 mb-2">Property Images</h2>
-        <p className="text-gray-600 text-lg">Upload high-quality images to showcase your property</p>
+        <h2 className="text-xl font-bold text-gray-800 mb-1">Property Images</h2>
+        <p className="text-gray-600 text-sm">Upload high-quality images to showcase your property</p>
       </div>
 
       {/* Upload Area */}
@@ -62,12 +62,9 @@ const Step3_Images: React.FC<Props> = ({
             }`}>
               <Upload className="w-8 h-8" />
             </div>
-            <h4 className="text-lg font-semibold text-gray-700 mb-2">
+            <h4 className="text-lg font-semibold text-gray-700 mb-4">
               {isDragActive ? 'Drop images here!' : 'Upload Property Images'}
             </h4>
-            <p className="text-gray-500 mb-4">
-              Drag & drop images here, or click to select files
-            </p>
             <div className="flex items-center space-x-4 text-sm text-gray-400">
               <span>• JPG, PNG, WebP supported</span>
               <span>• Max 10MB per image</span>

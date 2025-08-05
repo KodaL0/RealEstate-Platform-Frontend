@@ -104,13 +104,13 @@ const Navbar: React.FC = () => {
       {/* Sidebar Overlay */}
       {isSidebarOpen && (
         <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] transition-opacity duration-300"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-50 ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed left-0 top-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-[9999] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -243,7 +243,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="fixed w-full z-30 bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)' }}>
+      <nav className="fixed w-full z-[9999] bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)' }}>
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">
