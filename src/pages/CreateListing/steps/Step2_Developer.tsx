@@ -585,18 +585,7 @@ const Step2_Developer: React.FC<Props> = ({
         </button>
       </div>
 
-      {/* Progress Indicator */}
-      <div className="mt-8 pt-6 border-t border-gray-200">
-        <div className="flex items-center justify-center text-sm text-gray-500">
-          <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-            <div className="w-2 h-2 bg-gray-300 rounded-full"></div>
-          </div>
-          <span className="ml-3">Step 2 of 4</span>
-        </div>
-      </div>
+
     </section>
   );
 };

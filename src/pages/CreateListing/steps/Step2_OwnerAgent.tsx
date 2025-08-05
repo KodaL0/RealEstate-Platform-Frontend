@@ -625,90 +625,73 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             Property Amenities
           </h3>
           
-          {/* Mobile: Fixed Category Selector + Scrollable Amenities */}
+                    {/* Mobile: Simple Amenity Selection */}
           <div className="md:hidden">
-            {/* Fixed Category Selector */}
-            <div className="sticky top-0 bg-white z-10 pb-4 mb-4 border-b border-gray-200">
-              <div className="flex gap-2 overflow-x-auto pb-2 amenity-category-scroll" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                <style>{`
-                  .amenity-category-scroll::-webkit-scrollbar {
-                    display: none;
-                  }
-                `}</style>
-                {(() => {
-                  const categories = Array.from(new Set(AMENITIES.map(a => a.category)));
-                  return categories.map(category => {
-                    const selectedCount = formData.amenities.filter(amenityId => {
-                      const amenity = findAmenityById(amenityId);
-                      return amenity && amenity.category === category;
-                    }).length;
-                    
-                    return (
-                      <button
-                        key={category}
-                        type="button"
-                        onClick={() => setActiveCategory(category)}
-                        className={`flex-shrink-0 px-4 py-3 rounded-xl border-2 transition-all duration-200 text-center min-w-max ${
-                          activeCategory === category
-                            ? 'border-blue-500 bg-blue-50 shadow-md'
-                            : 'border-gray-200 bg-white hover:border-gray-300'
-                        }`}
-                      >
-                                              <div className="text-sm font-semibold text-gray-800">
-                        {category}
-                      </div>
-                      </button>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-            
-            {/* Mobile: Amenities Grid - Fixed Height Container */}
-            <div className="h-120 overflow-y-auto">
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-3 pb-4">
+            <div className="space-y-4">
               {(() => {
-                const filteredAmenities = AMENITIES.filter(a => a.category === activeCategory);
-                return filteredAmenities.map(a => {
-                  const isSelected = formData.amenities.some(amenityId => {
-                    const foundAmenity = findAmenityById(amenityId);
-                    return foundAmenity && foundAmenity.id === a.id;
-                  });
+                const categories = Array.from(new Set(AMENITIES.map(a => a.category)));
+                return categories.map(category => {
+                  const categoryAmenities = AMENITIES.filter(a => a.category === category);
+                  const selectedCount = formData.amenities.filter(amenityId => {
+                    const amenity = findAmenityById(amenityId);
+                    return amenity && amenity.category === category;
+                  }).length;
                   
                   return (
-                    <button
-                      key={a.id}
-                      type="button"
-                      onClick={() => toggleAmenity(a.id)}
-                      className={`p-3 rounded-lg border-2 transition-all duration-200 text-center ${
-                        isSelected
-                          ? 'border-green-500 bg-green-50 shadow-sm'
-                          : 'border-gray-200 bg-white hover:border-gray-300 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex flex-col items-center space-y-2">
-                        <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                          isSelected
-                            ? 'bg-green-500 border-green-500'
-                            : 'border-gray-300'
-                        }`}>
-                          {isSelected && (
-                            <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                        <span className={`text-xs font-medium ${
-                          isSelected ? 'text-green-700' : 'text-gray-700'
-                        }`}>
-                          {a.label}
-                        </span>
+                    <div key={category} className="bg-white rounded-xl border border-gray-200 p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-semibold text-gray-800">{category}</h4>
+                        {selectedCount > 0 && (
+                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                            {selectedCount} selected
+                          </span>
+                        )}
                       </div>
-                    </button>
+                      
+                      <div className="grid grid-cols-1 gap-3">
+                        {categoryAmenities.map(a => {
+                          const isSelected = formData.amenities.some(amenityId => {
+                            const foundAmenity = findAmenityById(amenityId);
+                            return foundAmenity && foundAmenity.id === a.id;
+                          });
+                          
+                          return (
+                            <button
+                              key={a.id}
+                              type="button"
+                              onClick={() => toggleAmenity(a.id)}
+                              className={`w-full p-4 rounded-lg border-2 transition-all duration-200 text-left ${
+                                isSelected
+                                  ? 'border-blue-500 bg-blue-50'
+                                  : 'border-gray-200 bg-white hover:border-gray-300'
+                              }`}
+                            >
+                              <div className="flex items-center space-x-4">
+                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center flex-shrink-0 ${
+                                  isSelected
+                                    ? 'bg-blue-500 border-blue-500'
+                                    : 'border-gray-300'
+                                }`}>
+                                  {isSelected && (
+                                    <svg className="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                    </svg>
+                                  )}
+                                </div>
+                                <span className={`text-base font-medium leading-tight ${
+                                  isSelected ? 'text-blue-700' : 'text-gray-700'
+                                }`}>
+                                  {a.label}
+                                </span>
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
                 });
               })()}
-              </div>
             </div>
           </div>
 
