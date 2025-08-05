@@ -55,11 +55,11 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollCont
   }, [lastScrollY, scrollContainerRef]);
 
   return (
-    <div className={`w-full transition-all duration-300 ease-in-out overflow-hidden ${
-      isVisible ? 'py-1 opacity-100 max-h-16' : 'py-0 opacity-0 max-h-0'
-    }`}>
+    <>
       {/* Desktop */}
-      <div className="hidden sm:block">
+      <div className={`hidden sm:block w-full transition-all duration-300 ease-in-out overflow-hidden ${
+        isVisible ? 'py-1 opacity-100 max-h-16' : 'py-0 opacity-0 max-h-0'
+      }`}>
         <nav className="flex items-center justify-center" aria-label="Progress">
           <ol className="flex items-center space-x-16">
             {STEPS.map(step => {
@@ -112,19 +112,43 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollCont
         </nav>
       </div>
 
-      {/* Mobile */}
-      <div className="sm:hidden">
-        <div className="text-center text-xs font-medium text-gray-500">
-          Step {currentStep + 1} of {totalSteps}: {STEPS[currentStep].name}
-        </div>
-        <div className="mt-2 w-full bg-gray-200 rounded-full h-3">
-          <div
-            className="bg-blue-600 h-3 rounded-full transition-all duration-300 ease-in-out"
-            style={{ width: `${((currentStep + 1) / totalSteps) * 100}%` }}
-          />
+      {/* Mobile - Fixed and Small with Visual Stages */}
+      <div className="sm:hidden fixed top-20 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3">
+        <div className="flex items-center justify-center space-x-2">
+          {STEPS.map((step, index) => {
+            const isCompleted = index < currentStep;
+            const isCurrent = index === currentStep;
+            const isUpcoming = index > currentStep;
+            
+            return (
+              <div key={step.id} className="flex items-center">
+                {/* Stage Circle */}
+                <div className={`w-3 h-3 rounded-full transition-all duration-300 ease-in-out ${
+                  isCompleted 
+                    ? 'bg-blue-600' 
+                    : isCurrent 
+                      ? 'bg-blue-600 ring-2 ring-blue-200' 
+                      : 'bg-gray-300'
+                }`}>
+                  {isCompleted && (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
+                    </div>
+                  )}
+                </div>
+                
+                {/* Connector Line (except for last item) */}
+                {index < STEPS.length - 1 && (
+                  <div className={`w-8 h-0.5 mx-1 transition-all duration-300 ease-in-out ${
+                    isCompleted ? 'bg-blue-600' : 'bg-gray-300'
+                  }`}></div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

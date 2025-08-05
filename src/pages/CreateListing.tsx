@@ -118,7 +118,7 @@ const step2 =
       <div className="flex-shrink-0">
         <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
       </div>
-      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 px-2">
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 px-2 sm:mt-4 pt-12 sm:pt-0">
         <div className="w-full">
           {steps[currentStep]}
         </div>
