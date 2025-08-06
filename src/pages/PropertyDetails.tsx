@@ -504,8 +504,7 @@ const PropertyDetails: React.FC = () => {
               <div className="bg-gray-50 p-6">
 
                 
-                <div className="max-h-96 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
-                  <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
                     {property.images.map((img, idx) => (
                       <div
                         key={idx}
@@ -534,7 +533,6 @@ const PropertyDetails: React.FC = () => {
                         </div>
                       </div>
                     ))}
-                  </div>
                 </div>
                 
 
