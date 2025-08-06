@@ -187,7 +187,8 @@ const Step2_OwnerAgent: React.FC<Props> = ({
            formData.energyRating || 
            formData.constructionMaterial || 
            formData.floorLevel || 
-           formData.totalFloors;
+           formData.totalFloors || 
+           availableFromDate;
   };
 
   const isAmenitiesFilled = () => {
@@ -564,7 +565,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
           {/* Available From */}
           <div className="relative mt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Available From
+              Available From <span className="text-red-500">*</span>
             </label>
             <button
               type="button"
@@ -640,6 +641,11 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                     <div key={category} className="bg-white rounded-xl border border-gray-200 p-4">
                       <div className="flex items-center justify-between mb-3">
                         <h4 className="font-semibold text-gray-800">{category}</h4>
+                        {selectedCount > 0 && (
+                          <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full">
+                            {selectedCount} selected
+                          </span>
+                        )}
                       </div>
                       
                       <div className="grid grid-cols-1 gap-3">
