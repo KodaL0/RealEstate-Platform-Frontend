@@ -107,29 +107,29 @@ const formatEndpoint = (ep: string): string => {
   return '/' + (clean.endsWith('/') ? clean : clean + '/');
 };
 
-export const apiGet = <T = any>(endpoint: string, config?: RequestConfig): Promise<T> =>
-  apiClient.get<T>(formatEndpoint(endpoint), config).then(res => res.data as T);
+export const apiGet = <T = any>(endpoint: string, config?: RequestConfig) =>
+  apiClient.get<T>(formatEndpoint(endpoint), config);
 
-export const apiPost = <T = any>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> =>
-  apiClient.post<T>(formatEndpoint(endpoint), data, config).then(res => res.data as T);
+export const apiPost = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
+  apiClient.post<T>(formatEndpoint(endpoint), data, config);
 
-export const apiPut = <T = any>(endpoint: string, data?: any, config?: RequestConfig): Promise<T> =>
-  apiClient.put<T>(formatEndpoint(endpoint), data, config).then(res => res.data as T);
+export const apiPut = <T = any>(endpoint: string, data?: any, config?: RequestConfig) =>
+  apiClient.put<T>(formatEndpoint(endpoint), data, config);
 
-export const apiDelete = <T = any>(endpoint: string, config?: RequestConfig): Promise<T> =>
-  apiClient.delete<T>(formatEndpoint(endpoint), config).then(res => res.data as T);
+export const apiDelete = <T = any>(endpoint: string, config?: RequestConfig) =>
+  apiClient.delete<T>(formatEndpoint(endpoint), config);
 
-export const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig): Promise<T> =>
+export const apiFormPost = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
   apiClient.post<T>(formatEndpoint(endpoint), formData, {
     ...config,
     headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
-  }).then(res => res.data as T);
+  });
 
-export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig): Promise<T> =>
+export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
   apiClient.put<T>(formatEndpoint(endpoint), formData, {
     ...config,
     headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
-  }).then(res => res.data as T);
+  });
 
 const api = {
   get: apiGet,

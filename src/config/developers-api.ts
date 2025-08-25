@@ -1,9 +1,66 @@
 // src/config/developers-api.ts
-import { apiClient, apiGet, apiPost, apiPut, apiDelete, apiFormPost } from './api';
+import axios from 'axios';
+import environment from './environment';
 
-// Add PATCH helper for consistency
-const apiPatch = <T = any>(endpoint: string, data?: any, config?: any) =>
-  apiClient.patch<T>(endpoint, data, config);
+// Create a dedicated Axios client for the Developer Portal that ALWAYS targets the API domain
+// This avoids accidental same-origin calls to www.propertpro.com, which would miss JWT cookies.
+const devApiClient = axios.create({
+  baseURL: `${environment.baseUrl}/api`,
+  withCredentials: true,
+  headers: {
+    Accept: 'application/json',
+    'Content-Type': 'application/json',
+    'X-Requested-With': 'XMLHttpRequest',
+  },
+});
+
+// Attach Authorization (from cookies) and CSRF headers centrally
+devApiClient.interceptors.request.use((cfg) => {
+  const getCookieValue = (name: string): string | null => {
+    if (typeof document === 'undefined') return null;
+    const cookies = document.cookie.split(';');
+    for (let cookie of cookies) {
+      const [cookieName, ...cookieValueParts] = cookie.trim().split('=');
+      if (cookieName === name) {
+        return cookieValueParts.join('=');
+      }
+    }
+    return null;
+  };
+
+  let token = getCookieValue('access_token');
+  if (!token) token = getCookieValue('mobile_access_token');
+  if (token) {
+    cfg.headers = { ...cfg.headers, Authorization: `Bearer ${token}` } as any;
+  }
+
+  const csrfToken = getCookieValue('csrftoken');
+  if (csrfToken) {
+    cfg.headers = { ...cfg.headers, 'X-CSRFToken': csrfToken } as any;
+  }
+
+  return cfg;
+});
+
+// Helper wrappers bound to the devApiClient
+function toPromise<T>(p: any): Promise<T> {
+  return new Promise((resolve, reject) => {
+    (p as any).then((r: any) => resolve((r?.data ?? r) as T)).catch(reject);
+  });
+}
+
+const devApiGet = <T = any>(endpoint: string, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.get<T>(endpoint, config));
+const devApiPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.post<T>(endpoint, data, config));
+const devApiPut = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.put<T>(endpoint, data, config));
+const devApiDelete = <T = any>(endpoint: string, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.delete<T>(endpoint, config));
+const devApiFormPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.post<T>(endpoint, data, { ...(config || {}), headers: { ...(config?.headers || {}), 'Content-Type': 'multipart/form-data' } }));
+const devApiPatch = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
+  toPromise<T>(devApiClient.patch<T>(endpoint, data, config));
 
 // ────────────────────────────────────────────────────────────────────────────
 // TypeScript Interfaces
@@ -206,42 +263,42 @@ const formatDevEndpoint = (endpoint: string): string => {
 export const organizationsApi = {
   // Get user's organization
   getMine: (): Promise<OrganizationResponse> =>
-    apiGet<OrganizationResponse>(formatDevEndpoint('orgs/mine')).then(r => r.data),
+    devApiGet<OrganizationResponse>(formatDevEndpoint('orgs/mine')),
 
   // List organizations user belongs to
   list: (): Promise<DeveloperOrganization[]> =>
-    apiGet<DeveloperOrganization[]>(formatDevEndpoint('orgs')),
+    devApiGet<DeveloperOrganization[]>(formatDevEndpoint('orgs')),
 
   // Get specific organization
   get: (id: number): Promise<DeveloperOrganization> =>
-    apiGet<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`)),
+    devApiGet<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`)),
 
   // Create organization
   create: (data: Partial<DeveloperOrganization>): Promise<DeveloperOrganization> =>
-    apiPost<DeveloperOrganization>(formatDevEndpoint('orgs'), data),
+    devApiPost<DeveloperOrganization>(formatDevEndpoint('orgs'), data),
 
   // Update organization
   update: (id: number, data: Partial<DeveloperOrganization>): Promise<DeveloperOrganization> =>
-    apiPut<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`), data),
+    devApiPut<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`), data),
 
   // Partial update organization
   patch: (id: number, data: Partial<DeveloperOrganization>): Promise<DeveloperOrganization> =>
-    apiPatch<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`), data),
+    devApiPatch<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`), data),
 
   // Delete organization
   delete: (id: number): Promise<void> =>
-    apiDelete<void>(formatDevEndpoint(`orgs/${id}`)),
+    devApiDelete<void>(formatDevEndpoint(`orgs/${id}`)),
 
   // Upload organization logo
   uploadLogo: (id: number, logoFile: File) => {
     const formData = new FormData();
     formData.append('logo', logoFile);
-    return apiFormPost<LogoUploadResponse>(formatDevEndpoint(`orgs/${id}/upload_logo`), formData);
+    return devApiFormPost<LogoUploadResponse>(formatDevEndpoint(`orgs/${id}/upload_logo`), formData);
   },
 
   // Get organization file structure
   getFileStructure: (): Promise<FileStructure> =>
-    apiGet<FileStructure>(formatDevEndpoint('orgs/file_structure')),
+    devApiGet<FileStructure>(formatDevEndpoint('orgs/file_structure')),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -251,27 +308,27 @@ export const organizationsApi = {
 export const projectsApi = {
   // List projects
   list: (): Promise<Project[]> =>
-    apiGet<Project[]>(formatDevEndpoint('projects')).then(r => r.data),
+    devApiGet<Project[]>(formatDevEndpoint('projects')),
 
   // Get specific project
   get: (id: number): Promise<Project> =>
-    apiGet<Project>(formatDevEndpoint(`projects/${id}`)).then(r => r.data),
+    devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
 
   // Create project
   create: (data: Partial<Project>): Promise<Project> =>
-    apiPost<Project>(formatDevEndpoint('projects'), data).then(r => r.data),
+    devApiPost<Project>(formatDevEndpoint('projects'), data),
 
   // Update project
   update: (id: number, data: Partial<Project>): Promise<Project> =>
-    apiPut<Project>(formatDevEndpoint(`projects/${id}`), data).then(r => r.data),
+    devApiPut<Project>(formatDevEndpoint(`projects/${id}`), data),
 
   // Partial update project
   patch: (id: number, data: Partial<Project>): Promise<Project> =>
-    apiPatch<Project>(formatDevEndpoint(`projects/${id}`), data).then(r => r.data),
+    devApiPatch<Project>(formatDevEndpoint(`projects/${id}`), data),
 
   // Delete project
   delete: (id: number): Promise<void> =>
-    apiDelete<void>(formatDevEndpoint(`projects/${id}`)).then(() => undefined),
+    devApiDelete<void>(formatDevEndpoint(`projects/${id}`)),
 
   // Upload project asset
   uploadAsset: (projectId: number, data: {
@@ -288,18 +345,18 @@ export const projectsApi = {
     if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata));
     if (data.progress_date) formData.append('progress_date', data.progress_date);
     
-    return apiFormPost<ProjectAsset>(formatDevEndpoint(`projects/${projectId}/upload_asset`), formData);
+    return devApiFormPost<ProjectAsset>(formatDevEndpoint(`projects/${projectId}/upload_asset`), formData);
   },
 
   // Ingest pricelist from text
   ingestPricelist: (projectId: number, text: string): Promise<PricelistIngestionResult> =>
-    apiPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist`), { text }),
+    devApiPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist`), { text }),
 
   // Ingest pricelist from PDF
   ingestPricelistPdf: (projectId: number, file: File): Promise<PricelistIngestionResult> => {
     const formData = new FormData();
     formData.append('file', file);
-    return apiFormPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist_pdf`), formData);
+    return devApiFormPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist_pdf`), formData);
   },
 
   // Ingest description from DOCX
@@ -307,7 +364,7 @@ export const projectsApi = {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('target', target);
-    return apiFormPost<{ ok: boolean }>(formatDevEndpoint(`projects/${projectId}/ingest_description_docx`), formData);
+    return devApiFormPost<{ ok: boolean }>(formatDevEndpoint(`projects/${projectId}/ingest_description_docx`), formData);
   },
 };
 
@@ -318,31 +375,27 @@ export const projectsApi = {
 export const unitsApi = {
   // List units
   list: (): Promise<Unit[]> =>
-    apiGet<Unit[]>(formatDevEndpoint('units')).then(r => r.data),
-
-  // List units by project
-  listByProject: (projectId: number): Promise<Unit[]> =>
-    apiGet<Unit[]>(formatDevEndpoint('units'), { params: { project: projectId } }).then(r => r.data),
+    devApiGet<Unit[]>(formatDevEndpoint('units')),
 
   // Get specific unit
   get: (id: number): Promise<Unit> =>
-    apiGet<Unit>(formatDevEndpoint(`units/${id}`)).then(r => r.data),
+    devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
 
   // Create unit
   create: (data: Partial<Unit>): Promise<Unit> =>
-    apiPost<Unit>(formatDevEndpoint('units'), data).then(r => r.data),
+    devApiPost<Unit>(formatDevEndpoint('units'), data),
 
   // Update unit
   update: (id: number, data: Partial<Unit>): Promise<Unit> =>
-    apiPut<Unit>(formatDevEndpoint(`units/${id}`), data).then(r => r.data),
+    devApiPut<Unit>(formatDevEndpoint(`units/${id}`), data),
 
   // Partial update unit
   patch: (id: number, data: Partial<Unit>): Promise<Unit> =>
-    apiPatch<Unit>(formatDevEndpoint(`units/${id}`), data).then(r => r.data),
+    devApiPatch<Unit>(formatDevEndpoint(`units/${id}`), data),
 
   // Delete unit
   delete: (id: number): Promise<void> =>
-    apiDelete<void>(formatDevEndpoint(`units/${id}`)).then(() => undefined),
+    devApiDelete<void>(formatDevEndpoint(`units/${id}`)),
 
   // Upload unit media
   uploadMedia: (unitId: number, data: {
@@ -353,7 +406,7 @@ export const unitsApi = {
     formData.append('image', data.image);
     if (data.is_primary !== undefined) formData.append('is_primary', String(data.is_primary));
     
-    return apiFormPost<UnitMedia>(formatDevEndpoint(`units/${unitId}/upload_media`), formData);
+    return devApiFormPost<UnitMedia>(formatDevEndpoint(`units/${unitId}/upload_media`), formData);
   },
 };
 
@@ -364,15 +417,11 @@ export const unitsApi = {
 export const projectAssetsApi = {
   // List project assets
   list: (): Promise<ProjectAsset[]> =>
-    apiGet<ProjectAsset[]>(formatDevEndpoint('project-assets')).then(r => r.data),
-
-  // List project assets filtered by project
-  listByProject: (projectId: number): Promise<ProjectAsset[]> =>
-    apiGet<ProjectAsset[]>(formatDevEndpoint('project-assets'), { params: { project: projectId } }).then(r => r.data),
+    devApiGet<ProjectAsset[]>(formatDevEndpoint('project-assets')),
 
   // Get specific project asset
   get: (id: number): Promise<ProjectAsset> =>
-    apiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)).then(r => r.data),
+    devApiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)),
 
   // Create project asset
   create: (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
@@ -387,18 +436,18 @@ export const projectAssetsApi = {
           }
         }
       });
-      return apiFormPost<ProjectAsset>(formatDevEndpoint('project-assets'), formData).then(r => r.data);
+      return devApiFormPost<ProjectAsset>(formatDevEndpoint('project-assets'), formData);
     }
-    return apiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data).then(r => r.data);
+    return devApiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data);
   },
 
   // Update project asset
   update: (id: number, data: Partial<ProjectAsset>): Promise<ProjectAsset> =>
-    apiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data).then(r => r.data),
+    devApiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data),
 
   // Delete project asset
   delete: (id: number): Promise<void> =>
-    apiDelete<void>(formatDevEndpoint(`project-assets/${id}`)).then(() => undefined),
+    devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`)),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -408,11 +457,11 @@ export const projectAssetsApi = {
 export const assetsApi = {
   // List assets
   list: (): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets')),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets')),
 
   // Get specific asset
   get: (id: number): Promise<DeveloperAsset> =>
-    apiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
+    devApiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
 
   // Create asset
   create: (data: Partial<DeveloperAsset> & { file?: File }): Promise<DeveloperAsset> => {
@@ -429,58 +478,58 @@ export const assetsApi = {
           }
         }
       });
-      return apiFormPost<DeveloperAsset>(formatDevEndpoint('assets'), formData);
+      return devApiFormPost<DeveloperAsset>(formatDevEndpoint('assets'), formData);
     }
-    return apiPost<DeveloperAsset>(formatDevEndpoint('assets'), data);
+    return devApiPost<DeveloperAsset>(formatDevEndpoint('assets'), data);
   },
 
   // Update asset
   update: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
-    apiPut<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
+    devApiPut<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
 
   // Partial update asset
   patch: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
-    apiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
+    devApiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
 
   // Delete asset
   delete: (id: number): Promise<void> =>
-    apiDelete<void>(formatDevEndpoint(`assets/${id}`)),
+    devApiDelete<void>(formatDevEndpoint(`assets/${id}`)),
 
   // Filter assets by type
   getByType: (type: string): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_type'), { params: { type } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_type'), { params: { type } }),
 
   // Filter assets by category
   getByCategory: (type: string, category: string): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_category'), { params: { type, category } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_category'), { params: { type, category } }),
 
   // Get assets for specific project
   getByProject: (projectId: number): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_project'), { params: { project: projectId } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_project'), { params: { project: projectId } }),
 
   // Get featured assets
   getFeatured: (): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/featured')),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/featured')),
 
   // Get public assets
   getPublic: (): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/public')),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/public')),
 
   // Toggle featured status
   toggleFeatured: (id: number): Promise<DeveloperAsset> =>
-    apiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/toggle_featured`), {}),
+    devApiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/toggle_featured`), {}),
 
   // Toggle public visibility
   togglePublic: (id: number): Promise<DeveloperAsset> =>
-    apiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/toggle_public`), {}),
+    devApiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/toggle_public`), {}),
 
   // Add tags to asset
   addTags: (id: number, tags: string[]): Promise<DeveloperAsset> =>
-    apiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/add_tags`), { tags }),
+    devApiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/add_tags`), { tags }),
 
   // Remove tags from asset
   removeTags: (id: number, tags: string[]): Promise<DeveloperAsset> =>
-    apiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/remove_tags`), { tags }),
+    devApiPost<DeveloperAsset>(formatDevEndpoint(`assets/${id}/remove_tags`), { tags }),
 
   // Search assets
   search: (params: {
@@ -489,15 +538,15 @@ export const assetsApi = {
     category?: string;
     project?: number;
   }): Promise<DeveloperAsset[]> =>
-    apiGet<DeveloperAsset[]>(formatDevEndpoint('assets/search'), { params }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/search'), { params }),
 
   // Get asset statistics for project
   getStatistics: (projectId: number): Promise<AssetStatistics> =>
-    apiGet<AssetStatistics>(formatDevEndpoint('assets/statistics'), { params: { project: projectId } }),
+    devApiGet<AssetStatistics>(formatDevEndpoint('assets/statistics'), { params: { project: projectId } }),
 
   // Get project asset structure
   getStructure: (projectId: number): Promise<any> =>
-    apiGet<any>(formatDevEndpoint('assets/structure'), { params: { project: projectId } }),
+    devApiGet<any>(formatDevEndpoint('assets/structure'), { params: { project: projectId } }),
 
   // Bulk upload assets
   bulkUpload: (projectId: number, files: File[]): Promise<BulkUploadResponse> => {
@@ -506,12 +555,12 @@ export const assetsApi = {
     files.forEach(file => {
       formData.append('files', file);
     });
-    return apiFormPost<BulkUploadResponse>(formatDevEndpoint('assets/bulk_upload'), formData);
+    return devApiFormPost<BulkUploadResponse>(formatDevEndpoint('assets/bulk_upload'), formData);
   },
 
   // Get available categories
   getCategories: (type?: string): Promise<AssetCategories> =>
-    apiGet<AssetCategories>(formatDevEndpoint('assets/categories'), { params: type ? { type } : {} }),
+    devApiGet<AssetCategories>(formatDevEndpoint('assets/categories'), { params: type ? { type } : {} }),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
