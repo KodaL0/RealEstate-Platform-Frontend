@@ -250,19 +250,6 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
       )}
 
       {activeSection === 'units' && (
-        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-medium text-blue-800 mb-2">Debug Info</h4>
-          <div className="text-sm text-blue-700 space-y-1">
-            <p>User ID: {user?.id}</p>
-            <p>User Email: {user?.email}</p>
-            <p>Is Developer: {user?.is_developer ? 'Yes' : 'No'}</p>
-            <p>Project ID: {project.id}</p>
-            <p>Units Count: {units.length}</p>
-          </div>
-        </div>
-      )}
-      
-      {activeSection === 'units' && (
         <EnhancedUnitsManager
           projectId={project.id}
           units={units}
