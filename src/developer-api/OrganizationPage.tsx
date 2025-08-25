@@ -16,8 +16,8 @@ export default function OrganizationPage() {
         
         const response = await developersApi.organizations.getMine();
         console.log('Organization API response:', response); // Debug log
-        if (response.data.organization) {
-          setOrganization(response.data.organization);
+        if (response.organization) {
+          setOrganization(response.organization);
         } else {
           setError('No organization found. Please create an organization first.');
         }
@@ -37,8 +37,8 @@ export default function OrganizationPage() {
     try {
       const response = await developersApi.organizations.getMine();
       console.log('Organization update response:', response); // Debug log
-      if (response.data.organization) {
-        setOrganization(response.data.organization);
+      if (response.organization) {
+        setOrganization(response.organization);
       }
     } catch (error) {
       console.error('Error refreshing organization:', error);

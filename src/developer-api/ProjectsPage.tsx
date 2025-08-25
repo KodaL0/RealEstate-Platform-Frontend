@@ -47,8 +47,8 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         const orgResponse = await developersApi.organizations.getMine();
-        if (orgResponse.data.organization) {
-          setOrganizationId(orgResponse.data.organization.id);
+        if (orgResponse.organization) {
+          setOrganizationId(orgResponse.organization.id);
           const projectsResponse = await developersApi.projects.list();
           const items = projectsResponse.data || [];
           setProjects(items);
