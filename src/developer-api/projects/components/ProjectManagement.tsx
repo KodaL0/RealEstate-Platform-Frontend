@@ -5,6 +5,7 @@ import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
 import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
+import { useUser } from '../../../context/UserContext';
 
 type Project = {
   id: number;
@@ -31,6 +32,7 @@ interface ProjectManagementProps {
 }
 
 export default function ProjectManagement({ project, activeSection }: ProjectManagementProps) {
+  const { user } = useUser();
   const [units, setUnits] = useState<Unit[]>([]);
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [photos, setPhotos] = useState<ProjectAsset[]>([]);
@@ -79,11 +81,18 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
   const handleDeleteUnit = async (unitId: number) => {
     if (!confirm('Are you sure you want to delete this unit?')) return;
     
+    console.log('Attempting to delete unit:', unitId);
+    console.log('Current user:', user);
+    console.log('Project:', project);
+    
     try {
       await developersApi.units.delete(unitId);
       setUnits(units.filter(unit => unit.id !== unitId));
-    } catch (error) {
+      console.log('Unit deleted successfully');
+    } catch (error: any) {
       console.error('Failed to delete unit:', error);
+      console.error('Error details:', error.response?.data);
+      console.error('Error status:', error.response?.status);
     }
   };
 
@@ -236,6 +245,19 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
         </>
       )}
 
+      {activeSection === 'units' && (
+        <div className="mb-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+          <h4 className="font-medium text-blue-800 mb-2">Debug Info</h4>
+          <div className="text-sm text-blue-700 space-y-1">
+            <p>User ID: {user?.id}</p>
+            <p>User Email: {user?.email}</p>
+            <p>Is Developer: {user?.is_developer ? 'Yes' : 'No'}</p>
+            <p>Project ID: {project.id}</p>
+            <p>Units Count: {units.length}</p>
+          </div>
+        </div>
+      )}
+      
       {activeSection === 'units' && (
         <EnhancedUnitsManager
           projectId={project.id}
