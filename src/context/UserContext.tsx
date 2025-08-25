@@ -7,6 +7,7 @@ type User = {
   id: number;
   username: string;
   email: string;
+  is_developer?: boolean;
   name?: string;
   bio?: string;
   location?: string;

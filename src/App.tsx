@@ -32,6 +32,8 @@ import Developers from "./pages/Developers";
 import DeveloperProjects from "./pages/DeveloperProjects";
 import DeveloperDetail from "./pages/DeveloperDetail";
 import ProjectDetail from "./pages/ProjectDetail";
+import DeveloperPortal from "./developer-api/DeveloperPortal";
+import { RequireDeveloper } from "./components/RequireAuth";
 
 
 
@@ -48,12 +50,13 @@ function RouteChangeTracker() {
 function AppContent() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith('/chat');
+  const isDeveloperRoute = location.pathname.startsWith('/developer-api');
 
   return (
    <div className="h-full flex flex-col">
-      <Navbar />
+      {!isDeveloperRoute && <Navbar />}
 
-      <main className={`relative ${isChatRoute ? "h-full" : "flex-grow"}`}>
+      <main className={`relative ${!isDeveloperRoute ? 'pt-[var(--navbar-height)]' : ''} ${isChatRoute ? "h-full" : "flex-grow"}`}>
         <Routes>
           {/* Public */}
           <Route path="/" element={<Home />} />
@@ -72,6 +75,14 @@ function AppContent() {
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
           <Route path="/projects" element={<DeveloperProjects />} />
+          <Route
+            path="/developer-api/*"
+            element={
+              <RequireDeveloper>
+                <DeveloperPortal />
+              </RequireDeveloper>
+            }
+          />
           
           {/* Chat routes - Protected and handled by ChatContainer */}
           <Route
@@ -138,8 +149,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Only show footer when NOT on chat routes */}
-      {!isChatRoute && <Footer />}
+      {/* Footer visible on all routes except chat and developer portal */}
+      {!isChatRoute && !isDeveloperRoute && <Footer />}
       
       {/* Toast Notifications */}
       <Toaster 

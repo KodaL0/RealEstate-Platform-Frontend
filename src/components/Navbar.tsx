@@ -217,6 +217,22 @@ const Navbar: React.FC = () => {
                       </Link>
                     );
                   })}
+                  {user?.is_developer && (
+                    <Link
+                      to="/developer-api"
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
+                        isActive('/developer-api')
+                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <Building2 className="h-5 w-5" />
+                        <span className="font-medium">Developer Portal</span>
+                      </div>
+                    </Link>
+                  )}
                 </nav>
               </div>
             )}
@@ -238,7 +254,7 @@ const Navbar: React.FC = () => {
       </div>
 
       {/* Main Navbar */}
-      <nav className="fixed w-full z-[9999] bg-white shadow-md pt-[env(safe-area-inset-top)]" style={{ height: 'var(--navbar-height)', transform: 'none !important', transition: 'none !important' }}>
+      <nav className="fixed w-full z-[9999] bg-white shadow-md" style={{ height: 'var(--navbar-height)', transform: 'none !important', transition: 'none !important' }}>
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">

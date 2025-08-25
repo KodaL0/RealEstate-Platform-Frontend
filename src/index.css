@@ -93,6 +93,8 @@ body,
   .mobile-safe-right {
     padding-right: env(safe-area-inset-right);
   }
+
+  /* Developer Portal overrides removed: these were causing mobile layout issues */
 }
 
 @layer utilities {

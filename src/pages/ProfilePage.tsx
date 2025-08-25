@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { User as UserIcon, Save, MapPin, Phone, Building, Globe, Camera, FileText, Loader2 } from 'lucide-react';
 import api from '../config/api';
 
@@ -314,6 +314,18 @@ const ProfilePage: React.FC = () => {
           <h1 className="text-3xl font-bold">Profile Management</h1>
         </div>
 
+        {user?.is_developer && (
+          <div className="mb-6">
+            <Link
+              to="/developer-api"
+              className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+            >
+              <Building className="h-4 w-4" />
+              <span>Open Developer Portal</span>
+            </Link>
+          </div>
+        )}
+
         <div className="grid md:grid-cols-2 gap-8">
           {/* Username Section */}
           <div className="bg-gray-50 p-6 rounded-lg">
@@ -387,7 +399,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
+                  <label className="mb-1 font-medium text-gray-700 flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
                     Location
                   </label>
@@ -401,7 +413,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
+                  <label className="mb-1 font-medium text-gray-700 flex items-center">
                     <Phone className="h-4 w-4 mr-1" />
                     Phone Number
                   </label>
@@ -415,7 +427,7 @@ const ProfilePage: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block mb-1 font-medium text-gray-700 flex items-center">
+                  <label className="mb-1 font-medium text-gray-700 flex items-center">
                     <Building className="h-4 w-4 mr-1" />
                     Office/Workplace
                   </label>

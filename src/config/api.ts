@@ -55,6 +55,9 @@ apiClient.interceptors.request.use(cfg => {
       ...cfg.headers,
       Authorization: `Bearer ${token}`,
     };
+  } else {
+    // No JWT token found - this is normal when using Django session auth
+    console.log('🔐 No JWT token found - using Django session authentication');
   }
 
   // Try to get CSRF token if available, but don't fail if missing
@@ -66,9 +69,16 @@ apiClient.interceptors.request.use(cfg => {
     };
   }
 
-  // Add debug logging for mobile issues
+  // Add debug logging for authentication method
   if (!token) {
-    console.warn("Mobile debug - No access_token found in cookies:", document.cookie);
+    console.log("🔐 Using Django session authentication (no JWT token needed)");
+    console.log("🔍 Available cookies:", Object.keys(document.cookie.split(';').reduce((acc: Record<string, boolean>, cookie) => {
+      const [name] = cookie.trim().split('=');
+      acc[name] = true;
+      return acc;
+    }, {})));
+  } else {
+    console.log("✅ JWT token found:", token.substring(0, 20) + "...");
   }
 
   // then continue to your existing logging

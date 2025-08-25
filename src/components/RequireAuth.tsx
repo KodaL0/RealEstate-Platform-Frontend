@@ -18,3 +18,23 @@ export function RequireAuth({ children }: { children: ReactElement }) {
 
   return children;
 }
+
+// Gate specifically for developer-only pages
+export function RequireDeveloper({ children }: { children: ReactElement }) {
+  const { user, isLoading } = useUser();
+  const location = useLocation();
+
+  if (isLoading) {
+    return <div>Checking authentication…</div>;
+  }
+
+  if (!user) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  if (!user.is_developer) {
+    return <Navigate to="/" replace />;
+  }
+
+  return children;
+}
