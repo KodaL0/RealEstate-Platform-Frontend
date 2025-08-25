@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import ProjectToolbar from './ProjectToolbar';
+import developersApi from '../../../config/developers-api';
 
 type Project = {
   id: number;
@@ -26,25 +27,18 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     const loadProjectStats = async () => {
       try {
         // Fetch units for this project
-        const unitsResponse = await fetch(`/api/dev/v1/units/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (unitsResponse.ok) {
-          const unitsData = await unitsResponse.json();
-          setUnits(unitsData || []);
-        }
+        const unitsData = await developersApi.units.list();
+        const projectUnits = unitsData.filter(unit => unit.project === project.id);
+        setUnits(projectUnits);
 
         // Fetch assets for this project
-        const assetsResponse = await fetch(`/api/dev/v1/project-assets/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (assetsResponse.ok) {
-          const assetsData = await assetsResponse.json();
-          setAssets(assetsData || []);
-        }
+        const assetsData = await developersApi.projectAssets.list();
+        const projectAssets = assetsData.filter(asset => asset.project === project.id);
+        setAssets(projectAssets);
 
-        // For now, photos are empty
-        setPhotos([]);
+        // Filter photos from assets
+        const projectPhotos = projectAssets.filter(asset => asset.category === 'photos');
+        setPhotos(projectPhotos);
         
       } catch (error) {
         console.error('Failed to load project stats:', error);

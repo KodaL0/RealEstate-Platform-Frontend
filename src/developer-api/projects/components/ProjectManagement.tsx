@@ -4,7 +4,7 @@ import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
-import developersApi, { Unit } from '../../../config/developers-api';
+import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
 
 type Project = {
   id: number;
@@ -32,8 +32,8 @@ interface ProjectManagementProps {
 
 export default function ProjectManagement({ project, activeSection }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
-  const [assets, setAssets] = useState<Asset[]>([]);
-  const [photos, setPhotos] = useState<any[]>([]);
+  const [assets, setAssets] = useState<ProjectAsset[]>([]);
+  const [photos, setPhotos] = useState<ProjectAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUnitForm, setShowUnitForm] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -45,28 +45,18 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
       setIsLoading(true);
       try {
         // Fetch units for this project
-        const unitsResponse = await fetch(`/api/dev/v1/units/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (unitsResponse.ok) {
-          const unitsData = await unitsResponse.json();
-          setUnits(unitsData || []);
-        }
+        const unitsData = await developersApi.units.list();
+        const projectUnits = unitsData.filter(unit => unit.project === project.id);
+        setUnits(projectUnits);
 
         // Fetch assets for this project
-        const assetsResponse = await fetch(`/api/dev/v1/project-assets/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (assetsResponse.ok) {
-          const assetsData = await assetsResponse.json();
-          setAssets(Array.isArray(assetsData) ? assetsData : []);
-          const photosData = (Array.isArray(assetsData) ? assetsData : []).filter((asset: any) => asset.category === 'photos');
-          setPhotos(photosData);
-        } else {
-          // Gracefully handle backend 500 or other errors
-          setAssets([]);
-          setPhotos([]);
-        }
+        const assetsData = await developersApi.projectAssets.list();
+        const projectAssets = assetsData.filter(asset => asset.project === project.id);
+        setAssets(projectAssets);
+        
+        // Filter photos from assets
+        const projectPhotos = projectAssets.filter(asset => asset.category === 'photos');
+        setPhotos(projectPhotos);
         
       } catch (error) {
         console.error('Failed to load project data:', error);
