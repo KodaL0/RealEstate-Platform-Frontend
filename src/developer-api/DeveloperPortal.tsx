@@ -41,7 +41,7 @@ export default function DeveloperPortal() {
       try {
         const res = await organizationsApi.getMine();
         const data = res as any;
-        const org = (data?.data?.organization ?? data?.organization) || null;
+        const org = data?.organization || null;
         if (org) {
           setOrganization(org);
         } else {
