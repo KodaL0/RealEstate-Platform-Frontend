@@ -38,15 +38,36 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
     setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      if (!formData.code || !formData.unit_type || formData.bedrooms === undefined) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      // Clean up formData by removing undefined values
+      const cleanFormData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log('Submitting unit data:', cleanFormData);
+
       let savedUnit;
       if (unit) {
-        savedUnit = await developersApi.units.update(unit.id, formData);
+        // Update existing unit
+        console.log('Updating unit:', unit.id);
+        savedUnit = await developersApi.units.update(unit.id, cleanFormData);
+        console.log('Unit updated successfully:', savedUnit);
       } else {
-        savedUnit = await developersApi.units.create(formData);
+        // Create new unit
+        console.log('Creating new unit');
+        savedUnit = await developersApi.units.create(cleanFormData);
+        console.log('Unit created successfully:', savedUnit);
       }
+      
       onSave(savedUnit);
     } catch (error) {
       console.error('Error saving unit:', error);
+      // You could add a toast notification here
+      alert(`Error saving unit: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }

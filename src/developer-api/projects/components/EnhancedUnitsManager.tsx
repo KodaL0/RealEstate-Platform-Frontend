@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Copy, Edit, Trash2, Eye, MoreHorizontal, Search, Filter } from 'lucide-react';
 import { Unit } from '../../../config/developers-api';
+import UnitForm from './UnitForm';
 
 interface EnhancedUnitsManagerProps {
   projectId: number;
@@ -25,7 +26,6 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
   const [viewMode, setViewMode] = useState<'table' | 'cards'>('table');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
-  const [duplicatingUnit, setDuplicatingUnit] = useState<Unit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
   // Filter units based on search and filters
@@ -53,7 +53,6 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
       };
 
       await onUnitDuplicate(duplicatedUnit);
-      setDuplicatingUnit(null);
     } catch (error) {
       console.error('Failed to duplicate unit:', error);
     } finally {
@@ -211,14 +210,17 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                 <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
                   <div className="flex items-center space-x-2">
                     <button
-                      onClick={() => setEditingUnit(unit)}
+                      onClick={() => {
+                        setEditingUnit(unit);
+                        setShowCreateModal(true);
+                      }}
                       className="text-blue-600 hover:text-blue-900 p-1 rounded"
                       title="Edit"
                     >
                       <Edit className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setDuplicatingUnit(unit)}
+                      onClick={() => onUnitDuplicate(unit)}
                       className="text-green-600 hover:text-green-900 p-1 rounded"
                       title="Duplicate"
                     >
@@ -255,14 +257,17 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
             </div>
             <div className="flex items-center space-x-1 ml-2">
               <button
-                onClick={() => setEditingUnit(unit)}
+                onClick={() => {
+                  setEditingUnit(unit);
+                  setShowCreateModal(true);
+                }}
                 className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
                 title="Edit"
               >
                 <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
               <button
-                onClick={() => setDuplicatingUnit(unit)}
+                onClick={() => onUnitDuplicate(unit)}
                 className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
                 title="Duplicate"
               >
@@ -476,8 +481,43 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         </div>
       )}
 
-      {/* Modals would be implemented here */}
-      {/* You can integrate with your existing UnitForm or create new modals */}
+      {/* Unit Form Modal */}
+      {showCreateModal && (
+        <UnitForm
+          projectId={projectId}
+          unit={null}
+          onSave={async (savedUnit) => {
+            if (editingUnit) {
+              await onUnitUpdate(savedUnit);
+            } else {
+              await onUnitCreate(savedUnit);
+            }
+            setShowCreateModal(false);
+            setEditingUnit(null);
+          }}
+          onCancel={() => {
+            setShowCreateModal(false);
+            setEditingUnit(null);
+          }}
+        />
+      )}
+
+      {/* Edit Unit Modal */}
+      {editingUnit && (
+        <UnitForm
+          projectId={projectId}
+          unit={editingUnit}
+          onSave={async (savedUnit) => {
+            await onUnitUpdate(savedUnit);
+            setShowCreateModal(false);
+            setEditingUnit(null);
+          }}
+          onCancel={() => {
+            setShowCreateModal(false);
+            setEditingUnit(null);
+          }}
+        />
+      )}
     </div>
   );
 };
