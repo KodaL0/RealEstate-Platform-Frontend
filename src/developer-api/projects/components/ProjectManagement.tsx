@@ -11,8 +11,10 @@ type Project = {
   name: string;
   location?: string;
   status?: string;
+  description?: string;
+  start_date?: string;       
+  finish_date?: string;      
 };
-
 
 
 type Asset = {
@@ -216,9 +218,17 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
               <div>
                 <h4 className="font-medium text-gray-900 mb-3">Project Details</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="text-gray-500">Type:</span> Residential Development</div>
+                  {project.description && (
+                    <div><span className="text-gray-500">Description:</span> {project.description}</div>
+                  )}
+                  {project.start_date && (
+                    <div><span className="text-gray-500">Start Date:</span> {new Date(project.start_date).toLocaleDateString()}</div>
+                  )}
+                  {project.finish_date && (
+                    <div><span className="text-gray-500">Finish Date:</span> {new Date(project.finish_date).toLocaleDateString()}</div>
+                  )}
                   <div><span className="text-gray-500">Total Units:</span> {units.length}</div>
-                  <div><span className="text-gray-500">Available:</span> {units.filter(u => u.status === 'available').length}</div>
+                  <div><span className="text-gray-500">Available Units:</span> {units.filter(u => u.status === 'available').length}</div>
                   <div><span className="text-gray-500">Reserved:</span> {units.filter(u => u.status === 'reserved').length}</div>
                   <div><span className="text-gray-500">Sold:</span> {units.filter(u => u.status === 'sold').length}</div>
                 </div>
