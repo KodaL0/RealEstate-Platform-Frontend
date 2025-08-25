@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Routes, Route, Link, useLocation } from 'react-router-dom';
+import { useUser } from '../context/UserContext';
 import EnhancedLayout from './components/EnhancedLayout';
 import OrganizationPage from './OrganizationPage';
 import ProjectsPage from './ProjectsPage';
@@ -20,12 +21,18 @@ type Organization = {
 
 export default function DeveloperPortal() {
   const location = useLocation();
+  const { user, isLoading: authLoading } = useUser();
   const [organization, setOrganization] = useState<Organization | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch organization data for layout purposes
   useEffect(() => {
+    // Only fetch organization data if user is authenticated and is a developer
+    if (authLoading || !user || !user.is_developer) {
+      return;
+    }
+
     const fetchOrganization = async () => {
       try {
         const response = await fetch('/api/dev/v1/orgs/mine/', {
@@ -39,6 +46,8 @@ export default function DeveloperPortal() {
           } else {
             setError('No organization found. Please create an organization first.');
           }
+        } else if (response.status === 401) {
+          setError('Authentication required. Please log in again.');
         } else {
           setError('Failed to fetch organization data.');
         }
@@ -51,8 +60,42 @@ export default function DeveloperPortal() {
     };
 
     fetchOrganization();
-  }, []);
+  }, [user, authLoading]);
 
+  // Show loading while checking authentication
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error if user is not a developer
+  if (!user || !user.is_developer) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-4xl mb-4">🚫</div>
+          <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+          <p className="text-gray-600 mb-4">
+            {!user ? 'You must be logged in to access the developer portal.' : 'You must be a developer to access this portal.'}
+          </p>
+          <button 
+            onClick={() => window.location.href = !user ? '/login' : '/developers'} 
+            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            {!user ? 'Go to Login' : 'Go to Developers Page'}
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading while fetching organization data
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -64,6 +107,7 @@ export default function DeveloperPortal() {
     );
   }
 
+  // Show error if organization fetch failed
   if (error) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -82,6 +126,7 @@ export default function DeveloperPortal() {
     );
   }
 
+  // Show message if no organization found
   if (!organization) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
