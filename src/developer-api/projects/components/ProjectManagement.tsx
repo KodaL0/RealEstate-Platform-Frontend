@@ -14,18 +14,6 @@ type Project = {
   status?: string;
 };
 
-
-
-type Asset = {
-  id: number;
-  project: number;
-  category: string;
-  title?: string;
-  description?: string;
-  file: string;
-  uploaded_at: string;
-};
-
 interface ProjectManagementProps {
   project: Project;
   activeSection: 'overview' | 'units' | 'assets' | 'photos' | 'team';
@@ -83,7 +71,12 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     
     console.log('Attempting to delete unit:', unitId);
     console.log('Current user:', user);
+    console.log('User is_developer:', user?.is_developer);
     console.log('Project:', project);
+    
+    // Log the unit being deleted
+    const unitToDelete = units.find(unit => unit.id === unitId);
+    console.log('Unit to delete:', unitToDelete);
     
     try {
       await developersApi.units.delete(unitId);
@@ -93,6 +86,17 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
       console.error('Failed to delete unit:', error);
       console.error('Error details:', error.response?.data);
       console.error('Error status:', error.response?.status);
+      console.error('Error headers:', error.response?.headers);
+      
+      // Log more details about the request
+      if (error.config) {
+        console.error('Request config:', {
+          url: error.config.url,
+          method: error.config.method,
+          headers: error.config.headers,
+          withCredentials: error.config.withCredentials
+        });
+      }
     }
   };
 
@@ -126,12 +130,12 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     setEditingUnit(null);
   };
 
-  const handleAssetUpload = (newAsset: Asset) => {
+  const handleAssetUpload = (newAsset: ProjectAsset) => {
     setAssets([newAsset, ...assets]);
     setShowAssetUpload(false);
   };
 
-  const handlePhotoUpload = (newPhoto: any) => {
+  const handlePhotoUpload = (newPhoto: ProjectAsset) => {
     setPhotos([newPhoto, ...photos]);
     setShowPhotoUpload(false);
   };

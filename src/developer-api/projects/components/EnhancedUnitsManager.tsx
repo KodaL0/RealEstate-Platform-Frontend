@@ -1,29 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Plus, Copy, Edit, Trash2, Eye, MoreHorizontal, Search, Filter } from 'lucide-react';
-
-interface Unit {
-  id: number;
-  project: number;
-  code: string;
-  block?: string;
-  unit_type: 'studio' | 'apartment' | 'house';
-  bedrooms: number;
-  bathrooms: number;
-  area_internal?: number;
-  area_veranda?: number;
-  area_total?: number;
-  floor?: string;
-  view?: string;
-  price?: number;
-  currency: string;
-  vat_included: boolean;
-  status: 'available' | 'reserved' | 'sold';
-  pool_type?: string;
-  delivery_months?: number;
-  price_min_furniture_package?: number;
-  price_max_furniture_package?: number;
-  external_ref?: string;
-}
+import { Unit } from '../../../config/developers-api';
 
 interface EnhancedUnitsManagerProps {
   projectId: number;
@@ -31,7 +8,7 @@ interface EnhancedUnitsManagerProps {
   onUnitCreate: (unit: Omit<Unit, 'id'>) => Promise<void>;
   onUnitUpdate: (unit: Unit) => Promise<void>;
   onUnitDelete: (unitId: number) => Promise<void>;
-  onUnitDuplicate: (unit: Unit) => Promise<void>;
+  onUnitDuplicate: (unit: Omit<Unit, 'id'>) => Promise<void>;
 }
 
 const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
