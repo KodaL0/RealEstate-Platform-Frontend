@@ -1,29 +1,5 @@
 import { useState, useEffect } from 'react';
-import developersApi from '../../../config/developers-api';
-
-type Unit = {
-  id: number;
-  project: number;
-  code: string;
-  block?: string;
-  unit_type: 'studio' | 'apartment' | 'house';
-  bedrooms: number;
-  bathrooms: number;
-  area_internal?: number;
-  area_veranda?: number;
-  area_total?: number;
-  floor?: string;
-  view?: string;
-  price?: number;
-  currency: string;
-  vat_included: boolean;
-  status: 'available' | 'reserved' | 'sold';
-  pool_type?: string;
-  delivery_months?: number;
-  price_min_furniture_package?: number;
-  price_max_furniture_package?: number;
-  external_ref?: string;
-};
+import developersApi, { Unit } from '../../../config/developers-api';
 
 interface UnitFormProps {
   projectId: number;
@@ -62,15 +38,36 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
     setIsSubmitting(true);
 
     try {
+      // Validate required fields
+      if (!formData.code || !formData.unit_type || formData.bedrooms === undefined) {
+        throw new Error('Please fill in all required fields');
+      }
+
+      // Clean up formData by removing undefined values
+      const cleanFormData = Object.fromEntries(
+        Object.entries(formData).filter(([_, value]) => value !== undefined)
+      );
+
+      console.log('Submitting unit data:', cleanFormData);
+
       let savedUnit;
       if (unit) {
-        savedUnit = await developersApi.units.update(unit.id, formData);
+        // Update existing unit
+        console.log('Updating unit:', unit.id);
+        savedUnit = await developersApi.units.update(unit.id, cleanFormData);
+        console.log('Unit updated successfully:', savedUnit);
       } else {
-        savedUnit = await developersApi.units.create(formData);
+        // Create new unit
+        console.log('Creating new unit');
+        savedUnit = await developersApi.units.create(cleanFormData);
+        console.log('Unit created successfully:', savedUnit);
       }
+      
       onSave(savedUnit);
     } catch (error) {
       console.error('Error saving unit:', error);
+      // You could add a toast notification here
+      alert(`Error saving unit: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsSubmitting(false);
     }
@@ -116,16 +113,29 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
+                Unit Type
+              </label>
+              <select
+                value={formData.unit_type || 'apartment'}
+                onChange={(e) => handleInputChange('unit_type', e.target.value as Unit['unit_type'])}
+                className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
+              >
+                <option value="studio">Studio</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+              </select>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
                 Bedrooms
               </label>
               <select
                 value={formData.bedrooms || 1}
-                onChange={(e) => handleInputChange('bedrooms', 
-                  e.target.value === 'ST' ? 'ST' : Number(e.target.value)
-                )}
+                onChange={(e) => handleInputChange('bedrooms', Number(e.target.value))}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
               >
-                <option value="ST">Studio</option>
+                <option value={0}>Studio (0)</option>
                 <option value={1}>1 Bedroom</option>
                 <option value={2}>2 Bedrooms</option>
                 <option value={3}>3 Bedrooms</option>
@@ -186,8 +196,8 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
               </label>
               <input
                 type="number"
-                value={formData.area_covered || ''}
-                onChange={(e) => handleInputChange('area_covered', 
+                value={formData.area_veranda || ''}
+                onChange={(e) => handleInputChange('area_veranda', 
                   e.target.value ? Number(e.target.value) : undefined
                 )}
                 className="w-full border border-gray-300 rounded px-3 py-2 focus:outline-none focus:border-blue-500"
