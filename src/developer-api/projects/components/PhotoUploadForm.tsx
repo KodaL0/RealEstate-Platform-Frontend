@@ -47,20 +47,20 @@ export default function PhotoUploadForm({ projectId, onClose, onUpload }: PhotoU
           const response = await developersApi.projectAssets.create({
             file: photoData.file,
             project: projectId,
-            category: 'photos',
+            category: 'photos' as const,
             title: title || photoData.file.name.split('.')[0],
             description: description,
           });
-          return response.data;
+          return response;
         } catch (error) {
           throw new Error(`Failed to upload ${photoData.file.name}`);
         }
       });
 
-      const uploadedPhotos = await Promise.all(uploadPromises);
+      const uploadedProjectAssets = await Promise.all(uploadPromises);
       
       // Call onUpload for each successfully uploaded photo
-      uploadedPhotos.forEach(photo => onUpload(photo));
+      uploadedProjectAssets.forEach(photo => onUpload(photo));
       
       onClose();
     } catch (error) {

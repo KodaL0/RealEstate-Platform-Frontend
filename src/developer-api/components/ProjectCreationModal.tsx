@@ -78,16 +78,17 @@ export default function ProjectCreationModal({
       const payload = {
         ...formData,
         organization: organizationId,
-        price_min: formData.price_min ? parseFloat(formData.price_min) : null,
-        price_max: formData.price_max ? parseFloat(formData.price_max) : null,
-        latitude: formData.latitude ? parseFloat(formData.latitude) : null,
-        longitude: formData.longitude ? parseFloat(formData.longitude) : null,
-        start_date: formData.start_date || null,
-        completion_date: formData.completion_date || null
+        status: formData.status as 'planning' | 'construction' | 'completed' | 'available',
+        price_min: formData.price_min ? parseFloat(formData.price_min) : undefined,
+        price_max: formData.price_max ? parseFloat(formData.price_max) : undefined,
+        latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
+        longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
+        start_date: formData.start_date || undefined,
+        completion_date: formData.completion_date || undefined
       };
 
       const response = await developersApi.projects.create(payload);
-      onProjectCreated(response.data);
+      onProjectCreated(response);
       onClose();
     } catch (error) {
       setError('An error occurred while creating the project');
