@@ -47,16 +47,22 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         const orgResponse = await developersApi.organizations.getMine();
+        console.log('Organization response:', orgResponse);
         if (orgResponse.organization) {
           setOrganizationId(orgResponse.organization.id);
+          console.log('Fetching projects for organization:', orgResponse.organization.id);
           const projectsResponse = await developersApi.projects.list();
-          const items = projectsResponse.data || [];
+          console.log('Projects response:', projectsResponse);
+          const items = projectsResponse || [];
+          console.log('Projects items:', items);
           setProjects(items);
           setSlugById(buildUniqueSlugs(items));
         }
       } catch (error: any) {
         console.error('Error fetching data:', error);
         console.error('Error details:', error?.response);
+        console.error('Error message:', error?.message);
+        console.error('Error status:', error?.response?.status);
       } finally {
         setIsLoading(false);
       }
@@ -90,7 +96,7 @@ export default function ProjectsPage() {
       if (!projects.length) {
         try {
           const resp = await developersApi.projects.list();
-          const items = resp.data || [];
+          const items = resp || [];
           const map = buildUniqueSlugs(items);
           setProjects(items);
           setSlugById(map);

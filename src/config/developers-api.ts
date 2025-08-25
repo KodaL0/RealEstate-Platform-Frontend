@@ -45,7 +45,14 @@ devApiClient.interceptors.request.use((cfg) => {
 // Helper wrappers bound to the devApiClient
 function toPromise<T>(p: any): Promise<T> {
   return new Promise((resolve, reject) => {
-    (p as any).then((r: any) => resolve((r?.data ?? r) as T)).catch(reject);
+    (p as any).then((r: any) => {
+      console.log('API Response in toPromise:', r);
+      console.log('Response data:', r?.data);
+      console.log('Response type:', typeof r);
+      const result = (r?.data ?? r) as T;
+      console.log('Final result:', result);
+      resolve(result);
+    }).catch(reject);
   });
 }
 
