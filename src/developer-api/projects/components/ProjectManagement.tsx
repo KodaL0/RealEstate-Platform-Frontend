@@ -4,6 +4,7 @@ import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
+import developersApi, { Unit } from '../../../config/developers-api';
 
 type Project = {
   id: number;
@@ -12,29 +13,7 @@ type Project = {
   status?: string;
 };
 
-type Unit = {
-  id: number;
-  project: number;
-  code: string;
-  block?: string;
-  unit_type: 'studio' | 'apartment' | 'house';
-  bedrooms: number;
-  bathrooms: number;
-  area_internal?: number;
-  area_veranda?: number;
-  area_total?: number;
-  floor?: string;
-  view?: string;
-  price?: number;
-  currency: string;
-  vat_included: boolean;
-  status: 'available' | 'reserved' | 'sold';
-  pool_type?: string;
-  delivery_months?: number;
-  price_min_furniture_package?: number;
-  price_max_furniture_package?: number;
-  external_ref?: string;
-};
+
 
 type Asset = {
   id: number;
@@ -285,19 +264,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           units={units}
           onUnitCreate={async (unit) => {
             try {
-              const response = await fetch('/api/dev/v1/units/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const savedUnit = await response.json();
-                setUnits(prev => [...prev, savedUnit]);
-              }
+              const savedUnit = await developersApi.units.create(unit);
+              setUnits(prev => [...prev, savedUnit]);
             } catch (error) {
               console.error('Failed to create unit:', error);
             }
