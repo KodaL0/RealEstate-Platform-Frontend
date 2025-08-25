@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import developersApi from '../../../config/developers-api';
 import UnitForm from './UnitForm';
 import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
@@ -65,30 +66,17 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     const loadProjectData = async () => {
       setIsLoading(true);
       try {
-        // Fetch units for this project
-        const unitsResponse = await fetch(`/api/dev/v1/units/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (unitsResponse.ok) {
-          const unitsData = await unitsResponse.json();
-          setUnits(unitsData || []);
-        }
+        // Fetch units for this project via centralized client
+        const unitsData = await developersApi.units.listByProject(project.id);
+        setUnits((unitsData || []) as unknown as Unit[]);
 
-        // Fetch assets for this project
-        const assetsResponse = await fetch(`/api/dev/v1/project-assets/?project=${project.id}`, { 
-          credentials: 'include' 
-        });
-        if (assetsResponse.ok) {
-          const assetsData = await assetsResponse.json();
-          setAssets(Array.isArray(assetsData) ? assetsData : []);
-          const photosData = (Array.isArray(assetsData) ? assetsData : []).filter((asset: any) => asset.category === 'photos');
-          setPhotos(photosData);
-        } else {
-          // Gracefully handle backend 500 or other errors
-          setAssets([]);
-          setPhotos([]);
-        }
-        
+        // Fetch assets for this project via centralized client
+        const assetsData = await developersApi.projectAssets.listByProject(project.id);
+        const normalizedAssets = Array.isArray(assetsData) ? assetsData : [];
+        setAssets(normalizedAssets);
+        const photosData = normalizedAssets.filter((asset: any) => asset.category === 'photos');
+        setPhotos(photosData);
+
       } catch (error) {
         console.error('Failed to load project data:', error);
         // Set empty arrays on error
@@ -285,38 +273,16 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           units={units}
           onUnitCreate={async (unit) => {
             try {
-              const response = await fetch('/api/dev/v1/units/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const savedUnit = await response.json();
-                setUnits(prev => [...prev, savedUnit]);
-              }
+              const savedUnit = await developersApi.units.create(unit);
+              setUnits(prev => ([...prev, savedUnit] as unknown as Unit[]));
             } catch (error) {
               console.error('Failed to create unit:', error);
             }
           }}
           onUnitUpdate={async (unit) => {
             try {
-              const response = await fetch(`/api/dev/v1/units/${unit.id}/`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const updatedUnit = await response.json();
-                setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
-              }
+              const updatedUnit = await developersApi.units.update(unit.id, unit);
+              setUnits(prev => (prev.map(u => u.id === unit.id ? (updatedUnit as unknown as Unit) : u)));
             } catch (error) {
               console.error('Failed to update unit:', error);
             }
@@ -324,19 +290,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           onUnitDelete={handleDeleteUnit}
           onUnitDuplicate={async (unit) => {
             try {
-              const response = await fetch('/api/dev/v1/units/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const savedUnit = await response.json();
-                setUnits(prev => [...prev, savedUnit]);
-              }
+              const savedUnit = await developersApi.units.create(unit);
+              setUnits(prev => ([...prev, savedUnit] as unknown as Unit[]));
             } catch (error) {
               console.error('Failed to duplicate unit:', error);
             }

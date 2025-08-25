@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import developersApi from '../../../config/developers-api';
 
 type Unit = {
   id: number;
@@ -32,7 +33,7 @@ interface UnitFormProps {
 }
 
 export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
-  const [formData, setFormData] = useState<Partial<Unit>>({
+  const [formData, setFormData] = useState<any>({
     project: projectId,
     code: '',
     unit_type: 'apartment',
@@ -61,27 +62,12 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
     setIsSubmitting(true);
 
     try {
-      const url = unit 
-        ? `/api/dev/v1/units/${unit.id}/`
-        : '/api/dev/v1/units/';
-      
-      const method = unit ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const savedUnit = await response.json();
-        onSave(savedUnit);
-      } else {
-        console.error('Failed to save unit');
-      }
+      const payload = { ...formData };
+      delete payload.area_covered; // not part of backend Unit type
+      const savedUnit = unit
+        ? await developersApi.units.update(unit.id, payload)
+        : await developersApi.units.create(payload);
+      onSave(savedUnit as unknown as Unit);
     } catch (error) {
       console.error('Error saving unit:', error);
     } finally {
