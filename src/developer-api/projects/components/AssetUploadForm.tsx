@@ -1,4 +1,5 @@
 import { useState, useEffect, KeyboardEvent } from 'react';
+import developersApi from '../../../config/developers-api';
 
 type AssetCategory = 
   | 'floor_plans'
@@ -109,19 +110,16 @@ export default function AssetUploadForm({ projectId, onClose, onUpload }: AssetU
       // Include tags in metadata for quick filtering
       formData.append('metadata', JSON.stringify({ tags }));
 
-      const response = await fetch('/api/dev/v1/project-assets/', {
-        method: 'POST',
-        credentials: 'include',
-        body: formData,
+      const newAsset = await developersApi.projectAssets.create({
+        file: file,
+        project: projectId,
+        category: selectedCategory,
+        title: finalTitle,
+        description: description,
+        metadata: { tags }
       });
-
-      if (response.ok) {
-        const newAsset = await response.json();
-        onUpload(newAsset);
-        onClose();
-      } else {
-        console.error('Failed to upload asset');
-      }
+      onUpload(newAsset);
+      onClose();
     } catch (error) {
       console.error('Error uploading asset:', error);
     } finally {

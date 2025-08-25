@@ -80,14 +80,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     if (!confirm('Are you sure you want to delete this unit?')) return;
     
     try {
-      const response = await fetch(`/api/dev/v1/units/${unitId}/`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-      
-      if (response.ok) {
-        setUnits(units.filter(unit => unit.id !== unitId));
-      }
+      await developersApi.units.delete(unitId);
+      setUnits(units.filter(unit => unit.id !== unitId));
     } catch (error) {
       console.error('Failed to delete unit:', error);
     }
@@ -97,16 +91,10 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     if (!confirm('Are you sure you want to delete this photo?')) return;
 
     try {
-      const response = await fetch(`/api/dev/v1/project-assets/${photoId}/`, {
-        method: 'DELETE',
-        credentials: 'include'
-      });
-
-      if (response.ok) {
-        setPhotos(photos.filter(photo => photo.id !== photoId));
-        // Also remove from assets since photos are stored as assets
-        setAssets(assets.filter(asset => asset.id !== photoId));
-      }
+      await developersApi.projectAssets.delete(photoId);
+      setPhotos(photos.filter(photo => photo.id !== photoId));
+      // Also remove from assets since photos are stored as assets
+      setAssets(assets.filter(asset => asset.id !== photoId));
     } catch (error) {
       console.error('Failed to delete photo:', error);
     }
@@ -262,19 +250,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           }}
           onUnitUpdate={async (unit) => {
             try {
-              const response = await fetch(`/api/dev/v1/units/${unit.id}/`, {
-                method: 'PUT',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const updatedUnit = await response.json();
-                setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
-              }
+              const updatedUnit = await developersApi.units.update(unit.id, unit);
+              setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
             } catch (error) {
               console.error('Failed to update unit:', error);
             }
@@ -282,19 +259,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           onUnitDelete={handleDeleteUnit}
           onUnitDuplicate={async (unit) => {
             try {
-              const response = await fetch('/api/dev/v1/units/', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-                credentials: 'include',
-                body: JSON.stringify(unit),
-              });
-              
-              if (response.ok) {
-                const savedUnit = await response.json();
-                setUnits(prev => [...prev, savedUnit]);
-              }
+              const savedUnit = await developersApi.units.create(unit);
+              setUnits(prev => [...prev, savedUnit]);
             } catch (error) {
               console.error('Failed to duplicate unit:', error);
             }

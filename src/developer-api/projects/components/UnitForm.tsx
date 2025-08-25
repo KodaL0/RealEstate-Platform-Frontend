@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import developersApi from '../../../config/developers-api';
 
 type Unit = {
   id: number;
@@ -61,27 +62,13 @@ export default function UnitForm({ projectId, unit, onSave, onCancel }: UnitForm
     setIsSubmitting(true);
 
     try {
-      const url = unit 
-        ? `/api/dev/v1/units/${unit.id}/`
-        : '/api/dev/v1/units/';
-      
-      const method = unit ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include',
-        body: JSON.stringify(formData),
-      });
-
-      if (response.ok) {
-        const savedUnit = await response.json();
-        onSave(savedUnit);
+      let savedUnit;
+      if (unit) {
+        savedUnit = await developersApi.units.update(unit.id, formData);
       } else {
-        console.error('Failed to save unit');
+        savedUnit = await developersApi.units.create(formData);
       }
+      onSave(savedUnit);
     } catch (error) {
       console.error('Error saving unit:', error);
     } finally {

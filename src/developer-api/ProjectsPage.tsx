@@ -47,14 +47,10 @@ export default function ProjectsPage() {
     const fetchData = async () => {
       try {
         const orgResponse = await developersApi.organizations.getMine();
-        console.log('Organization response:', orgResponse);
         if (orgResponse.organization) {
           setOrganizationId(orgResponse.organization.id);
-          console.log('Fetching projects for organization:', orgResponse.organization.id);
           const projectsResponse = await developersApi.projects.list();
-          console.log('Projects response:', projectsResponse);
           const items = projectsResponse || [];
-          console.log('Projects items:', items);
           setProjects(items);
           setSlugById(buildUniqueSlugs(items));
         }
