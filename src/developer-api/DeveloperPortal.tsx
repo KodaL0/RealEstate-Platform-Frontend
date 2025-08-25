@@ -5,7 +5,7 @@ import { organizationsApi } from '../config/developers-api';
 import EnhancedLayout from './components/EnhancedLayout';
 import OrganizationPage from './OrganizationPage';
 import ProjectsPage from './ProjectsPage';
-import OrganizationCreationForm from './OrganizationCreationForm';
+import OrganizationCreationForm from './OrganizationCreationForm.tsx';
 
 type Organization = {
   id: number;
@@ -99,10 +99,15 @@ export default function DeveloperPortal() {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-4xl mb-4">🚫</div>
-          <h3 className="text-lg font-medium mb-2">Access Denied</h3>
+          <div className="text-4xl mb-4">{!user ? '🔐' : '🚫'}</div>
+          <h3 className="text-lg font-medium mb-2">
+            {!user ? 'Login Required' : 'Access Denied'}
+          </h3>
           <p className="text-gray-600 mb-4">
-            {!user ? 'You must be logged in to access the developer portal.' : 'You need developer access to use this portal. Please contact support to request developer status.'}
+            {!user 
+              ? 'You must be logged in to access the developer portal. Please log in with your account.' 
+              : 'You need developer access to use this portal. Please contact support to request developer status.'
+            }
           </p>
           
           {/* Debug information */}
@@ -114,22 +119,32 @@ export default function DeveloperPortal() {
               <p>Email: {user?.email || 'N/A'}</p>
               <p>Is Developer: {user?.is_developer ? 'Yes' : 'No'}</p>
               <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
+              <p>Available Cookies: {Object.keys(document.cookie.split(';').reduce((acc: Record<string, boolean>, cookie) => {
+                const [name] = cookie.trim().split('=');
+                acc[name] = true;
+                return acc;
+              }, {})).join(', ') || 'None'}</p>
             </div>
           )}
           
           <div className="space-y-3">
             {!user ? (
-              <button 
-                onClick={() => window.location.href = '/login'} 
-                className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-              >
-                Go to Login
-              </button>
+              <>
+                <button 
+                  onClick={() => window.location.href = '/login'} 
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                >
+                  Go to Login
+                </button>
+                <p className="text-sm text-gray-500">
+                  Don't have an account? <a href="/login" className="text-blue-600 hover:underline">Sign up here</a>
+                </p>
+              </>
             ) : (
               <>
                 <button 
                   onClick={() => window.location.href = '/developers'} 
-                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-blue-700 transition-colors"
                 >
                   Go to Developers Page
                 </button>
