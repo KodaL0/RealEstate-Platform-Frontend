@@ -39,26 +39,22 @@ export default function DeveloperPortal() {
 
     const fetchOrganization = async () => {
       try {
-        const response = await fetch('/api/dev/v1/orgs/mine/', {
-          credentials: 'include'
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          if (data.organization) {
-            setOrganization(data.organization);
-          } else {
-            // No organization found - show creation form
-            setShowCreateForm(true);
-          }
-        } else if (response.status === 401) {
+        const res = await organizationsApi.getMine();
+        const data = res as any;
+        const org = (data?.data?.organization ?? data?.organization) || null;
+        if (org) {
+          setOrganization(org);
+        } else {
+          // No organization found - show creation form
+          setShowCreateForm(true);
+        }
+      } catch (err: any) {
+        const status = err?.response?.status;
+        if (status === 401) {
           setError('Authentication required. Please log in again.');
         } else {
           setError('Failed to fetch organization data.');
         }
-      } catch (error) {
-        console.error('Error fetching organization:', error);
-        setError('An error occurred while fetching organization data.');
       } finally {
         setIsLoading(false);
       }
