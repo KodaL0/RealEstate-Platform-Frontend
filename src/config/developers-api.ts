@@ -2,6 +2,206 @@
 import axios from 'axios';
 import environment from './environment';
 
+// ────────────────────────────────────────────────────────────────────────────
+// Cache Management
+// ────────────────────────────────────────────────────────────────────────────
+
+interface CacheEntry<T> {
+  data: T;
+  timestamp: number;
+  ttl: number;
+}
+
+interface CacheStore {
+  units: CacheEntry<any[]> | null;
+  assets: CacheEntry<any[]> | null;
+  projects: CacheEntry<any[]> | null;
+  projectAssets: CacheEntry<any[]> | null;
+}
+
+class DeveloperApiCache {
+  private cache: CacheStore = {
+    units: null,
+    assets: null,
+    projects: null,
+    projectAssets: null,
+  };
+
+  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private readonly TTL = 5 * 60 * 1000; // 5 minutes
+  private backgroundRefreshInterval: NodeJS.Timeout | null = null;
+
+  private isCacheValid(entry: CacheEntry<any> | null): boolean {
+    if (!entry) return false;
+    const now = Date.now();
+    return (now - entry.timestamp) < entry.ttl;
+  }
+
+  get<T>(key: keyof CacheStore): T | null {
+    const entry = this.cache[key];
+    if (this.isCacheValid(entry)) {
+      return entry.data as T;
+    }
+    return null;
+  }
+
+  set<T>(key: keyof CacheStore, data: T): void {
+    this.cache[key] = {
+      data,
+      timestamp: Date.now(),
+      ttl: this.TTL,
+    };
+  }
+
+  updateItem<T extends { id: number }>(key: keyof CacheStore, updatedItem: T): void {
+    const entry = this.cache[key];
+    if (entry && Array.isArray(entry.data)) {
+      const index = entry.data.findIndex((item: any) => item.id === updatedItem.id);
+      if (index !== -1) {
+        entry.data[index] = updatedItem;
+        entry.timestamp = Date.now();
+      }
+    }
+  }
+
+  addItem<T>(key: keyof CacheStore, newItem: T): void {
+    const entry = this.cache[key];
+    if (entry && Array.isArray(entry.data)) {
+      entry.data.unshift(newItem);
+      entry.timestamp = Date.now();
+    }
+  }
+
+  removeItem(key: keyof CacheStore, itemId: number): void {
+    const entry = this.cache[key];
+    if (entry && Array.isArray(entry.data)) {
+      entry.data = entry.data.filter((item: any) => item.id !== itemId);
+      entry.timestamp = Date.now();
+    }
+  }
+
+  invalidate(key: keyof CacheStore): void {
+    this.cache[key] = null;
+  }
+
+  clear(): void {
+    this.cache = {
+      units: null,
+      assets: null,
+      projects: null,
+      projectAssets: null,
+    };
+  }
+
+  private getPendingRequest(key: string): Promise<any> | null {
+    return this.pendingRequests.get(key) || null;
+  }
+
+  private setPendingRequest(key: string, promise: Promise<any>): void {
+    this.pendingRequests.set(key, promise);
+    promise.finally(() => {
+      this.pendingRequests.delete(key);
+    });
+  }
+
+  async getCachedData<T>(
+    key: keyof CacheStore,
+    apiCall: () => Promise<T>,
+    requestKey?: string
+  ): Promise<T> {
+    const cachedData = this.get<T>(key);
+    if (cachedData !== null) {
+      return cachedData;
+    }
+
+    const pendingKey = requestKey || key;
+    const pendingRequest = this.getPendingRequest(pendingKey);
+    if (pendingRequest) {
+      return pendingRequest;
+    }
+
+    const apiPromise = apiCall().then((data) => {
+      this.set(key, data);
+      return data;
+    });
+
+    this.setPendingRequest(pendingKey, apiPromise);
+    return apiPromise;
+  }
+
+  async bulkFetch(api: any): Promise<void> {
+    try {
+      const [units, assets, projects, projectAssets] = await Promise.all([
+        api.units.list(),
+        api.assets.list(),
+        api.projects.list(),
+        api.projectAssets.list(),
+      ]);
+
+      this.set('units', units);
+      this.set('assets', assets);
+      this.set('projects', projects);
+      this.set('projectAssets', projectAssets);
+
+      console.log('Developer API: Bulk data cached successfully');
+    } catch (error) {
+      console.error('Developer API: Failed to bulk fetch data:', error);
+    }
+  }
+
+  startBackgroundRefresh(api: any, intervalMinutes: number = 4): void {
+    if (this.backgroundRefreshInterval) {
+      clearInterval(this.backgroundRefreshInterval);
+    }
+
+    this.backgroundRefreshInterval = setInterval(async () => {
+      try {
+        await this.bulkFetch(api);
+      } catch (error) {
+        console.error('Developer API: Background refresh failed:', error);
+      }
+    }, intervalMinutes * 60 * 1000);
+  }
+
+  stopBackgroundRefresh(): void {
+    if (this.backgroundRefreshInterval) {
+      clearInterval(this.backgroundRefreshInterval);
+      this.backgroundRefreshInterval = null;
+    }
+  }
+
+  getCacheStatus(): Record<string, { hasData: boolean; age: number; isValid: boolean }> {
+    const now = Date.now();
+    const status: Record<string, any> = {};
+
+    Object.entries(this.cache).forEach(([key, entry]) => {
+      if (entry) {
+        const age = now - entry.timestamp;
+        status[key] = {
+          hasData: true,
+          age: Math.round(age / 1000),
+          isValid: this.isCacheValid(entry),
+        };
+      } else {
+        status[key] = {
+          hasData: false,
+          age: 0,
+          isValid: false,
+        };
+      }
+    });
+
+    return status;
+  }
+}
+
+// Create singleton cache instance
+const developerApiCache = new DeveloperApiCache();
+
+// ────────────────────────────────────────────────────────────────────────────
+// HTTP Client Setup
+// ────────────────────────────────────────────────────────────────────────────
+
 // Create a dedicated Axios client for the Developer Portal that ALWAYS targets the API domain
 // This avoids accidental same-origin calls to www.propertpro.com, which would miss JWT cookies.
 const devApiClient = axios.create({
@@ -55,8 +255,8 @@ const devApiPost = <T = any>(endpoint: string, data?: any, config?: any): Promis
   toPromise<T>(devApiClient.post<T>(endpoint, data, config));
 const devApiPut = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
   toPromise<T>(devApiClient.put<T>(endpoint, data, config));
-const devApiDelete = <T = any>(endpoint: string, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.delete<T>(endpoint, config));
+const devApiDelete = <T = any>(endpoint: string, config?: any): Promise<void> =>
+  toPromise<T>(devApiClient.delete<void>(endpoint, config));
 const devApiFormPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
   toPromise<T>(devApiClient.post<T>(endpoint, data, { ...(config || {}), headers: { ...(config?.headers || {}), 'Content-Type': 'multipart/form-data' } }));
 const devApiPatch = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
@@ -306,29 +506,54 @@ export const organizationsApi = {
 // ────────────────────────────────────────────────────────────────────────────
 
 export const projectsApi = {
-  // List projects
+  // Raw API methods
   list: (): Promise<Project[]> =>
     devApiGet<Project[]>(formatDevEndpoint('projects')),
 
-  // Get specific project
   get: (id: number): Promise<Project> =>
     devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
 
-  // Create project
   create: (data: Partial<Project>): Promise<Project> =>
     devApiPost<Project>(formatDevEndpoint('projects'), data),
 
-  // Update project
   update: (id: number, data: Partial<Project>): Promise<Project> =>
     devApiPut<Project>(formatDevEndpoint(`projects/${id}`), data),
 
-  // Partial update project
   patch: (id: number, data: Partial<Project>): Promise<Project> =>
     devApiPatch<Project>(formatDevEndpoint(`projects/${id}`), data),
 
-  // Delete project
   delete: (id: number): Promise<void> =>
     devApiDelete<void>(formatDevEndpoint(`projects/${id}`)),
+
+  // Cache-integrated methods
+  listCached: (): Promise<Project[]> =>
+    developerApiCache.getCachedData('projects', () => devApiGet<Project[]>(formatDevEndpoint('projects'))),
+
+  getCached: (id: number): Promise<Project> =>
+    devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
+
+  createAndCache: async (data: Partial<Project>): Promise<Project> => {
+    const result = await devApiPost<Project>(formatDevEndpoint('projects'), data);
+    developerApiCache.addItem('projects', result);
+    return result;
+  },
+
+  updateAndCache: async (id: number, data: Partial<Project>): Promise<Project> => {
+    const result = await devApiPut<Project>(formatDevEndpoint(`projects/${id}`), data);
+    developerApiCache.updateItem('projects', result);
+    return result;
+  },
+
+  patchAndCache: async (id: number, data: Partial<Project>): Promise<Project> => {
+    const result = await devApiPatch<Project>(formatDevEndpoint(`projects/${id}`), data);
+    developerApiCache.updateItem('projects', result);
+    return result;
+  },
+
+  deleteAndCache: async (id: number): Promise<void> => {
+    await devApiDelete<void>(formatDevEndpoint(`projects/${id}`));
+    developerApiCache.removeItem('projects', id);
+  },
 
   // Upload project asset
   uploadAsset: (projectId: number, data: {
@@ -373,29 +598,54 @@ export const projectsApi = {
 // ────────────────────────────────────────────────────────────────────────────
 
 export const unitsApi = {
-  // List units
+  // Raw API methods
   list: (): Promise<Unit[]> =>
     devApiGet<Unit[]>(formatDevEndpoint('units')),
 
-  // Get specific unit
   get: (id: number): Promise<Unit> =>
     devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
 
-  // Create unit
   create: (data: Partial<Unit>): Promise<Unit> =>
     devApiPost<Unit>(formatDevEndpoint('units'), data),
 
-  // Update unit
   update: (id: number, data: Partial<Unit>): Promise<Unit> =>
     devApiPut<Unit>(formatDevEndpoint(`units/${id}`), data),
 
-  // Partial update unit
   patch: (id: number, data: Partial<Unit>): Promise<Unit> =>
     devApiPatch<Unit>(formatDevEndpoint(`units/${id}`), data),
 
-  // Delete unit
   delete: (id: number): Promise<void> =>
     devApiDelete<void>(formatDevEndpoint(`units/${id}`)),
+
+  // Cache-integrated methods
+  listCached: (): Promise<Unit[]> =>
+    developerApiCache.getCachedData('units', () => devApiGet<Unit[]>(formatDevEndpoint('units'))),
+
+  getCached: (id: number): Promise<Unit> =>
+    devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
+
+  createAndCache: async (data: Partial<Unit>): Promise<Unit> => {
+    const result = await devApiPost<Unit>(formatDevEndpoint('units'), data);
+    developerApiCache.addItem('units', result);
+    return result;
+  },
+
+  updateAndCache: async (id: number, data: Partial<Unit>): Promise<Unit> => {
+    const result = await devApiPut<Unit>(formatDevEndpoint(`units/${id}`), data);
+    developerApiCache.updateItem('units', result);
+    return result;
+  },
+
+  patchAndCache: async (id: number, data: Partial<Unit>): Promise<Unit> => {
+    const result = await devApiPatch<Unit>(formatDevEndpoint(`units/${id}`), data);
+    developerApiCache.updateItem('units', result);
+    return result;
+  },
+
+  deleteAndCache: async (id: number): Promise<void> => {
+    await devApiDelete<void>(formatDevEndpoint(`units/${id}`));
+    developerApiCache.removeItem('units', id);
+  },
 
   // Upload unit media
   uploadMedia: (unitId: number, data: {
@@ -415,15 +665,13 @@ export const unitsApi = {
 // ────────────────────────────────────────────────────────────────────────────
 
 export const projectAssetsApi = {
-  // List project assets
+  // Raw API methods
   list: (): Promise<ProjectAsset[]> =>
     devApiGet<ProjectAsset[]>(formatDevEndpoint('project-assets')),
 
-  // Get specific project asset
   get: (id: number): Promise<ProjectAsset> =>
     devApiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)),
 
-  // Create project asset
   create: (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
     if (data.file) {
       const formData = new FormData();
@@ -441,13 +689,35 @@ export const projectAssetsApi = {
     return devApiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data);
   },
 
-  // Update project asset
   update: (id: number, data: Partial<ProjectAsset>): Promise<ProjectAsset> =>
     devApiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data),
 
-  // Delete project asset
   delete: (id: number): Promise<void> =>
     devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`)),
+
+  // Cache-integrated methods
+  listCached: (): Promise<ProjectAsset[]> =>
+    developerApiCache.getCachedData('projectAssets', () => devApiGet<ProjectAsset[]>(formatDevEndpoint('project-assets'))),
+
+  getCached: (id: number): Promise<ProjectAsset> =>
+    devApiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)),
+
+  createAndCache: async (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
+    const result = await projectAssetsApi.create(data);
+    developerApiCache.addItem('projectAssets', result);
+    return result;
+  },
+
+  updateAndCache: async (id: number, data: Partial<ProjectAsset>): Promise<ProjectAsset> => {
+    const result = await devApiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data);
+    developerApiCache.updateItem('projectAssets', result);
+    return result;
+  },
+
+  deleteAndCache: async (id: number): Promise<void> => {
+    await devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`));
+    developerApiCache.removeItem('projectAssets', id);
+  },
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -455,15 +725,13 @@ export const projectAssetsApi = {
 // ────────────────────────────────────────────────────────────────────────────
 
 export const assetsApi = {
-  // List assets
+  // Raw API methods
   list: (): Promise<DeveloperAsset[]> =>
     devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets')),
 
-  // Get specific asset
   get: (id: number): Promise<DeveloperAsset> =>
     devApiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
 
-  // Create asset
   create: (data: Partial<DeveloperAsset> & { file?: File }): Promise<DeveloperAsset> => {
     if (data.file) {
       const formData = new FormData();
@@ -483,17 +751,44 @@ export const assetsApi = {
     return devApiPost<DeveloperAsset>(formatDevEndpoint('assets'), data);
   },
 
-  // Update asset
   update: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
     devApiPut<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
 
-  // Partial update asset
   patch: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
     devApiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
 
-  // Delete asset
   delete: (id: number): Promise<void> =>
     devApiDelete<void>(formatDevEndpoint(`assets/${id}`)),
+
+  // Cache-integrated methods
+  listCached: (): Promise<DeveloperAsset[]> =>
+    developerApiCache.getCachedData('assets', () => devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets'))),
+
+  getCached: (id: number): Promise<DeveloperAsset> =>
+    devApiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
+
+  createAndCache: async (data: Partial<DeveloperAsset> & { file?: File }): Promise<DeveloperAsset> => {
+    const result = await assetsApi.create(data);
+    developerApiCache.addItem('assets', result);
+    return result;
+  },
+
+  updateAndCache: async (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> => {
+    const result = await devApiPut<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data);
+    developerApiCache.updateItem('assets', result);
+    return result;
+  },
+
+  patchAndCache: async (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> => {
+    const result = await devApiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data);
+    developerApiCache.updateItem('assets', result);
+    return result;
+  },
+
+  deleteAndCache: async (id: number): Promise<void> => {
+    await devApiDelete<void>(formatDevEndpoint(`assets/${id}`));
+    developerApiCache.removeItem('assets', id);
+  },
 
   // Filter assets by type
   getByType: (type: string): Promise<DeveloperAsset[]> =>
@@ -573,6 +868,26 @@ export const developersApi = {
   units: unitsApi,
   projectAssets: projectAssetsApi, // Legacy support
   assets: assetsApi,
+  
+  // Cache management methods
+  cache: developerApiCache,
+  
+  // Initialize developer data (call when user is identified as developer)
+  initializeDeveloperData: async (): Promise<void> => {
+    await developerApiCache.bulkFetch(developersApi);
+    developerApiCache.startBackgroundRefresh(developersApi);
+  },
+  
+  // Stop background refresh (call when user logs out)
+  cleanup: (): void => {
+    developerApiCache.stopBackgroundRefresh();
+    developerApiCache.clear();
+  },
+  
+  // Get cache status for debugging
+  getCacheStatus: (): Record<string, { hasData: boolean; age: number; isValid: boolean }> => {
+    return developerApiCache.getCacheStatus();
+  },
 };
 
 export default developersApi;
