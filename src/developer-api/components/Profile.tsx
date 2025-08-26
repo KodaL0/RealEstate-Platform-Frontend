@@ -67,7 +67,11 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
       if (logoFile) {
         try {
           const logoResponse = await developersApi.organizations.uploadLogo(organization.id, logoFile);
-          updateData.logo = logoResponse.data.logo_url;
+          // The response should directly contain logo_url
+          if (!logoResponse.logo_url) {
+            throw new Error('No logo URL received from server');
+          }
+          updateData.logo = logoResponse.logo_url;
         } catch (error) {
           console.error('Failed to upload logo:', error);
           alert('Failed to upload logo. Please try again.');

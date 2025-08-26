@@ -499,6 +499,14 @@ export const organizationsApi = {
   // Get organization file structure
   getFileStructure: (): Promise<FileStructure> =>
     devApiGet<FileStructure>(formatDevEndpoint('orgs/file_structure')),
+
+  // Get S3 logo folder structure
+  getLogoStructure: (): Promise<any> =>
+    devApiGet<any>(formatDevEndpoint('orgs/logo_structure')),
+
+  // Clean up orphaned logos
+  cleanupLogos: (): Promise<any> =>
+    devApiPost<any>(formatDevEndpoint('orgs/cleanup_logos')),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
