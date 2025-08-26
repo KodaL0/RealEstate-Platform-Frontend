@@ -44,7 +44,7 @@ const EnhancedLayout: React.FC<EnhancedLayoutProps> = ({
                 
                 <div className="flex flex-col min-w-0 flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900 text-lg tracking-tight">PropertyPro</span>
+                    <span className="font-bold text-slate-900 text-lg tracking-tight">Developeper Portal</span>
                     <div className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full"></div>
                     {organization?.name && (
                       <span className="text-sm font-medium text-slate-600 truncate hidden sm:block">
@@ -59,7 +59,7 @@ const EnhancedLayout: React.FC<EnhancedLayoutProps> = ({
             
             <div className="flex items-center space-x-3">
               <button
-                onClick={onNavigateHome}
+                onClick={() => (window.location.href = 'https://www.propertpro.com')}
                 className="group inline-flex items-center space-x-2 px-4 py-2.5 bg-white border border-slate-200 rounded-xl shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 flex-shrink-0 hover:-translate-y-0.5"
                 title="Main Dashboard"
               >
