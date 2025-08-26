@@ -45,9 +45,20 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
       // Generate new code based on existing pattern
       const newCode = generateSmartCode(unit.code, units);
       
+      // Double-check uniqueness with the robust function
+      const guaranteedUniqueCode = generateUniqueCode(newCode, units);
+      
+      console.log('Duplicating unit:', {
+        originalCode: unit.code,
+        smartCode: newCode,
+        guaranteedUniqueCode: guaranteedUniqueCode,
+        existingCodes: units.map(u => u.code),
+        projectId: projectId
+      });
+      
       const duplicatedUnit: Omit<Unit, 'id'> = {
         ...unit,
-        code: newCode,
+        code: guaranteedUniqueCode,
         status: 'available', // Reset status for new unit
         price: unit.price ? Math.round(unit.price * 1.05) : undefined, // Slight price increase
       };
@@ -58,7 +69,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [units, onUnitDuplicate]);
+  }, [units, onUnitDuplicate, projectId]);
 
   // Generate smart code based on existing pattern
   const generateSmartCode = (originalCode: string, existingUnits: Unit[]): string => {
@@ -79,6 +90,27 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     }
     
     return `${base}${nextNumber}`;
+  };
+
+  // Generate a guaranteed unique code
+  const generateUniqueCode = (baseCode: string, existingUnits: Unit[]): string => {
+    let counter = 1;
+    let newCode = baseCode;
+    
+    // Keep trying until we find a unique code
+    while (existingUnits.some(u => u.code === newCode)) {
+      newCode = `${baseCode}-${counter}`;
+      counter++;
+      
+      // Safety check to prevent infinite loops
+      if (counter > 1000) {
+        const timestamp = Date.now().toString().slice(-6);
+        newCode = `${baseCode}-${timestamp}`;
+        break;
+      }
+    }
+    
+    return newCode;
   };
 
   // Quick actions for common unit types
