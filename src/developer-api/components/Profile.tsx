@@ -315,7 +315,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
             <div className="relative">
               <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl flex items-center justify-center overflow-hidden shadow-lg shadow-slate-200/50 border border-white/50">
                 {organization?.logo ? (
-                  <img src={organization.logo} alt="Organization logo" className="w-full h-full object-cover" />
+                  <img src={organization.logo} alt="" className="w-full h-full object-cover" />
                 ) : (
                   <Building2 className="h-8 w-8 text-slate-400" />
                 )}
