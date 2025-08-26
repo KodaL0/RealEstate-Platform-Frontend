@@ -16,15 +16,8 @@ type Project = {
   finish_date?: string;      
 };
 
-type Asset = {
-  id: number;
-  project: number;
-  category: string;
-  title?: string;
-  description?: string;
-  file: string;
-  uploaded_at: string;
-};
+// Update Asset type to match ProjectAsset interface
+type Asset = ProjectAsset;
 
 interface ProjectManagementProps {
   project: Project;
@@ -45,18 +38,23 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     const loadProjectData = async () => {
       setIsLoading(true);
       try {
-        // Fetch units for this project
-        const unitsData = await developersApi.units.list();
-        const projectUnits = unitsData.filter(unit => unit.project === project.id);
-        setUnits(projectUnits);
-
-        // Fetch assets for this project
-        const assetsData = await developersApi.projectAssets.list();
-        const projectAssets = assetsData.filter(asset => asset.project === project.id);
-        setAssets(projectAssets);
+        // Initialize developer data cache if not already done
+        // This will bulk fetch all data and cache it for 5 minutes
+        await developersApi.initializeDeveloperData();
         
-        // Filter photos from assets
+        // Get cached data for this specific project
+        const [unitsData, assetsData] = await Promise.all([
+          developersApi.units.listCached(),
+          developersApi.projectAssets.listCached(),
+        ]);
+        
+        // Filter data for this specific project
+        const projectUnits = unitsData.filter(unit => unit.project === project.id);
+        const projectAssets = assetsData.filter(asset => asset.project === project.id);
         const projectPhotos = projectAssets.filter(asset => asset.category === 'photos');
+        
+        setUnits(projectUnits);
+        setAssets(projectAssets);
         setPhotos(projectPhotos);
         
       } catch (error) {
@@ -81,9 +79,9 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     if (!confirm('Are you sure you want to delete this unit?')) return;
     
     try {
-      await developersApi.units.delete(unitId);
+      await developersApi.units.deleteAndCache(unitId);
       setUnits(units.filter(unit => unit.id !== unitId));
-    } catch (error) {
+        } catch (error) {
       console.error('Failed to delete unit:', error);
     }
   };
@@ -92,7 +90,7 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     if (!confirm('Are you sure you want to delete this photo?')) return;
 
     try {
-      await developersApi.projectAssets.delete(photoId);
+      await developersApi.projectAssets.deleteAndCache(photoId);
       setPhotos(photos.filter(photo => photo.id !== photoId));
       // Also remove from assets since photos are stored as assets
       setAssets(assets.filter(asset => asset.id !== photoId));
@@ -251,7 +249,7 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           units={units}
           onUnitCreate={async (unit) => {
             try {
-              const savedUnit = await developersApi.units.create(unit);
+              const savedUnit = await developersApi.units.createAndCache(unit);
               setUnits(prev => [...prev, savedUnit]);
             } catch (error) {
               console.error('Failed to create unit:', error);
@@ -259,7 +257,7 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           }}
           onUnitUpdate={async (unit) => {
             try {
-              const updatedUnit = await developersApi.units.update(unit.id, unit);
+              const updatedUnit = await developersApi.units.updateAndCache(unit.id, unit);
               setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
             } catch (error) {
               console.error('Failed to update unit:', error);
@@ -268,7 +266,12 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           onUnitDelete={handleDeleteUnit}
           onUnitDuplicate={async (unit) => {
             try {
-              const savedUnit = await developersApi.units.create(unit);
+              // The unit parameter is already Omit<Unit, 'id'>, so we just need to ensure project ID is set
+              const newUnitData = {
+                ...unit,
+                project: project.id, // Ensure project ID is set for the new unit
+              };
+              const savedUnit = await developersApi.units.createAndCache(newUnitData);
               setUnits(prev => [...prev, savedUnit]);
             } catch (error) {
               console.error('Failed to duplicate unit:', error);
