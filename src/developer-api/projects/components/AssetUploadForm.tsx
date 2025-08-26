@@ -857,3 +857,6 @@ function App() {
     </div>
   );
 }
+
+
+export default AssetUploadForm;
