@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Plus, Copy, Edit, Trash2, Eye, MoreHorizontal, Search, Filter } from 'lucide-react';
+import { Plus, Copy, Edit, Trash2, Eye, MoreHorizontal, Search, Filter, Grid, List, Building, Home, Layers } from 'lucide-react';
 import { Unit } from '../../../config/developers-api';
 import UnitForm from './UnitForm';
 
@@ -78,6 +78,8 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
   const quickCreateTemplates = [
     {
       name: 'Studio',
+      icon: Home,
+      color: 'from-blue-500 to-blue-600',
       template: {
         unit_type: 'studio' as const,
         bedrooms: 0,
@@ -88,6 +90,8 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     },
     {
       name: '1BR Apartment',
+      icon: Building,
+      color: 'from-emerald-500 to-emerald-600',
       template: {
         unit_type: 'apartment' as const,
         bedrooms: 1,
@@ -98,6 +102,8 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     },
     {
       name: '2BR Apartment',
+      icon: Layers,
+      color: 'from-violet-500 to-violet-600',
       template: {
         unit_type: 'apartment' as const,
         bedrooms: 2,
@@ -108,6 +114,8 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     },
     {
       name: '3BR Apartment',
+      icon: Building,
+      color: 'from-amber-500 to-amber-600',
       template: {
         unit_type: 'apartment' as const,
         bedrooms: 3,
@@ -143,88 +151,126 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     }
   };
 
+  // Get status styling
+  const getStatusStyling = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'bg-gradient-to-r from-emerald-50 to-emerald-100 text-emerald-800 border border-emerald-200';
+      case 'reserved':
+        return 'bg-gradient-to-r from-amber-50 to-amber-100 text-amber-800 border border-amber-200';
+      case 'sold':
+        return 'bg-gradient-to-r from-red-50 to-red-100 text-red-800 border border-red-200';
+      default:
+        return 'bg-gradient-to-r from-slate-50 to-slate-100 text-slate-800 border border-slate-200';
+    }
+  };
+
   // Responsive table component
   const UnitsTable = () => (
-    <div className="overflow-hidden rounded-lg border border-gray-200">
+    <div className="overflow-hidden rounded-xl border border-slate-200 shadow-lg shadow-slate-200/50">
       <div className="overflow-x-auto">
         <table className="w-full">
-          <thead className="bg-gray-50">
+          <thead className="bg-gradient-to-r from-slate-50 to-slate-100 border-b border-slate-200">
             <tr>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Code</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Type</th>
-              <th className="hidden sm:table-cell px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Floor</th>
-              <th className="hidden md:table-cell px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Area</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Price</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Status</th>
-              <th className="px-3 py-3 text-left text-xs font-medium text-gray-600 uppercase tracking-wider">Actions</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Unit Code</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Type & Layout</th>
+              <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Floor</th>
+              <th className="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Area</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Price</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white divide-y divide-gray-200">
-            {filteredUnits.map((unit) => (
-              <tr key={unit.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <div className="text-sm font-medium text-gray-900">{unit.code}</div>
-                    {unit.block && (
-                      <span className="ml-2 inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                        {unit.block}
-                      </span>
-                    )}
+          <tbody className="bg-white divide-y divide-slate-100">
+            {filteredUnits.map((unit, index) => (
+              <tr key={unit.id} className={`hover:bg-gradient-to-r hover:from-blue-50/50 hover:to-indigo-50/50 transition-all duration-200 ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/30'}`}>
+                <td className="px-6 py-5 whitespace-nowrap">
+                  <div className="flex items-center space-x-3">
+                    <div className="flex-shrink-0 w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+                      <Building className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{unit.code}</div>
+                      {unit.block && (
+                        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 border border-slate-200">
+                          Block {unit.block}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <span className="text-sm text-gray-900">
-                      {unit.bedrooms === 0 ? 'ST' : `${unit.bedrooms}BR`}
+                <td className="px-6 py-5 whitespace-nowrap">
+                  <div className="flex flex-col space-y-1">
+                    <span className="text-sm font-medium text-slate-900">
+                      {unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms} Bedroom`}
                     </span>
-                    <span className="ml-2 text-xs text-gray-500">
-                      {unit.unit_type}
-                    </span>
+                    <div className="flex items-center space-x-2 text-xs text-slate-500">
+                      <span className="capitalize">{unit.unit_type}</span>
+                      <span>•</span>
+                      <span>{unit.bathrooms} Bath{unit.bathrooms !== 1 ? 's' : ''}</span>
+                    </div>
                   </div>
                 </td>
-                <td className="hidden sm:table-cell px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {unit.floor || '-'}
-                </td>
-                <td className="hidden md:table-cell px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {unit.area_total ? `${unit.area_total}m²` : '-'}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-900">
-                  {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
-                </td>
-                <td className="px-3 py-4 whitespace-nowrap">
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    unit.status === 'available' ? 'bg-green-100 text-green-800' :
-                    unit.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {unit.status}
+                <td className="hidden sm:table-cell px-6 py-5 whitespace-nowrap">
+                  <span className="inline-flex items-center px-3 py-1 rounded-lg text-sm font-medium bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-800 border border-indigo-200">
+                    {unit.floor || 'N/A'}
                   </span>
                 </td>
-                <td className="px-3 py-4 whitespace-nowrap text-sm font-medium">
+                <td className="hidden md:table-cell px-6 py-5 whitespace-nowrap">
+                  <div className="text-sm font-medium text-slate-900">
+                    {unit.area_total ? `${unit.area_total}m²` : '-'}
+                  </div>
+                  {unit.area_internal && unit.area_internal !== unit.area_total && (
+                    <div className="text-xs text-slate-500">
+                      {unit.area_internal}m² internal
+                    </div>
+                  )}
+                </td>
+                <td className="px-6 py-5 whitespace-nowrap">
+                  <div className="text-sm font-semibold text-slate-900">
+                    {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
+                  </div>
+                  {unit.currency && unit.price && (
+                    <div className="text-xs text-slate-500">
+                      {unit.vat_included ? 'VAT incl.' : 'VAT excl.'}
+                    </div>
+                  )}
+                </td>
+                <td className="px-6 py-5 whitespace-nowrap">
+                  <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusStyling(unit.status)}`}>
+                    <div className={`w-2 h-2 rounded-full mr-2 ${
+                      unit.status === 'available' ? 'bg-emerald-500' :
+                      unit.status === 'reserved' ? 'bg-amber-500' :
+                      'bg-red-500'
+                    }`}></div>
+                    {unit.status.charAt(0).toUpperCase() + unit.status.slice(1)}
+                  </span>
+                </td>
+                <td className="px-6 py-5 whitespace-nowrap">
                   <div className="flex items-center space-x-2">
                     <button
                       onClick={() => {
                         setEditingUnit(unit);
                         setShowCreateModal(true);
                       }}
-                      className="text-blue-600 hover:text-blue-900 p-1 rounded"
-                      title="Edit"
+                      className="group p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-blue-200"
+                      title="Edit Unit"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4 group-hover:scale-110 transition-transform" />
                     </button>
                     <button
-                      onClick={() => onUnitDuplicate(unit)}
-                      className="text-green-600 hover:text-green-900 p-1 rounded"
-                      title="Duplicate"
+                      onClick={() => handleSmartDuplicate(unit)}
+                      className="group p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-emerald-200"
+                      title="Duplicate Unit"
                     >
-                      <Copy className="h-4 w-4" />
+                      <Copy className="h-4 w-4 group-hover:scale-110 transition-transform" />
                     </button>
                     <button
                       onClick={() => onUnitDelete(unit.id)}
-                      className="text-red-600 hover:text-red-900 p-1 rounded"
-                      title="Delete"
+                      className="group p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-red-200"
+                      title="Delete Unit"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 group-hover:scale-110 transition-transform" />
                     </button>
                   </div>
                 </td>
@@ -238,81 +284,89 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
 
   // Responsive cards component
   const UnitsCards = () => (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 p-4 sm:p-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 p-6">
       {filteredUnits.map((unit) => (
-        <div key={unit.id} className="bg-gray-50 border border-gray-200 rounded-lg p-3 sm:p-4 hover:shadow-md transition-all duration-200 hover:border-blue-300">
-          <div className="flex items-start justify-between mb-3">
-            <div className="flex-1 min-w-0">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 truncate">{unit.code}</h3>
-              {unit.block && (
-                <span className="text-xs sm:text-sm text-gray-500">Block {unit.block}</span>
-              )}
+        <div key={unit.id} className="group bg-white border border-slate-200 rounded-xl p-6 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 hover:border-blue-300 hover:-translate-y-1">
+          <div className="flex items-start justify-between mb-4">
+            <div className="flex items-center space-x-3 flex-1 min-w-0">
+              <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
+                <Building className="h-6 w-6 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-lg font-bold text-slate-900 truncate group-hover:text-blue-700 transition-colors">{unit.code}</h3>
+                {unit.block && (
+                  <span className="inline-flex items-center px-2 py-1 rounded-lg text-xs font-medium bg-gradient-to-r from-slate-100 to-slate-200 text-slate-700 border border-slate-200">
+                    Block {unit.block}
+                  </span>
+                )}
+              </div>
             </div>
-            <div className="flex items-center space-x-1 ml-2">
+            <div className="flex items-center space-x-1 ml-3">
               <button
                 onClick={() => {
                   setEditingUnit(unit);
                   setShowCreateModal(true);
                 }}
-                className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50 transition-colors"
-                title="Edit"
+                className="group/btn p-2 text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-blue-200"
+                title="Edit Unit"
               >
-                <Edit className="h-3 w-3 sm:h-4 sm:w-4" />
+                <Edit className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
               </button>
               <button
-                onClick={() => onUnitDuplicate(unit)}
-                className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50 transition-colors"
-                title="Duplicate"
+                onClick={() => handleSmartDuplicate(unit)}
+                className="group/btn p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-emerald-200"
+                title="Duplicate Unit"
               >
-                <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+                <Copy className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
               </button>
               <button
                 onClick={() => onUnitDelete(unit.id)}
-                className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50 transition-colors"
-                title="Delete"
+                className="group/btn p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-red-200"
+                title="Delete Unit"
               >
-                <Trash2 className="h-3 w-3 sm:h-4 sm:w-4" />
+                <Trash2 className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
               </button>
             </div>
           </div>
 
-          <div className="space-y-2 text-xs sm:text-sm">
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Type:</span>
-              <span className="font-medium text-gray-900">
+          <div className="space-y-3">
+            <div className="flex items-center justify-between py-2 border-b border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Type:</span>
+              <span className="text-sm font-semibold text-slate-900">
                 {unit.bedrooms === 0 ? 'Studio' : `${unit.bedrooms}BR ${unit.unit_type}`}
               </span>
             </div>
             
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Area:</span>
-              <span className="font-medium text-gray-900">
+            <div className="flex items-center justify-between py-2 border-b border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Area:</span>
+              <span className="text-sm font-semibold text-slate-900">
                 {unit.area_total ? `${unit.area_total}m²` : '-'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Floor:</span>
-              <span className="font-medium text-gray-900">
-                {unit.floor || '-'}
+            <div className="flex items-center justify-between py-2 border-b border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Floor:</span>
+              <span className="inline-flex items-center px-2 py-1 rounded-lg text-sm font-medium bg-gradient-to-r from-indigo-50 to-indigo-100 text-indigo-800 border border-indigo-200">
+                {unit.floor || 'N/A'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Price:</span>
-              <span className="font-medium text-gray-900">
+            <div className="flex items-center justify-between py-2 border-b border-slate-100">
+              <span className="text-sm font-medium text-slate-600">Price:</span>
+              <span className="text-sm font-bold text-slate-900">
                 {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
               </span>
             </div>
 
-            <div className="flex items-center justify-between">
-              <span className="text-gray-600">Status:</span>
-              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                unit.status === 'available' ? 'bg-green-100 text-green-800' :
-                unit.status === 'reserved' ? 'bg-yellow-100 text-yellow-800' :
-                'bg-red-100 text-red-800'
-              }`}>
-                {unit.status}
+            <div className="flex items-center justify-between pt-2">
+              <span className="text-sm font-medium text-slate-600">Status:</span>
+              <span className={`inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${getStatusStyling(unit.status)}`}>
+                <div className={`w-2 h-2 rounded-full mr-2 ${
+                  unit.status === 'available' ? 'bg-emerald-500' :
+                  unit.status === 'reserved' ? 'bg-amber-500' :
+                  'bg-red-500'
+                }`}></div>
+                {unit.status.charAt(0).toUpperCase() + unit.status.slice(1)}
               </span>
             </div>
           </div>
@@ -322,154 +376,182 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
   );
 
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-8">
       {/* Header with Actions */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <div className="flex flex-col space-y-4 sm:space-y-0 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl sm:text-2xl font-bold text-gray-900">Units Management</h2>
-            <p className="text-sm text-gray-600 mt-1">
-              {units.length} unit{units.length !== 1 ? 's' : ''} • {filteredUnits.length} shown
-            </p>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 p-8">
+        <div className="flex flex-col space-y-6 lg:space-y-0 lg:flex-row lg:items-center lg:justify-between">
+          <div className="space-y-2">
+            <h2 className="text-3xl font-bold text-slate-900 bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text">
+              Units Management
+            </h2>
+            <div className="flex items-center space-x-4 text-sm text-slate-600">
+              <span className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="font-medium">{units.length} total unit{units.length !== 1 ? 's' : ''}</span>
+              </span>
+              <span className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                <span className="font-medium">{filteredUnits.length} shown</span>
+              </span>
+            </div>
           </div>
           
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-3">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
             {/* View Mode Toggle */}
-            <div className="flex border border-gray-300 rounded-lg">
+            <div className="flex bg-slate-100 border border-slate-200 rounded-xl p-1 shadow-inner">
               <button
                 onClick={() => setViewMode('table')}
-                className={`px-3 py-2 text-sm font-medium rounded-l-lg transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   viewMode === 'table' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    ? 'bg-white text-slate-900 shadow-md shadow-slate-200/50 border border-slate-200' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
+                <List className="h-4 w-4" />
                 <span className="hidden sm:inline">Table</span>
-                <span className="sm:hidden">📊</span>
               </button>
               <button
                 onClick={() => setViewMode('cards')}
-                className={`px-3 py-2 text-sm font-medium rounded-r-lg transition-colors ${
+                className={`flex items-center space-x-2 px-4 py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
                   viewMode === 'cards' 
-                    ? 'bg-blue-600 text-white' 
-                    : 'bg-white text-gray-700 hover:bg-gray-50'
+                    ? 'bg-white text-slate-900 shadow-md shadow-slate-200/50 border border-slate-200' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
                 }`}
               >
+                <Grid className="h-4 w-4" />
                 <span className="hidden sm:inline">Cards</span>
-                <span className="sm:hidden">🃏</span>
               </button>
             </div>
 
             {/* Create Button */}
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center justify-center px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+              className="group inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white text-sm font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-0.5"
             >
-              <Plus className="h-4 w-4 mr-2" />
+              <Plus className="h-5 w-5 mr-2 group-hover:scale-110 transition-transform" />
               <span className="hidden sm:inline">Create Unit</span>
-              <span className="sm:hidden">Add</span>
+              <span className="sm:hidden">Add Unit</span>
             </button>
           </div>
         </div>
       </div>
 
       {/* Quick Create Templates */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <h3 className="text-sm font-medium text-gray-700 mb-3 sm:mb-4">Quick Create Templates</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
-          {quickCreateTemplates.map((template) => (
-            <button
-              key={template.name}
-              onClick={() => handleQuickCreate(template.template)}
-              disabled={isLoading}
-              className="flex flex-col items-center p-2 sm:p-3 bg-gray-50 border border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-colors disabled:opacity-50 group"
-            >
-              <span className="text-base sm:text-lg mb-1 group-hover:scale-110 transition-transform">
-                {template.template.bedrooms === 0 ? '🏠' : '🏢'}
-              </span>
-              <span className="text-xs font-medium text-gray-700 text-center leading-tight">{template.name}</span>
-              <span className="text-xs text-gray-500">{template.template.area_internal}m²</span>
-            </button>
-          ))}
+      <div className="bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 p-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-violet-600 rounded-lg flex items-center justify-center">
+            <Plus className="h-4 w-4 text-white" />
+          </div>
+          <h3 className="text-lg font-bold text-slate-900">Quick Create Templates</h3>
+        </div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          {quickCreateTemplates.map((template) => {
+            const Icon = template.icon;
+            return (
+              <button
+                key={template.name}
+                onClick={() => handleQuickCreate(template.template)}
+                disabled={isLoading}
+                className="group flex flex-col items-center p-6 bg-gradient-to-br from-slate-50 to-slate-100 border border-slate-200 rounded-xl hover:border-blue-300 hover:shadow-lg hover:shadow-slate-200/50 transition-all duration-300 disabled:opacity-50 hover:-translate-y-1"
+              >
+                <div className={`w-12 h-12 bg-gradient-to-br ${template.color} rounded-xl flex items-center justify-center mb-3 shadow-lg group-hover:shadow-xl transition-all duration-300 group-hover:scale-110`}>
+                  <Icon className="h-6 w-6 text-white" />
+                </div>
+                <span className="text-sm font-semibold text-slate-900 text-center mb-1 group-hover:text-blue-700 transition-colors">
+                  {template.name}
+                </span>
+                <span className="text-xs text-slate-500 font-medium">
+                  {template.template.area_internal}m² • {template.template.bathrooms} bath{template.template.bathrooms !== 1 ? 's' : ''}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       {/* Search and Filters */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6">
-        <div className="space-y-4">
+      <div className="bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 p-8">
+        <div className="space-y-6">
           {/* Search Bar */}
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Search by code or block..."
+              placeholder="Search by unit code or block..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full pl-12 pr-4 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-slate-900 placeholder-slate-500 bg-slate-50 focus:bg-white shadow-inner"
             />
           </div>
           
           {/* Filters */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Status</option>
-              <option value="available">Available</option>
-              <option value="reserved">Reserved</option>
-              <option value="sold">Sold</option>
-            </select>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="relative">
+              <Filter className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-slate-900 bg-slate-50 focus:bg-white shadow-inner appearance-none"
+              >
+                <option value="">All Status</option>
+                <option value="available">Available</option>
+                <option value="reserved">Reserved</option>
+                <option value="sold">Sold</option>
+              </select>
+            </div>
             
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="">All Types</option>
-              <option value="studio">Studio</option>
-              <option value="apartment">Apartment</option>
-              <option value="house">House</option>
-            </select>
+            <div className="relative">
+              <Building className="absolute left-4 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 border border-slate-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 text-slate-900 bg-slate-50 focus:bg-white shadow-inner appearance-none"
+              >
+                <option value="">All Types</option>
+                <option value="studio">Studio</option>
+                <option value="apartment">Apartment</option>
+                <option value="house">House</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Units Display */}
       {filteredUnits.length === 0 ? (
-        <div className="text-center py-8 sm:py-12 bg-white border border-gray-200 rounded-lg">
-          <div className="text-3xl sm:text-4xl mb-4">🏠</div>
-          <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">No units found</h3>
-          <p className="text-sm sm:text-base text-gray-600 mb-4 px-4">
+        <div className="text-center py-16 bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50">
+          <div className="w-24 h-24 bg-gradient-to-br from-slate-100 to-slate-200 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Building className="h-12 w-12 text-slate-400" />
+          </div>
+          <h3 className="text-xl font-bold text-slate-900 mb-3">No units found</h3>
+          <p className="text-slate-600 mb-8 max-w-md mx-auto">
             {searchQuery || statusFilter || typeFilter 
-              ? 'Try adjusting your search or filters'
-              : 'Create your first unit to get started'
+              ? 'Try adjusting your search criteria or filters to find the units you\'re looking for.'
+              : 'Get started by creating your first unit using one of the quick templates above.'
             }
           </p>
           {!searchQuery && !statusFilter && !typeFilter && (
             <button
               onClick={() => setShowCreateModal(true)}
-              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg shadow-blue-600/25 hover:shadow-xl hover:shadow-blue-600/30 hover:-translate-y-0.5"
             >
-              <Plus className="h-4 w-4 mr-2" />
-              <span className="hidden sm:inline">Create First Unit</span>
-              <span className="sm:hidden">Create Unit</span>
+              <Plus className="h-5 w-5 mr-2" />
+              Create First Unit
             </button>
           )}
         </div>
       ) : (
-        <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+        <div className="bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden">
           {viewMode === 'table' ? <UnitsTable /> : <UnitsCards />}
         </div>
       )}
 
       {/* Loading Overlay */}
       {isLoading && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 flex items-center space-x-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-gray-700">Processing...</span>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl p-8 flex items-center space-x-4 shadow-2xl border border-slate-200">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+            <span className="text-slate-700 font-medium">Processing your request...</span>
           </div>
         </div>
       )}
