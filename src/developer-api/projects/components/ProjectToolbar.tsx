@@ -153,7 +153,7 @@ export default function ProjectToolbar({
 
       {/* Navigation Toolbar */}
       <div className={`${compact ? 'px-0 py-0' : 'px-6 py-5'}`}>
-        <div className={`${compact ? 'bg-transparent border-0 rounded-none' : 'bg-white border border-slate-200 rounded-xl shadow-lg shadow-slate-200/50 overflow-visible'}`}>
+        <div className={`flex items-center ${compact ? 'space-x-1' : 'space-x-3'} overflow-x-auto scrollbar-hide`}>
           {toolbarItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeView === item.id;
