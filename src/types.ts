@@ -25,6 +25,15 @@ export interface DevUnitRow {
   pool: boolean;
 }
 
+// types.ts
+export interface UnitFormValues {
+  id?: number
+  name: string
+  price: number
+  bedrooms: number
+  bathrooms: number
+}
+
 /* ---------- API Property model ---------- */
 export interface Property {
   id: string;
