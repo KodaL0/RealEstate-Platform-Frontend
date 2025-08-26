@@ -71,13 +71,17 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
           if (!logoResponse.logo_url) {
             throw new Error('No logo URL received from server');
           }
-          updateData.logo = logoResponse.logo_url;
+          // Don't include logo in the patch request - it's already uploaded
+          delete updateData.logo;
         } catch (error) {
           console.error('Failed to upload logo:', error);
           alert('Failed to upload logo. Please try again.');
           setIsLoading(false);
           return;
         }
+      } else {
+        // If no new logo file, remove logo from update data to avoid sending old URL
+        delete updateData.logo;
       }
       
       await developersApi.organizations.patch(organization.id, updateData);
