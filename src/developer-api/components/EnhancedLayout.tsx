@@ -44,7 +44,7 @@ const EnhancedLayout: React.FC<EnhancedLayoutProps> = ({
                 
                 <div className="flex flex-col min-w-0 flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="font-bold text-slate-900 text-lg tracking-tight">Developeper Portal</span>
+                    <span className="font-bold text-slate-900 text-lg tracking-tight">Developer Portal</span>
                     <div className="hidden sm:block w-1 h-1 bg-slate-300 rounded-full"></div>
                     {organization?.name && (
                       <span className="text-sm font-medium text-slate-600 truncate hidden sm:block">
