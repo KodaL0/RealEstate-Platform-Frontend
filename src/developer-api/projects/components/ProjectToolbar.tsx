@@ -168,8 +168,9 @@ export default function ProjectToolbar({
                 className={`
                   group relative flex items-center ${compact ? 'space-x-1.5' : 'space-x-3'} ${baseBtn} font-semibold transition-all duration-300 ease-out
                   ${isActive 
-                    ? `${item.bgColor} ${item.activeColor} ring-2 ring-offset-2 ring-offset-white shadow-lg shadow-slate-200/50 transform scale-105` 
-                    : `text-slate-600 hover:text-slate-800 hover:bg-slate-50 hover:shadow-md hover:shadow-slate-200/30 hover:-translate-y-0.5`}
+                    ? `${item.bgColor} ${item.activeColor} ring-2 ring-offset-2 ring-offset-white shadow-lg shadow-slate-200/50 scale-105` 
+                    : `text-slate-600 hover:text-slate-800 hover:bg-slate-50 hover:shadow-md hover:shadow-slate-200/30 hover:-translate-y-0.5 ring-2 ring-offset-2 ring-transparent`}
+
                   whitespace-nowrap flex-shrink-0 border border-transparent
                   ${isActive ? `${item.borderColor}` : 'hover:border-slate-200'}
                 `}
