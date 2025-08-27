@@ -591,16 +591,20 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <AssetUploadForm
-          projectId={projectId}
-          onClose={() => setShowUploadModal(false)}
-          onUpload={(newAsset) => {
-            // After upload, refresh list or prepend
-            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
-            setShowUploadModal(false);
-            fetchAssets();
-          }}
-        />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl mx-auto my-10">
+            <AssetUploadForm
+              projectId={projectId}
+              onClose={() => setShowUploadModal(false)}
+              onUpload={(newAsset) => {
+                // After upload, refresh list or prepend
+                setAssets(prev => [newAsset as unknown as Asset, ...prev]);
+                setShowUploadModal(false);
+                fetchAssets();
+              }}
+            />
+          </div>
+        </div>
       )}
     </div>
   );
