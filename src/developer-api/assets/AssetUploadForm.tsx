@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Upload, FileText, Image, Video, Music, Archive, Paperclip, Folder, Tag } from 'lucide-react';
-import developersApi from '../config/developers-api';
+import developersApi from '../../config/developers-api';
 
 type AssetCategory = 
   | 'floor_plans'

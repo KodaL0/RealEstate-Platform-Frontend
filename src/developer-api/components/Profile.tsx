@@ -190,7 +190,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 flex items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center">
                     <MapPin className="h-4 w-4 mr-1" />
                     Country *
                   </label>
@@ -204,7 +204,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 flex items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center">
                     <Globe className="h-4 w-4 mr-1" />
                     Website
                   </label>
@@ -217,7 +217,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 flex items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center">
                     <Mail className="h-4 w-4 mr-1" />
                     Email
                   </label>
@@ -230,7 +230,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 flex items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center">
                     <Phone className="h-4 w-4 mr-1" />
                     Phone
                   </label>
@@ -243,7 +243,7 @@ export default function Profile({ organization, onUpdate }: ProfileProps) {
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="block text-sm font-semibold text-slate-700 flex items-center">
+                  <label className="text-sm font-semibold text-slate-700 flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     Established Year
                   </label>
