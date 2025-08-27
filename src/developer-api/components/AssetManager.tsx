@@ -73,8 +73,8 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
   const fetchCategories = async () => {
     try {
-      // Note: This endpoint might not exist in the current API, using empty object as fallback
-      setCategories({});
+      const categoriesData = await developersApi.assets.getCategories();
+      setCategories(categoriesData || {});
     } catch (error) {
       console.error('Error fetching categories:', error);
       setCategories({});
@@ -140,19 +140,23 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
     setIsUploading(true);
     try {
-      const formData = new FormData();
-      formData.append('project', projectId.toString());
+      const fileArray = Array.from(uploadFiles);
+      const result = await developersApi.assets.bulkUpload(projectId, fileArray);
       
-      Array.from(uploadFiles).forEach(file => {
-        formData.append('files', file);
-      });
-
-      // Note: Bulk upload endpoint might not exist in current API
-      // For now, we'll simulate success and refresh the list
-      console.log('Bulk upload completed');
-      fetchAssets(); // Refresh the list
-      setShowUploadModal(false);
+      if (result.created_assets && result.created_assets.length > 0) {
+        // Refresh assets list
+        await fetchAssets();
+        
+        // Show success message
+        console.log(`Successfully uploaded ${result.total_created} assets`);
+        
+        if (result.errors && result.errors.length > 0) {
+          console.warn(`Upload completed with ${result.total_errors} errors:`, result.errors);
+        }
+      }
+      
       setUploadFiles(null);
+      setShowUploadModal(false);
     } catch (error) {
       console.error('Error uploading files:', error);
     } finally {

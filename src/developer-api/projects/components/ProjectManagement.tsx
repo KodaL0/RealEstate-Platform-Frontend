@@ -1,20 +1,18 @@
 import { useState, useEffect } from 'react';
-import { Building, Star, Crown } from 'lucide-react';
 import UnitForm from './UnitForm';
 import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
-import ProjectPreview from './ProjectPreview';
 import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
 
 type Project = {
   id: number;
   name: string;
+  description?: string;
   location?: string;
   status?: string;
-  description?: string;
-  start_date?: string;       
+  start_date?: string;      
   finish_date?: string;
   main_image?: string;
 };
@@ -31,12 +29,10 @@ type Asset = {
 
 interface ProjectManagementProps {
   project: Project;
-  activeSection: 'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team';
-  onProjectUpdate?: (updatedProject: Project) => void;
-  onViewChange?: (view: string) => void;
+  activeSection: 'overview' | 'units' | 'assets' | 'photos' | 'team';
 }
 
-export default function ProjectManagement({ project, activeSection, onProjectUpdate, onViewChange }: ProjectManagementProps) {
+export default function ProjectManagement({ project, activeSection }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [photos, setPhotos] = useState<ProjectAsset[]>([]);
@@ -45,7 +41,6 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [showAssetUpload, setShowAssetUpload] = useState(false);
   const [showPhotoUpload, setShowPhotoUpload] = useState(false);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProjectData = async () => {
@@ -79,7 +74,9 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
     loadProjectData();
   }, [project.id]);
 
-
+  const getMockImage = () => {
+    return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&h=300';
+  };
 
   const handleDeleteUnit = async (unitId: number) => {
     if (!confirm('Are you sure you want to delete this unit?')) return;
@@ -105,37 +102,15 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
     }
   };
 
-  const handleSetAsPrimary = async (photo: ProjectAsset) => {
-    try {
-      // Update the project's main_image field
-      const updatedProject = await developersApi.projects.patch(project.id, {
-        main_image: photo.file
-      });
-      
-      // Call the callback to update the parent component
-      if (onProjectUpdate) {
-        onProjectUpdate(updatedProject);
-      }
-      
-      // Show success message
-      setSuccessMessage('Primary image updated successfully!');
-      setTimeout(() => setSuccessMessage(null), 3000);
-    } catch (error) {
-      console.error('Failed to set primary image:', error);
-      alert('Failed to set primary image. Please try again.');
-    }
-  };
-
   const handleSaveUnit = (savedUnit: Unit) => {
-    if (editingUnit) {
+    if (savedUnit.id) {
       // Update existing unit
-      setUnits(units.map(unit => unit.id === savedUnit.id ? savedUnit : unit));
+      setUnits(prev => prev.map(unit => unit.id === savedUnit.id ? savedUnit : unit));
     } else {
       // Add new unit
-      setUnits([...units, savedUnit]);
+      setUnits(prev => [...prev, savedUnit]);
     }
     setShowUnitForm(false);
-    setEditingUnit(null);
   };
 
   const handleCancelUnitForm = () => {
@@ -210,20 +185,11 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
           <div className="relative bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/50">
             {/* Hero Image with Enhanced Overlay */}
             <div className="relative h-48 sm:h-56 md:h-64 bg-gradient-to-br from-slate-900 to-slate-700">
-              {project.main_image ? (
-                <img 
-                  src={project.main_image} 
-                  alt={project.name}
-                  className="w-full h-full object-cover opacity-80"
-                  onError={(e) => {
-                    e.currentTarget.style.display = 'none';
-                    e.currentTarget.nextElementSibling?.classList.remove('hidden');
-                  }}
-                />
-              ) : null}
-              <div className={`w-full h-full flex items-center justify-center ${project.main_image ? 'hidden' : ''}`}>
-                <Building className="w-24 h-24 text-white/60" />
-              </div>
+              <img 
+                src={getMockImage()} 
+                alt={project.name}
+                className="w-full h-full object-cover opacity-80"
+              />
               
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-slate-900/60 via-transparent to-transparent"></div>
@@ -390,44 +356,19 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
         </>
       )}
 
-      {activeSection === 'preview' && (
-        <ProjectPreview
-          project={project}
-          stats={{
-            units: units.length,
-            assets: assets.length,
-            photos: photos.length
-          }}
-          onEdit={() => {
-            // TODO: Implement edit functionality
-            console.log('Edit project clicked');
-          }}
-          onViewChange={onViewChange}
-        />
-      )}
-
       {activeSection === 'units' && (
         <div className="bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden">
           <EnhancedUnitsManager
             projectId={project.id}
             units={units}
-            onUnitCreate={async (unit) => {
-              try {
-                const savedUnit = await developersApi.units.create(unit);
-                setUnits(prev => [...prev, savedUnit]);
-              } catch (error) {
-                console.error('Failed to create unit:', error);
+            onEdit={(unit: Unit | null) => {
+              if (unit) {
+                setEditingUnit(unit);
+                setShowUnitForm(true);
               }
             }}
-            onUnitUpdate={async (unit) => {
-              try {
-                const updatedUnit = await developersApi.units.update(unit.id, unit);
-                setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
-              } catch (error) {
-                console.error('Failed to update unit:', error);
-              }
-            }}
-            onUnitDelete={handleDeleteUnit}
+            onSave={handleSaveUnit}
+            onDelete={handleDeleteUnit}
             onUnitDuplicate={async (unit) => {
               try {
                 const savedUnit = await developersApi.units.create(unit);
@@ -448,15 +389,6 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
 
       {activeSection === 'photos' && (
         <div className="bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-3xl p-6 md:p-8 shadow-xl shadow-slate-200/50">
-          {/* Success Message */}
-          {successMessage && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-xl">
-              <div className="flex items-center space-x-2 text-green-700">
-                <Star className="w-5 h-5" />
-                <span className="text-sm font-medium">{successMessage}</span>
-              </div>
-            </div>
-          )}
           <div className="flex justify-between items-center mb-8">
             <div className="flex items-center">
               <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center mr-4">
@@ -466,15 +398,7 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-slate-800">Photos Gallery</h3>
-                <p className="text-slate-600">
-                  Showcase your project with stunning visuals
-                  {project.main_image && (
-                    <span className="ml-2 inline-flex items-center space-x-1 text-amber-600">
-                      <Star className="w-4 h-4" />
-                      <span className="text-sm font-medium">Primary image set</span>
-                    </span>
-                  )}
-                </p>
+                <p className="text-slate-600">Showcase your project with stunning visuals</p>
               </div>
             </div>
             <button
@@ -512,30 +436,10 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
               </button>
             </div>
           ) : (
-            <>
-              {/* Instructions */}
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-                <div className="flex items-center space-x-2 text-blue-700">
-                  <Star className="w-5 h-5" />
-                  <span className="text-sm font-medium">
-                    Hover over any photo and click the star icon to set it as the primary image for your project
-                  </span>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {photos.map((photo, index) => (
                 <div key={photo.id} className="group relative">
                   <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl overflow-hidden shadow-lg shadow-slate-200/50 group-hover:shadow-xl group-hover:shadow-slate-300/50 transition-all duration-300">
-                    {/* Primary Image Indicator */}
-                    {project.main_image === photo.file && (
-                      <div className="absolute top-3 left-3 z-10">
-                        <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-2 rounded-full shadow-lg">
-                          <Crown className="w-4 h-4" />
-                        </div>
-                      </div>
-                    )}
-                    
                     <img 
                       src={photo.file} 
                       alt={photo.title || `Photo ${index + 1}`}
@@ -544,19 +448,7 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
                     
                     {/* Enhanced Overlay Controls */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center">
-                      <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300 flex space-x-2">
-                        {/* Set as Primary Button */}
-                        {project.main_image !== photo.file && (
-                          <button 
-                            onClick={() => handleSetAsPrimary(photo)}
-                            className="bg-blue-500/90 backdrop-blur-sm hover:bg-blue-600 text-white p-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
-                            title="Set as primary image"
-                          >
-                            <Star className="w-5 h-5" />
-                          </button>
-                        )}
-                        
-                        {/* Delete Button */}
+                      <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
                         <button 
                           onClick={() => handleDeletePhoto(photo.id)}
                           className="bg-red-500/90 backdrop-blur-sm hover:bg-red-600 text-white p-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
@@ -572,25 +464,16 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
                   
                   {/* Enhanced Photo Info */}
                   <div className="mt-4 text-center">
-                    <div className="flex items-center justify-center space-x-2 mb-2">
-                      <p className="text-sm font-semibold text-slate-700 truncate">
-                        {photo.title || `Photo ${index + 1}`}
-                      </p>
-                      {project.main_image === photo.file && (
-                        <div className="flex items-center space-x-1 text-amber-600">
-                          <Star className="w-3 h-3" />
-                          <span className="text-xs font-medium">Primary</span>
-                        </div>
-                      )}
-                    </div>
-                    <p className="text-xs text-slate-500">
+                    <p className="text-sm font-semibold text-slate-700 truncate">
+                      {photo.title || `Photo ${index + 1}`}
+                    </p>
+                    <p className="text-xs text-slate-500 mt-1">
                       {new Date(photo.uploaded_at).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
-            </>
           )}
         </div>
       )}

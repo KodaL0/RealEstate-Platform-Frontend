@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, Home, MapPin, DollarSign, BarChart3, Upload, FileText, Image, Video, FileCheck, Folder, Tag, Plus } from 'lucide-react';
+import developersApi from '../../../config/developers-api';
 
 // Mock API types (replace with your actual types)
 interface Unit {
@@ -164,33 +165,107 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     try {
       const finalTitle = (customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled');
 
+      // Determine asset type based on file MIME type
+      const getAssetType = (file: File): string => {
+        if (file.type.startsWith('image/')) return 'image';
+        if (file.type.startsWith('video/')) return 'video';
+        if (file.type.startsWith('audio/')) return 'audio';
+        if (file.type === 'application/pdf' || 
+            file.type.includes('document') || 
+            file.type.includes('text') ||
+            file.type.includes('spreadsheet') ||
+            file.type.includes('presentation')) return 'document';
+        if (file.type.includes('zip') || file.type.includes('rar') || file.type.includes('tar')) return 'archive';
+        return 'other';
+      };
+
+      // Determine category based on asset type and selected category
+      const getCategory = (assetType: string, selectedCategory: string): string | undefined => {
+        if (assetType === 'document') {
+          return selectedCategory;
+        } else if (assetType === 'image') {
+          // Map frontend categories to backend image categories
+          const categoryMap: Record<string, string> = {
+            'photos': 'other_images',
+            'floor_plans': 'floor_plans',
+            'brochures': 'other_images',
+            'presentations': 'other_images',
+            'specifications': 'other_images',
+            'contracts': 'other_images',
+            'permits': 'other_images',
+            'legal_documents': 'other_images',
+            'other': 'other_images'
+          };
+          return categoryMap[selectedCategory] || 'other_images';
+        } else if (assetType === 'video') {
+          // Map frontend categories to backend video categories
+          const categoryMap: Record<string, string> = {
+            'videos': 'other_videos',
+            'presentations': 'marketing',
+            'other': 'other_videos'
+          };
+          return categoryMap[selectedCategory] || 'other_videos';
+        }
+        return undefined;
+      };
+
+      const assetType = getAssetType(file!);
+      const category = getCategory(assetType, selectedCategory);
+
       console.log('Uploading asset:', {
         file: file?.name,
         project: projectId,
-        category: selectedCategory,
+        asset_type: assetType,
+        category: category,
         title: finalTitle,
         description,
         tags
       });
 
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const newAsset = {
-        id: Date.now(),
-        file: file,
+      // Prepare asset data for API
+      const assetData: any = {
         project: projectId,
-        category: selectedCategory,
+        asset_type: assetType,
+        file: file,
         title: finalTitle,
-        description: description,
-        metadata: { tags }
+        description: description || undefined,
+        tags: tags.length > 0 ? tags : undefined
       };
+
+      // Add category-specific fields based on asset type
+      if (assetType === 'document' && category) {
+        assetData.document_category = category;
+      } else if (assetType === 'image' && category) {
+        assetData.image_category = category;
+      } else if (assetType === 'video' && category) {
+        assetData.video_category = category;
+      }
+
+      // Create asset using the real API
+      const newAsset = await developersApi.assets.create(assetData);
+      
+      console.log('Asset uploaded successfully:', newAsset);
       
       onUpload(newAsset);
       onClose();
     } catch (error) {
       console.error('Error uploading asset:', error);
-      setErrors({ submit: `Error uploading asset: ${error instanceof Error ? error.message : 'Unknown error'}` });
+      
+      // Handle specific API errors
+      let errorMessage = 'Unknown error occurred';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        // Handle API response errors
+        const apiError = error as any;
+        if (apiError.response?.data?.error) {
+          errorMessage = apiError.response.data.error;
+        } else if (apiError.response?.data) {
+          errorMessage = JSON.stringify(apiError.response.data);
+        }
+      }
+      
+      setErrors({ submit: `Error uploading asset: ${errorMessage}` });
     } finally {
       setIsUploading(false);
     }
