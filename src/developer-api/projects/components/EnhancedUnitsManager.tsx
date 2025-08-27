@@ -32,8 +32,6 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
   const [dupUnit, setDupUnit] = useState<Unit | null>(null);
   const [dupCopies, setDupCopies] = useState<number>(1);
   const [dupScheme, setDupScheme] = useState<'increment' | 'floor-number'>('increment');
-  const [dupFloor, setDupFloor] = useState<string>('');
-  const [dupPricePct, setDupPricePct] = useState<number>(5);
 
   // Filter units based on search and filters
   const filteredUnits = units.filter(unit => {
@@ -112,18 +110,10 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         projectId: projectId
       });
       
+      const { id: _omitId, created_at: _omitCreated, updated_at: _omitUpdated, media: _omitMedia, ...rest } = unit as any;
       const duplicatedUnit: Omit<Unit, 'id'> = {
-        ...unit,
+        ...rest,
         code: newCode,
-        status: 'available', // Reset status for new unit
-        price: unit.price ? Math.round(unit.price * 1.05) : undefined, // Slight price increase
-        // Keep outdoor features from original unit
-        plot: unit.plot,
-        plot_area: unit.plot_area,
-        veranda: unit.veranda,
-        veranda_area: unit.veranda_area,
-        pool: unit.pool,
-        pool_area: unit.pool_area,
       };
 
       await onUnitDuplicate(duplicatedUnit);
@@ -147,15 +137,11 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
       const copies = Math.max(1, Math.min(dupCopies || 1, 50));
       let snapshot: Unit[] = [...units];
       for (let i = 0; i < copies; i++) {
-        const newCode = generateUnitCode(dupScheme, snapshot, dupFloor || dupUnit.floor);
-        const adjustedPrice = typeof dupUnit.price === 'number'
-          ? Math.round(dupUnit.price * (1 + (dupPricePct || 0) / 100))
-          : undefined;
+        const newCode = generateUnitCode(dupScheme, snapshot, dupUnit.floor);
+        const { id: _id, created_at: _c, updated_at: _u, media: _m, ...rest } = dupUnit as any;
         const duplicatedUnit: Omit<Unit, 'id'> = {
-          ...dupUnit,
+          ...rest,
           code: newCode,
-          status: 'available',
-          price: adjustedPrice,
         };
         await onUnitDuplicate(duplicatedUnit);
         // Add a minimal unit into snapshot to avoid code collision in loop
@@ -458,7 +444,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                       <Edit className="h-4 w-4 group-hover:scale-110 transition-transform" />
                     </button>
                     <button
-                      onClick={() => { setDupUnit(unit); setDupCopies(1); setDupScheme(codeScheme); setDupFloor(unit.floor || ''); setDupPricePct(5); setShowDuplicateModal(true); }}
+                      onClick={() => { setDupUnit(unit); setDupCopies(1); setDupScheme(codeScheme); setShowDuplicateModal(true); }}
                       className="group p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-emerald-200"
                       title="Duplicate Unit"
                     >
@@ -512,7 +498,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                 <Edit className="h-4 w-4 group-hover/btn:scale-110 transition-transform" />
               </button>
               <button
-                onClick={() => { setDupUnit(unit); setDupCopies(1); setDupScheme(codeScheme); setDupFloor(unit.floor || ''); setDupPricePct(5); setShowDuplicateModal(true); }}
+                onClick={() => { setDupUnit(unit); setDupCopies(1); setDupScheme(codeScheme); setShowDuplicateModal(true); }}
                 className="group/btn p-2 text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 rounded-lg transition-all duration-200 hover:shadow-md border border-transparent hover:border-emerald-200"
                 title="Duplicate Unit"
               >
@@ -839,14 +825,6 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                     <option value="increment">N+1</option>
                     <option value="floor-number">Floor+Number</option>
                   </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Floor override (optional)</label>
-                  <input type="text" value={dupFloor} onChange={(e) => setDupFloor(e.target.value)} placeholder={dupUnit.floor || ''} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-slate-700 mb-1">Price adjustment (%)</label>
-                  <input type="number" value={dupPricePct} onChange={(e) => setDupPricePct(parseFloat(e.target.value || '0'))} className="w-full px-3 py-2 border border-slate-300 rounded-lg" />
                 </div>
               </div>
             </div>
