@@ -351,6 +351,13 @@ export interface Unit {
   price_min_furniture_package?: number;
   price_max_furniture_package?: number;
   external_ref?: string;
+  // New fields for plot, veranda, and pool
+  plot?: 'none' | 'communal' | 'private' | 'both';
+  plot_area?: number;
+  veranda?: 'none' | 'communal' | 'private' | 'both';
+  veranda_area?: number;
+  pool?: 'none' | 'communal' | 'private' | 'both';
+  pool_area?: number;
   created_at: string;
   updated_at: string;
   media?: UnitMedia[];

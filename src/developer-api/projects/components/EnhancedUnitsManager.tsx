@@ -57,6 +57,13 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         code: newCode,
         status: 'available', // Reset status for new unit
         price: unit.price ? Math.round(unit.price * 1.05) : undefined, // Slight price increase
+        // Keep outdoor features from original unit
+        plot: unit.plot,
+        plot_area: unit.plot_area,
+        veranda: unit.veranda,
+        veranda_area: unit.veranda_area,
+        pool: unit.pool,
+        pool_area: unit.pool_area,
       };
 
       await onUnitDuplicate(duplicatedUnit);
@@ -86,6 +93,9 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         bathrooms: 1,
         area_internal: 35,
         area_total: 40,
+        plot: 'none' as const,
+        veranda: 'none' as const,
+        pool: 'none' as const,
       }
     },
     {
@@ -98,6 +108,9 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         bathrooms: 1,
         area_internal: 55,
         area_total: 65,
+        plot: 'none' as const,
+        veranda: 'none' as const,
+        pool: 'none' as const,
       }
     },
     {
@@ -110,6 +123,9 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         bathrooms: 2,
         area_internal: 75,
         area_total: 85,
+        plot: 'none' as const,
+        veranda: 'none' as const,
+        pool: 'none' as const,
       }
     },
     {
@@ -122,6 +138,44 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         bathrooms: 2,
         area_internal: 95,
         area_total: 110,
+        plot: 'none' as const,
+        veranda: 'none' as const,
+        pool: 'none' as const,
+      }
+    },
+    {
+      name: 'House with Garden',
+      icon: Home,
+      color: 'from-green-500 to-green-600',
+      template: {
+        unit_type: 'house' as const,
+        bedrooms: 3,
+        bathrooms: 2,
+        area_internal: 120,
+        area_total: 150,
+        plot: 'private' as const,
+        plot_area: 200,
+        veranda: 'private' as const,
+        veranda_area: 30,
+        pool: 'none' as const,
+      }
+    },
+    {
+      name: 'Luxury Villa',
+      icon: Building,
+      color: 'from-purple-500 to-purple-600',
+      template: {
+        unit_type: 'house' as const,
+        bedrooms: 4,
+        bathrooms: 3,
+        area_internal: 180,
+        area_total: 220,
+        plot: 'private' as const,
+        plot_area: 300,
+        veranda: 'private' as const,
+        veranda_area: 50,
+        pool: 'private' as const,
+        pool_area: 40,
       }
     }
   ];
@@ -140,6 +194,10 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
         currency: 'EUR',
         vat_included: false,
         status: 'available',
+        // Initialize outdoor features
+        plot: 'none',
+        veranda: 'none',
+        pool: 'none',
         ...template
       };
 
@@ -176,6 +234,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Type & Layout</th>
               <th className="hidden sm:table-cell px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Floor</th>
               <th className="hidden md:table-cell px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Area</th>
+              <th className="hidden lg:table-cell px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Outdoor Features</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Price</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Status</th>
               <th className="px-6 py-4 text-left text-xs font-semibold text-slate-700 uppercase tracking-wider">Actions</th>
@@ -225,6 +284,49 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                       {unit.area_internal}m² internal
                     </div>
                   )}
+                </td>
+                <td className="hidden lg:table-cell px-6 py-5 whitespace-nowrap">
+                  <div className="space-y-1">
+                    {unit.plot && unit.plot !== 'none' && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                          Plot: {unit.plot}
+                        </span>
+                        {unit.plot_area && (
+                          <span className="text-xs text-slate-600">
+                            {unit.plot_area}m²
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {unit.veranda && unit.veranda !== 'none' && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                          Veranda: {unit.veranda}
+                        </span>
+                        {unit.veranda_area && (
+                          <span className="text-xs text-slate-600">
+                            {unit.veranda_area}m²
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {unit.pool && unit.pool !== 'none' && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+                          Pool: {unit.pool}
+                        </span>
+                        {unit.pool_area && (
+                          <span className="text-xs text-slate-600">
+                            {unit.pool_area}m²
+                          </span>
+                        )}
+                      </div>
+                    )}
+                    {(!unit.plot || unit.plot === 'none') && (!unit.veranda || unit.veranda === 'none') && (!unit.pool || unit.pool === 'none') && (
+                      <span className="text-xs text-slate-400 italic">No outdoor features</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap">
                   {unit.status === 'sold' ? (
@@ -359,6 +461,51 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
               </span>
             </div>
 
+            {/* Outdoor Features */}
+            {(unit.plot && unit.plot !== 'none') || (unit.veranda && unit.veranda !== 'none') || (unit.pool && unit.pool !== 'none') ? (
+              <div className="py-2 border-b border-slate-100">
+                <span className="text-sm font-medium text-slate-600 mb-2 block">Outdoor Features:</span>
+                <div className="space-y-2">
+                  {unit.plot && unit.plot !== 'none' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded-full font-medium">
+                        Plot: {unit.plot}
+                      </span>
+                      {unit.plot_area && (
+                        <span className="text-xs text-slate-600 font-medium">
+                          {unit.plot_area}m²
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {unit.veranda && unit.veranda !== 'none' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                        Veranda: {unit.veranda}
+                      </span>
+                      {unit.veranda_area && (
+                        <span className="text-xs text-slate-600 font-medium">
+                          {unit.veranda_area}m²
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {unit.pool && unit.pool !== 'none' && (
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded-full font-medium">
+                        Pool: {unit.pool}
+                      </span>
+                      {unit.pool_area && (
+                        <span className="text-xs text-slate-600 font-medium">
+                          {unit.pool_area}m²
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : null}
+
             <div className="flex items-center justify-between py-2 border-b border-slate-100">
               <span className="text-sm font-medium text-slate-600">Price:</span>
               {unit.status === 'sold' ? (
@@ -458,7 +605,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
           </div>
           <h3 className="text-lg font-bold text-slate-900">Quick Create Templates</h3>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           {quickCreateTemplates.map((template) => {
             const Icon = template.icon;
             return (

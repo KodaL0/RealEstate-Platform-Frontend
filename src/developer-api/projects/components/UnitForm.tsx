@@ -19,6 +19,13 @@ interface Unit {
   vat_included: boolean;
   status: 'available' | 'reserved' | 'sold';
   floor: string;
+  // New fields for plot, veranda, and pool
+  plot?: 'none' | 'communal' | 'private' | 'both';
+  plot_area?: number;
+  veranda?: 'none' | 'communal' | 'private' | 'both';
+  veranda_area?: number;
+  pool?: 'none' | 'communal' | 'private' | 'both';
+  pool_area?: number;
   created_at?: string;  // add these
   updated_at?: string;
 }
@@ -44,7 +51,14 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
     currency: 'EUR',
     vat_included: false,
     status: 'available',
-    floor: ''
+    floor: '',
+    // Initialize new fields
+    plot: 'none',
+    plot_area: undefined,
+    veranda: 'none',
+    veranda_area: undefined,
+    pool: 'none',
+    pool_area: undefined
   });
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -67,6 +81,17 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
     }
     if (formData.bedrooms === undefined) {
       newErrors.bedrooms = 'Number of bedrooms is required';
+    }
+
+    // Validate outdoor feature areas when features are selected
+    if (formData.plot && formData.plot !== 'none' && !formData.plot_area) {
+      newErrors.plot_area = 'Plot area is required when plot is selected';
+    }
+    if (formData.veranda && formData.veranda !== 'none' && !formData.veranda_area) {
+      newErrors.veranda_area = 'Veranda area is required when veranda is selected';
+    }
+    if (formData.pool && formData.pool !== 'none' && !formData.pool_area) {
+      newErrors.pool_area = 'Pool area is required when pool is selected';
     }
 
     setErrors(newErrors);
@@ -283,6 +308,129 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
                     placeholder="150"
                   />
+                </div>
+              </div>
+            </div>
+
+            {/* Plot, Veranda & Pool Section */}
+            <div className="space-y-4">
+              <div className="flex items-center space-x-2 mb-4">
+                <MapPin className="w-5 h-5 text-green-600" />
+                <h4 className="font-semibold text-gray-900">Outdoor Features</h4>
+                <div className="flex-1 h-px bg-gray-200"></div>
+              </div>
+
+              {/* Plot */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plot
+                  </label>
+                  <select
+                    value={formData.plot || 'none'}
+                    onChange={(e) => handleInputChange('plot', e.target.value as Unit['plot'])}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
+                  >
+                    <option value="none">None</option>
+                    <option value="communal">Communal</option>
+                    <option value="private">Private</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Plot Area (m²)
+                  </label>
+                                      <input
+                      type="number"
+                      value={formData.plot_area || ''}
+                      onChange={(e) => handleInputChange('plot_area', 
+                        e.target.value ? Number(e.target.value) : undefined
+                      )}
+                      disabled={formData.plot === 'none'}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${
+                        formData.plot === 'none' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                      } ${errors.plot_area ? 'border-red-300' : ''}`}
+                      placeholder="200"
+                    />
+                    {errors.plot_area && <p className="mt-1 text-sm text-red-600">{errors.plot_area}</p>}
+                </div>
+              </div>
+
+              {/* Veranda */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Veranda
+                  </label>
+                  <select
+                    value={formData.veranda || 'none'}
+                    onChange={(e) => handleInputChange('veranda', e.target.value as Unit['veranda'])}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
+                  >
+                    <option value="none">None</option>
+                    <option value="communal">Communal</option>
+                    <option value="private">Private</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Veranda Area (m²)
+                  </label>
+                                      <input
+                      type="number"
+                      value={formData.veranda_area || ''}
+                      onChange={(e) => handleInputChange('veranda_area', 
+                        e.target.value ? Number(e.target.value) : undefined
+                      )}
+                      disabled={formData.veranda === 'none'}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${
+                        formData.veranda === 'none' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                      } ${errors.veranda_area ? 'border-red-300' : ''}`}
+                      placeholder="25"
+                    />
+                    {errors.veranda_area && <p className="mt-1 text-sm text-red-600">{errors.veranda_area}</p>}
+                </div>
+              </div>
+
+              {/* Pool */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pool
+                  </label>
+                  <select
+                    value={formData.pool || 'none'}
+                    onChange={(e) => handleInputChange('pool', e.target.value as Unit['pool'])}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
+                  >
+                    <option value="none">None</option>
+                    <option value="communal">Communal</option>
+                    <option value="private">Private</option>
+                    <option value="both">Both</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Pool Area (m²)
+                  </label>
+                                      <input
+                      type="number"
+                      value={formData.pool_area || ''}
+                      onChange={(e) => handleInputChange('pool_area', 
+                        e.target.value ? Number(e.target.value) : undefined
+                      )}
+                      disabled={formData.pool === 'none'}
+                      className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${
+                        formData.pool === 'none' ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : ''
+                      } ${errors.pool_area ? 'border-red-300' : ''}`}
+                      placeholder="50"
+                    />
+                    {errors.pool_area && <p className="mt-1 text-sm text-red-600">{errors.pool_area}</p>}
                 </div>
               </div>
             </div>
