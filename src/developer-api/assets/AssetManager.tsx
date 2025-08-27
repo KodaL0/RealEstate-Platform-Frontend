@@ -472,7 +472,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
           ))}
         </div>
       ) : (
-        {viewMode === 'list' ? (
+        viewMode === 'list' ? (
           <div className="space-y-3">
             {filteredAssets.map(asset => (
               <AssetRow
@@ -504,7 +504,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
               />
             ))}
           </div>
-        )}
+        )
       )}
 
       {/* Upload Modal (render form directly; it provides its own overlay) */}
