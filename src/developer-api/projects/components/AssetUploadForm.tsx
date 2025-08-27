@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Home, MapPin, DollarSign, BarChart3, Upload, FileText, Image, Video, FileCheck, Folder, Tag, Plus } from 'lucide-react';
+import { X, Upload, FileText, Image, Video, Music, Archive, Paperclip, Folder, Tag } from 'lucide-react';
 import developersApi from '../../../config/developers-api';
 
 // Mock API types (replace with your actual types)
@@ -40,6 +40,8 @@ interface AssetUploadFormProps {
 
 function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps) {
   const [selectedCategory, setSelectedCategory] = useState<AssetCategory>('other');
+  const [selectedType, setSelectedType] = useState<'document' | 'image' | 'video' | 'audio' | 'archive' | 'other'>('document');
+  const [availableCategories, setAvailableCategories] = useState<Array<[string, string]>>([]);
   const [customTitle, setCustomTitle] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState('');
   const [description, setDescription] = useState('');
@@ -50,38 +52,58 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [dragActive, setDragActive] = useState(false);
 
-  const assetCategories = [
-    { value: 'floor_plans', label: 'Floor Plans', icon: Home, color: 'bg-blue-100 text-blue-700 border-blue-200' },
-    { value: 'brochures', label: 'Brochures', icon: FileText, color: 'bg-green-100 text-green-700 border-green-200' },
-    { value: 'legal_documents', label: 'Legal Documents', icon: FileCheck, color: 'bg-purple-100 text-purple-700 border-purple-200' },
-    { value: 'photos', label: 'Photos', icon: Image, color: 'bg-pink-100 text-pink-700 border-pink-200' },
-    { value: 'videos', label: 'Videos', icon: Video, color: 'bg-red-100 text-red-700 border-red-200' },
-    { value: 'presentations', label: 'Presentations', icon: BarChart3, color: 'bg-orange-100 text-orange-700 border-orange-200' },
-    { value: 'specifications', label: 'Specifications', icon: FileText, color: 'bg-teal-100 text-teal-700 border-teal-200' },
-    { value: 'contracts', label: 'Contracts', icon: FileCheck, color: 'bg-indigo-100 text-indigo-700 border-indigo-200' },
-    { value: 'permits', label: 'Permits', icon: FileCheck, color: 'bg-emerald-100 text-emerald-700 border-emerald-200' },
-    { value: 'other', label: 'Other', icon: Folder, color: 'bg-gray-100 text-gray-700 border-gray-200' }
+  const assetTypes = [
+    { value: 'document' as const, label: 'Document', icon: FileText, color: 'bg-blue-100 text-blue-700 border-blue-200' },
+    { value: 'image' as const, label: 'Image', icon: Image, color: 'bg-green-100 text-green-700 border-green-200' },
+    { value: 'video' as const, label: 'Video', icon: Video, color: 'bg-red-100 text-red-700 border-red-200' },
+    { value: 'audio' as const, label: 'Audio', icon: Music, color: 'bg-purple-100 text-purple-700 border-purple-200' },
+    { value: 'archive' as const, label: 'Archive', icon: Archive, color: 'bg-orange-100 text-orange-700 border-orange-200' },
+    { value: 'other' as const, label: 'Other', icon: Paperclip, color: 'bg-gray-100 text-gray-700 border-gray-200' }
   ];
 
-  // Predefined title suggestions per category
-  const titleSuggestions: Record<AssetCategory, string[]> = {
-    floor_plans: ['Floor Plan', 'Site Plan', 'Unit Plan', 'Level Plan'],
-    brochures: ['Project Brochure', 'Marketing Brochure', 'Sales Brochure'],
-    legal_documents: ['Legal Document', 'Agreement', 'Disclosure', 'Terms'],
-    photos: ['Exterior Photo', 'Interior Photo', 'Amenities Photo', 'Construction Photo'],
-    videos: ['Virtual Tour', 'Marketing Video', 'Construction Video'],
-    presentations: ['Investor Deck', 'Sales Presentation', 'Project Overview'],
-    specifications: ['Technical Specifications', 'Material Specifications'],
-    contracts: ['Sales Agreement', 'Contract Addendum', 'Purchase Agreement'],
-    permits: ['Building Permit', 'Occupancy Permit', 'Inspection Approval'],
+  // Predefined title suggestions per asset type
+  const titleSuggestionsByType: Record<string, string[]> = {
+    document: ['Project Brochure', 'Agreement', 'Disclosure', 'Terms', 'Specification'],
+    image: ['Exterior Photo', 'Interior Photo', 'Amenities Photo', 'Construction Photo', 'Rendering'],
+    video: ['Virtual Tour', 'Marketing Video', 'Construction Video'],
+    audio: ['Audio File'],
+    archive: ['Archive'],
     other: ['Document', 'File']
   };
 
-  // Keep suggestion in sync with category
+  // Keep suggestion in sync with selected type
   useEffect(() => {
-    const first = titleSuggestions[selectedCategory]?.[0] || '';
+    const first = titleSuggestionsByType[selectedType]?.[0] || '';
     setSelectedSuggestion(first);
-  }, [selectedCategory]);
+  }, [selectedType]);
+
+  // Fetch categories for selected type
+  useEffect(() => {
+    let isMounted = true;
+    const fetchCategories = async () => {
+      try {
+        const data = await developersApi.assets.getCategories(selectedType);
+        const cats = (data && (data as any)[selectedType]) || [];
+        if (isMounted) {
+          setAvailableCategories(cats);
+          if (cats.length > 0) {
+            setSelectedCategory(cats[0][0] as AssetCategory);
+          } else {
+            setSelectedCategory('other');
+          }
+        }
+      } catch (e) {
+        if (isMounted) {
+          setAvailableCategories([]);
+          setSelectedCategory('other');
+        }
+      }
+    };
+    fetchCategories();
+    return () => {
+      isMounted = false;
+    };
+  }, [selectedType]);
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -147,6 +169,10 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     if (!file) {
       newErrors.file = 'Please select a file to upload';
     }
+    // Require category for specific types
+    if ((selectedType === 'document' || selectedType === 'image' || selectedType === 'video') && !selectedCategory) {
+      newErrors.category = 'Please select a category';
+    }
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -165,7 +191,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     try {
       const finalTitle = (customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled');
 
-      // Determine asset type based on file MIME type
+      // Determine asset type based on selection (fallback to MIME type detection)
       const getAssetType = (file: File): string => {
         if (file.type.startsWith('image/')) return 'image';
         if (file.type.startsWith('video/')) return 'video';
@@ -178,39 +204,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
         if (file.type.includes('zip') || file.type.includes('rar') || file.type.includes('tar')) return 'archive';
         return 'other';
       };
-
-      // Determine category based on asset type and selected category
-      const getCategory = (assetType: string, selectedCategory: string): string | undefined => {
-        if (assetType === 'document') {
-          return selectedCategory;
-        } else if (assetType === 'image') {
-          // Map frontend categories to backend image categories
-          const categoryMap: Record<string, string> = {
-            'photos': 'other_images',
-            'floor_plans': 'floor_plans',
-            'brochures': 'other_images',
-            'presentations': 'other_images',
-            'specifications': 'other_images',
-            'contracts': 'other_images',
-            'permits': 'other_images',
-            'legal_documents': 'other_images',
-            'other': 'other_images'
-          };
-          return categoryMap[selectedCategory] || 'other_images';
-        } else if (assetType === 'video') {
-          // Map frontend categories to backend video categories
-          const categoryMap: Record<string, string> = {
-            'videos': 'other_videos',
-            'presentations': 'marketing',
-            'other': 'other_videos'
-          };
-          return categoryMap[selectedCategory] || 'other_videos';
-        }
-        return undefined;
-      };
-
-      const assetType = getAssetType(file!);
-      const category = getCategory(assetType, selectedCategory);
+      const assetType = selectedType || getAssetType(file!);
+      const category = selectedCategory;
 
       console.log('Uploading asset:', {
         file: file?.name,
@@ -271,8 +266,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     }
   };
 
-  const selectedCategoryData = assetCategories.find(cat => cat.value === selectedCategory);
-  const IconComponent = selectedCategoryData?.icon || Folder;
+  const selectedTypeData = assetTypes.find(t => t.value === selectedType);
+  const TypeIcon = selectedTypeData?.icon || Folder;
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
@@ -303,34 +298,51 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
               </div>
             )}
 
-            {/* Category Selection Section */}
+            {/* Type & Category Selection Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
                 <Folder className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-gray-900">Asset Category</h4>
+                <h4 className="font-semibold text-gray-900">Asset Type & Category</h4>
                 <div className="flex-1 h-px bg-gray-200"></div>
               </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
-                {assetCategories.map((category) => {
-                  const IconComp = category.icon;
+              {/* Type selection */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+                {assetTypes.map((type) => {
+                  const IconComp = type.icon;
                   return (
                     <button
-                      key={category.value}
+                      key={type.value}
                       type="button"
-                      onClick={() => setSelectedCategory(category.value as AssetCategory)}
+                      onClick={() => setSelectedType(type.value)}
                       className={`p-4 rounded-xl border-2 transition-all duration-200 text-center hover:scale-105 ${
-                        selectedCategory === category.value
-                          ? `${category.color} border-current shadow-lg`
+                        selectedType === type.value
+                          ? `${type.color} border-current shadow-lg`
                           : 'border-gray-200 hover:border-gray-300 text-gray-700 hover:bg-gray-50'
                       }`}
                     >
                       <IconComp className="w-6 h-6 mx-auto mb-2" />
-                      <div className="text-xs font-medium leading-tight">{category.label}</div>
+                      <div className="text-xs font-medium leading-tight">{type.label}</div>
                     </button>
                   );
                 })}
               </div>
+
+              {/* Category selection for applicable types */}
+              {(selectedType === 'document' || selectedType === 'image' || selectedType === 'video') && (
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value as AssetCategory)}
+                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white ${errors.category ? 'border-red-300' : 'border-gray-300'}`}
+                  >
+                    {availableCategories.map(([value, label]) => (
+                      <option key={value} value={value}>{label}</option>
+                    ))}
+                  </select>
+                  {errors.category && <p className="text-sm text-red-600 mt-1">{errors.category}</p>}
+                </div>
+              )}
             </div>
 
             {/* File Upload Section */}
@@ -407,7 +419,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
                     onChange={(e) => setSelectedSuggestion(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
                   >
-                    {(titleSuggestions[selectedCategory] || []).map((s) => (
+                    {(titleSuggestionsByType[selectedType] || []).map((s: string) => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>
@@ -481,20 +493,23 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
               </div>
             </div>
 
-            {/* Selected Category Preview */}
-            {selectedCategoryData && (
-              <div className={`p-4 rounded-xl border ${selectedCategoryData.color}`}>
-                <div className="flex items-center space-x-3">
-                  <IconComponent className="w-5 h-5" />
-                  <div>
-                    <p className="font-medium">Uploading to: {selectedCategoryData.label}</p>
-                    <p className="text-sm opacity-75">
-                      Final title: {(customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled')}
-                    </p>
-                  </div>
+            {/* Selected Type/Category Preview */}
+            <div className="p-4 rounded-xl border border-gray-200 bg-gray-50">
+              <div className="flex items-center space-x-3">
+                <TypeIcon className="w-5 h-5 text-gray-700" />
+                <div>
+                  <p className="font-medium">
+                    Uploading as: {selectedType.charAt(0).toUpperCase() + selectedType.slice(1)}
+                    {(selectedType === 'document' || selectedType === 'image' || selectedType === 'video') && selectedCategory ?
+                      ` • ${availableCategories.find(([v]) => v === selectedCategory)?.[1] || selectedCategory}`
+                      : ''}
+                  </p>
+                  <p className="text-sm opacity-75">
+                    Final title: {(customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled')}
+                  </p>
                 </div>
               </div>
-            )}
+            </div>
 
             {/* Form Actions */}
             <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100">
@@ -638,7 +653,7 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <Home className="w-4 h-4 text-white" />
+              <FileText className="w-4 h-4 text-white" />
             </div>
             <h3 className="text-xl font-semibold text-white">
               {unit ? 'Edit Unit' : 'Add New Unit'}
@@ -665,7 +680,7 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
             {/* Basic Information Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
-                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-blue-600" />
                 <h4 className="font-semibold text-gray-900">Basic Information</h4>
                 <div className="flex-1 h-px bg-gray-200"></div>
               </div>
@@ -756,7 +771,7 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
             {/* Area Information Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
-                <MapPin className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-blue-600" />
                 <h4 className="font-semibold text-gray-900">Area Information</h4>
                 <div className="flex-1 h-px bg-gray-200"></div>
               </div>
@@ -797,7 +812,7 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
             {/* Pricing & Status Section */}
             <div className="space-y-4">
               <div className="flex items-center space-x-2 mb-4">
-                <DollarSign className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-blue-600" />
                 <h4 className="font-semibold text-gray-900">Pricing & Status</h4>
                 <div className="flex-1 h-px bg-gray-200"></div>
               </div>
@@ -867,71 +882,4 @@ function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
 }
 
 // Demo App component
-function App() {
-  const [showUnitForm, setShowUnitForm] = useState(false);
-  const [showAssetForm, setShowAssetForm] = useState(false);
-
-  const handleSave = (unit: Unit) => {
-    console.log('Saved unit:', unit);
-    setShowUnitForm(false);
-  };
-
-  const handleCancel = () => {
-    setShowUnitForm(false);
-  };
-
-  const handleAssetUpload = (asset: any) => {
-    console.log('Uploaded asset:', asset);
-    setShowAssetForm(false);
-  };
-
-  const handleAssetCancel = () => {
-    setShowAssetForm(false);
-  };
-
-  return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-900 mb-4">PropertyPro Unit Management</h1>
-        <p className="text-gray-600 mb-8">Professional forms with enhanced styling</p>
-        
-        {!showUnitForm && !showAssetForm && (
-          <div className="space-y-4">
-            <button
-              onClick={() => setShowUnitForm(true)}
-              className="bg-blue-600 text-white px-6 py-3 rounded-xl hover:bg-blue-700 transition-colors mr-4"
-            >
-              Open Unit Form
-            </button>
-            <button
-              onClick={() => setShowAssetForm(true)}
-              className="bg-green-600 text-white px-6 py-3 rounded-xl hover:bg-green-700 transition-colors"
-            >
-              Open Asset Upload Form
-            </button>
-          </div>
-        )}
-
-        {showUnitForm && (
-          <UnitForm
-            projectId={1}
-            unit={null}
-            onSave={handleSave}
-            onCancel={handleCancel}
-          />
-        )}
-
-        {showAssetForm && (
-          <AssetUploadForm
-            projectId={1}
-            onClose={handleAssetCancel}
-            onUpload={handleAssetUpload}
-          />
-        )}
-      </div>
-    </div>
-  );
-}
-
-
 export default AssetUploadForm;

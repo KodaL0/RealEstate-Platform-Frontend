@@ -1,6 +1,7 @@
-import { useState, useEffect } from 'react';
-import { Upload, Search, Filter, Download, Eye, Trash2, Star, Globe, FileText, Image, Video, Music, Archive, Paperclip, X, FolderOpen, Calendar, User } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Upload, Search, Filter, Download, Eye, Trash2, Star, Globe, FileText, Image, Video, Music, Archive, Paperclip, FolderOpen, LayoutGrid, ListTree, X } from 'lucide-react';
 import developersApi from '../../config/developers-api';
+import AssetUploadForm from '../projects/components/AssetUploadForm';
 
 interface Asset {
   id: number;
@@ -36,10 +37,9 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
   const [selectedType, setSelectedType] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadFiles, setUploadFiles] = useState<FileList | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
+  // Upload is handled by AssetUploadForm modal
   const [categories, setCategories] = useState<any>({});
-  const [dragActive, setDragActive] = useState(false);
+  const [organizedView, setOrganizedView] = useState(false);
 
   const assetTypes = [
     { value: '', label: 'All Types', icon: FolderOpen, color: 'text-gray-600' },
@@ -115,54 +115,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     setFilteredAssets(filtered);
   };
 
-  const handleDrag = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setDragActive(false);
-    
-    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-      setUploadFiles(e.dataTransfer.files);
-    }
-  };
-
-  const handleBulkUpload = async () => {
-    if (!uploadFiles || uploadFiles.length === 0) return;
-
-    setIsUploading(true);
-    try {
-      const fileArray = Array.from(uploadFiles);
-      const result = await developersApi.assets.bulkUpload(projectId, fileArray);
-      
-      if (result.created_assets && result.created_assets.length > 0) {
-        // Refresh assets list
-        await fetchAssets();
-        
-        // Show success message
-        console.log(`Successfully uploaded ${result.total_created} assets`);
-        
-        if (result.errors && result.errors.length > 0) {
-          console.warn(`Upload completed with ${result.total_errors} errors:`, result.errors);
-        }
-      }
-      
-      setUploadFiles(null);
-      setShowUploadModal(false);
-    } catch (error) {
-      console.error('Error uploading files:', error);
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  // Drag-and-drop and bulk upload were replaced by AssetUploadForm
 
   const toggleFeatured = async (assetId: number) => {
     try {
@@ -229,6 +182,29 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     });
   };
 
+  // Build a map from category code to label for documents
+  const documentCategoryLabelMap = useMemo(() => {
+    const map: Record<string, string> = {};
+    const docs = categories?.document || [];
+    docs.forEach((pair: [string, string]) => {
+      map[pair[0]] = pair[1];
+    });
+    return map;
+  }, [categories]);
+
+  // Group documents by category when organized view is enabled
+  const groupedDocuments = useMemo(() => {
+    if (!organizedView || selectedType !== 'document') return null;
+    const groups: Record<string, Asset[]> = {};
+    const docs = filteredAssets.filter(a => a.asset_type === 'document');
+    for (const a of docs) {
+      const key = a.document_category || 'uncategorized';
+      if (!groups[key]) groups[key] = [] as Asset[];
+      groups[key].push(a);
+    }
+    return groups;
+  }, [organizedView, selectedType, filteredAssets]);
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-16">
@@ -264,13 +240,33 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
               </span>
             </div>
           </div>
-          <button
-            onClick={() => setShowUploadModal(true)}
-            className="inline-flex items-center px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
-          >
-            <Upload className="h-5 w-5 mr-2" />
-            Upload Files
-          </button>
+          <div className="flex items-center gap-2">
+            {selectedType === 'document' && (
+              <div className="bg-white/20 rounded-xl p-1 flex items-center">
+                <button
+                  onClick={() => setOrganizedView(false)}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? 'bg-white text-blue-700' : 'text-white/80 hover:text-white'}`}
+                  title="Grid View"
+                >
+                  <LayoutGrid className="w-4 h-4 mr-1" /> Grid
+                </button>
+                <button
+                  onClick={() => setOrganizedView(true)}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? 'bg-white text-blue-700' : 'text-white/80 hover:text-white'}`}
+                  title="Organized View"
+                >
+                  <ListTree className="w-4 h-4 mr-1" /> Organized
+                </button>
+              </div>
+            )}
+            <button
+              onClick={() => setShowUploadModal(true)}
+              className="inline-flex items-center px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+            >
+              <Upload className="h-5 w-5 mr-2" />
+              Upload Files
+            </button>
+          </div>
         </div>
       </div>
 
@@ -364,7 +360,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
         )}
       </div>
 
-      {/* Assets Grid */}
+      {/* Assets Grid or Organized Documents */}
       {filteredAssets.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-2xl shadow-lg border border-gray-100">
           <div className="w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -386,6 +382,80 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
               Upload First Asset
             </button>
           )}
+        </div>
+      ) : organizedView && selectedType === 'document' && groupedDocuments ? (
+        <div className="space-y-8">
+          {Object.entries(groupedDocuments).map(([cat, items]) => (
+            <div key={cat}>
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-lg font-semibold text-gray-900">
+                  {cat === 'uncategorized' ? 'Uncategorized' : (documentCategoryLabelMap[cat] || cat)}
+                  <span className="ml-2 text-xs text-gray-500">({items.length})</span>
+                </h4>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {items.map(asset => (
+                  <div key={asset.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
+                    <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
+                      <div className="flex flex-col items-center space-y-2">
+                        {getAssetIcon(asset)}
+                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
+                          {asset.asset_type}
+                        </span>
+                      </div>
+                      <div className="absolute top-3 right-3 flex space-x-1">
+                        {asset.is_featured && (
+                          <div className="bg-yellow-500 text-white p-1.5 rounded-full shadow-lg" title="Featured">
+                            <Star className="h-3 w-3" />
+                          </div>
+                        )}
+                        {asset.is_public && (
+                          <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg" title="Public">
+                            <Globe className="h-3 w-3" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
+                        <button
+                          onClick={() => window.open(asset.file, '_blank')}
+                          className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+                        >
+                          <Eye className="h-4 w-4 inline mr-2" />
+                          View
+                        </button>
+                      </div>
+                    </div>
+                    <div className="p-4">
+                      <h4 className="font-semibold text-gray-900 truncate mb-1">{asset.title || asset.original_filename}</h4>
+                      <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
+                        <span className="capitalize">{documentCategoryLabelMap[asset.document_category || ''] || 'Document'}</span>
+                        <span>•</span>
+                        <span>{formatFileSize(asset.file_size)}</span>
+                        <span>•</span>
+                        <span>{formatDate(asset.uploaded_at)}</span>
+                      </div>
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div className="flex space-x-1">
+                          <button onClick={() => toggleFeatured(asset.id)} className={`p-2 rounded-lg transition-all duration-200 ${asset.is_featured ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`} title="Toggle Featured">
+                            <Star className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => togglePublic(asset.id)} className={`p-2 rounded-lg transition-all duration-200 ${asset.is_public ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`} title="Toggle Public">
+                            <Globe className="h-4 w-4" />
+                          </button>
+                          <button onClick={() => window.open(asset.file, '_blank')} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200" title="Download">
+                            <Download className="h-4 w-4" />
+                          </button>
+                        </div>
+                        <button onClick={() => deleteAsset(asset.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200" title="Delete">
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -521,100 +591,16 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] overflow-hidden">
-            {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-                  <Upload className="w-4 h-4 text-white" />
-                </div>
-                <h3 className="text-xl font-semibold text-white">Upload Files</h3>
-              </div>
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center text-white"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            
-            <div className="p-6">
-              <div 
-                className={`border-2 border-dashed rounded-xl p-8 text-center transition-all duration-200 ${
-                  dragActive
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-300 hover:border-gray-400 hover:bg-gray-50'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Upload className="w-8 h-8 text-blue-600" />
-                </div>
-                <h4 className="text-lg font-medium text-gray-900 mb-2">
-                  {dragActive ? 'Drop your files here' : 'Choose files to upload'}
-                </h4>
-                <p className="text-gray-600 mb-4">
-                  or drag and drop them here
-                </p>
-                <input
-                  type="file"
-                  multiple
-                  onChange={(e) => setUploadFiles(e.target.files)}
-                  className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 transition-colors"
-                />
-              </div>
-              
-              {uploadFiles && uploadFiles.length > 0 && (
-                <div className="mt-6 p-4 bg-gray-50 rounded-xl">
-                  <div className="flex items-center space-x-2 mb-3">
-                    <FileText className="w-4 h-4 text-gray-600" />
-                    <p className="text-sm font-medium text-gray-900">
-                      Selected {uploadFiles.length} file{uploadFiles.length > 1 ? 's' : ''}:
-                    </p>
-                  </div>
-                  <div className="max-h-32 overflow-y-auto space-y-2">
-                    {Array.from(uploadFiles).map((file, index) => (
-                      <div key={index} className="flex items-center justify-between text-sm bg-white p-2 rounded-lg">
-                        <span className="text-gray-700 truncate flex-1 mr-2">{file.name}</span>
-                        <span className="text-gray-500 text-xs">{formatFileSize(file.size)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-            
-            <div className="flex justify-end space-x-3 p-6 border-t border-gray-100">
-              <button
-                onClick={() => setShowUploadModal(false)}
-                className="px-6 py-3 text-gray-700 bg-gray-100 rounded-xl hover:bg-gray-200 transition-all duration-200 font-medium"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleBulkUpload}
-                disabled={!uploadFiles || uploadFiles.length === 0 || isUploading}
-                className="px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-xl hover:from-blue-700 hover:to-blue-800 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center space-x-2"
-              >
-                {isUploading ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Uploading...</span>
-                  </>
-                ) : (
-                  <>
-                    <Upload className="w-4 h-4" />
-                    <span>Upload Files</span>
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
+        <AssetUploadForm
+          projectId={projectId}
+          onClose={() => setShowUploadModal(false)}
+          onUpload={(newAsset) => {
+            // After upload, refresh list or prepend
+            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
+            setShowUploadModal(false);
+            fetchAssets();
+          }}
+        />
       )}
     </div>
   );
