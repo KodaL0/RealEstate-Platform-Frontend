@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Upload, Search, Filter, Download, Eye, Trash2, Star, Globe, FileText, Image, Video, Music, Archive, Paperclip, FolderOpen, LayoutGrid, ListTree, X } from 'lucide-react';
-import developersApi from '../../config/developers-api';
-import AssetUploadForm from '../projects/components/AssetUploadForm';
+import developersApi from '../config/developers-api';
+import AssetUploadForm from './AssetUploadForm';
 
 interface Asset {
   id: number;
@@ -612,3 +612,5 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     </div>
   );
 }
+
+

@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import UnitForm from './UnitForm';
-import AssetUploadForm from './AssetUploadForm';
+import AssetUploadForm from '../../assets/AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
-import AssetManager from '../../components/AssetManager';
+import AssetManager from '../../assets/AssetManager';
 import ProjectPreview from './ProjectPreview';
 import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
 
