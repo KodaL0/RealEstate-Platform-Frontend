@@ -2,6 +2,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { Upload, Search, Filter, Download, Eye, Trash2, Star, Globe, FileText, Image, Video, Music, Archive, Paperclip, FolderOpen, LayoutGrid, ListTree, X } from 'lucide-react';
 import developersApi from '../../config/developers-api';
 import AssetUploadForm from './AssetUploadForm';
+import AssetCard from './components/AssetCard';
+import AssetRow from './components/AssetRow';
 
 interface Asset {
   id: number;
@@ -40,6 +42,8 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
   // Upload is handled by AssetUploadForm modal
   const [categories, setCategories] = useState<any>({});
   const [organizedView, setOrganizedView] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [openFilters, setOpenFilters] = useState(false);
 
   const assetTypes = [
     { value: '', label: 'All Types', icon: FolderOpen, color: 'text-gray-600' },
@@ -230,20 +234,40 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
               <p className="text-sm text-gray-500">Manage documents, images and files for this project</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-xl p-1 flex items-center bg-gray-100">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                title="Grid View"
+                aria-label="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4 mr-1" /> Grid
+              </button>
+              <button
+                onClick={() => setViewMode('list')}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === 'list' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                title="List View"
+                aria-label="List view"
+              >
+                <ListTree className="w-4 h-4 mr-1" /> List
+              </button>
+            </div>
             {selectedType === 'document' && (
               <div className="rounded-xl p-1 flex items-center bg-gray-100">
                 <button
                   onClick={() => setOrganizedView(false)}
                   className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
-                  title="Grid View"
+                  title="Flat View"
+                  aria-label="Flat view"
                 >
-                  <LayoutGrid className="w-4 h-4 mr-1" /> Grid
+                  <LayoutGrid className="w-4 h-4 mr-1" /> Flat
                 </button>
                 <button
                   onClick={() => setOrganizedView(true)}
                   className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
                   title="Organized View"
+                  aria-label="Organized view"
                 >
                   <ListTree className="w-4 h-4 mr-1" /> Organized
                 </button>
@@ -280,13 +304,21 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
       {/* Search and Filters */}
       <div className="bg-white rounded-2xl shadow-lg border border-gray-100 p-6">
-        <div className="flex items-center space-x-2 mb-6">
+        <div className="flex items-center gap-2 mb-4">
           <Filter className="w-5 h-5 text-blue-600" />
           <h3 className="font-semibold text-gray-900">Search & Filter</h3>
           <div className="flex-1 h-px bg-gray-200"></div>
+          <button
+            className="sm:hidden text-sm text-blue-600 hover:text-blue-800 px-3 py-1 rounded-lg bg-blue-50"
+            onClick={() => setOpenFilters(v => !v)}
+            aria-expanded={openFilters}
+            aria-controls="asset-filters"
+          >
+            {openFilters ? 'Hide' : 'Show'}
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div id="asset-filters" className={`${openFilters ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'hidden md:grid md:grid-cols-3 md:gap-4'}`}>
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -401,200 +433,78 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
                   <span className="ml-2 text-xs text-gray-500">({items.length})</span>
                 </h4>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                {items.map(asset => (
-                  <div key={asset.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
-                    <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
-                      <div className="flex flex-col items-center space-y-2">
-                        {getAssetIcon(asset)}
-                        <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                          {asset.asset_type}
-                        </span>
-                      </div>
-                      <div className="absolute top-3 right-3 flex space-x-1">
-                        {asset.is_featured && (
-                          <div className="bg-yellow-500 text-white p-1.5 rounded-full shadow-lg" title="Featured">
-                            <Star className="h-3 w-3" />
-                          </div>
-                        )}
-                        {asset.is_public && (
-                          <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg" title="Public">
-                            <Globe className="h-3 w-3" />
-                          </div>
-                        )}
-                      </div>
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                        <button
-                          onClick={() => window.open(asset.file, '_blank')}
-                          className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                        >
-                          <Eye className="h-4 w-4 inline mr-2" />
-                          View
-                        </button>
-                      </div>
-                    </div>
-                    <div className="p-4">
-                      <h4 className="font-semibold text-gray-900 truncate mb-1">{asset.title || asset.original_filename}</h4>
-                      <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
-                        <span className="capitalize">{documentCategoryLabelMap[asset.document_category || ''] || 'Document'}</span>
-                        <span>•</span>
-                        <span>{formatFileSize(asset.file_size)}</span>
-                        <span>•</span>
-                        <span>{formatDate(asset.uploaded_at)}</span>
-                      </div>
-                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                        <div className="flex space-x-1">
-                          <button onClick={() => toggleFeatured(asset.id)} className={`p-2 rounded-lg transition-all duration-200 ${asset.is_featured ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`} title="Toggle Featured">
-                            <Star className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => togglePublic(asset.id)} className={`p-2 rounded-lg transition-all duration-200 ${asset.is_public ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`} title="Toggle Public">
-                            <Globe className="h-4 w-4" />
-                          </button>
-                          <button onClick={() => window.open(asset.file, '_blank')} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200" title="Download">
-                            <Download className="h-4 w-4" />
-                          </button>
-                        </div>
-                        <button onClick={() => deleteAsset(asset.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200" title="Delete">
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              {viewMode === 'list' ? (
+                <div className="space-y-3">
+                  {items.map(asset => (
+                    <AssetRow
+                      key={asset.id}
+                      asset={asset}
+                      onToggleFeatured={toggleFeatured}
+                      onTogglePublic={togglePublic}
+                      onDelete={deleteAsset}
+                      onView={(file) => window.open(file, '_blank')}
+                      renderIcon={getAssetIcon}
+                      formatFileSize={formatFileSize}
+                      formatDate={formatDate}
+                      categoryLabel={documentCategoryLabelMap[asset.document_category || ''] || 'Document'}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                  {items.map(asset => (
+                    <AssetCard
+                      key={asset.id}
+                      asset={asset}
+                      onToggleFeatured={toggleFeatured}
+                      onTogglePublic={togglePublic}
+                      onDelete={deleteAsset}
+                      onView={(file) => window.open(file, '_blank')}
+                      renderIcon={getAssetIcon}
+                      formatFileSize={formatFileSize}
+                      formatDate={formatDate}
+                      categoryLabel={documentCategoryLabelMap[asset.document_category || ''] || 'Document'}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-          {filteredAssets.map(asset => (
-            <div key={asset.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
-              {/* Asset Preview */}
-              <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
-                {asset.asset_type === 'image' ? (
-                  <img
-                    src={asset.file}
-                    alt={asset.title || asset.original_filename}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                ) : (
-                  <div className="flex flex-col items-center space-y-2">
-                    {getAssetIcon(asset)}
-                    <span className="text-xs text-gray-500 font-medium uppercase tracking-wide">
-                      {asset.asset_type}
-                    </span>
-                  </div>
-                )}
-                
-                {/* Status Indicators */}
-                <div className="absolute top-3 right-3 flex space-x-1">
-                  {asset.is_featured && (
-                    <div className="bg-yellow-500 text-white p-1.5 rounded-full shadow-lg" title="Featured">
-                      <Star className="h-3 w-3" />
-                    </div>
-                  )}
-                  {asset.is_public && (
-                    <div className="bg-green-500 text-white p-1.5 rounded-full shadow-lg" title="Public">
-                      <Globe className="h-3 w-3" />
-                    </div>
-                  )}
-                </div>
-
-                {/* Hover Overlay */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-                  <button
-                    onClick={() => window.open(asset.file, '_blank')}
-                    className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
-                  >
-                    <Eye className="h-4 w-4 inline mr-2" />
-                    View
-                  </button>
-                </div>
-              </div>
-
-              {/* Asset Info */}
-              <div className="p-4">
-                <h4 className="font-semibold text-gray-900 truncate mb-1">
-                  {asset.title || asset.original_filename}
-                </h4>
-                <div className="flex items-center space-x-2 text-xs text-gray-500 mb-3">
-                  <span className="capitalize">{asset.asset_type}</span>
-                  <span>•</span>
-                  <span>{formatFileSize(asset.file_size)}</span>
-                  <span>•</span>
-                  <span>{formatDate(asset.uploaded_at)}</span>
-                </div>
-                
-                {asset.description && (
-                  <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-                    {asset.description}
-                  </p>
-                )}
-
-                {/* Tags */}
-                {asset.tags && asset.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1 mb-4">
-                    {asset.tags.slice(0, 2).map(tag => (
-                      <span
-                        key={tag}
-                        className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium"
-                      >
-                        {tag}
-                      </span>
-                    ))}
-                    {asset.tags.length > 2 && (
-                      <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full font-medium">
-                        +{asset.tags.length - 2}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {/* Actions */}
-                <div className="flex items-center justify-between pt-3 border-t border-gray-100">
-                  <div className="flex space-x-1">
-                    <button
-                      onClick={() => toggleFeatured(asset.id)}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
-                        asset.is_featured 
-                          ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' 
-                          : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'
-                      }`}
-                      title="Toggle Featured"
-                    >
-                      <Star className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => togglePublic(asset.id)}
-                      className={`p-2 rounded-lg transition-all duration-200 ${
-                        asset.is_public 
-                          ? 'text-green-600 bg-green-50 hover:bg-green-100' 
-                          : 'text-gray-400 hover:text-green-600 hover:bg-green-50'
-                      }`}
-                      title="Toggle Public"
-                    >
-                      <Globe className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => window.open(asset.file, '_blank')}
-                      className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                      title="Download"
-                    >
-                      <Download className="h-4 w-4" />
-                    </button>
-                  </div>
-                  <button
-                    onClick={() => deleteAsset(asset.id)}
-                    className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
-                    title="Delete"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        {viewMode === 'list' ? (
+          <div className="space-y-3">
+            {filteredAssets.map(asset => (
+              <AssetRow
+                key={asset.id}
+                asset={asset}
+                onToggleFeatured={toggleFeatured}
+                onTogglePublic={togglePublic}
+                onDelete={deleteAsset}
+                onView={(file) => window.open(file, '_blank')}
+                renderIcon={getAssetIcon}
+                formatFileSize={formatFileSize}
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredAssets.map(asset => (
+              <AssetCard
+                key={asset.id}
+                asset={asset}
+                onToggleFeatured={toggleFeatured}
+                onTogglePublic={togglePublic}
+                onDelete={deleteAsset}
+                onView={(file) => window.open(file, '_blank')}
+                renderIcon={getAssetIcon}
+                formatFileSize={formatFileSize}
+                formatDate={formatDate}
+              />
+            ))}
+          </div>
+        )}
       )}
 
       {/* Upload Modal (render form directly; it provides its own overlay) */}

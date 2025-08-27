@@ -192,7 +192,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
             </div>
             <h3 className="text-xl font-semibold text-white">Upload Asset</h3>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/20 hover:bg白/30 transition-colors flex items-center justify-center text-white">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center text-white">
             <X className="w-4 h-4" />
           </button>
         </div>
