@@ -217,42 +217,32 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header with Actions */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-2xl p-6 text-white">
+    <div className="space-y-6">
+      {/* Header with Actions (neutral, responsive) */}
+      <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                <FolderOpen className="w-5 h-5" />
-              </div>
-              <h2 className="text-2xl font-bold">Asset Manager</h2>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-blue-50 rounded-xl flex items-center justify-center">
+              <FolderOpen className="w-5 h-5 text-blue-600" />
             </div>
-            <p className="text-blue-100">Manage documents, images, and other project files</p>
-            <div className="flex items-center space-x-4 mt-3 text-sm text-blue-100">
-              <span className="flex items-center space-x-1">
-                <FileText className="w-4 h-4" />
-                <span>{assets.length} Total Assets</span>
-              </span>
-              <span className="flex items-center space-x-1">
-                <Star className="w-4 h-4" />
-                <span>{assets.filter(a => a.is_featured).length} Featured</span>
-              </span>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Asset Manager</h2>
+              <p className="text-sm text-gray-500">Manage documents, images and files for this project</p>
             </div>
           </div>
           <div className="flex items-center gap-2">
             {selectedType === 'document' && (
-              <div className="bg-white/20 rounded-xl p-1 flex items-center">
+              <div className="rounded-xl p-1 flex items-center bg-gray-100">
                 <button
                   onClick={() => setOrganizedView(false)}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? 'bg-white text-blue-700' : 'text-white/80 hover:text-white'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
                   title="Grid View"
                 >
                   <LayoutGrid className="w-4 h-4 mr-1" /> Grid
                 </button>
                 <button
                   onClick={() => setOrganizedView(true)}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? 'bg-white text-blue-700' : 'text-white/80 hover:text-white'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
                   title="Organized View"
                 >
                   <ListTree className="w-4 h-4 mr-1" /> Organized
@@ -261,12 +251,30 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
             )}
             <button
               onClick={() => setShowUploadModal(true)}
-              className="inline-flex items-center px-6 py-3 bg-white text-blue-600 rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium shadow-lg hover:shadow-xl"
+              className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium shadow"
             >
               <Upload className="h-5 w-5 mr-2" />
-              Upload Files
+              Upload
             </button>
           </div>
+        </div>
+        {/* Type tabs */}
+        <div className="mt-4 flex flex-wrap gap-2">
+          {assetTypes.map((t) => {
+            const Icon = t.icon;
+            const active = selectedType === t.value;
+            return (
+              <button
+                key={t.value}
+                onClick={() => { setSelectedType(t.value); setSelectedCategory(''); }}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition-all ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                title={t.label}
+              >
+                <Icon className={`w-4 h-4 mr-1 ${active ? 'text-white' : t.color}`} />
+                {t.label}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -589,22 +597,17 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
         </div>
       )}
 
-      {/* Upload Modal */}
+      {/* Upload Modal (render form directly; it provides its own overlay) */}
       {showUploadModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto mx-auto my-10">
-            <AssetUploadForm
-              projectId={projectId}
-              onClose={() => setShowUploadModal(false)}
-              onUpload={(newAsset) => {
-                // After upload, refresh list or prepend
-                setAssets(prev => [newAsset as unknown as Asset, ...prev]);
-                setShowUploadModal(false);
-                fetchAssets();
-              }}
-            />
-          </div>
-        </div>
+        <AssetUploadForm
+          projectId={projectId}
+          onClose={() => setShowUploadModal(false)}
+          onUpload={(newAsset) => {
+            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
+            setShowUploadModal(false);
+            fetchAssets();
+          }}
+        />
       )}
     </div>
   );
