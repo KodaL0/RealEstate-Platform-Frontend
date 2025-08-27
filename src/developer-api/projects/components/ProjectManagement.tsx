@@ -36,7 +36,7 @@ interface ProjectManagementProps {
   onViewChange?: (view: string) => void;
 }
 
-export default function ProjectManagement({ project, activeSection, onProjectUpdate }: ProjectManagementProps) {
+export default function ProjectManagement({ project, activeSection, onProjectUpdate, onViewChange }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [photos, setPhotos] = useState<ProjectAsset[]>([]);

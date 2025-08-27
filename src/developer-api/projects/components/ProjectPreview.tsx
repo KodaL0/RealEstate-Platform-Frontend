@@ -163,34 +163,34 @@ export default function ProjectPreview({
         <div className="p-6 md:p-8">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
             {[
-              { 
-                label: 'Total Units', 
-                value: stats.units, 
-                icon: Building, 
-                color: 'from-blue-500 to-indigo-500',
-                action: () => onViewChange?.('units')
-              },
-              { 
-                label: 'Available Units', 
-                value: project.available_units || 0, 
-                icon: Users, 
-                color: 'from-emerald-500 to-teal-500',
-                action: () => onViewChange?.('units')
-              },
-              { 
-                label: 'Assets', 
-                value: stats.assets, 
-                icon: FileText, 
-                color: 'from-violet-500 to-purple-500',
-                action: () => onViewChange?.('assets')
-              },
-              { 
-                label: 'Photos', 
-                value: stats.photos, 
-                icon: Image, 
-                color: 'from-pink-500 to-rose-500',
-                action: () => onViewChange?.('photos')
-              }
+                             { 
+                 label: 'Total Units', 
+                 value: stats.units, 
+                 icon: Building, 
+                 color: 'from-blue-500 to-indigo-500',
+                 action: () => onViewChange ? onViewChange('units') : undefined
+               },
+                             { 
+                 label: 'Available Units', 
+                 value: project.available_units || 0, 
+                 icon: Users, 
+                 color: 'from-emerald-500 to-teal-500',
+                 action: () => onViewChange ? onViewChange('units') : undefined
+               },
+               { 
+                 label: 'Assets', 
+                 value: stats.assets, 
+                 icon: FileText, 
+                 color: 'from-violet-500 to-purple-500',
+                 action: () => onViewChange ? onViewChange('assets') : undefined
+               },
+               { 
+                 label: 'Photos', 
+                 value: stats.photos, 
+                 icon: Image, 
+                 color: 'from-pink-500 to-rose-500',
+                 action: () => onViewChange ? onViewChange('photos') : undefined
+               }
             ].map((stat, index) => (
               <button
                 key={index}
@@ -417,10 +417,10 @@ export default function ProjectPreview({
             <h3 className="text-lg font-bold text-slate-800 mb-4">Quick Actions</h3>
             
             <div className="space-y-3">
-              <button
-                onClick={() => onViewChange?.('units')}
-                className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
-              >
+                             <button
+                 onClick={() => onViewChange ? onViewChange('units') : undefined}
+                 className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-xl transition-colors group"
+               >
                 <div className="flex items-center">
                   <Building className="w-5 h-5 text-blue-600 mr-3" />
                   <span className="font-medium text-slate-700">Manage Units</span>
@@ -428,10 +428,10 @@ export default function ProjectPreview({
                 <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-blue-600" />
               </button>
               
-              <button
-                onClick={() => onViewChange?.('photos')}
-                className="w-full flex items-center justify-between p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors group"
-              >
+                             <button
+                 onClick={() => onViewChange ? onViewChange('photos') : undefined}
+                 className="w-full flex items-center justify-between p-3 bg-emerald-50 hover:bg-emerald-100 rounded-xl transition-colors group"
+               >
                 <div className="flex items-center">
                   <Image className="w-5 h-5 text-emerald-600 mr-3" />
                   <span className="font-medium text-slate-700">View Photos</span>
@@ -439,10 +439,10 @@ export default function ProjectPreview({
                 <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-emerald-600" />
               </button>
               
-              <button
-                onClick={() => onViewChange?.('assets')}
-                className="w-full flex items-center justify-between p-3 bg-violet-50 hover:bg-violet-100 rounded-xl transition-colors group"
-              >
+                             <button
+                 onClick={() => onViewChange ? onViewChange('assets') : undefined}
+                 className="w-full flex items-center justify-between p-3 bg-violet-50 hover:bg-violet-100 rounded-xl transition-colors group"
+               >
                 <div className="flex items-center">
                   <FileText className="w-5 h-5 text-violet-600 mr-3" />
                   <span className="font-medium text-slate-700">Manage Assets</span>
