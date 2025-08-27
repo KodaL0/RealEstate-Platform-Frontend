@@ -5,6 +5,7 @@ import {
   FileText, 
   Users, 
   BarChart3,
+  Eye,
   Edit3,
   Trash2,
   Plus,
@@ -28,6 +29,7 @@ interface ProjectToolbarProps {
   layout?: 'horizontal' | 'sidebar';
   showHeader?: boolean;
   showQuickActions?: boolean;
+  activeView?: string;
 }
 
 export default function ProjectToolbar({ 
@@ -39,12 +41,16 @@ export default function ProjectToolbar({
   stats,
   layout = 'horizontal',
   showHeader = true,
-  showQuickActions = true
+  showQuickActions = true,
+  activeView: externalActiveView
 }: ProjectToolbarProps) {
-  const [activeView, setActiveView] = useState('overview');
+  const [internalActiveView, setInternalActiveView] = useState('overview');
+  
+  // Use external activeView if provided, otherwise use internal state
+  const activeView = externalActiveView || internalActiveView;
 
   const handleViewChange = (view: string) => {
-    setActiveView(view);
+    setInternalActiveView(view);
     onViewChange(view);
   };
 
@@ -91,6 +97,16 @@ export default function ProjectToolbar({
       activeBg: 'bg-amber-100',
       borderColor: 'border-amber-200',
       count: stats.photos 
+    },
+    { 
+      id: 'preview', 
+      label: 'Preview', 
+      icon: Eye, 
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50', 
+      hoverBg: 'hover:bg-emerald-100',
+      activeBg: 'bg-emerald-100',
+      borderColor: 'border-emerald-200'
     },
     { 
       id: 'team', 

@@ -20,7 +20,7 @@ export default function ProjectsPage() {
   const navigate = useNavigate();
   const projectMatch = useMatch('/developer-api/projects/:projectSlug/:tab?');
 
-  const [projectSection, setProjectSection] = useState<'overview' | 'units' | 'assets' | 'photos' | 'team'>('overview');
+  const [projectSection, setProjectSection] = useState<'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team'>('overview');
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -176,10 +176,11 @@ export default function ProjectsPage() {
             projectId={activeProject.id}
             projectName={activeProject.name}
             onViewChange={handleProjectViewChange}
+            activeView={projectSection}
             stats={{
-              units: 0,
-              assets: 0,
-              photos: 0,
+              units: 0, // TODO: Get actual counts from ProjectManagement
+              assets: 0, // TODO: Get actual counts from ProjectManagement
+              photos: 0, // TODO: Get actual counts from ProjectManagement
             }}
             compact={false}
             showHeader={false}
@@ -191,6 +192,7 @@ export default function ProjectsPage() {
           project={activeProject} 
           activeSection={projectSection} 
           onProjectUpdate={handleProjectUpdate}
+          onViewChange={handleProjectViewChange}
         />
       </div>
     );

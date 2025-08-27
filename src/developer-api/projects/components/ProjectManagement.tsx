@@ -5,6 +5,7 @@ import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
+import ProjectPreview from './ProjectPreview';
 import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
 
 type Project = {
@@ -30,8 +31,9 @@ type Asset = {
 
 interface ProjectManagementProps {
   project: Project;
-  activeSection: 'overview' | 'units' | 'assets' | 'photos' | 'team';
+  activeSection: 'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team';
   onProjectUpdate?: (updatedProject: Project) => void;
+  onViewChange?: (view: string) => void;
 }
 
 export default function ProjectManagement({ project, activeSection, onProjectUpdate }: ProjectManagementProps) {
@@ -386,6 +388,22 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
             </div>
           </div>
         </>
+      )}
+
+      {activeSection === 'preview' && (
+        <ProjectPreview
+          project={project}
+          stats={{
+            units: units.length,
+            assets: assets.length,
+            photos: photos.length
+          }}
+          onEdit={() => {
+            // TODO: Implement edit functionality
+            console.log('Edit project clicked');
+          }}
+          onViewChange={onViewChange}
+        />
       )}
 
       {activeSection === 'units' && (
