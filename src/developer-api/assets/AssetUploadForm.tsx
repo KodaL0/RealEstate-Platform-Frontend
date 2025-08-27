@@ -183,8 +183,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   const TypeIcon = selectedTypeData?.icon || Folder;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden pointer-events-auto" role="dialog" aria-modal="true">
+    <div className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm">
+      <div className="flex flex-col h-full w-full">
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
@@ -197,8 +197,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
           </button>
         </div>
 
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-          <form onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-white">
+          <form onSubmit={handleSubmit} className="max-w-3xl mx-auto space-y-6">
             {errors.submit && (
               <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">{errors.submit}</div>
             )}

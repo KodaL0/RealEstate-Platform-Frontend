@@ -222,6 +222,17 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
   return (
     <div className="space-y-6">
+      {showUploadModal && (
+        <AssetUploadForm
+          projectId={projectId}
+          onClose={() => setShowUploadModal(false)}
+          onUpload={(newAsset) => {
+            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
+            setShowUploadModal(false);
+            fetchAssets();
+          }}
+        />
+      )}
       {/* Header with Actions (neutral, responsive) */}
       <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
