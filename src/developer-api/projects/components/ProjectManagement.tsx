@@ -494,17 +494,18 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
               </button>
             </div>
           ) : (
-            {/* Instructions */}
-            <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
-              <div className="flex items-center space-x-2 text-blue-700">
-                <Star className="w-5 h-5" />
-                <span className="text-sm font-medium">
-                  Hover over any photo and click the star icon to set it as the primary image for your project
-                </span>
+            <>
+              {/* Instructions */}
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-xl">
+                <div className="flex items-center space-x-2 text-blue-700">
+                  <Star className="w-5 h-5" />
+                  <span className="text-sm font-medium">
+                    Hover over any photo and click the star icon to set it as the primary image for your project
+                  </span>
+                </div>
               </div>
-            </div>
-            
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {photos.map((photo, index) => (
                 <div key={photo.id} className="group relative">
                   <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl overflow-hidden shadow-lg shadow-slate-200/50 group-hover:shadow-xl group-hover:shadow-slate-300/50 transition-all duration-300">
@@ -571,6 +572,7 @@ export default function ProjectManagement({ project, activeSection, onProjectUpd
                 </div>
               ))}
             </div>
+            </>
           )}
         </div>
       )}
