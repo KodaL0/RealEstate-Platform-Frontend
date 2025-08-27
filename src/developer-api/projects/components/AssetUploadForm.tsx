@@ -222,6 +222,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
         project: projectId,
         asset_type: assetType,
         file: file,
+        original_filename: file.name,
         title: finalTitle,
         description: description || undefined,
         tags: tags.length > 0 ? tags : undefined
