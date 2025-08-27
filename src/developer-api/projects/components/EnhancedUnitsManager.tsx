@@ -27,6 +27,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [codeScheme, setCodeScheme] = useState<'increment' | 'floor-number'>('increment');
 
   // Filter units based on search and filters
   const filteredUnits = units.filter(unit => {
@@ -38,13 +39,66 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     return matchesSearch && matchesStatus && matchesType;
   });
 
+  // Helpers for code generation
+  const extractAllDigitCodes = (units: Unit[]): number[] => {
+    return units
+      .map(u => (u.code || '').trim())
+      .filter(code => /^\d+$/.test(code))
+      .map(code => parseInt(code, 10));
+  };
+
+  const parseFloorToNumber = (floor?: string): number => {
+    if (!floor) return 1;
+    const f = floor.toString().trim().toLowerCase();
+    if (/^-?\d+$/.test(f)) return parseInt(f, 10);
+    if (f.includes('ground')) return 0;
+    if (f.includes('basement')) return -1;
+    if (f.includes('first')) return 1;
+    if (f.includes('second')) return 2;
+    if (f.includes('third')) return 3;
+    if (f.includes('fourth')) return 4;
+    return 1;
+  };
+
+  const generateIncrementCode = (existing: Unit[]): string => {
+    const nums = extractAllDigitCodes(existing);
+    const next = (nums.length ? Math.max(...nums) : 0) + 1;
+    return String(next);
+  };
+
+  const generateFloorNumberCode = (existing: Unit[], floor?: string): string => {
+    const floorNum = parseFloorToNumber(floor);
+    const nums = extractAllDigitCodes(existing);
+    const sameFloor = nums.filter(n => Math.floor(n / 100) === floorNum);
+    const nextIndex = (sameFloor.length ? Math.max(...sameFloor.map(n => n % 100)) : 0) + 1;
+    const candidate = floorNum * 100 + nextIndex;
+    return String(candidate);
+  };
+
+  const ensureUniqueCode = (candidate: string, existing: Unit[]): string => {
+    const codes = new Set(existing.map(u => u.code));
+    if (!codes.has(candidate)) return candidate;
+    let suffix = 2;
+    let next = `${candidate}-${suffix}`;
+    while (codes.has(next)) {
+      suffix += 1;
+      next = `${candidate}-${suffix}`;
+    }
+    return next;
+  };
+
+  const generateUnitCode = (scheme: 'increment' | 'floor-number', existing: Unit[], floor?: string): string => {
+    const base = scheme === 'increment'
+      ? generateIncrementCode(existing)
+      : generateFloorNumberCode(existing, floor);
+    return ensureUniqueCode(base, existing);
+  };
+
   // Smart duplicate with automatic code generation
   const handleSmartDuplicate = useCallback(async (unit: Unit) => {
     setIsLoading(true);
     try {
-      // Simple approach: append timestamp to ensure uniqueness
-      const timestamp = Date.now().toString().slice(-4);
-      const newCode = `${unit.code}-${timestamp}`;
+      const newCode = generateUnitCode(codeScheme, units, unit.floor);
       
       console.log('Duplicating unit:', {
         originalCode: unit.code,
@@ -72,13 +126,11 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [onUnitDuplicate, projectId]);
+  }, [onUnitDuplicate, projectId, codeScheme, units]);
 
-  // Generate smart code based on existing pattern
-  const generateSmartCode = (originalCode: string, existingUnits: Unit[]): string => {
-    // Simple approach: append timestamp to ensure uniqueness
-    const timestamp = Date.now().toString().slice(-4);
-    return `${originalCode}-${timestamp}`;
+  // Generate code for quick create using selected scheme
+  const generateSmartCode = (existingUnits: Unit[], floor?: string): string => {
+    return generateUnitCode(codeScheme, existingUnits, floor);
   };
 
   // Quick actions for common unit types
@@ -185,7 +237,7 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
     try {
       const newUnit: Omit<Unit, 'id'> = {
         project: projectId,
-        code: generateSmartCode('A1', units),
+        code: generateSmartCode(units, template.floor),
         unit_type: template.unit_type,
         bedrooms: template.bedrooms,
         bathrooms: template.bathrooms,
@@ -593,6 +645,19 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
               <span className="hidden sm:inline">Create Unit</span>
               <span className="sm:hidden">Add Unit</span>
             </button>
+
+            {/* Code Scheme Selector */}
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium text-slate-700">Code Scheme</label>
+              <select
+                value={codeScheme}
+                onChange={(e) => setCodeScheme(e.target.value as 'increment' | 'floor-number')}
+                className="px-3 py-2 text-sm border border-slate-300 rounded-lg bg-white shadow-inner focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="increment">N+1</option>
+                <option value="floor-number">Floor+Number (e.g., 101, 203)</option>
+              </select>
+            </div>
           </div>
         </div>
       </div>
