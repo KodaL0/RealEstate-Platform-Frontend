@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { Building } from 'lucide-react';
 import ProjectToolbar from './ProjectToolbar';
 import developersApi from '../../../config/developers-api';
 
@@ -7,6 +8,7 @@ type Project = {
   name: string;
   location?: string;
   status?: string;
+  main_image?: string;
 };
 
 interface ProjectCardProps {
@@ -51,9 +53,7 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     loadProjectStats();
   }, [project.id]);
 
-  const getMockImage = () => {
-    return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop';
-  };
+
 
   return (
     <div 
@@ -61,11 +61,20 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     >
       {/* Image */}
       <div className="h-36 bg-gray-100 relative cursor-pointer" onClick={() => onClick(project)}>
-        <img 
-          src={getMockImage()} 
-          alt={project.name}
-          className="w-full h-full object-cover"
-        />
+        {project.main_image ? (
+          <img 
+            src={project.main_image} 
+            alt={project.name}
+            className="w-full h-full object-cover"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
+              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            }}
+          />
+        ) : null}
+        <div className={`w-full h-full flex items-center justify-center ${project.main_image ? 'hidden' : ''}`}>
+          <Building className="w-16 h-16 text-gray-400" />
+        </div>
         {project.status && (
           <div className="absolute top-2 right-2">
             <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">

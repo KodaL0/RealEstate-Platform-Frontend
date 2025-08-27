@@ -134,6 +134,18 @@ export default function ProjectsPage() {
     });
   };
 
+  const handleProjectUpdate = (updatedProject: Project) => {
+    setProjects(prev => {
+      const next = prev.map(p => p.id === updatedProject.id ? updatedProject : p);
+      return next;
+    });
+    
+    // Also update the active project if it's the one being updated
+    if (activeProject && activeProject.id === updatedProject.id) {
+      setActiveProject(updatedProject);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-20">
@@ -175,7 +187,11 @@ export default function ProjectsPage() {
           />
         </div>
 
-        <ProjectManagement project={activeProject} activeSection={projectSection} />
+        <ProjectManagement 
+          project={activeProject} 
+          activeSection={projectSection} 
+          onProjectUpdate={handleProjectUpdate}
+        />
       </div>
     );
   }
