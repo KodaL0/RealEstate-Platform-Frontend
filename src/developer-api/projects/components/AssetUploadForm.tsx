@@ -3,22 +3,7 @@ import { X, Upload, FileText, Image, Video, Music, Archive, Paperclip, Folder, T
 import developersApi from '../../../config/developers-api';
 
 // Mock API types (replace with your actual types)
-interface Unit {
-  id?: number;
-  project: number;
-  code: string;
-  unit_type: 'studio' | 'apartment' | 'house';
-  bedrooms: number;
-  bathrooms: number;
-  area_internal?: number;
-  area_veranda?: number;
-  area_total?: number;
-  price?: number;
-  currency: string;
-  vat_included: boolean;
-  status: 'available' | 'reserved' | 'sold';
-  floor: string;
-}
+// (Removed unused Unit type)
 
 type AssetCategory = 
   | 'floor_plans'
@@ -43,7 +28,6 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   const [selectedType, setSelectedType] = useState<'document' | 'image' | 'video' | 'audio' | 'archive' | 'other'>('document');
   const [availableCategories, setAvailableCategories] = useState<Array<[string, string]>>([]);
   const [customTitle, setCustomTitle] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState('');
   const [description, setDescription] = useState('');
   const [file, setFile] = useState<File | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -61,21 +45,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     { value: 'other' as const, label: 'Other', icon: Paperclip, color: 'bg-gray-100 text-gray-700 border-gray-200' }
   ];
 
-  // Predefined title suggestions per asset type
-  const titleSuggestionsByType: Record<string, string[]> = {
-    document: ['Project Brochure', 'Agreement', 'Disclosure', 'Terms', 'Specification'],
-    image: ['Exterior Photo', 'Interior Photo', 'Amenities Photo', 'Construction Photo', 'Rendering'],
-    video: ['Virtual Tour', 'Marketing Video', 'Construction Video'],
-    audio: ['Audio File'],
-    archive: ['Archive'],
-    other: ['Document', 'File']
-  };
-
-  // Keep suggestion in sync with selected type
-  useEffect(() => {
-    const first = titleSuggestionsByType[selectedType]?.[0] || '';
-    setSelectedSuggestion(first);
-  }, [selectedType]);
+  // Title defaults to filename when file selected
 
   // Fetch categories for selected type
   useEffect(() => {
@@ -169,8 +139,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     if (!file) {
       newErrors.file = 'Please select a file to upload';
     }
-    // Require category for specific types
-    if ((selectedType === 'document' || selectedType === 'image' || selectedType === 'video') && !selectedCategory) {
+    // Require category only when categories are available for type
+    if ((selectedType === 'document' || selectedType === 'image' || selectedType === 'video') && availableCategories.length > 0 && !selectedCategory) {
       newErrors.category = 'Please select a category';
     }
     
@@ -189,7 +159,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
     setErrors({});
 
     try {
-      const finalTitle = (customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled');
+      const defaultFromFile = file ? file.name.split('.')[0].replace(/[_-]/g, ' ') : '';
+      const finalTitle = (customTitle && customTitle.trim()) ? customTitle.trim() : (defaultFromFile || 'Untitled');
 
       // Determine asset type based on selection (fallback to MIME type detection)
       const getAssetType = (file: File): string => {
@@ -221,8 +192,8 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
       const assetData: any = {
         project: projectId,
         asset_type: assetType,
-        file: file,
-        original_filename: file.name,
+        file: file!,
+        original_filename: file!.name,
         title: finalTitle,
         description: description || undefined,
         tags: tags.length > 0 ? tags : undefined
@@ -271,10 +242,10 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   const TypeIcon = selectedTypeData?.icon || Folder;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
+      <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl h-[100svh] sm:h-auto sm:max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
               <Upload className="w-4 h-4 text-white" />
@@ -290,7 +261,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
         </div>
 
         {/* Form Container */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
+        <div className="p-4 sm:p-6 overflow-y-auto h-[calc(100svh-64px)] sm:h-auto sm:max-h-[calc(90vh-80px)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {errors.submit && (
@@ -409,48 +380,27 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
                 <h4 className="font-semibold text-gray-900">Asset Details</h4>
                 <div className="flex-1 h-px bg-gray-200"></div>
               </div>
-
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Suggested Title
-                  </label>
-                  <select
-                    value={selectedSuggestion}
-                    onChange={(e) => setSelectedSuggestion(e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
-                  >
-                    {(titleSuggestionsByType[selectedType] || []).map((s: string) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Custom Title (optional)
-                  </label>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Title</label>
                   <input
                     type="text"
                     value={customTitle}
                     onChange={(e) => setCustomTitle(e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                    placeholder="Enter custom title"
+                    placeholder={file ? file.name.split('.')[0].replace(/[_-]/g, ' ') : 'Enter title'}
                   />
                 </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Description
-                </label>
-                <textarea
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 resize-vertical"
-                  rows={3}
-                  placeholder="Optional description for this asset"
-                />
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Description</label>
+                  <textarea
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 resize-vertical"
+                    rows={3}
+                    placeholder="Optional description for this asset"
+                  />
+                </div>
               </div>
             </div>
 
@@ -506,7 +456,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
                       : ''}
                   </p>
                   <p className="text-sm opacity-75">
-                    Final title: {(customTitle && customTitle.trim()) ? customTitle.trim() : (selectedSuggestion || 'Untitled')}
+                    Final title: {(customTitle && customTitle.trim()) ? customTitle.trim() : (file ? file.name.split('.')[0].replace(/[_-]/g, ' ') : 'Untitled')}
                   </p>
                 </div>
               </div>
@@ -546,341 +496,4 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   );
 }
 
-interface UnitFormProps {
-  projectId: number;
-  unit?: Unit | null;
-  onSave: (unit: Unit) => void;
-  onCancel: () => void;
-}
-
-function UnitForm({ projectId, unit, onSave, onCancel }: UnitFormProps) {
-  const [formData, setFormData] = useState<Partial<Unit>>({
-    project: projectId,
-    code: '',
-    unit_type: 'apartment',
-    bedrooms: 1,
-    bathrooms: 1,
-    area_internal: undefined,
-    area_veranda: undefined,
-    area_total: undefined,
-    price: undefined,
-    currency: 'EUR',
-    vat_included: false,
-    status: 'available',
-    floor: ''
-  });
-
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  useEffect(() => {
-    if (unit) {
-      setFormData(unit);
-    }
-  }, [unit]);
-
-  const validateForm = () => {
-    const newErrors: Record<string, string> = {};
-    
-    if (!formData.code) {
-      newErrors.code = 'Unit code is required';
-    }
-    if (!formData.unit_type) {
-      newErrors.unit_type = 'Unit type is required';
-    }
-    if (formData.bedrooms === undefined) {
-      newErrors.bedrooms = 'Number of bedrooms is required';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!validateForm()) {
-      return;
-    }
-
-    setIsSubmitting(true);
-    setErrors({});
-
-    try {
-      // Clean up formData by removing undefined values
-      const cleanFormData = Object.fromEntries(
-        Object.entries(formData).filter(([_, value]) => value !== undefined)
-      );
-
-      console.log('Submitting unit data:', cleanFormData);
-
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const savedUnit = { id: Date.now(), ...cleanFormData } as Unit;
-      onSave(savedUnit);
-    } catch (error) {
-      console.error('Error saving unit:', error);
-      setErrors({ submit: `Error saving unit: ${error instanceof Error ? error.message : 'Unknown error'}` });
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleInputChange = (field: keyof Unit, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available': return 'bg-emerald-100 text-emerald-800 border-emerald-200';
-      case 'reserved': return 'bg-amber-100 text-amber-800 border-amber-200';
-      case 'sold': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
-              <FileText className="w-4 h-4 text-white" />
-            </div>
-            <h3 className="text-xl font-semibold text-white">
-              {unit ? 'Edit Unit' : 'Add New Unit'}
-            </h3>
-          </div>
-          <button
-            onClick={onCancel}
-            className="w-8 h-8 rounded-lg bg-white/20 hover:bg-white/30 transition-colors flex items-center justify-center text-white"
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-
-        {/* Form Container */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Error Message */}
-            {errors.submit && (
-              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
-                {errors.submit}
-              </div>
-            )}
-
-            {/* Basic Information Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-gray-900">Basic Information</h4>
-                <div className="flex-1 h-px bg-gray-200"></div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-1">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit Code *
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.code || ''}
-                    onChange={(e) => handleInputChange('code', e.target.value)}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${
-                      errors.code ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="e.g., A101"
-                  />
-                  {errors.code && <p className="mt-1 text-sm text-red-600">{errors.code}</p>}
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Floor
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.floor || ''}
-                    onChange={(e) => handleInputChange('floor', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                    placeholder="e.g., Ground, 1st, 2nd"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Unit Type *
-                  </label>
-                  <select
-                    value={formData.unit_type || 'apartment'}
-                    onChange={(e) => handleInputChange('unit_type', e.target.value as Unit['unit_type'])}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
-                  >
-                    <option value="studio">Studio</option>
-                    <option value="apartment">Apartment</option>
-                    <option value="house">House</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bedrooms *
-                  </label>
-                  <select
-                    value={formData.bedrooms || 1}
-                    onChange={(e) => handleInputChange('bedrooms', Number(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
-                  >
-                    <option value={0}>Studio (0)</option>
-                    <option value={1}>1 Bedroom</option>
-                    <option value={2}>2 Bedrooms</option>
-                    <option value={3}>3 Bedrooms</option>
-                    <option value={4}>4 Bedrooms</option>
-                    <option value={5}>5+ Bedrooms</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Bathrooms
-                  </label>
-                  <select
-                    value={formData.bathrooms || 1}
-                    onChange={(e) => handleInputChange('bathrooms', Number(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
-                  >
-                    <option value={1}>1 Bathroom</option>
-                    <option value={2}>2 Bathrooms</option>
-                    <option value={3}>3 Bathrooms</option>
-                    <option value={4}>4+ Bathrooms</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Area Information Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-gray-900">Area Information</h4>
-                <div className="flex-1 h-px bg-gray-200"></div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Internal Area (m²)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.area_internal || ''}
-                    onChange={(e) => handleInputChange('area_internal', 
-                      e.target.value ? Number(e.target.value) : undefined
-                    )}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                    placeholder="120"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Covered Area (m²)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.area_veranda || ''}
-                    onChange={(e) => handleInputChange('area_veranda', 
-                      e.target.value ? Number(e.target.value) : undefined
-                    )}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                    placeholder="150"
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Pricing & Status Section */}
-            <div className="space-y-4">
-              <div className="flex items-center space-x-2 mb-4">
-                <FileText className="w-5 h-5 text-blue-600" />
-                <h4 className="font-semibold text-gray-900">Pricing & Status</h4>
-                <div className="flex-1 h-px bg-gray-200"></div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Price (EUR)
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.price || ''}
-                    onChange={(e) => handleInputChange('price', 
-                      e.target.value ? Number(e.target.value) : undefined
-                    )}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
-                    placeholder="250,000"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={formData.status || 'available'}
-                    onChange={(e) => handleInputChange('status', e.target.value as Unit['status'])}
-                    className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 ${getStatusColor(formData.status || 'available')}`}
-                  >
-                    <option value="available">Available</option>
-                    <option value="reserved">Reserved</option>
-                    <option value="sold">Sold</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-
-            {/* Form Actions */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t border-gray-100">
-              <button
-                type="submit"
-                disabled={isSubmitting}
-                className="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 focus:ring-2 focus:ring-blue-500/20 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed font-medium flex items-center justify-center space-x-2"
-              >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                    <span>Saving...</span>
-                  </>
-                ) : (
-                  <span>{unit ? 'Update Unit' : 'Create Unit'}</span>
-                )}
-              </button>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="flex-1 bg-gray-100 text-gray-700 py-3 px-6 rounded-xl hover:bg-gray-200 focus:ring-2 focus:ring-gray-500/20 transition-all duration-200 font-medium"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// Demo App component
 export default AssetUploadForm;
