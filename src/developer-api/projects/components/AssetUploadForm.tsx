@@ -242,10 +242,10 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
   const TypeIcon = selectedTypeData?.icon || Folder;
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-0 sm:p-4">
-      <div className="bg-white rounded-none sm:rounded-2xl shadow-2xl w-full sm:max-w-2xl h-[100svh] sm:h-auto sm:max-h-[90vh] overflow-hidden">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden">
         {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 sm:px-6 py-4 flex justify-between items-center">
+        <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex justify-between items-center">
           <div className="flex items-center space-x-3">
             <div className="w-8 h-8 bg-white/20 rounded-lg flex items-center justify-center">
               <Upload className="w-4 h-4 text-white" />
@@ -261,7 +261,7 @@ function AssetUploadForm({ projectId, onClose, onUpload }: AssetUploadFormProps)
         </div>
 
         {/* Form Container */}
-        <div className="p-4 sm:p-6 overflow-y-auto h-[calc(100svh-64px)] sm:h-auto sm:max-h-[calc(90vh-80px)]">
+        <div className="p-6 overflow-y-auto max-h-[calc(90vh-80px)]">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Error Message */}
             {errors.submit && (
