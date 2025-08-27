@@ -227,13 +227,21 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
                   )}
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap">
-                  <div className="text-sm font-semibold text-slate-900">
-                    {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
-                  </div>
-                  {unit.currency && unit.price && (
-                    <div className="text-xs text-slate-500">
-                      {unit.vat_included ? 'VAT incl.' : 'VAT excl.'}
+                  {unit.status === 'sold' ? (
+                    <div className="text-sm font-medium text-slate-500 italic">
+                      Sold
                     </div>
+                  ) : (
+                    <>
+                      <div className="text-sm font-semibold text-slate-900">
+                        {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
+                      </div>
+                      {unit.currency && unit.price && (
+                        <div className="text-xs text-slate-500">
+                          {unit.vat_included ? 'VAT incl.' : 'VAT excl.'}
+                        </div>
+                      )}
+                    </>
                   )}
                 </td>
                 <td className="px-6 py-5 whitespace-nowrap">
@@ -353,9 +361,15 @@ const EnhancedUnitsManager: React.FC<EnhancedUnitsManagerProps> = ({
 
             <div className="flex items-center justify-between py-2 border-b border-slate-100">
               <span className="text-sm font-medium text-slate-600">Price:</span>
-              <span className="text-sm font-bold text-slate-900">
-                {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
-              </span>
+              {unit.status === 'sold' ? (
+                <span className="text-sm font-medium text-slate-500 italic">
+                  Sold
+                </span>
+              ) : (
+                <span className="text-sm font-bold text-slate-900">
+                  {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center justify-between pt-2">
