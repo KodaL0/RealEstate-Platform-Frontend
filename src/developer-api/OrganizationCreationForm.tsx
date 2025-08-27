@@ -54,8 +54,12 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
       newErrors.email = 'Please enter a valid email address';
     }
 
-    if (formData.website && !formData.website.startsWith('http')) {
-      newErrors.website = 'Website must start with http:// or https://';
+    if (formData.website) {
+      try {
+        new URL(formData.website);
+      } catch (error) {
+        newErrors.website = 'Please enter a valid website URL';
+      }
     }
 
     setErrors(newErrors);
@@ -214,14 +218,14 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 Website
               </label>
               <input
-                type="url"
+                type="text"
                 id="website"
                 value={formData.website}
                 onChange={(e) => handleInputChange('website', e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
                   errors.website ? 'border-red-500' : 'border-gray-300'
                 }`}
-                placeholder="https://www.yourcompany.com"
+                placeholder="Enter website URL"
                 disabled={isLoading}
               />
               {errors.website && (
