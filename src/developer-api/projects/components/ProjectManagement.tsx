@@ -4,6 +4,7 @@ import AssetUploadForm from './AssetUploadForm';
 import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../components/AssetManager';
+import ProjectPreview from './ProjectPreview';
 import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
 
 type Project = {
@@ -17,22 +18,15 @@ type Project = {
   main_image?: string;
 };
 
-type Asset = {
-  id: number;
-  project: number;
-  category: string;
-  title?: string;
-  description?: string;
-  file: string;
-  uploaded_at: string;
-};
+// Removed unused local Asset type
 
 interface ProjectManagementProps {
   project: Project;
-  activeSection: 'overview' | 'units' | 'assets' | 'photos' | 'team';
+  activeSection: 'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team';
+  onViewChange?: (view: string) => void;
 }
 
-export default function ProjectManagement({ project, activeSection }: ProjectManagementProps) {
+export default function ProjectManagement({ project, activeSection, onViewChange }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [assets, setAssets] = useState<ProjectAsset[]>([]);
   const [photos, setPhotos] = useState<ProjectAsset[]>([]);
@@ -118,8 +112,20 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
     setEditingUnit(null);
   };
 
-  const handleAssetUpload = (newAsset: Asset) => {
-    setAssets([newAsset, ...assets]);
+  const handleAssetUpload = (newAsset: any) => {
+    // Normalize to ProjectAsset-like structure if coming from new assets API
+    const normalized: ProjectAsset = {
+      id: newAsset.id,
+      project: project.id,
+      category: newAsset.document_category || newAsset.image_category || newAsset.video_category || 'other',
+      title: newAsset.title,
+      description: newAsset.description,
+      file: newAsset.file_url || newAsset.file,
+      uploaded_at: newAsset.uploaded_at || new Date().toISOString(),
+      metadata: newAsset.metadata || {}
+    } as any;
+
+    setAssets([normalized, ...assets]);
     setShowAssetUpload(false);
   };
 
@@ -179,6 +185,14 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
   return (
     <div className="w-full max-w-none space-y-8">
       {/* Dynamic Content Based on Active Section */}
+      {activeSection === 'preview' && (
+        <ProjectPreview
+          project={project as any}
+          stats={{ units: units.length, assets: assets.length, photos: photos.length }}
+          onEdit={() => setShowAssetUpload(true)}
+          onViewChange={onViewChange}
+        />
+      )}
       {activeSection === 'overview' && (
         <>
           {/* Enhanced Project Hero Card */}
@@ -361,14 +375,23 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
           <EnhancedUnitsManager
             projectId={project.id}
             units={units}
-            onEdit={(unit: Unit | null) => {
-              if (unit) {
-                setEditingUnit(unit);
-                setShowUnitForm(true);
+            onUnitCreate={async (unit) => {
+              try {
+                const savedUnit = await developersApi.units.create(unit);
+                setUnits(prev => [...prev, savedUnit]);
+              } catch (error) {
+                console.error('Failed to create unit:', error);
               }
             }}
-            onSave={handleSaveUnit}
-            onDelete={handleDeleteUnit}
+            onUnitUpdate={async (unit) => {
+              try {
+                const updatedUnit = await developersApi.units.update(unit.id, unit);
+                setUnits(prev => prev.map(u => u.id === unit.id ? updatedUnit : u));
+              } catch (error) {
+                console.error('Failed to update unit:', error);
+              }
+            }}
+            onUnitDelete={handleDeleteUnit}
             onUnitDuplicate={async (unit) => {
               try {
                 const savedUnit = await developersApi.units.create(unit);
@@ -528,8 +551,8 @@ export default function ProjectManagement({ project, activeSection }: ProjectMan
       {showUnitForm && (
         <UnitForm
           projectId={project.id}
-          unit={editingUnit}
-          onSave={handleSaveUnit}
+          unit={editingUnit as any}
+          onSave={(u: any) => handleSaveUnit(u as any)}
           onCancel={handleCancelUnitForm}
         />
       )}
