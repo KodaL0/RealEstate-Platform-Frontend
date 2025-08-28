@@ -12,6 +12,16 @@ import api from "../config/api";
 
 const PAGE_SIZE = 12;
 
+// === ASSUMPTIONS (adjust if your API differs) ===
+// 1) GET /developers/ supports params:
+//    - page (1-based), page_size, sort, search, country, specialty, min_projects
+// 2) Response shape:
+//    - { results: DeveloperLike[], count: number }  // DRF-style
+//      OR
+//    - DeveloperLike[]                               // plain array
+//    If your API uses different keys (e.g., total), tweak below.
+// ================================================
+
 interface SearchFiltersType {
   search?: string;
   country?: string;
@@ -19,6 +29,10 @@ interface SearchFiltersType {
   minProjects?: string;
   order?: string;
 }
+
+type ApiDevelopersResponse =
+  | { results: any[]; count: number }
+  | any[];
 
 const Developers = () => {
   const [searchParams] = useSearchParams();
@@ -61,58 +75,26 @@ const Developers = () => {
         if (searchFilters.specialty) qp.specialty = searchFilters.specialty;
         if (searchFilters.minProjects) qp.min_projects = searchFilters.minProjects;
 
-        console.log("Fetching DEVELOPERS with query params:", qp);
+        // 🔌 Real API call
+        const { data } = await api.get<ApiDevelopersResponse>("/developers/", { params: qp });
 
-        // Mock API call - replace with actual API
-        const mockData = {
-          results: [
-            {
-              id: "1",
-              name: "Premium Developments Ltd",
-              description: "Leading luxury property developer in Cyprus with over 20 years of experience",
-              established: 2003,
-              location: "Limassol",
-              country: "Cyprus",
-              totalProjects: 25,
-              activeProjects: 5,
-              completedProjects: 20,
-              specialties: ["Luxury Villas", "Residential Complexes", "Commercial"],
-              rating: 4.8,
-              reviewCount: 156,
-              image: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800",
-              createdAt: "2023-01-01",
-              updatedAt: "2024-01-01"
-            },
-            {
-              id: "2",
-              name: "Mediterranean Homes",
-              description: "Specializing in modern Mediterranean-style properties across Greece and Cyprus",
-              established: 2010,
-              location: "Athens",
-              country: "Greece",
-              totalProjects: 18,
-              activeProjects: 3,
-              completedProjects: 15,
-              specialties: ["Mediterranean Style", "Eco-Friendly", "Apartments"],
-              rating: 4.6,
-              reviewCount: 89,
-              image: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-              createdAt: "2023-01-01",
-              updatedAt: "2024-01-01"
-            }
-          ],
-          count: 2
-        };
+        // Normalize response (supports DRF-style or plain array)
+        const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
+        const count: number =
+          Array.isArray(data) ? results.length : (typeof data.count === "number" ? data.count : results.length);
 
-        const normalized = mockData.results;
+        // Map backend objects -> UI Developer shape
+        const normalized: Developer[] = results.map((d) => normalizeDeveloper(d));
+
         setDevelopers(normalized);
-        
-        const totalCount = mockData.count || 0;
-        setTotalCount(totalCount);
-        setTotalPages(Math.ceil(totalCount / PAGE_SIZE));
+        setTotalCount(count);
+        setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
       } catch (err) {
         console.error("Error fetching developers:", err);
         setError("Failed to fetch developers. Please try again.");
+        setDevelopers([]);
+        setTotalCount(0);
+        setTotalPages(1);
       } finally {
         setIsLoading(false);
       }
@@ -278,7 +260,14 @@ const Developers = () => {
                 disabled={isLoading}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-sm"
               >
-                {sortOptions.map(option => (
+                {[
+                  { value: "recommended", label: "Recommended" },
+                  { value: "name-asc", label: "Name: A to Z" },
+                  { value: "name-desc", label: "Name: Z to A" },
+                  { value: "projects-desc", label: "Most Projects" },
+                  { value: "rating-desc", label: "Highest Rated" },
+                  { value: "newest", label: "Newest First" },
+                ].map(option => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -499,7 +488,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
         </p>
         
         <div className="flex flex-wrap gap-2 mb-4">
-          {developer.specialties.slice(0, 3).map((specialty, index) => (
+          {developer.specialties?.slice(0, 3).map((specialty, index) => (
             <span
               key={index}
               className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
@@ -507,7 +496,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
               {specialty}
             </span>
           ))}
-          {developer.specialties.length > 3 && (
+          {developer.specialties && developer.specialties.length > 3 && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
               +{developer.specialties.length - 3} more
             </span>
@@ -528,5 +517,26 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
     </Link>
   );
 };
+
+// Map backend payload to your UI's Developer type
+function normalizeDeveloper(d: any): Developer {
+  return {
+    id: String(d.id ?? d.uuid ?? d.slug ?? ""),
+    name: d.name ?? d.title ?? "Unnamed Developer",
+    description: d.description ?? "",
+    established: d.established ?? d.founded_year ?? undefined,
+    location: d.location ?? d.city ?? "",
+    country: d.country ?? d.country_name ?? "Cyprus", // default to keep badge stable
+    totalProjects: d.total_projects ?? d.projects_total ?? d.totalProjects ?? 0,
+    activeProjects: d.active_projects ?? d.projects_active ?? d.activeProjects ?? 0,
+    completedProjects: d.completed_projects ?? d.projects_completed ?? d.completedProjects ?? 0,
+    specialties: d.specialties ?? d.tags ?? [],
+    rating: d.rating ?? d.avg_rating ?? undefined,
+    reviewCount: d.review_count ?? d.reviews ?? 0,
+    image: d.image ?? d.logo_url ?? d.cover_image ?? undefined,
+    createdAt: d.created_at ?? d.createdAt ?? undefined,
+    updatedAt: d.updated_at ?? d.updatedAt ?? undefined,
+  };
+}
 
 export default Developers;
