@@ -12,16 +12,6 @@ import api from "../config/api";
 
 const PAGE_SIZE = 12;
 
-// === ASSUMPTIONS (adjust if your API differs) ===
-// 1) GET /developers/ supports params:
-//    - page (1-based), page_size, sort, search, country, specialty, min_projects
-// 2) Response shape:
-//    - { results: DeveloperLike[], count: number }  // DRF-style
-//      OR
-//    - DeveloperLike[]                               // plain array
-//    If your API uses different keys (e.g., total), tweak below.
-// ================================================
-
 interface SearchFiltersType {
   search?: string;
   country?: string;
@@ -67,16 +57,28 @@ const Developers = () => {
       try {
         const qp: Record<string, string> = {
           page_size: PAGE_SIZE.toString(),
-          sort: sortOption,
         };
+
+        // map UI sort -> backend ordering (adjust field names if your API differs)
+        const orderingMap: Record<string, string | undefined> = {
+          recommended: "recommended",        // only if your API supports it
+          "name-asc": "name",
+          "name-desc": "-name",
+          "projects-desc": "-total_projects",
+          "rating-desc": "-rating",
+          newest: "-created_at",
+        };
+        const ordering = orderingMap[sortOption];
+        if (ordering) qp.ordering = ordering;
+
         if (searchFilters.search) qp.search = searchFilters.search;
         if (currentPage !== 1) qp.page = currentPage.toString();
         if (searchFilters.country) qp.country = searchFilters.country;
         if (searchFilters.specialty) qp.specialty = searchFilters.specialty;
         if (searchFilters.minProjects) qp.min_projects = searchFilters.minProjects;
 
-        // 🔌 Real API call
-        const { data } = await api.get<ApiDevelopersResponse>("/developers/", { params: qp });
+        // 🔌 Real API call — your api wrapper prefixes /api automatically
+        const { data } = await api.get<ApiDevelopersResponse>("developers", { params: qp });
 
         // Normalize response (supports DRF-style or plain array)
         const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
@@ -526,7 +528,7 @@ function normalizeDeveloper(d: any): Developer {
     description: d.description ?? "",
     established: d.established ?? d.founded_year ?? undefined,
     location: d.location ?? d.city ?? "",
-    country: d.country ?? d.country_name ?? "Cyprus", // default to keep badge stable
+    country: d.country ?? d.country_name ?? "Cyprus",
     totalProjects: d.total_projects ?? d.projects_total ?? d.totalProjects ?? 0,
     activeProjects: d.active_projects ?? d.projects_active ?? d.activeProjects ?? 0,
     completedProjects: d.completed_projects ?? d.projects_completed ?? d.completedProjects ?? 0,
