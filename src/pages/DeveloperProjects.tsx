@@ -234,7 +234,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
 
   return (
     <Link
-      to={`/project/${project.id}`} // ✅ fixed route (was /projects/:id)
+      to={`/projects/${project.id}`} // ✅ fixed route (was /projects/:id)
       className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group transform hover:-translate-y-2 block"
     >
       <div className="relative h-96 md:h-[500px] overflow-hidden">
