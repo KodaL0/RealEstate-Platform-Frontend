@@ -81,10 +81,16 @@ export default function DeveloperPortal() {
   // Show loading while checking authentication
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <div className="relative">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600 mx-auto mb-6"></div>
+            <div className="absolute inset-0 rounded-full bg-blue-600/10 animate-pulse"></div>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-slate-800">Authenticating</h3>
+            <p className="text-slate-600 text-sm">Verifying your credentials...</p>
+          </div>
         </div>
       </div>
     );
@@ -93,65 +99,73 @@ export default function DeveloperPortal() {
   // Show error if user is not a developer
   if (!user || !user.is_developer) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-4xl mb-4">{!user ? '🔐' : '🚫'}</div>
-          <h3 className="text-lg font-medium mb-2">
-            {!user ? 'Login Required' : 'Access Denied'}
-          </h3>
-          <p className="text-gray-600 mb-4">
-            {!user 
-              ? 'You must be logged in to access the developer portal. Please log in with your account.' 
-              : 'You need developer access to use this portal. Please contact support to request developer status.'
-            }
-          </p>
-          
-          {/* Debug information */}
-          {window.location.hostname === 'localhost' && (
-            <div className="bg-gray-100 p-3 rounded text-left text-xs mb-4">
-              <p><strong>Debug Info:</strong></p>
-              <p>User: {user ? 'Yes' : 'No'}</p>
-              <p>User ID: {user?.id || 'N/A'}</p>
-              <p>Email: {user?.email || 'N/A'}</p>
-              <p>Is Developer: {user?.is_developer ? 'Yes' : 'No'}</p>
-              <p>Auth Loading: {authLoading ? 'Yes' : 'No'}</p>
-              <p>Available Cookies: {Object.keys(document.cookie.split(';').reduce((acc: Record<string, boolean>, cookie) => {
-                const [name] = cookie.trim().split('=');
-                acc[name] = true;
-                return acc;
-              }, {})).join(', ') || 'None'}</p>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">{!user ? '🔐' : '🚫'}</span>
             </div>
-          )}
-          
-          <div className="space-y-3">
-            {!user ? (
-              <>
-                <button 
-                  onClick={() => window.location.href = '/login'} 
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Go to Login
-                </button>
-                <p className="text-sm text-gray-500">
-                  Don't have an account? <a href="/login" className="text-blue-600 hover:underline">Sign up here</a>
-                </p>
-              </>
-            ) : (
-              <>
-                <button 
-                  onClick={() => window.location.href = '/developers'} 
-                  className="w-full px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Go to Developers Page
-                </button>
-                <button 
-                  onClick={() => window.location.href = '/contact'} 
-                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-                >
-                  Request Developer Access
-                </button>
-              </>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-3">
+              {!user ? 'Authentication Required' : 'Access Restricted'}
+            </h3>
+            
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              {!user 
+                ? 'Please sign in to your PropertyPro developer account to access the API portal.' 
+                : 'Developer access is required to use this portal. Contact our team to request developer privileges.'
+              }
+            </p>
+
+            {/* Debug information */}
+            {window.location.hostname === 'localhost' && (
+              <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left">
+                <p className="font-semibold text-slate-700 mb-2 text-sm">Debug Information</p>
+                <div className="space-y-1 text-xs text-slate-600">
+                  <p><span className="font-medium">User:</span> {user ? 'Authenticated' : 'Not logged in'}</p>
+                  <p><span className="font-medium">User ID:</span> {user?.id || 'N/A'}</p>
+                  <p><span className="font-medium">Email:</span> {user?.email || 'N/A'}</p>
+                  <p><span className="font-medium">Developer Status:</span> {user?.is_developer ? 'Active' : 'Inactive'}</p>
+                  <p><span className="font-medium">Auth Loading:</span> {authLoading ? 'Yes' : 'No'}</p>
+                  <p><span className="font-medium">Cookies:</span> {Object.keys(document.cookie.split(';').reduce((acc: Record<string, boolean>, cookie) => {
+                    const [name] = cookie.trim().split('=');
+                    acc[name] = true;
+                    return acc;
+                  }, {})).join(', ') || 'None'}</p>
+                </div>
+              </div>
             )}
+            
+            <div className="space-y-3">
+              {!user ? (
+                <>
+                  <button 
+                    onClick={() => window.location.href = '/login'} 
+                    className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    Sign In to PropertyPro
+                  </button>
+                  <p className="text-sm text-slate-500">
+                    New to PropertyPro? <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors">Create an account</a>
+                  </p>
+                </>
+              ) : (
+                <div className="space-y-3">
+                  <button 
+                    onClick={() => window.location.href = '/developers'} 
+                    className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    View Developer Resources
+                  </button>
+                  <button 
+                    onClick={() => window.location.href = '/contact'} 
+                    className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+                  >
+                    Request API Access
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -166,10 +180,16 @@ export default function DeveloperPortal() {
   // Show loading while fetching organization data
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading developer portal...</p>
+          <div className="relative mb-6">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-slate-200 border-t-blue-600 mx-auto"></div>
+            <div className="absolute inset-0 rounded-full bg-blue-600/10 animate-pulse"></div>
+          </div>
+          <div className="space-y-2">
+            <h3 className="text-lg font-semibold text-slate-800">Loading Developer Portal</h3>
+            <p className="text-slate-600 text-sm">Setting up your workspace...</p>
+          </div>
         </div>
       </div>
     );
@@ -178,17 +198,23 @@ export default function DeveloperPortal() {
   // Show error if organization fetch failed
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-4xl mb-4">⚠️</div>
-          <h3 className="text-lg font-medium mb-2">Unable to Load Portal</h3>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Try Again
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">⚠️</span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Unable to Load Portal</h3>
+            <p className="text-slate-600 mb-6 leading-relaxed">{error}</p>
+            
+            <button 
+              onClick={() => window.location.reload()} 
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              Try Again
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -197,64 +223,80 @@ export default function DeveloperPortal() {
   // Show message if no organization found (fallback)
   if (!organization) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <div className="text-4xl mb-4">🏢</div>
-          <h3 className="text-lg font-medium mb-2">No Organization Found</h3>
-          <p className="text-gray-600 mb-4">You need to create an organization to access the developer portal.</p>
-          <button 
-            onClick={() => setShowCreateForm(true)} 
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
-          >
-            Create Organization
-          </button>
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100 flex items-center justify-center p-4">
+        <div className="max-w-md mx-auto">
+          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 text-center">
+            <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
+              <span className="text-3xl">🏢</span>
+            </div>
+            
+            <h3 className="text-xl font-bold text-slate-800 mb-3">Organization Required</h3>
+            <p className="text-slate-600 mb-6 leading-relaxed">
+              Create an organization profile to access PropertyPro's developer tools and API resources.
+            </p>
+            
+            <button 
+              onClick={() => setShowCreateForm(true)} 
+              className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
+            >
+              Create Organization
+            </button>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 w-full">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 w-full">
       <EnhancedLayout
         organization={organization}
         showBackButton={false}
         mainDashboardPath="/"
       >
-        {/* Navigation Tabs - Responsive */}
-        <div className="mb-6">
+        {/* Navigation Tabs - Enhanced Design */}
+        <div className="mb-8">
           <div className="flex justify-center sm:justify-start">
-            <div className="inline-flex rounded-lg border border-gray-200 bg-white overflow-hidden shadow-sm">
+            <nav className="inline-flex bg-white/80 backdrop-blur-sm rounded-2xl p-1.5 shadow-lg border border-white/20">
               <Link
                 to="/developer-api/organization"
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
+                className={`relative px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
                   location.pathname.includes('/organization') 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-700 hover:bg-gray-50'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105' 
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50/80'
                 }`}
               >
-                Organization
+                {location.pathname.includes('/organization') && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
+                )}
+                <span className="relative">Organization</span>
               </Link>
               <Link
                 to="/developer-api/projects"
-                className={`px-4 py-2 text-sm font-medium transition-colors ${
-                  location.pathname.includes('/projects') 
-                    ? 'bg-blue-600 text-white' 
-                    : 'text-gray-700 hover:bg-gray-50'
+                className={`relative px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
+                  location.pathname.includes('/projects') || location.pathname === '/developer-api/' || location.pathname === '/developer-api'
+                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105' 
+                    : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50/80'
                 }`}
               >
-                Projects
+                {(location.pathname.includes('/projects') || location.pathname === '/developer-api/' || location.pathname === '/developer-api') && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
+                )}
+                <span className="relative">Projects & APIs</span>
               </Link>
-            </div>
+            </nav>
           </div>
         </div>
 
-        {/* Route Content - Full width with proper responsive containers */}
+        {/* Route Content - Enhanced Container */}
         <div className="w-full">
-          <Routes>
-            <Route path="/organization" element={<OrganizationPage />} />
-            <Route path="/projects/*" element={<ProjectsPage />} />
-            <Route path="/" element={<ProjectsPage />} />
-          </Routes>
+          <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
+            <Routes>
+              <Route path="/organization" element={<OrganizationPage />} />
+              <Route path="/projects/*" element={<ProjectsPage />} />
+              <Route path="/" element={<ProjectsPage />} />
+            </Routes>
+          </div>
         </div>
       </EnhancedLayout>
     </div>
