@@ -3,15 +3,15 @@ import {
   useEffect,
 } from "react";
 import { useParams, Link } from "react-router-dom";
-import { 
-  Building2, 
-  MapPin, 
-  Calendar, 
-  Star, 
-  Award, 
-  Phone, 
-  Mail, 
-  Globe, 
+import {
+  Building2,
+  MapPin,
+  Calendar,
+  Star,
+  Award,
+  Phone,
+  Mail,
+  Globe,
   ArrowLeft,
   ChevronRight
 } from "lucide-react";
@@ -30,89 +30,24 @@ const DeveloperDetail = () => {
   useEffect(() => {
     const fetchDeveloperData = async () => {
       if (!id) return;
-      
+
       setIsLoading(true);
       setError(null);
 
       try {
-        // Mock API calls - replace with actual API
-        const mockDeveloper: Developer = {
-          id: "1",
-          name: "Premium Developments Ltd",
-          description: "Premium Developments Ltd is a leading luxury property developer in Cyprus with over 20 years of experience in creating exceptional residential and commercial properties. We specialize in high-end developments that combine modern architecture with Mediterranean charm.",
-          established: 2003,
-          location: "Limassol",
-          country: "Cyprus",
-          website: "https://premiumdev.com",
-          email: "info@premiumdev.com",
-          phone: "+357 25 123456",
-          totalProjects: 25,
-          activeProjects: 5,
-          completedProjects: 20,
-          specialties: ["Luxury Villas", "Residential Complexes", "Commercial", "Waterfront Properties"],
-          rating: 4.8,
-          reviewCount: 156,
-          image: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200",
-          createdAt: "2023-01-01",
-          updatedAt: "2024-01-01"
-        };
+        // org detail
+        const orgReq = api.get(`dev/v1/orgs/${id}`);
+        // org projects (filter by organization)
+        const projectsReq = api.get("dev/v1/projects", { params: { organization: id } });
 
-        const mockProjects: Project[] = [
-          {
-            id: "1",
-            developerId: "1",
-            name: "City Views",
-            description: "Luxury residential complex with stunning city and sea views",
-            location: "Paphos, Konia",
-            country: "Cyprus",
-            status: "available",
-            totalUnits: 24,
-            availableUnits: 8,
-            priceRange: {
-              min: 450000,
-              max: 850000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Villa", "Apartment"],
-            amenities: ["Swimming Pool", "Gym", "Security", "Parking"],
-            images: [
-              "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-              "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Sea View", "Modern Design", "Energy Efficient"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "2",
-            developerId: "1",
-            name: "Marina Heights",
-            description: "Exclusive waterfront development with private marina access",
-            location: "Limassol Marina",
-            country: "Cyprus",
-            status: "construction",
-            totalUnits: 36,
-            availableUnits: 12,
-            priceRange: {
-              min: 750000,
-              max: 1500000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Penthouse", "Apartment"],
-            amenities: ["Marina Access", "Concierge", "Spa", "Restaurant"],
-            images: [
-              "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Marina View", "Luxury Finishes", "Smart Home"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          }
-        ];
+        const [{ data: orgData }, { data: projData }] = await Promise.all([orgReq, projectsReq]);
 
-        setDeveloper(mockDeveloper);
-        setProjects(mockProjects);
+        const org = normalizeDeveloperOrg(orgData);
+        const projResults: any[] = Array.isArray(projData) ? projData : (projData.results ?? []);
+        const normalizedProjects = projResults.map(normalizeProject);
+
+        setDeveloper(org);
+        setProjects(normalizedProjects);
       } catch (err) {
         console.error("Error fetching developer data:", err);
         setError("Failed to fetch developer information. Please try again.");
@@ -177,7 +112,7 @@ const DeveloperDetail = () => {
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
           <img
-            src={developer.image}
+            src={developer.image || "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200"}
             alt={developer.name}
             className="w-full h-full object-cover opacity-60"
           />
@@ -195,7 +130,7 @@ const DeveloperDetail = () => {
             <div className="flex items-center space-x-6 text-white/90">
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2" />
-                <span>{developer.location}, {developer.country}</span>
+                <span>{developer.location}{developer.country ? `, ${developer.country}` : ""}</span>
               </div>
               {developer.established && (
                 <div className="flex items-center">
@@ -203,10 +138,10 @@ const DeveloperDetail = () => {
                   <span>Est. {developer.established}</span>
                 </div>
               )}
-              {developer.rating && (
+              {typeof developer.rating === "number" && (
                 <div className="flex items-center">
                   <Star className="h-4 w-4 mr-2 text-yellow-400 fill-current" />
-                  <span>{developer.rating} ({developer.reviewCount} reviews)</span>
+                  <span>{developer.rating}{typeof developer.reviewCount === "number" ? ` (${developer.reviewCount} reviews)` : ""}</span>
                 </div>
               )}
             </div>
@@ -251,29 +186,35 @@ const DeveloperDetail = () => {
                 <div className="lg:col-span-2">
                   <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">About {developer.name}</h2>
-                    <p className="text-gray-600 leading-relaxed mb-6">
-                      {developer.description}
-                    </p>
-                    
+                    {developer.description && (
+                      <p className="text-gray-600 leading-relaxed mb-6">
+                        {developer.description}
+                      </p>
+                    )}
+
                     <div className="grid grid-cols-2 gap-6">
-                      <div>
-                        <h3 className="font-semibold text-gray-900 mb-3">Specialties</h3>
-                        <div className="flex flex-wrap gap-2">
-                          {developer.specialties.map((specialty, index) => (
-                            <span
-                              key={index}
-                              className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                            >
-                              {specialty}
-                            </span>
-                          ))}
+                      {developer.specialties?.length ? (
+                        <div>
+                          <h3 className="font-semibold text-gray-900 mb-3">Specialties</h3>
+                          <div className="flex flex-wrap gap-2">
+                            {developer.specialties.map((specialty, index) => (
+                              <span
+                                key={index}
+                                className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                              >
+                                {specialty}
+                              </span>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      
+                      ) : null}
+
                       <div>
                         <h3 className="font-semibold text-gray-900 mb-3">Experience</h3>
                         <p className="text-gray-600">
-                          {developer.established && `${new Date().getFullYear() - developer.established} years`} of excellence in property development
+                          {developer.established
+                            ? `${new Date().getFullYear() - developer.established} years of excellence in property development`
+                            : "Experience details not available"}
                         </p>
                       </div>
                     </div>
@@ -291,21 +232,21 @@ const DeveloperDetail = () => {
                           <Award className="h-5 w-5 text-blue-600 mr-2" />
                           <span className="text-gray-600">Total Projects</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.totalProjects}</span>
+                        <span className="font-semibold text-gray-900">{developer.totalProjects ?? projects.length}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <Building2 className="h-5 w-5 text-green-600 mr-2" />
                           <span className="text-gray-600">Active Projects</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.activeProjects}</span>
+                        <span className="font-semibold text-gray-900">{developer.activeProjects ?? projects.filter(p => p.status !== "completed").length}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <Star className="h-5 w-5 text-yellow-500 mr-2" />
                           <span className="text-gray-600">Completed</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.completedProjects}</span>
+                        <span className="font-semibold text-gray-900">{developer.completedProjects ?? projects.filter(p => p.status === "completed").length}</span>
                       </div>
                     </div>
                   </div>
@@ -333,9 +274,9 @@ const DeveloperDetail = () => {
                       {developer.website && (
                         <div className="flex items-center">
                           <Globe className="h-4 w-4 text-gray-400 mr-3" />
-                          <a 
-                            href={developer.website} 
-                            target="_blank" 
+                          <a
+                            href={developer.website}
+                            target="_blank"
                             rel="noopener noreferrer"
                             className="text-blue-600 hover:text-blue-700"
                           >
@@ -396,7 +337,7 @@ const DeveloperDetail = () => {
             >
               <div className="max-w-2xl">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">Contact {developer.name}</h2>
-                
+
                 <div className="bg-white rounded-xl shadow-sm p-8">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div>
@@ -429,9 +370,9 @@ const DeveloperDetail = () => {
                             <Globe className="h-5 w-5 text-gray-400 mr-3" />
                             <div>
                               <p className="text-sm text-gray-500">Website</p>
-                              <a 
-                                href={developer.website} 
-                                target="_blank" 
+                              <a
+                                href={developer.website}
+                                target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-blue-600 hover:text-blue-700 font-medium"
                               >
@@ -444,31 +385,37 @@ const DeveloperDetail = () => {
                           <MapPin className="h-5 w-5 text-gray-400 mr-3" />
                           <div>
                             <p className="text-sm text-gray-500">Location</p>
-                            <p className="font-medium text-gray-900">{developer.location}, {developer.country}</p>
+                            <p className="font-medium text-gray-900">
+                              {developer.location}{developer.country ? `, ${developer.country}` : ""}
+                            </p>
                           </div>
                         </div>
                       </div>
                     </div>
-                    
+
                     <div>
                       <h3 className="font-semibold text-gray-900 mb-4">Quick Facts</h3>
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-gray-500">Established</p>
-                          <p className="font-medium text-gray-900">{developer.established}</p>
+                          <p className="font-medium text-gray-900">{developer.established ?? "—"}</p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Total Projects</p>
-                          <p className="font-medium text-gray-900">{developer.totalProjects}</p>
+                          <p className="font-medium text-gray-900">{developer.totalProjects ?? projects.length}</p>
                         </div>
-                        <div>
-                          <p className="text-sm text-gray-500">Rating</p>
-                          <div className="flex items-center">
-                            <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                            <span className="font-medium text-gray-900">{developer.rating}</span>
-                            <span className="text-gray-500 ml-1">({developer.reviewCount} reviews)</span>
+                        {typeof developer.rating === "number" && (
+                          <div>
+                            <p className="text-sm text-gray-500">Rating</p>
+                            <div className="flex items-center">
+                              <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
+                              <span className="font-medium text-gray-900">{developer.rating}</span>
+                              {typeof developer.reviewCount === "number" && (
+                                <span className="text-gray-500 ml-1">({developer.reviewCount} reviews)</span>
+                              )}
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -484,25 +431,27 @@ const DeveloperDetail = () => {
 
 // Project Card Component
 const ProjectCard = ({ project }: { project: Project }) => {
-  const statusColors = {
+  const statusColors: Record<Project["status"], string> = {
     planning: 'bg-yellow-100 text-yellow-800',
     construction: 'bg-blue-100 text-blue-800',
     completed: 'bg-green-100 text-green-800',
     available: 'bg-purple-100 text-purple-800'
   };
 
-  const statusLabels = {
+  const statusLabels: Record<Project["status"], string> = {
     planning: 'Planning',
     construction: 'Under Construction',
     completed: 'Completed',
     available: 'Available'
   };
 
+  const mainImg = project.mainImage || (project.images && project.images[0]) || "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800";
+
   return (
     <Link to={`/project/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       <div className="relative h-64 overflow-hidden">
         <img
-          src={project.mainImage || project.images[0]}
+          src={mainImg}
           alt={project.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
         />
@@ -512,12 +461,14 @@ const ProjectCard = ({ project }: { project: Project }) => {
           </span>
         </div>
         <div className="absolute top-4 right-4">
-          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/90 text-gray-800">
-            {project.country === 'Cyprus' ? '🇨🇾' : '🇬🇷'} {project.country}
-          </span>
+          {project.country && (
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/90 text-gray-800">
+              {project.country === 'Cyprus' ? '🇨🇾' : project.country === 'Greece' ? '🇬🇷' : '🌍'} {project.country}
+            </span>
+          )}
         </div>
       </div>
-      
+
       <div className="p-6">
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
@@ -525,30 +476,89 @@ const ProjectCard = ({ project }: { project: Project }) => {
           </h3>
           <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-blue-600 transition-colors" />
         </div>
-        
+
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="h-4 w-4 mr-1" />
           <span className="text-sm">{project.location}</span>
         </div>
-        
+
         <p className="text-gray-600 text-sm mb-4 line-clamp-2">
           {project.description}
         </p>
-        
+
         <div className="flex items-center justify-between text-sm">
           <div>
-            <span className="text-gray-500">From </span>
-            <span className="font-semibold text-gray-900">
-              €{project.priceRange.min.toLocaleString()}
-            </span>
+            {project.priceRange?.min ? (
+              <>
+                <span className="text-gray-500">From </span>
+                <span className="font-semibold text-gray-900">
+                  {project.priceRange.currency === "EUR" ? "€" : ""}{project.priceRange.min.toLocaleString()}
+                </span>
+              </>
+            ) : (
+              <span className="text-gray-500">Price on request</span>
+            )}
           </div>
           <div className="text-gray-500">
-            {project.availableUnits} of {project.totalUnits} available
+            {typeof project.availableUnits === "number" && typeof project.totalUnits === "number"
+              ? `${project.availableUnits} of ${project.totalUnits} available`
+              : ""}
           </div>
         </div>
       </div>
     </Link>
   );
 };
+
+/** Normalize org payload -> UI Developer type */
+function normalizeDeveloperOrg(d: any): Developer {
+  return {
+    id: String(d.id ?? d.uuid ?? d.slug ?? ""),
+    name: d.name ?? d.title ?? "Unnamed Developer",
+    description: d.description ?? "",
+    established: d.established ?? d.founded_year ?? undefined,
+    location: d.location ?? d.city ?? "",
+    country: d.country ?? d.country_name ?? "",
+    website: d.website ?? d.site ?? undefined,
+    email: d.email ?? undefined,
+    phone: d.phone ?? undefined,
+    totalProjects: d.total_projects ?? d.projects_total ?? undefined,
+    activeProjects: d.active_projects ?? d.projects_active ?? undefined,
+    completedProjects: d.completed_projects ?? d.projects_completed ?? undefined,
+    specialties: d.specialties ?? d.tags ?? [],
+    rating: d.rating ?? d.avg_rating ?? undefined,
+    reviewCount: d.review_count ?? d.reviews ?? undefined,
+    image: d.image ?? d.logo_url ?? d.logo ?? d.cover_image ?? undefined,
+    createdAt: d.created_at ?? d.createdAt ?? undefined,
+    updatedAt: d.updated_at ?? d.updatedAt ?? undefined,
+  };
+}
+
+/** Normalize project payload -> UI Project type */
+function normalizeProject(p: any): Project {
+  return {
+    id: String(p.id ?? p.uuid ?? ""),
+    developerId: String(p.organization ?? p.developerId ?? ""),
+    name: p.name ?? p.title ?? "Unnamed Project",
+    description: p.description ?? "",
+    location: p.location ?? "",
+    country: p.country ?? "",
+    status: p.status ?? "planning",
+    totalUnits: p.total_units ?? p.units_total ?? p.totalUnits ?? 0,
+    availableUnits: p.available_units ?? p.units_available ?? p.availableUnits ?? 0,
+    priceRange: {
+      min: p.price_min ?? 0,
+      max: p.price_max ?? 0,
+      currency: p.currency ?? "EUR",
+    },
+    propertyTypes: p.property_types ?? [],
+    amenities: p.amenities ?? [],
+    images: Array.isArray(p.images) ? p.images : (p.main_image ? [p.main_image] : []),
+    mainImage: p.main_image ?? undefined,
+    features: p.features ?? [],
+    createdAt: p.created_at ?? p.createdAt ?? undefined,
+    updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
+  };
+}
 
 export default DeveloperDetail;
