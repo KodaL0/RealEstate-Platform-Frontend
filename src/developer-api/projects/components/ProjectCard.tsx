@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { Building } from 'lucide-react';
-import ProjectToolbar from './ProjectToolbar';
 import UnitPublishModal from './UnitPublishModal';
 import developersApi from '../../../config/developers-api';
 
@@ -10,6 +9,7 @@ type Project = {
   location?: string;
   status?: string;
   main_image?: string;
+  is_published?: boolean;
 };
 
 interface ProjectCardProps {
@@ -26,6 +26,8 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
   const [photos, setPhotos] = useState<any[]>([]);
   const [showManage, setShowManage] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
+  const [isPublished, setIsPublished] = useState<boolean>(Boolean((project as any).is_published));
+  const [isBusy, setIsBusy] = useState(false);
 
   useEffect(() => {
     const loadProjectStats = async () => {
@@ -84,11 +86,14 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
 
         {project.status && (
           <div className="absolute top-2 right-2">
-            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
-              {project.status}
-            </span>
+            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">{project.status}</span>
           </div>
         )}
+        <div className="absolute top-2 left-2">
+          <span className={`px-2 py-1 text-xs rounded border ${isPublished ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
+            {isPublished ? 'Published' : 'Draft'}
+          </span>
+        </div>
       </div>
 
 
@@ -105,13 +110,35 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
             </div>
           </div>
           <div className="flex items-center space-x-2">
-            <button
-              onClick={() => setShowPublishModal(true)}
-              className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-              title="Publish project"
-            >
-              Publish
-            </button>
+            {isPublished ? (
+              <button
+                onClick={async () => {
+                  if (!confirm('Unpublish this project? It will no longer be publicly visible.')) return;
+                  setIsBusy(true);
+                  try {
+                    await developersApi.projects.unpublish(project.id);
+                    setIsPublished(false);
+                  } catch (e) {
+                    alert('Failed to unpublish project.');
+                  } finally {
+                    setIsBusy(false);
+                  }
+                }}
+                disabled={isBusy}
+                className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors disabled:opacity-50"
+                title="Unpublish project"
+              >
+                {isBusy ? 'Working…' : 'Unpublish'}
+              </button>
+            ) : (
+              <button
+                onClick={() => setShowPublishModal(true)}
+                className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+                title="Publish project"
+              >
+                Publish
+              </button>
+            )}
           </div>
         </div>
 
@@ -129,7 +156,7 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
         onClose={() => setShowPublishModal(false)}
         onPublished={() => {
           // Best-effort update without full reload
-          developersApi.projects.patch(project.id, { is_published: true }).catch(() => {});
+          setIsPublished(true);
         }}
       />
     </div>
