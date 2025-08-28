@@ -1,15 +1,15 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { 
-  Building2, 
-  MapPin, 
+import {
+  Building2,
+  MapPin,
   Search,
   Filter,
   ChevronRight,
-  Star
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Project } from "../types";
+import api from "../config/api";
 
 const DeveloperProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -22,196 +22,57 @@ const DeveloperProjects = () => {
   useEffect(() => {
     const fetchProjects = async () => {
       setIsLoading(true);
-      
       try {
-        // Mock API call - replace with actual API
-        const mockProjects: Project[] = [
-          {
-            id: "1",
-            developerId: "1",
-            name: "City Views",
-            description: "Luxury residential complex with stunning city and sea views, featuring modern architecture and premium amenities in the heart of Paphos.",
-            location: "Paphos, Konia",
-            country: "Cyprus",
-            status: "available",
-            totalUnits: 24,
-            availableUnits: 8,
-            priceRange: {
-              min: 450000,
-              max: 850000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Villa", "Apartment"],
-            amenities: ["Swimming Pool", "Gym", "Security", "Parking"],
-            images: [
-              "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-              "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Sea View", "Modern Design", "Energy Efficient"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "2",
-            developerId: "1",
-            name: "Marina Heights",
-            description: "Exclusive waterfront development with private marina access, luxury finishes, and breathtaking Mediterranean views.",
-            location: "Limassol Marina",
-            country: "Cyprus",
-            status: "construction",
-            totalUnits: 36,
-            availableUnits: 12,
-            priceRange: {
-              min: 750000,
-              max: 1500000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Penthouse", "Apartment"],
-            amenities: ["Marina Access", "Concierge", "Spa", "Restaurant"],
-            images: [
-              "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Marina View", "Luxury Finishes", "Smart Home"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "3",
-            developerId: "2",
-            name: "Sunset Villas",
-            description: "Premium villa collection with panoramic sunset views, private pools, and contemporary Mediterranean design.",
-            location: "Ayia Napa",
-            country: "Cyprus",
-            status: "available",
-            totalUnits: 12,
-            availableUnits: 5,
-            priceRange: {
-              min: 650000,
-              max: 950000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Villa"],
-            amenities: ["Private Pool", "Garden", "Garage", "Sea View"],
-            images: [
-              "https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/1396132/pexels-photo-1396132.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Sunset View", "Private Pool", "Modern Design"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "4",
-            developerId: "3",
-            name: "Golden Coast Residences",
-            description: "Beachfront residential complex offering luxury apartments with direct beach access and world-class amenities.",
-            location: "Protaras",
-            country: "Cyprus",
-            status: "completed",
-            totalUnits: 48,
-            availableUnits: 3,
-            priceRange: {
-              min: 380000,
-              max: 720000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Apartment", "Penthouse"],
-            amenities: ["Beach Access", "Pool", "Gym", "Restaurant"],
-            images: [
-              "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/2102587/pexels-photo-2102587.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Beach Front", "Luxury Amenities", "Investment Opportunity"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "5",
-            developerId: "4",
-            name: "Mountain View Estates",
-            description: "Exclusive hillside development with panoramic mountain and valley views, featuring eco-friendly design and premium finishes.",
-            location: "Troodos Mountains",
-            country: "Cyprus",
-            status: "planning",
-            totalUnits: 18,
-            availableUnits: 18,
-            priceRange: {
-              min: 520000,
-              max: 890000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Villa", "Townhouse"],
-            amenities: ["Mountain View", "Eco-Friendly", "Private Gardens", "Hiking Trails"],
-            images: [
-              "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Mountain View", "Eco-Friendly", "Nature Setting"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          },
-          {
-            id: "6",
-            developerId: "5",
-            name: "Urban Loft Collection",
-            description: "Contemporary loft-style apartments in the heart of Nicosia, perfect for modern urban living with premium amenities.",
-            location: "Nicosia City Center",
-            country: "Cyprus",
-            status: "construction",
-            totalUnits: 32,
-            availableUnits: 15,
-            priceRange: {
-              min: 280000,
-              max: 480000,
-              currency: "EUR"
-            },
-            propertyTypes: ["Loft", "Apartment"],
-            amenities: ["City Center", "Modern Design", "Rooftop Terrace", "Parking"],
-            images: [
-              "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800"
-            ],
-            mainImage: "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800",
-            features: ["Urban Living", "Modern Lofts", "City Center"],
-            createdAt: "2023-01-01",
-            updatedAt: "2024-01-01"
-          }
-        ];
+        // Real API call (your api wrapper prefixes /api)
+        const { data } = await api.get("dev/v1/projects", {
+          // If your backend supports filters, you can pass them here:
+          // params: {
+          //   status: selectedStatus !== "all" ? selectedStatus : undefined,
+          //   search: searchTerm || undefined,
+          //   location: selectedLocation !== "all" ? selectedLocation : undefined,
+          // },
+        });
 
-        setProjects(mockProjects);
-        setFilteredProjects(mockProjects);
+        // DRF-style {results, count} OR plain array
+        const raw: any[] = Array.isArray(data) ? data : (data?.results ?? []);
+        const normalized = raw.map(normalizeProject);
+
+        setProjects(normalized);
+        setFilteredProjects(normalized);
       } catch (error) {
         console.error("Error fetching projects:", error);
+        setProjects([]);
+        setFilteredProjects([]);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchProjects();
+    // If you want server-side filtering, add [searchTerm, selectedStatus, selectedLocation] here
   }, []);
 
+  // Client-side filtering
   useEffect(() => {
     let filtered = projects;
 
-    // Filter by search term
     if (searchTerm) {
-      filtered = filtered.filter(project =>
-        project.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        project.description.toLowerCase().includes(searchTerm.toLowerCase())
+      const q = searchTerm.toLowerCase();
+      filtered = filtered.filter((p) =>
+        [p.name, p.location, p.description].some((t) =>
+          (t || "").toLowerCase().includes(q)
+        )
       );
     }
 
-    // Filter by status
     if (selectedStatus !== "all") {
-      filtered = filtered.filter(project => project.status === selectedStatus);
+      filtered = filtered.filter((p) => p.status === selectedStatus);
     }
 
-    // Filter by location
     if (selectedLocation !== "all") {
-      filtered = filtered.filter(project => 
-        project.location.toLowerCase().includes(selectedLocation.toLowerCase())
+      const loc = selectedLocation.toLowerCase();
+      filtered = filtered.filter((p) =>
+        (p.location || "").toLowerCase().includes(loc)
       );
     }
 
@@ -223,7 +84,7 @@ const DeveloperProjects = () => {
     { value: "available", label: "Available" },
     { value: "construction", label: "Under Construction" },
     { value: "completed", label: "Completed" },
-    { value: "planning", label: "Planning" }
+    { value: "planning", label: "Planning" },
   ];
 
   const locationOptions = [
@@ -233,7 +94,7 @@ const DeveloperProjects = () => {
     { value: "ayia napa", label: "Ayia Napa" },
     { value: "protaras", label: "Protaras" },
     { value: "nicosia", label: "Nicosia" },
-    { value: "troodos", label: "Troodos" }
+    { value: "troodos", label: "Troodos" },
   ];
 
   if (isLoading) {
@@ -255,7 +116,9 @@ const DeveloperProjects = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Developer Projects</h1>
-          <p className="text-gray-600">Discover exceptional developments from Cyprus's leading property developers</p>
+          <p className="text-gray-600">
+            Discover exceptional developments from Cyprus's leading property developers
+          </p>
         </div>
 
         {/* Filters */}
@@ -281,7 +144,7 @@ const DeveloperProjects = () => {
                 onChange={(e) => setSelectedStatus(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
               >
-                {statusOptions.map(option => (
+                {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -297,7 +160,7 @@ const DeveloperProjects = () => {
                 onChange={(e) => setSelectedLocation(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white"
               >
-                {locationOptions.map(option => (
+                {locationOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -343,43 +206,62 @@ const DeveloperProjects = () => {
 // Project Card Component
 const ProjectCard = ({ project }: { project: Project }) => {
   const statusColors = {
-    planning: 'bg-yellow-100 text-yellow-800',
-    construction: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    available: 'bg-purple-100 text-purple-800'
-  };
+    planning: "bg-yellow-100 text-yellow-800",
+    construction: "bg-blue-100 text-blue-800",
+    completed: "bg-green-100 text-green-800",
+    available: "bg-purple-100 text-purple-800",
+  } as const;
 
   const statusLabels = {
-    planning: 'Planning',
-    construction: 'Under Construction',
-    completed: 'Completed',
-    available: 'Available'
-  };
+    planning: "Planning",
+    construction: "Under Construction",
+    completed: "Completed",
+    available: "Available",
+  } as const;
+
+  const mainImg =
+    project.mainImage ||
+    (project.images && project.images[0]) ||
+    "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800";
+
+  const countryChip = project.country
+    ? project.country === "Cyprus"
+      ? "🇨🇾 Cyprus"
+      : project.country === "Greece"
+      ? "🇬🇷 Greece"
+      : `🌍 ${project.country}`
+    : null;
 
   return (
-    <Link 
-      to={`/projects/${project.id}`} 
+    <Link
+      to={`/project/${project.id}`} // ✅ fixed route (was /projects/:id)
       className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group transform hover:-translate-y-2 block"
     >
       <div className="relative h-96 md:h-[500px] overflow-hidden">
         <img
-          src={project.mainImage || project.images[0]}
+          src={mainImg}
           alt={project.name}
           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
-        
+
         <div className="absolute top-6 left-6">
-          <span className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${statusColors[project.status]} backdrop-blur-sm`}>
+          <span
+            className={`inline-flex items-center px-4 py-2 rounded-full text-sm font-medium ${
+              statusColors[project.status]
+            } backdrop-blur-sm`}
+          >
             {statusLabels[project.status]}
           </span>
         </div>
-        
-        <div className="absolute top-6 right-6">
-          <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white/90 text-gray-800 backdrop-blur-sm">
-            {project.country === 'Cyprus' ? '🇨🇾' : '🇬🇷'} {project.country}
-          </span>
-        </div>
+
+        {countryChip && (
+          <div className="absolute top-6 right-6">
+            <span className="inline-flex items-center px-4 py-2 rounded-full text-sm font-medium bg-white/90 text-gray-800 backdrop-blur-sm">
+              {countryChip}
+            </span>
+          </div>
+        )}
 
         {/* Project Title Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-8">
@@ -400,15 +282,13 @@ const ProjectCard = ({ project }: { project: Project }) => {
           </div>
         </div>
       </div>
-      
+
       <div className="p-8">
-        <p className="text-gray-600 text-lg mb-6 leading-relaxed">
-          {project.description}
-        </p>
+        <p className="text-gray-600 text-lg mb-6 leading-relaxed">{project.description}</p>
 
         {/* Property Types */}
         <div className="flex flex-wrap gap-3 mb-6">
-          {project.propertyTypes.map((type, index) => (
+          {project.propertyTypes?.map((type, index) => (
             <span
               key={index}
               className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-medium bg-blue-50 text-blue-700 border border-blue-200"
@@ -417,10 +297,10 @@ const ProjectCard = ({ project }: { project: Project }) => {
             </span>
           ))}
         </div>
-        
+
         {/* Amenities */}
         <div className="flex flex-wrap gap-2 mb-6">
-          {project.amenities.slice(0, 4).map((amenity, index) => (
+          {project.amenities?.slice(0, 4).map((amenity, index) => (
             <span
               key={index}
               className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700"
@@ -428,25 +308,27 @@ const ProjectCard = ({ project }: { project: Project }) => {
               {amenity}
             </span>
           ))}
-          {project.amenities.length > 4 && (
+          {project.amenities && project.amenities.length > 4 && (
             <span className="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-700">
               +{project.amenities.length - 4} more
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between pt-4 border-t border-gray-200">
           <div className="flex items-center space-x-8">
             <div>
               <span className="text-gray-500 text-sm block">Starting from</span>
               <span className="font-bold text-2xl text-gray-900">
-                €{project.priceRange.min.toLocaleString()}
+                {project.priceRange?.min
+                  ? `€${project.priceRange.min.toLocaleString()}`
+                  : "—"}
               </span>
             </div>
             <div>
               <span className="text-gray-500 text-sm block">Total Units</span>
               <span className="font-semibold text-lg text-gray-900">
-                {project.totalUnits}
+                {project.totalUnits ?? "—"}
               </span>
             </div>
           </div>
@@ -454,15 +336,20 @@ const ProjectCard = ({ project }: { project: Project }) => {
             <div className="text-sm text-gray-500 mb-1">Available Units</div>
             <div className="flex items-center">
               <span className="font-bold text-xl text-green-600 mr-2">
-                {project.availableUnits}
+                {project.availableUnits ?? 0}
               </span>
-              <span className="text-gray-400">/ {project.totalUnits}</span>
+              <span className="text-gray-400">/ {project.totalUnits ?? 0}</span>
             </div>
             <div className="w-24 bg-gray-200 rounded-full h-2 mt-2">
-              <div 
-                className="bg-green-500 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${(project.availableUnits / project.totalUnits) * 100}%` }}
-              ></div>
+              <div
+                className="bg-green-500 h-2 rounded-full transition-all duration-300"
+                style={{
+                  width:
+                    project.totalUnits && project.totalUnits > 0
+                      ? `${((project.availableUnits ?? 0) / project.totalUnits) * 100}%`
+                      : "0%",
+                }}
+              />
             </div>
           </div>
         </div>
@@ -472,3 +359,30 @@ const ProjectCard = ({ project }: { project: Project }) => {
 };
 
 export default DeveloperProjects;
+
+/** Normalize backend Project -> UI Project type */
+function normalizeProject(p: any): Project {
+  return {
+    id: String(p.id ?? p.uuid ?? ""),
+    developerId: String(p.organization ?? p.developerId ?? ""),
+    name: p.name ?? p.title ?? "Unnamed Project",
+    description: p.description ?? "",
+    location: p.location ?? "",
+    country: p.country ?? "",
+    status: p.status ?? "planning",
+    totalUnits: p.total_units ?? p.units_total ?? p.totalUnits ?? 0,
+    availableUnits: p.available_units ?? p.units_available ?? p.availableUnits ?? 0,
+    priceRange: {
+      min: p.price_min ?? 0,
+      max: p.price_max ?? 0,
+      currency: p.currency ?? "EUR",
+    },
+    propertyTypes: p.property_types ?? [],
+    amenities: p.amenities ?? [],
+    images: Array.isArray(p.images) ? p.images : p.main_image ? [p.main_image] : [],
+    mainImage: p.main_image ?? undefined,
+    features: p.features ?? [],
+    createdAt: p.created_at ?? p.createdAt ?? undefined,
+    updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
+  };
+}
