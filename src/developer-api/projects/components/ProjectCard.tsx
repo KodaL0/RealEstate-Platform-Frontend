@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Building } from 'lucide-react';
 import ProjectToolbar from './ProjectToolbar';
+import UnitPublishModal from './UnitPublishModal';
 import developersApi from '../../../config/developers-api';
 
 type Project = {
@@ -24,6 +25,7 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
   const [assets, setAssets] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
   const [showManage, setShowManage] = useState(false);
+  const [showPublishModal, setShowPublishModal] = useState(false);
 
   useEffect(() => {
     const loadProjectStats = async () => {
@@ -102,15 +104,15 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
               <span className="truncate">{project.location}</span>
             </div>
           </div>
-          <button
-            onClick={() => setShowManage(v => !v)}
-            className="ml-3 inline-flex items-center px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md transition-colors"
-            aria-expanded={showManage}
-            aria-controls={`project-toolbar-${project.id}`}
-            title="Manage project"
-          >
-            {showManage ? 'Hide' : 'Manage'}
-          </button>
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => setShowPublishModal(true)}
+              className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
+              title="Publish project"
+            >
+              Publish
+            </button>
+          </div>
         </div>
 
         {/* Quick Stats Summary */}
@@ -120,26 +122,16 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
         </div>
       </div>
 
-      {/* Collapsible Project Management Toolbar (compact) */}
-      {showManage && (
-        <div id={`project-toolbar-${project.id}`} className="px-3 pb-3">
-          <ProjectToolbar
-            projectId={project.id}
-            projectName={project.name}
-            onViewChange={onViewChange || (() => {})}
-            onEdit={onEdit}
-            onDelete={onDelete}
-            stats={{
-              units: units.length,
-              assets: assets.length,
-              photos: photos.length
-            }}
-            compact
-            showHeader={false}
-            showQuickActions={false}
-          />
-        </div>
-      )}
+      {/* Unit selection modal for publishing */}
+      <UnitPublishModal
+        projectId={project.id}
+        isOpen={showPublishModal}
+        onClose={() => setShowPublishModal(false)}
+        onPublished={() => {
+          // Best-effort update without full reload
+          developersApi.projects.patch(project.id, { is_published: true }).catch(() => {});
+        }}
+      />
     </div>
   );
 }

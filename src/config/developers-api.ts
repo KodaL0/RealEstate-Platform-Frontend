@@ -517,6 +517,12 @@ export const organizationsApi = {
   // Clean up orphaned logos
   cleanupLogos: (): Promise<any> =>
     devApiPost<any>(formatDevEndpoint('orgs/cleanup_logos')),
+
+  // Publish / Unpublish organization
+  publish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/publish`), {}),
+  unpublish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/unpublish`), {}),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -572,6 +578,12 @@ export const projectsApi = {
     await devApiDelete<void>(formatDevEndpoint(`projects/${id}`));
     developerApiCache.removeItem('projects', id);
   },
+
+  // Publish / Unpublish project
+  publish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`projects/${id}/publish`), {}),
+  unpublish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`projects/${id}/unpublish`), {}),
 
   // Upload project asset
   uploadAsset: (projectId: number, data: {
@@ -664,6 +676,12 @@ export const unitsApi = {
     await devApiDelete<void>(formatDevEndpoint(`units/${id}`));
     developerApiCache.removeItem('units', id);
   },
+
+  // Publish / Unpublish unit
+  publish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`units/${id}/publish`), {}),
+  unpublish: (id: number): Promise<{ message: string }> =>
+    devApiPost<{ message: string }>(formatDevEndpoint(`units/${id}/unpublish`), {}),
 
   // Upload unit media
   uploadMedia: (unitId: number, data: {
