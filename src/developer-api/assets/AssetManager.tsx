@@ -29,9 +29,10 @@ interface Asset {
 
 interface AssetManagerProps {
   projectId: number;
+  onStatsChange?: (stats: { assets: number; photos: number }) => void; // NEW
 }
 
-export default function AssetManager({ projectId }: AssetManagerProps) {
+export default function AssetManager({ projectId, onStatsChange }: AssetManagerProps) {
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,6 +54,15 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     { value: 'archive', label: 'Archives', icon: Archive, color: 'text-orange-600' },
     { value: 'other', label: 'Other', icon: Paperclip, color: 'text-gray-600' }
   ];
+
+  // Emit totals whenever full assets list changes
+  useEffect(() => {
+    const assetsCount = assets.length;
+    const photosCount = assets.filter(
+      a => a.asset_type === 'image' || a.mime_type?.startsWith('image/')
+    ).length;
+    onStatsChange?.({ assets: assetsCount, photos: photosCount });
+  }, [assets, onStatsChange]);
 
   useEffect(() => {
     fetchAssets();
@@ -88,7 +98,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     let filtered = assets;
 
     if (searchQuery) {
-      filtered = filtered.filter(asset => 
+      filtered = filtered.filter(asset =>
         asset.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
         asset.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
