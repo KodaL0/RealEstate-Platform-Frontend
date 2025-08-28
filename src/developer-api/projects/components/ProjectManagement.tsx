@@ -68,7 +68,15 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     loadProjectData();
   }, [project.id]);
 
-  const getMockImage = () => {
+  const getHeroImage = () => {
+    if (photos.length > 0) {
+      // Use the first uploaded photo
+      return photos[0].file;
+    }
+    if (project.main_image) {
+      return project.main_image;
+    }
+    // fallback placeholder
     return 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?auto=format&fit=crop&w=600&h=300';
   };
 
@@ -200,7 +208,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
             {/* Hero Image with Enhanced Overlay */}
             <div className="relative h-48 sm:h-56 md:h-64 bg-gradient-to-br from-slate-900 to-slate-700">
               <img 
-                src={getMockImage()} 
+                src={getHeroImage()} 
                 alt={project.name}
                 className="w-full h-full object-cover opacity-80"
               />
