@@ -59,17 +59,19 @@ const Developers = () => {
           page_size: PAGE_SIZE.toString(),
         };
 
-        // map UI sort -> backend ordering (adjust field names if your API differs)
+        // ordering map (only send if it exists server-side)
         const orderingMap: Record<string, string | undefined> = {
-          recommended: "recommended",        // only if your API supports it
+          // remove "recommended" if your API doesn't support it
           "name-asc": "name",
           "name-desc": "-name",
-          "projects-desc": "-total_projects",
-          "rating-desc": "-rating",
+          "projects-desc": "-total_projects", // only if the field exists
+          "rating-desc": "-rating",           // only if the field exists
           newest: "-created_at",
         };
+
         const ordering = orderingMap[sortOption];
-        if (ordering) qp.ordering = ordering;
+        if (ordering) qp.ordering = ordering; // do not send qp.ordering if undefined
+
 
         if (searchFilters.search) qp.search = searchFilters.search;
         if (currentPage !== 1) qp.page = currentPage.toString();
@@ -78,7 +80,7 @@ const Developers = () => {
         if (searchFilters.minProjects) qp.min_projects = searchFilters.minProjects;
 
         // 🔌 Real API call — your api wrapper prefixes /api automatically
-        const { data } = await api.get<ApiDevelopersResponse>("developers", { params: qp });
+        const { data } = await api.get("dev/v1/orgs", { params: qp });
 
         // Normalize response (supports DRF-style or plain array)
         const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
@@ -535,7 +537,7 @@ function normalizeDeveloper(d: any): Developer {
     specialties: d.specialties ?? d.tags ?? [],
     rating: d.rating ?? d.avg_rating ?? undefined,
     reviewCount: d.review_count ?? d.reviews ?? 0,
-    image: d.image ?? d.logo_url ?? d.cover_image ?? undefined,
+    image: d.image ?? d.logo_url ?? d.logo ?? d.cover_image ?? undefined,
     createdAt: d.created_at ?? d.createdAt ?? undefined,
     updatedAt: d.updated_at ?? d.updatedAt ?? undefined,
   };
