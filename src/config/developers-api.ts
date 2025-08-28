@@ -523,6 +523,10 @@ export const organizationsApi = {
     devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/publish`), {}),
   unpublish: (id: number): Promise<{ message: string }> =>
     devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/unpublish`), {}),
+
+  // Public
+  listPublic: (): Promise<DeveloperOrganization[]> =>
+    devApiGet<DeveloperOrganization[]>(formatDevEndpoint('orgs/public')),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -584,6 +588,12 @@ export const projectsApi = {
     devApiPost<{ message: string }>(formatDevEndpoint(`projects/${id}/publish`), {}),
   unpublish: (id: number): Promise<{ message: string }> =>
     devApiPost<{ message: string }>(formatDevEndpoint(`projects/${id}/unpublish`), {}),
+
+  // Public
+  listPublic: (params?: { organization?: number }): Promise<Project[]> =>
+    devApiGet<Project[]>(formatDevEndpoint('projects/public'), { params }),
+  getPublic: (id: number): Promise<Project> =>
+    devApiGet<Project>(formatDevEndpoint(`projects/${id}/public_detail`)),
 
   // Upload project asset
   uploadAsset: (projectId: number, data: {
@@ -682,6 +692,10 @@ export const unitsApi = {
     devApiPost<{ message: string }>(formatDevEndpoint(`units/${id}/publish`), {}),
   unpublish: (id: number): Promise<{ message: string }> =>
     devApiPost<{ message: string }>(formatDevEndpoint(`units/${id}/unpublish`), {}),
+
+  // Public
+  listPublic: (params?: { project?: number }): Promise<Unit[]> =>
+    devApiGet<Unit[]>(formatDevEndpoint('units/public'), { params }),
 
   // Upload unit media
   uploadMedia: (unitId: number, data: {
