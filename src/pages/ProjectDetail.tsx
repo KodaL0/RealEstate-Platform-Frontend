@@ -15,24 +15,35 @@ import {
   Star,
   Phone,
   Mail,
+  Home,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import {
-  Project,
-  Developer,
-  PROJECT_STATUS_LABELS,
-  PROJECT_STATUS_COLORS,
-} from "../types";
+import { Project, Developer } from "../types";
+import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
 import api from "../config/api";
+
+type UnitRow = {
+  id: string;
+  code?: string;
+  unit_type?: string;
+  bedrooms?: number;
+  bathrooms?: number;
+  area_total?: number;
+  price?: number;
+  currency?: string;
+  status?: "available" | "reserved" | "sold";
+  is_primary?: boolean;
+};
 
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [developer, setDeveloper] = useState<Developer | null>(null);
+  const [units, setUnits] = useState<UnitRow[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "amenities" | "floorplans" | "gallery"
+    "overview" | "units" | "amenities" | "floorplans" | "gallery"
   >("overview");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
@@ -47,7 +58,7 @@ const ProjectDetail = () => {
         const proj = normalizeProject(projectRaw);
         setProject(proj);
 
-        // 2) Fetch developer/org if we have an org/developer id
+        // 2) Grab developer/org
         const orgId = projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
         if (orgId) {
           const { data: orgRaw } = await api.get(`dev/v1/orgs/${orgId}`);
@@ -55,11 +66,24 @@ const ProjectDetail = () => {
         } else {
           setDeveloper(null);
         }
+
+        // 3) Units: use embedded if present, else fetch by project
+        const embeddedUnits = Array.isArray(projectRaw.units) ? projectRaw.units : null;
+        if (embeddedUnits && embeddedUnits.length) {
+          setUnits(embeddedUnits.map(normalizeUnit));
+        } else {
+          const { data: unitsRaw } = await api.get(`dev/v1/units`, {
+            params: { project: id },
+          });
+          const list = Array.isArray(unitsRaw) ? unitsRaw : unitsRaw?.results ?? [];
+          setUnits(list.map(normalizeUnit));
+        }
       } catch (e) {
-        console.error("Error fetching project/developer:", e);
+        console.error("Error fetching project/developer/units:", e);
         setError("Failed to fetch project information. Please try again.");
         setProject(null);
         setDeveloper(null);
+        setUnits([]);
       } finally {
         setIsLoading(false);
       }
@@ -122,29 +146,38 @@ const ProjectDetail = () => {
     );
   }
 
+  // Tabs (added "Units")
   const tabs = [
     { id: "overview", label: "Overview" },
+    { id: "units", label: `Units (${units.length})` },
     { id: "amenities", label: "Amenities" },
     { id: "floorplans", label: "Floor Plans" },
     { id: "gallery", label: "Gallery" },
   ] as const;
 
-  const heroImg =
-    project.images?.[currentImageIndex] ||
-    project.mainImage ||
-    "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=1200";
+  const hasImages = (project.images && project.images.length > 0) || !!project.mainImage;
+  const heroImg = hasImages ? (project.images?.[currentImageIndex] || project.mainImage!) : "";
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section with Image Gallery */}
+      {/* Hero Section */}
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
-          <img src={heroImg} alt={project.name} className="w-full h-full object-cover" />
+          {hasImages ? (
+            <img src={heroImg} alt={project.name} className="w-full h-full object-cover" />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
+              <div className="flex items-center space-x-3 text-white/90">
+                <Home className="h-7 w-7" />
+                <span className="text-lg">No images available</span>
+              </div>
+            </div>
+          )}
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
         {/* Image Navigation */}
-        {project.images && project.images.length > 1 && (
+        {hasImages && project.images && project.images.length > 1 && (
           <>
             <button
               onClick={prevImage}
@@ -228,7 +261,7 @@ const ProjectDetail = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
                     ? "border-blue-500 text-blue-600"
@@ -245,6 +278,7 @@ const ProjectDetail = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <AnimatePresence mode="wait">
+          {/* Overview */}
           {activeTab === "overview" && (
             <motion.div
               key="overview"
@@ -391,10 +425,7 @@ const ProjectDetail = () => {
                   {developer && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Developer</h3>
-                      <Link
-                        to={`/developer/${developer.id}`}
-                        className="block group"
-                      >
+                      <Link to={`/developer/${developer.id}`} className="block group">
                         <h4 className="font-medium text-blue-600 group-hover:text-blue-700 mb-2">
                           {developer.name}
                         </h4>
@@ -451,6 +482,106 @@ const ProjectDetail = () => {
             </motion.div>
           )}
 
+          {/* Units */}
+          {activeTab === "units" && (
+            <motion.div
+              key="units"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="mb-6">
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Units</h2>
+                <p className="text-gray-600">
+                  {project.availableUnits} of {project.totalUnits} units available
+                </p>
+              </div>
+
+              {units.length === 0 ? (
+                <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                  <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    Units information coming soon
+                  </h3>
+                  <p className="text-gray-600">
+                    Contact the developer for detailed unit availability and pricing.
+                  </p>
+                </div>
+              ) : (
+                <div className="overflow-x-auto bg-white rounded-xl shadow-sm">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Code
+                        </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Type
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Beds
+                        </th>
+                        <th className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Baths
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Area (m²)
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Price
+                        </th>
+                        <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Status
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {units.map((u) => (
+                        <tr key={u.id} className="hover:bg-gray-50">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {u.code ?? "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+                            {u.unit_type ?? "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                            {u.bedrooms ?? "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-700">
+                            {u.bathrooms ?? "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-700">
+                            {u.area_total != null ? u.area_total : "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
+                            {u.price != null
+                              ? `€${u.price.toLocaleString()}`
+                              : "—"}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-right">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                                u.status === "available"
+                                  ? "bg-green-100 text-green-800"
+                                  : u.status === "reserved"
+                                  ? "bg-yellow-100 text-yellow-800"
+                                  : "bg-gray-200 text-gray-700"
+                              }`}
+                            >
+                              {u.status ?? "—"}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </motion.div>
+          )}
+
+          {/* Amenities */}
           {activeTab === "amenities" && (
             <motion.div
               key="amenities"
@@ -487,6 +618,7 @@ const ProjectDetail = () => {
             </motion.div>
           )}
 
+          {/* Floorplans (derived from units when available) */}
           {activeTab === "floorplans" && (
             <motion.div
               key="floorplans"
@@ -583,6 +715,7 @@ const ProjectDetail = () => {
             </motion.div>
           )}
 
+          {/* Gallery */}
           {activeTab === "gallery" && (
             <motion.div
               key="gallery"
@@ -600,25 +733,37 @@ const ProjectDetail = () => {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(project.images ?? []).map((image, index) => (
-                  <motion.div
-                    key={index}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    className="relative aspect-square overflow-hidden rounded-xl shadow-sm hover:shadow-lg transition-shadow cursor-pointer group"
-                    onClick={() => setCurrentImageIndex(index)}
-                  >
-                    <img
-                      src={image}
-                      alt={`${project.name} - Image ${index + 1}`}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                    />
-                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
-                  </motion.div>
-                ))}
-              </div>
+              {hasImages ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {(project.images ?? []).map((image, index) => (
+                    <motion.div
+                      key={index}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="relative aspect-square overflow-hidden rounded-xl shadow-sm hover:shadow-lg transition-shadow cursor-pointer group"
+                      onClick={() => setCurrentImageIndex(index)}
+                    >
+                      <img
+                        src={image}
+                        alt={`${project.name} - Image ${index + 1}`}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-white rounded-xl shadow-sm p-8 text-center">
+                  <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No images available
+                  </h3>
+                  <p className="text-gray-600">
+                    This project doesn’t have images yet.
+                  </p>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
@@ -634,14 +779,12 @@ export default ProjectDetail;
    =========================== */
 
 function normalizeProject(p: any): Project {
-  // image array fallback
   const imgs: string[] = Array.isArray(p.images)
     ? p.images
     : p.main_image
     ? [p.main_image]
     : [];
 
-  // floor plans: adapt if your API returns a different structure
   const floorPlans =
     Array.isArray(p.units) && p.units.length
       ? p.units
@@ -682,7 +825,7 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: imgs,
+    images: imgs,               // ✅ only from API (no stock fallback)
     mainImage: p.main_image ?? undefined,
     features: p.features ?? [],
     coordinates:
@@ -716,5 +859,19 @@ function normalizeDeveloper(d: any): Developer {
     image: d.logo ?? d.logo_url ?? d.image ?? undefined,
     createdAt: d.created_at ?? d.createdAt ?? undefined,
     updatedAt: d.updated_at ?? d.updatedAt ?? undefined,
+  };
+}
+
+function normalizeUnit(u: any): UnitRow {
+  return {
+    id: String(u.id ?? u.uuid ?? ""),
+    code: u.code ?? u.name ?? undefined,
+    unit_type: u.unit_type ?? undefined,
+    bedrooms: u.bedrooms ?? undefined,
+    bathrooms: u.bathrooms ?? undefined,
+    area_total: u.area_total ?? u.area_internal ?? undefined,
+    price: u.price ?? undefined,
+    currency: u.currency ?? "EUR",
+    status: u.status ?? undefined,
   };
 }
