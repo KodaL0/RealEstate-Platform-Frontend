@@ -289,14 +289,13 @@ export default function DeveloperPortal() {
         </div>
 
         {/* Route Content - Enhanced Container */}
+        {/* Route Content */}
         <div className="w-full">
-          <div className="bg-white/60 backdrop-blur-sm rounded-2xl shadow-xl border border-white/20 overflow-hidden">
-            <Routes>
-              <Route path="/organization" element={<OrganizationPage />} />
-              <Route path="/projects/*" element={<ProjectsPage />} />
-              <Route path="/" element={<ProjectsPage />} />
-            </Routes>
-          </div>
+          <Routes>
+            <Route path="/organization" element={<OrganizationPage />} />
+            <Route path="/projects/*" element={<ProjectsPage />} />
+            <Route path="/" element={<ProjectsPage />} />
+          </Routes>
         </div>
       </EnhancedLayout>
     </div>
