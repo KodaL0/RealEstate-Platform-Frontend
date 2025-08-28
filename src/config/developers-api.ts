@@ -277,6 +277,7 @@ export interface DeveloperOrganization {
   phone?: string;
   logo?: string;
   established?: number;
+  is_published: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -312,6 +313,7 @@ export interface Project {
   main_image?: string;
   latitude?: number;
   longitude?: number;
+  is_published: boolean;
   created_at: string;
   updated_at: string;
   assets?: ProjectAsset[];
@@ -358,6 +360,7 @@ export interface Unit {
   veranda_area?: number;
   pool?: 'none' | 'communal' | 'private' | 'both';
   pool_area?: number;
+  is_published: boolean;
   created_at: string;
   updated_at: string;
   media?: UnitMedia[];
