@@ -269,7 +269,7 @@ export default function DeveloperPortal() {
                 {location.pathname.includes('/organization') && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
                 )}
-                <span className="relative">Organization</span>
+                <span className="relative">My Organization</span>
               </Link>
               <Link
                 to="/developer-api/projects"
@@ -282,7 +282,7 @@ export default function DeveloperPortal() {
                 {(location.pathname.includes('/projects') || location.pathname === '/developer-api/' || location.pathname === '/developer-api') && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
                 )}
-                <span className="relative">Projects & APIs</span>
+                <span className="relative">My Projects</span>
               </Link>
             </nav>
           </div>
