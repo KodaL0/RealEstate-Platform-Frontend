@@ -60,10 +60,13 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
       className="bg-white border rounded-lg hover:border-gray-300 transition-colors overflow-hidden"
     >
       {/* Image */}
-      <div className="h-36 bg-gray-100 relative cursor-pointer" onClick={() => onClick(project)}>
-        {project.main_image ? (
+      <div 
+        className="h-36 bg-gray-100 relative cursor-pointer" 
+        onClick={() => onClick(project)}
+      >
+        {project.main_image || photos[0]?.file ? (
           <img 
-            src={project.main_image} 
+            src={project.main_image || photos[0]?.file} 
             alt={project.name}
             className="w-full h-full object-cover"
             onError={(e) => {
@@ -72,9 +75,11 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
             }}
           />
         ) : null}
-        <div className={`w-full h-full flex items-center justify-center ${project.main_image ? 'hidden' : ''}`}>
+
+        <div className={`w-full h-full flex items-center justify-center ${(project.main_image || photos[0]?.file) ? 'hidden' : ''}`}>
           <Building className="w-16 h-16 text-gray-400" />
         </div>
+
         {project.status && (
           <div className="absolute top-2 right-2">
             <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
@@ -83,6 +88,7 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
           </div>
         )}
       </div>
+
 
       {/* Info */}
       <div className="p-4">
