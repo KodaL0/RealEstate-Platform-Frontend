@@ -39,7 +39,6 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
   const [selectedType, setSelectedType] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
-  // Upload is handled by AssetUploadForm modal
   const [categories, setCategories] = useState<any>({});
   const [organizedView, setOrganizedView] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
@@ -118,8 +117,6 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
     setFilteredAssets(filtered);
   };
-
-  // Drag-and-drop and bulk upload were replaced by AssetUploadForm
 
   const toggleFeatured = async (assetId: number) => {
     try {
@@ -222,18 +219,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
 
   return (
     <div className="space-y-6">
-      {showUploadModal && (
-        <AssetUploadForm
-          projectId={projectId}
-          onClose={() => setShowUploadModal(false)}
-          onUpload={(newAsset) => {
-            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
-            setShowUploadModal(false);
-            fetchAssets();
-          }}
-        />
-      )}
-      {/* Header with Actions (neutral, responsive) */}
+      {/* Header with Actions */}
       <div className="bg-white rounded-2xl p-5 shadow-lg border border-gray-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-3">
@@ -518,7 +504,7 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
         )
       )}
 
-      {/* Upload Modal (render form directly; it provides its own overlay) */}
+      {/* Upload Modal - Only render once when showUploadModal is true */}
       {showUploadModal && (
         <AssetUploadForm
           projectId={projectId}
@@ -533,5 +519,3 @@ export default function AssetManager({ projectId }: AssetManagerProps) {
     </div>
   );
 }
-
-
