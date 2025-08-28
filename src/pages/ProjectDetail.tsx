@@ -249,7 +249,7 @@ const ProjectDetail = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-8">
           <div className="text-white">
             <Link
-              to={`/project/${project.id}`}
+              to={`/projects/${project.id}`}
               className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
