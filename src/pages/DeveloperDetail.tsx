@@ -448,7 +448,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
   const mainImg = project.mainImage || (project.images && project.images[0]) || "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800";
 
   return (
-    <Link to={`/project/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+    <Link to={`/projects/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       <div className="relative h-64 overflow-hidden">
         <img
           src={mainImg}
