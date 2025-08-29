@@ -13,7 +13,8 @@ import {
   Mail,
   Globe,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Image as ImageIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Developer, Project } from "../types";
@@ -429,7 +430,56 @@ const DeveloperDetail = () => {
   );
 };
 
-// Project Card Component
+/* -------------------------------------------
+   Image + URL Helpers (for robust image fields)
+-------------------------------------------- */
+const API_BASE =
+  (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
+
+function toAbsoluteUrl(u?: string | null): string | undefined {
+  if (!u) return undefined;
+  try { return new URL(u, API_BASE).href; } catch { return u || undefined; }
+}
+
+function pickImageStrings(input: any): string[] {
+  if (!input) return [];
+  if (typeof input === "string") return [input];
+  if (Array.isArray(input)) return input.flatMap(pickImageStrings);
+  const candidates = [
+    input.image,
+    input.url,
+    input.src,
+    input.file,
+    input.file_url,
+    input.path,
+    input.thumbnail,
+    input.preview,
+  ].filter(Boolean);
+  return candidates as string[];
+}
+
+function extractProjectImageUrls(p: any): string[] {
+  const buckets: any[] = [];
+  buckets.push(p.images, p.media, p.gallery, p.photos, p.assets, p.gallery_images);
+  buckets.push(p.main_image, p.cover_image, p.hero_image, p.thumbnail);
+  if (Array.isArray(p.units)) {
+    buckets.push(
+      p.units.filter(Boolean).map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets)
+    );
+  }
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const raw of buckets.flatMap(pickImageStrings)) {
+    const abs = toAbsoluteUrl(String(raw));
+    if (abs && !seen.has(abs)) {
+      seen.add(abs);
+      urls.push(abs);
+    }
+  }
+  return urls;
+}
+
+// Project Card Component (NO MOCK — uses actual API images)
 const ProjectCard = ({ project }: { project: Project }) => {
   const statusColors: Record<Project["status"], string> = {
     planning: 'bg-yellow-100 text-yellow-800',
@@ -445,16 +495,35 @@ const ProjectCard = ({ project }: { project: Project }) => {
     available: 'Available'
   };
 
-  const mainImg = project.mainImage || (project.images && project.images[0]) || "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800";
+  const mainImg = project.mainImage || (project.images && project.images[0]) || "";
 
   return (
     <Link to={`/projects/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       <div className="relative h-64 overflow-hidden">
-        <img
-          src={mainImg}
-          alt={project.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-        />
+        {mainImg ? (
+          <img
+            src={mainImg}
+            alt={project.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+            loading="lazy"
+            onError={(e) => {
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+              const fallback = (e.currentTarget.nextSibling as HTMLElement);
+              if (fallback) fallback.classList.remove("hidden");
+            }}
+          />
+        ) : null}
+
+        {/* Graceful no-image panel instead of mock */}
+        <div className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}>
+          <div className="text-center text-white/90">
+            <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <ImageIcon className="w-6 h-6" />
+            </div>
+            <div className="text-sm font-medium">No image available</div>
+          </div>
+        </div>
+
         <div className="absolute top-4 left-4">
           <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status]}`}>
             {statusLabels[project.status]}
@@ -534,8 +603,15 @@ function normalizeDeveloperOrg(d: any): Developer {
   };
 }
 
-/** Normalize project payload -> UI Project type */
+/** Normalize project payload -> UI Project type (with robust image extraction) */
 function normalizeProject(p: any): Project {
+  const images = extractProjectImageUrls(p);
+  const mainImage =
+    toAbsoluteUrl(p.main_image) ||
+    toAbsoluteUrl(p.cover_image) ||
+    toAbsoluteUrl(p.hero_image) ||
+    images[0];
+
   return {
     id: String(p.id ?? p.uuid ?? ""),
     developerId: String(p.organization ?? p.developerId ?? ""),
@@ -553,8 +629,8 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: Array.isArray(p.images) ? p.images : (p.main_image ? [p.main_image] : []),
-    mainImage: p.main_image ?? undefined,
+    images,       // ✅ absolute URLs from API (no mock)
+    mainImage,    // ✅ robust hero fallback
     features: p.features ?? [],
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
