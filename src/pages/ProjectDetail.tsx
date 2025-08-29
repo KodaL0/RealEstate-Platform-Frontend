@@ -35,6 +35,93 @@ type UnitRow = {
   is_primary?: boolean;
 };
 
+/* ===========================
+   Image + URL Helpers
+   =========================== */
+
+// Base URL for making relative paths absolute
+const API_BASE =
+  (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
+
+function toAbsoluteUrl(u?: string | null): string | undefined {
+  if (!u) return undefined;
+  try {
+    return new URL(u, API_BASE).href;
+  } catch {
+    return u || undefined;
+  }
+}
+
+// Extract string URLs from many possible shapes
+function pickImageStrings(input: any): string[] {
+  if (!input) return [];
+  if (typeof input === "string") return [input];
+
+  if (Array.isArray(input)) {
+    return input.flatMap(pickImageStrings);
+  }
+
+  // Common object keys used by different backends
+  const candidates = [
+    input.image,
+    input.url,
+    input.src,
+    input.file,
+    input.file_url,
+    input.path,
+    input.thumbnail,
+    input.preview,
+  ].filter(Boolean);
+
+  return candidates as string[];
+}
+
+// Gather project image URLs from lots of likely fields + units fallback
+function extractProjectImageUrls(p: any): string[] {
+  const buckets: any[] = [];
+
+  // Common list fields
+  buckets.push(p.images);
+  buckets.push(p.media); // e.g. [{ image: "..." }]
+  buckets.push(p.gallery);
+  buckets.push(p.photos);
+  buckets.push(p.assets);
+  buckets.push(p.gallery_images);
+
+  // Single fields
+  buckets.push(p.main_image);
+  buckets.push(p.cover_image);
+  buckets.push(p.hero_image);
+  buckets.push(p.thumbnail);
+
+  // Fallback to unit media if present
+  if (Array.isArray(p.units)) {
+    buckets.push(
+      p.units
+        .filter(Boolean)
+        .map(
+          (u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets
+        )
+    );
+  }
+
+  // Flatten → to absolute → de-dupe (stable)
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const raw of buckets.flatMap(pickImageStrings)) {
+    const abs = toAbsoluteUrl(String(raw));
+    if (abs && !seen.has(abs)) {
+      seen.add(abs);
+      urls.push(abs);
+    }
+  }
+  return urls;
+}
+
+/* ===========================
+   Component
+   =========================== */
+
 const ProjectDetail = () => {
   const { id } = useParams<{ id: string }>();
   const [project, setProject] = useState<Project | null>(null);
@@ -59,7 +146,8 @@ const ProjectDetail = () => {
         setProject(proj);
 
         // 2) Grab developer/org
-        const orgId = projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
+        const orgId =
+          projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
         if (orgId) {
           const { data: orgRaw } = await api.get(`dev/v1/orgs/${orgId}`);
           setDeveloper(normalizeDeveloper(orgRaw));
@@ -156,7 +244,9 @@ const ProjectDetail = () => {
   ] as const;
 
   const hasImages = (project.images && project.images.length > 0) || !!project.mainImage;
-  const heroImg = hasImages ? (project.images?.[currentImageIndex] || project.mainImage!) : "";
+  const heroImg = hasImages
+    ? project.images?.[currentImageIndex] || project.mainImage!
+    : "";
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -164,7 +254,17 @@ const ProjectDetail = () => {
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
           {hasImages ? (
-            <img src={heroImg} alt={project.name} className="w-full h-full object-cover" />
+            <img
+              src={heroImg}
+              alt={project.name}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={(e) => {
+                if (project.mainImage) {
+                  (e.currentTarget as HTMLImageElement).src = project.mainImage;
+                }
+              }}
+            />
           ) : (
             <div className="w-full h-full bg-gradient-to-br from-gray-800 to-gray-700 flex items-center justify-center">
               <div className="flex items-center space-x-3 text-white/90">
@@ -555,9 +655,7 @@ const ProjectDetail = () => {
                             {u.area_total != null ? u.area_total : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
-                            {u.price != null
-                              ? `€${u.price.toLocaleString()}`
-                              : "—"}
+                            {u.price != null ? `€${u.price.toLocaleString()}` : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <span
@@ -595,8 +693,7 @@ const ProjectDetail = () => {
                   Project Amenities
                 </h2>
                 <p className="text-gray-600">
-                  Discover the premium amenities and facilities available at{" "}
-                  {project.name}
+                  Discover the premium amenities and facilities available at {project.name}
                 </p>
               </div>
 
@@ -650,6 +747,12 @@ const ProjectDetail = () => {
                             src={plan.image}
                             alt={plan.name}
                             className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              if (project.mainImage) {
+                                (e.currentTarget as HTMLImageElement).src = project.mainImage;
+                              }
+                            }}
                           />
                         </div>
                       )}
@@ -664,27 +767,21 @@ const ProjectDetail = () => {
                               <Bed className="h-5 w-5 text-gray-400" />
                             </div>
                             <p className="text-sm text-gray-500">Bedrooms</p>
-                            <p className="font-semibold text-gray-900">
-                              {plan.bedrooms}
-                            </p>
+                            <p className="font-semibold text-gray-900">{plan.bedrooms}</p>
                           </div>
                           <div className="text-center">
                             <div className="flex items-center justify-center mb-1">
                               <Bath className="h-5 w-5 text-gray-400" />
                             </div>
                             <p className="text-sm text-gray-500">Bathrooms</p>
-                            <p className="font-semibold text-gray-900">
-                              {plan.bathrooms}
-                            </p>
+                            <p className="font-semibold text-gray-900">{plan.bathrooms}</p>
                           </div>
                           <div className="text-center">
                             <div className="flex items-center justify-center mb-1">
                               <Square className="h-5 w-5 text-gray-400" />
                             </div>
                             <p className="text-sm text-gray-500">Area</p>
-                            <p className="font-semibold text-gray-900">
-                              {plan.area}m²
-                            </p>
+                            <p className="font-semibold text-gray-900">{plan.area}m²</p>
                           </div>
                         </div>
 
@@ -707,8 +804,7 @@ const ProjectDetail = () => {
                     Floor Plans Coming Soon
                   </h3>
                   <p className="text-gray-600">
-                    Detailed floor plans will be available soon. Contact the
-                    developer for more information.
+                    Detailed floor plans will be available soon. Contact the developer for more information.
                   </p>
                 </div>
               )}
@@ -725,12 +821,8 @@ const ProjectDetail = () => {
               transition={{ duration: 0.3 }}
             >
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Project Gallery
-                </h2>
-                <p className="text-gray-600">
-                  Explore high-quality images of {project.name}
-                </p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Gallery</h2>
+              <p className="text-gray-600">Explore high-quality images of {project.name}</p>
               </div>
 
               {hasImages ? (
@@ -748,6 +840,12 @@ const ProjectDetail = () => {
                         src={image}
                         alt={`${project.name} - Image ${index + 1}`}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                        onError={(e) => {
+                          if (project.mainImage) {
+                            (e.currentTarget as HTMLImageElement).src = project.mainImage;
+                          }
+                        }}
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-300"></div>
                     </motion.div>
@@ -756,12 +854,8 @@ const ProjectDetail = () => {
               ) : (
                 <div className="bg-white rounded-xl shadow-sm p-8 text-center">
                   <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No images available
-                  </h3>
-                  <p className="text-gray-600">
-                    This project doesn’t have images yet.
-                  </p>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No images available</h3>
+                  <p className="text-gray-600">This project doesn’t have images yet.</p>
                 </div>
               )}
             </motion.div>
@@ -779,11 +873,13 @@ export default ProjectDetail;
    =========================== */
 
 function normalizeProject(p: any): Project {
-  const imgs: string[] = Array.isArray(p.images)
-    ? p.images
-    : p.main_image
-    ? [p.main_image]
-    : [];
+  const imageUrls = extractProjectImageUrls(p);
+
+  const mainImage =
+    toAbsoluteUrl(p.main_image) ||
+    toAbsoluteUrl(p.cover_image) ||
+    toAbsoluteUrl(p.hero_image) ||
+    imageUrls[0];
 
   const floorPlans =
     Array.isArray(p.units) && p.units.length
@@ -792,17 +888,25 @@ function normalizeProject(p: any): Project {
           .map((u: any) => ({
             id: String(u.id ?? u.uuid ?? ""),
             name:
-              u.name ??
-              u.code ??
-              `${u.bedrooms ?? "—"}BR ${u.unit_type ?? "Unit"}`,
+              u.name ?? u.code ?? `${u.bedrooms ?? "—"}BR ${u.unit_type ?? "Unit"}`,
             bedrooms: u.bedrooms ?? 0,
             bathrooms: u.bathrooms ?? 0,
             area: u.area_total ?? u.area_internal ?? 0,
             price: u.price ?? 0,
             image:
-              (Array.isArray(u.media) && u.media[0]?.image) ||
-              p.main_image ||
-              undefined,
+              toAbsoluteUrl(
+                (Array.isArray(u.media) &&
+                  (u.media[0]?.image ||
+                    u.media[0]?.url ||
+                    u.media[0]?.src ||
+                    u.media[0]?.file ||
+                    u.media[0]?.file_url)) ||
+                  u.image ||
+                  u.url ||
+                  u.src ||
+                  u.file ||
+                  u.file_url
+              ) || mainImage,
           }))
       : [];
 
@@ -825,13 +929,11 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: imgs,               // ✅ only from API (no stock fallback)
-    mainImage: p.main_image ?? undefined,
+    images: imageUrls, // ✅ absolute URLs from many shapes (photos/assets)
+    mainImage, // ✅ robust hero fallback
     features: p.features ?? [],
     coordinates:
-      p.latitude && p.longitude
-        ? { lat: p.latitude, lng: p.longitude }
-        : undefined,
+      p.latitude && p.longitude ? { lat: p.latitude, lng: p.longitude } : undefined,
     floorPlans,
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
