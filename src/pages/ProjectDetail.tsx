@@ -203,8 +203,6 @@ const ProjectDetail = () => {
         )
       : 0;
 
-  const soldPct = Math.round(soldShare * 100);
-  // ▲▲ Derived availability
 
   const nextImage = () => {
     if (project?.images?.length) {
