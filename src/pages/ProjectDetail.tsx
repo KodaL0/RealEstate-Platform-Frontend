@@ -21,6 +21,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Project, Developer } from "../types";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
 import api from "../config/api";
+import { useMemo } from "react";
 
 type UnitRow = {
   id: string;
@@ -273,6 +274,45 @@ const ProjectDetail = () => {
     ? project.images?.[currentImageIndex] || project.mainImage!
     : "";
 
+
+
+// ▼ add these helpers somewhere above your return()
+function normalizeUnitStatus(s: any): "available" | "reserved" | "sold" | undefined {
+  const v = (s ?? "").toString().toLowerCase().trim();
+  if (["available", "avail", "active", "vacant"].includes(v)) return "available";
+  if (["reserved", "hold", "on hold", "pending", "in-progress"].includes(v)) return "reserved";
+  if (["sold", "closed", "unavailable"].includes(v)) return "sold";
+  return undefined;
+}
+
+function formatPrice(n?: number, currency: string = "EUR") {
+  if (n == null) return "—";
+  // no decimals (no .00)
+  const symbol = currency === "EUR" ? "€" : "";
+  return `${symbol}${Math.round(n).toLocaleString()}`;
+}
+
+// ▼ derive counts from units; fall back to project fields
+const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMemo(() => {
+  if (units && units.length) {
+    const norm = units.map(u => normalizeUnitStatus(u.status));
+    const avail = norm.filter(s => s === "available").length;
+    const res = norm.filter(s => s === "reserved").length;
+    const sold = norm.filter(s => s === "sold").length;
+    const total = units.length; // show what's actually configured
+    const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
+    return { totalUnits: total, availableCount: avail, reservedCount: res, soldCount: sold, soldPct: pct };
+  }
+  // fallback when units not loaded
+  const total = project.totalUnits ?? 0;
+  const avail = project.availableUnits ?? 0;
+  const sold = Math.max(0, total - avail);
+  const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
+  return { totalUnits: total, availableCount: avail, reservedCount: 0, soldCount: sold, soldPct: pct };
+}, [units, project.totalUnits, project.availableUnits]);
+
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero */}
@@ -500,9 +540,8 @@ const ProjectDetail = () => {
                 <div className="space-y-6">
                   {/* Price & Availability */}
                   <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">
-                      Price & Availability
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 mb-4">Price & Availability</h3>
+
                     <div className="space-y-4">
                       {project.priceRange && (
                         <div>
@@ -515,23 +554,33 @@ const ProjectDetail = () => {
                           </p>
                         </div>
                       )}
+
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Available Units</span>
                         <span className="font-semibold text-gray-900">
-                          {availableUnitsDerived} of {totalUnitsDerived}
+                          {availableCount} of {totalUnits}
                         </span>
                       </div>
+
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${soldShare * 100}%` }}
+                          style={{ width: `${soldPct}%` }}
                         />
                       </div>
-                      {totalUnitsDerived > 0 && (
-                        <p className="text-sm text-gray-500">{soldPct}% sold</p>
-                      )}
+                      <p className="text-sm text-gray-500">{soldPct}% sold</p>
+
+                      {/* optional: show a small breakdown like your management view */}
+                      <p className="text-sm text-gray-500">
+                        <span className="text-emerald-600 font-medium">{availableCount} available</span>
+                        {" · "}
+                        <span className="text-amber-600 font-medium">{reservedCount} reserved</span>
+                        {" · "}
+                        <span className="text-blue-600 font-medium">{soldCount} sold</span>
+                      </p>
                     </div>
                   </div>
+
 
                   {/* Developer Info */}
                   {developer && (
