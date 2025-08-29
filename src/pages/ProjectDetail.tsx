@@ -21,7 +21,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Project, Developer } from "../types";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
 import api from "../config/api";
-import { useMemo } from "react";
 
 type UnitRow = {
   id: string;
@@ -111,11 +110,36 @@ function formatPrice(value?: number, currency: string = "EUR") {
 function normalizeStatus(raw: any): UnitRow["status"] {
   if (!raw) return undefined;
   const s = String(raw).toLowerCase().trim();
-  if (["available", "active", "for sale", "for-sale", "open"].includes(s)) return "available";
-  if (["reserved", "hold", "on hold", "on-hold", "booked"].includes(s)) return "reserved";
+  if (["available", "active", "for sale", "for-sale", "open", "vacant", "avail"].includes(s))
+    return "available";
+  if (["reserved", "hold", "on hold", "on-hold", "booked", "pending", "in-progress"].includes(s))
+    return "reserved";
   if (["sold", "unavailable", "closed", "completed", "sold_out", "sold-out"].includes(s))
     return "sold";
   return undefined;
+}
+
+/** Derive availability counts (prefer units, fall back to project aggregates) */
+function computeAvailability(project: Project | null, units: UnitRow[]) {
+  if (units?.length) {
+    const total = units.length;
+    let available = 0;
+    let reserved = 0;
+    let sold = 0;
+    for (const u of units) {
+      const s = normalizeStatus(u.status);
+      if (s === "available") available++;
+      else if (s === "reserved") reserved++;
+      else if (s === "sold") sold++;
+    }
+    const soldPct = total ? Math.round((sold / total) * 100) : 0;
+    return { total, available, reserved, sold, soldPct };
+  }
+  const total = project?.totalUnits ?? 0;
+  const available = project?.availableUnits ?? 0;
+  const sold = Math.max(0, total - available);
+  const soldPct = total ? Math.round((sold / total) * 100) : 0;
+  return { total, available, reserved: 0, sold, soldPct };
 }
 
 /* ===========================
@@ -179,30 +203,18 @@ const ProjectDetail = () => {
     run();
   }, [id]);
 
-  // ▼▼ Derived availability so UI stays correct even if project.availableUnits is missing/stale
-  const totalUnitsDerived = (project?.totalUnits ?? 0) || units.length || 0;
+  // Derived availability (no hooks)
+  const { total, available, reserved, sold, soldPct } = computeAvailability(
+    project,
+    units
+  );
 
-  const availableFromUnits =
-    units.length > 0
-      ? units.filter((u) => u.status === "available").length
-      : undefined;
-
-  const availableUnitsDerived =
-    typeof project?.availableUnits === "number" && project!.availableUnits >= 0
-      ? project!.availableUnits
-      : (availableFromUnits ?? 0);
-
-  const reservedUnitsDerived = units.filter((u) => u.status === "reserved").length;
-  const soldUnitsDerived = units.filter((u) => u.status === "sold").length;
-
-  const soldShare =
-    totalUnitsDerived > 0
-      ? Math.min(
-          1,
-          (totalUnitsDerived - availableUnitsDerived) / totalUnitsDerived
-        )
-      : 0;
-
+  // Images
+  const hasImages =
+    (project?.images && project.images.length > 0) || !!project?.mainImage;
+  const heroImg = hasImages
+    ? project!.images?.[currentImageIndex] || project!.mainImage!
+    : "";
 
   const nextImage = () => {
     if (project?.images?.length) {
@@ -266,50 +278,6 @@ const ProjectDetail = () => {
     { id: "floorplans", label: "Floor Plans" },
     { id: "gallery", label: "Gallery" },
   ] as const;
-
-  const hasImages = (project.images && project.images.length > 0) || !!project.mainImage;
-  const heroImg = hasImages
-    ? project.images?.[currentImageIndex] || project.mainImage!
-    : "";
-
-
-
-// ▼ add these helpers somewhere above your return()
-function normalizeUnitStatus(s: any): "available" | "reserved" | "sold" | undefined {
-  const v = (s ?? "").toString().toLowerCase().trim();
-  if (["available", "avail", "active", "vacant"].includes(v)) return "available";
-  if (["reserved", "hold", "on hold", "pending", "in-progress"].includes(v)) return "reserved";
-  if (["sold", "closed", "unavailable"].includes(v)) return "sold";
-  return undefined;
-}
-
-function formatPrice(n?: number, currency: string = "EUR") {
-  if (n == null) return "—";
-  // no decimals (no .00)
-  const symbol = currency === "EUR" ? "€" : "";
-  return `${symbol}${Math.round(n).toLocaleString()}`;
-}
-
-// ▼ derive counts from units; fall back to project fields
-const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMemo(() => {
-  if (units && units.length) {
-    const norm = units.map(u => normalizeUnitStatus(u.status));
-    const avail = norm.filter(s => s === "available").length;
-    const res = norm.filter(s => s === "reserved").length;
-    const sold = norm.filter(s => s === "sold").length;
-    const total = units.length; // show what's actually configured
-    const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
-    return { totalUnits: total, availableCount: avail, reservedCount: res, soldCount: sold, soldPct: pct };
-  }
-  // fallback when units not loaded
-  const total = project.totalUnits ?? 0;
-  const avail = project.availableUnits ?? 0;
-  const sold = Math.max(0, total - avail);
-  const pct = total > 0 ? Math.round((sold / total) * 100) : 0;
-  return { totalUnits: total, availableCount: avail, reservedCount: 0, soldCount: sold, soldPct: pct };
-}, [units, project.totalUnits, project.availableUnits]);
-
-
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -402,7 +370,7 @@ const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMem
               <div className="flex items-center">
                 <Building2 className="h-4 w-4 mr-2" />
                 <span>
-                  {availableUnitsDerived} of {totalUnitsDerived} available
+                  {available} of {total} available
                 </span>
               </div>
               {project.priceRange?.min != null && (
@@ -556,7 +524,7 @@ const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMem
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Available Units</span>
                         <span className="font-semibold text-gray-900">
-                          {availableCount} of {totalUnits}
+                          {available} of {total}
                         </span>
                       </div>
 
@@ -568,17 +536,15 @@ const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMem
                       </div>
                       <p className="text-sm text-gray-500">{soldPct}% sold</p>
 
-                      {/* optional: show a small breakdown like your management view */}
                       <p className="text-sm text-gray-500">
-                        <span className="text-emerald-600 font-medium">{availableCount} available</span>
+                        <span className="text-emerald-600 font-medium">{available} available</span>
                         {" · "}
-                        <span className="text-amber-600 font-medium">{reservedCount} reserved</span>
+                        <span className="text-amber-600 font-medium">{reserved} reserved</span>
                         {" · "}
-                        <span className="text-blue-600 font-medium">{soldCount} sold</span>
+                        <span className="text-blue-600 font-medium">{sold} sold</span>
                       </p>
                     </div>
                   </div>
-
 
                   {/* Developer Info */}
                   {developer && (
@@ -653,21 +619,15 @@ const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMem
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Units</h2>
                 <p className="text-gray-600">
-                  {availableUnitsDerived} of {totalUnitsDerived} units available
+                  {available} of {total} units available
                   {units.length > 0 && (
                     <>
                       {" · "}
-                      <span className="text-emerald-600 font-medium">
-                        {availableUnitsDerived} available
-                      </span>
+                      <span className="text-emerald-600 font-medium">{available} available</span>
                       {" · "}
-                      <span className="text-amber-600 font-medium">
-                        {reservedUnitsDerived} reserved
-                      </span>
+                      <span className="text-amber-600 font-medium">{reserved} reserved</span>
                       {" · "}
-                      <span className="text-blue-600 font-medium">
-                        {soldUnitsDerived} sold
-                      </span>
+                      <span className="text-blue-600 font-medium">{sold} sold</span>
                     </>
                   )}
                 </p>
@@ -730,9 +690,7 @@ const { totalUnits, availableCount, reservedCount, soldCount, soldPct } = useMem
                             {u.area_total != null ? u.area_total : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
-                            {u.price != null
-                              ? formatPrice(u.price, u.currency)
-                              : "—"}
+                            {u.price != null ? formatPrice(u.price, u.currency) : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <span
