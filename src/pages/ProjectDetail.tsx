@@ -39,7 +39,6 @@ type UnitRow = {
    Image + URL Helpers
    =========================== */
 
-// Base URL for making relative paths absolute
 const API_BASE =
   (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
 
@@ -52,16 +51,11 @@ function toAbsoluteUrl(u?: string | null): string | undefined {
   }
 }
 
-// Extract string URLs from many possible shapes
 function pickImageStrings(input: any): string[] {
   if (!input) return [];
   if (typeof input === "string") return [input];
+  if (Array.isArray(input)) return input.flatMap(pickImageStrings);
 
-  if (Array.isArray(input)) {
-    return input.flatMap(pickImageStrings);
-  }
-
-  // Common object keys used by different backends
   const candidates = [
     input.image,
     input.url,
@@ -76,25 +70,11 @@ function pickImageStrings(input: any): string[] {
   return candidates as string[];
 }
 
-// Gather project image URLs from lots of likely fields + units fallback
 function extractProjectImageUrls(p: any): string[] {
   const buckets: any[] = [];
+  buckets.push(p.images, p.media, p.gallery, p.photos, p.assets, p.gallery_images);
+  buckets.push(p.main_image, p.cover_image, p.hero_image, p.thumbnail);
 
-  // Common list fields
-  buckets.push(p.images);
-  buckets.push(p.media); // e.g. [{ image: "..." }]
-  buckets.push(p.gallery);
-  buckets.push(p.photos);
-  buckets.push(p.assets);
-  buckets.push(p.gallery_images);
-
-  // Single fields
-  buckets.push(p.main_image);
-  buckets.push(p.cover_image);
-  buckets.push(p.hero_image);
-  buckets.push(p.thumbnail);
-
-  // Fallback to unit media if present
   if (Array.isArray(p.units)) {
     buckets.push(
       p.units
@@ -105,7 +85,6 @@ function extractProjectImageUrls(p: any): string[] {
     );
   }
 
-  // Flatten → to absolute → de-dupe (stable)
   const seen = new Set<string>();
   const urls: string[] = [];
   for (const raw of buckets.flatMap(pickImageStrings)) {
@@ -119,61 +98,22 @@ function extractProjectImageUrls(p: any): string[] {
 }
 
 /* ===========================
-   Price + Availability Helpers
+   Formatters / Normalizers
    =========================== */
 
-// Format money without .00
-function formatPrice(
-  value?: number | null,
-  currency: string = "EUR",
-  locale?: string
-): string {
-  if (value == null || Number.isNaN(value)) return "—";
-  return new Intl.NumberFormat(locale || undefined, {
-    style: "currency",
-    currency,
-    maximumFractionDigits: 0,
-    minimumFractionDigits: 0,
-  }).format(value);
+function formatPrice(value?: number, currency: string = "EUR") {
+  if (value == null) return "—";
+  const symbol = currency === "EUR" ? "€" : currency === "USD" ? "$" : "";
+  return `${symbol}${Math.round(value).toLocaleString()}`;
 }
 
-// Normalize any raw unit status to 'available' | 'reserved' | 'sold'
-function normalizeAvailability(u: any): "available" | "reserved" | "sold" | undefined {
-  // direct booleans first
-  if (u.is_available === true) return "available";
-  if (u.is_available === false) return u.reserved || u.on_hold ? "reserved" : "sold";
-  if (u.sold === true) return "sold";
-  if (u.reserved === true || u.on_hold === true) return "reserved";
-
-  // common string fields
-  const raw =
-    u.status ??
-    u.availability ??
-    u.state ??
-    u.sale_status ??
-    u.availability_status ??
-    u.stock_status;
-
-  if (!raw || typeof raw !== "string") return undefined;
-
-  const s = raw.toString().trim().toLowerCase();
-
-  if (
-    ["available", "active", "in stock", "on market", "vacant", "open"].includes(s) ||
-    /^available/.test(s)
-  ) return "available";
-
-  if (
-    ["reserved", "on hold", "pending", "hold", "deposit"].includes(s) ||
-    /^reser/.test(s) ||
-    /^pend/.test(s)
-  ) return "reserved";
-
-  if (
-    ["sold", "unavailable", "closed", "completed", "off market"].includes(s) ||
-    /^sold/.test(s)
-  ) return "sold";
-
+function normalizeStatus(raw: any): UnitRow["status"] {
+  if (!raw) return undefined;
+  const s = String(raw).toLowerCase().trim();
+  if (["available", "active", "for sale", "for-sale", "open"].includes(s)) return "available";
+  if (["reserved", "hold", "on hold", "on-hold", "booked"].includes(s)) return "reserved";
+  if (["sold", "unavailable", "closed", "completed", "sold_out", "sold-out"].includes(s))
+    return "sold";
   return undefined;
 }
 
@@ -199,12 +139,12 @@ const ProjectDetail = () => {
       setIsLoading(true);
       setError(null);
       try {
-        // 1) Fetch project
+        // 1) Project
         const { data: projectRaw } = await api.get(`dev/v1/projects/${id}`);
         const proj = normalizeProject(projectRaw);
         setProject(proj);
 
-        // 2) Grab developer/org
+        // 2) Developer/org
         const orgId =
           projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
         if (orgId) {
@@ -214,7 +154,7 @@ const ProjectDetail = () => {
           setDeveloper(null);
         }
 
-        // 3) Units: use embedded if present, else fetch by project
+        // 3) Units: embedded or fetch
         const embeddedUnits = Array.isArray(projectRaw.units) ? projectRaw.units : null;
         if (embeddedUnits && embeddedUnits.length) {
           setUnits(embeddedUnits.map(normalizeUnit));
@@ -223,14 +163,7 @@ const ProjectDetail = () => {
             params: { project: id },
           });
           const list = Array.isArray(unitsRaw) ? unitsRaw : unitsRaw?.results ?? [];
-          const normalized = list.map(normalizeUnit);
-          setUnits(normalized);
-
-          // (Optional) If project-level counts are missing, derive them
-          // if (proj && (proj.totalUnits === 0 || proj.availableUnits === 0)) {
-          //   const availableCount = normalized.filter(u => u.status === "available").length;
-          //   setProject(prev => prev ? { ...prev, totalUnits: normalized.length, availableUnits: availableCount } : prev);
-          // }
+          setUnits(list.map(normalizeUnit));
         }
       } catch (e) {
         console.error("Error fetching project/developer/units:", e);
@@ -244,6 +177,33 @@ const ProjectDetail = () => {
     };
     run();
   }, [id]);
+
+  // ▼▼ Derived availability so UI stays correct even if project.availableUnits is missing/stale
+  const totalUnitsDerived = (project?.totalUnits ?? 0) || units.length || 0;
+
+  const availableFromUnits =
+    units.length > 0
+      ? units.filter((u) => u.status === "available").length
+      : undefined;
+
+  const availableUnitsDerived =
+    typeof project?.availableUnits === "number" && project!.availableUnits >= 0
+      ? project!.availableUnits
+      : (availableFromUnits ?? 0);
+
+  const reservedUnitsDerived = units.filter((u) => u.status === "reserved").length;
+  const soldUnitsDerived = units.filter((u) => u.status === "sold").length;
+
+  const soldShare =
+    totalUnitsDerived > 0
+      ? Math.min(
+          1,
+          (totalUnitsDerived - availableUnitsDerived) / totalUnitsDerived
+        )
+      : 0;
+
+  const soldPct = Math.round(soldShare * 100);
+  // ▲▲ Derived availability
 
   const nextImage = () => {
     if (project?.images?.length) {
@@ -300,7 +260,6 @@ const ProjectDetail = () => {
     );
   }
 
-  // Tabs (added "Units")
   const tabs = [
     { id: "overview", label: "Overview" },
     { id: "units", label: `Units (${units.length})` },
@@ -314,28 +273,9 @@ const ProjectDetail = () => {
     ? project.images?.[currentImageIndex] || project.mainImage!
     : "";
 
-      // Derive availability when project counts are missing/stale
-  const totalUnitsDerived = project.totalUnits || units.length || 0;
-  const availableFromUnits =
-    units.length ? units.filter((u) => u.status === "available").length : undefined;
-
-  // prefer project.availableUnits if it’s a positive number; otherwise use derived value
-  const availableUnitsDerived =
-    typeof project.availableUnits === "number" && project.availableUnits >= 0
-      ? project.availableUnits
-      : (availableFromUnits ?? 0);
-
-  const soldShare =
-    totalUnitsDerived > 0
-      ? (totalUnitsDerived - availableUnitsDerived) / totalUnitsDerived
-      : 0;
-
-  const soldPct = Math.round(soldShare * 100);
-
-
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
+      {/* Hero */}
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
           {hasImages ? (
@@ -361,7 +301,6 @@ const ProjectDetail = () => {
           <div className="absolute inset-0 bg-black/40"></div>
         </div>
 
-        {/* Image Navigation */}
         {hasImages && project.images && project.images.length > 1 && (
           <>
             <button
@@ -425,7 +364,7 @@ const ProjectDetail = () => {
               <div className="flex items-center">
                 <Building2 className="h-4 w-4 mr-2" />
                 <span>
-                  {project.availableUnits} of {project.totalUnits} available
+                  {availableUnitsDerived} of {totalUnitsDerived} available
                 </span>
               </div>
               {project.priceRange?.min != null && (
@@ -561,7 +500,9 @@ const ProjectDetail = () => {
                 <div className="space-y-6">
                   {/* Price & Availability */}
                   <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">Price & Availability</h3>
+                    <h3 className="font-semibold text-gray-900 mb-4">
+                      Price & Availability
+                    </h3>
                     <div className="space-y-4">
                       {project.priceRange && (
                         <div>
@@ -574,27 +515,23 @@ const ProjectDetail = () => {
                           </p>
                         </div>
                       )}
-
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Available Units</span>
                         <span className="font-semibold text-gray-900">
                           {availableUnitsDerived} of {totalUnitsDerived}
                         </span>
                       </div>
-
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
                           style={{ width: `${soldShare * 100}%` }}
                         />
                       </div>
-
                       {totalUnitsDerived > 0 && (
                         <p className="text-sm text-gray-500">{soldPct}% sold</p>
                       )}
                     </div>
                   </div>
-
 
                   {/* Developer Info */}
                   {developer && (
@@ -669,7 +606,23 @@ const ProjectDetail = () => {
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Units</h2>
                 <p className="text-gray-600">
-                  {project.availableUnits} of {project.totalUnits} units available
+                  {availableUnitsDerived} of {totalUnitsDerived} units available
+                  {units.length > 0 && (
+                    <>
+                      {" · "}
+                      <span className="text-emerald-600 font-medium">
+                        {availableUnitsDerived} available
+                      </span>
+                      {" · "}
+                      <span className="text-amber-600 font-medium">
+                        {reservedUnitsDerived} reserved
+                      </span>
+                      {" · "}
+                      <span className="text-blue-600 font-medium">
+                        {soldUnitsDerived} sold
+                      </span>
+                    </>
+                  )}
                 </p>
               </div>
 
@@ -730,7 +683,9 @@ const ProjectDetail = () => {
                             {u.area_total != null ? u.area_total : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
-                            {u.price != null ? formatPrice(u.price, u.currency || "EUR") : "—"}
+                            {u.price != null
+                              ? formatPrice(u.price, u.currency)
+                              : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <span
@@ -740,8 +695,8 @@ const ProjectDetail = () => {
                                   : u.status === "reserved"
                                   ? "bg-yellow-100 text-yellow-800"
                                   : u.status === "sold"
-                                  ? "bg-gray-200 text-gray-700"
-                                  : "bg-slate-100 text-slate-700"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-200 text-gray-700"
                               }`}
                             >
                               {u.status ?? "—"}
@@ -792,7 +747,7 @@ const ProjectDetail = () => {
             </motion.div>
           )}
 
-          {/* Floorplans (derived from units when available) */}
+          {/* Floorplans */}
           {activeTab === "floorplans" && (
             <motion.div
               key="floorplans"
@@ -866,7 +821,7 @@ const ProjectDetail = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Starting from</span>
                             <span className="text-2xl font-bold text-gray-900">
-                              {formatPrice(plan.price ?? 0, project.priceRange?.currency || "EUR")}
+                              {formatPrice(plan.price, "EUR")}
                             </span>
                           </div>
                         </div>
@@ -1006,15 +961,15 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: imageUrls, // absolute URLs
-    mainImage, // robust hero fallback
+    images: imageUrls,
+    mainImage,
     features: p.features ?? [],
     coordinates:
       p.latitude && p.longitude ? { lat: p.latitude, lng: p.longitude } : undefined,
     floorPlans,
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
-  };
+  } as Project;
 }
 
 function normalizeDeveloper(d: any): Developer {
@@ -1045,12 +1000,12 @@ function normalizeUnit(u: any): UnitRow {
   return {
     id: String(u.id ?? u.uuid ?? ""),
     code: u.code ?? u.name ?? undefined,
-    unit_type: u.unit_type ?? u.type ?? undefined,
-    bedrooms: u.bedrooms ?? u.beds ?? undefined,
-    bathrooms: u.bathrooms ?? u.baths ?? undefined,
-    area_total: u.area_total ?? u.area_internal ?? u.size ?? undefined,
-    price: u.price ?? u.asking_price ?? u.list_price ?? undefined,
-    currency: (u.currency ?? u.price_currency ?? "EUR") as string,
-    status: normalizeAvailability(u),
+    unit_type: u.unit_type ?? undefined,
+    bedrooms: u.bedrooms ?? undefined,
+    bathrooms: u.bathrooms ?? undefined,
+    area_total: u.area_total ?? u.area_internal ?? undefined,
+    price: u.price ?? undefined,
+    currency: u.currency ?? "EUR",
+    status: normalizeStatus(u.status),
   };
 }
