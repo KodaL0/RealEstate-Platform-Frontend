@@ -1,12 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import {
-  Building2,
-  MapPin,
-  Search,
-  Filter,
-  ChevronRight,
-} from "lucide-react";
+import { Building2, MapPin, Search, Filter, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
 import { Project } from "../types";
 import api from "../config/api";
@@ -24,19 +18,10 @@ const DeveloperProjects = () => {
       setIsLoading(true);
       try {
         // Real API call (your api wrapper prefixes /api)
-        const { data } = await api.get("dev/v1/projects", {
-          // If your backend supports filters, you can pass them here:
-          // params: {
-          //   status: selectedStatus !== "all" ? selectedStatus : undefined,
-          //   search: searchTerm || undefined,
-          //   location: selectedLocation !== "all" ? selectedLocation : undefined,
-          // },
-        });
-
+        const { data } = await api.get("dev/v1/projects");
         // DRF-style {results, count} OR plain array
         const raw: any[] = Array.isArray(data) ? data : (data?.results ?? []);
         const normalized = raw.map(normalizeProject);
-
         setProjects(normalized);
         setFilteredProjects(normalized);
       } catch (error) {
@@ -49,7 +34,6 @@ const DeveloperProjects = () => {
     };
 
     fetchProjects();
-    // If you want server-side filtering, add [searchTerm, selectedStatus, selectedLocation] here
   }, []);
 
   // Client-side filtering
@@ -59,9 +43,7 @@ const DeveloperProjects = () => {
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter((p) =>
-        [p.name, p.location, p.description].some((t) =>
-          (t || "").toLowerCase().includes(q)
-        )
+        [p.name, p.location, p.description].some((t) => (t || "").toLowerCase().includes(q))
       );
     }
 
@@ -71,9 +53,7 @@ const DeveloperProjects = () => {
 
     if (selectedLocation !== "all") {
       const loc = selectedLocation.toLowerCase();
-      filtered = filtered.filter((p) =>
-        (p.location || "").toLowerCase().includes(loc)
-      );
+      filtered = filtered.filter((p) => (p.location || "").toLowerCase().includes(loc));
     }
 
     setFilteredProjects(filtered);
@@ -116,9 +96,7 @@ const DeveloperProjects = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Developer Projects</h1>
-          <p className="text-gray-600">
-            Discover exceptional developments from Cyprus's leading property developers
-          </p>
+          <p className="text-gray-600">Discover exceptional developments from Cyprus's leading property developers</p>
         </div>
 
         {/* Filters */}
@@ -177,7 +155,7 @@ const DeveloperProjects = () => {
           </p>
         </div>
 
-        {/* Projects Grid */}
+        {/* Projects List */}
         {filteredProjects.length === 0 ? (
           <div className="text-center py-16">
             <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
@@ -187,12 +165,7 @@ const DeveloperProjects = () => {
         ) : (
           <div className="space-y-8">
             {filteredProjects.map((project, index) => (
-              <motion.div
-                key={project.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
+              <motion.div key={project.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
                 <ProjectCard project={project} />
               </motion.div>
             ))}
@@ -202,6 +175,66 @@ const DeveloperProjects = () => {
     </div>
   );
 };
+
+/* -------------------------------------------
+   Image + URL Helpers (shared by normalizer)
+-------------------------------------------- */
+const API_BASE = (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
+
+function toAbsoluteUrl(u?: string | null): string | undefined {
+  if (!u) return undefined;
+  try {
+    return new URL(u, API_BASE).href;
+  } catch {
+    return u || undefined;
+  }
+}
+
+// Extract string URLs from many possible shapes
+function pickImageStrings(input: any): string[] {
+  if (!input) return [];
+  if (typeof input === "string") return [input];
+  if (Array.isArray(input)) return input.flatMap(pickImageStrings);
+  const candidates = [
+    input.image,
+    input.url,
+    input.src,
+    input.file,
+    input.file_url,
+    input.path,
+    input.thumbnail,
+    input.preview,
+  ].filter(Boolean);
+  return candidates as string[];
+}
+
+// Gather project image URLs from lots of likely fields + units fallback
+function extractProjectImageUrls(p: any): string[] {
+  const buckets: any[] = [];
+  // Common list-like fields
+  buckets.push(p.images, p.media, p.gallery, p.photos, p.assets, p.gallery_images);
+  // Single fields
+  buckets.push(p.main_image, p.cover_image, p.hero_image, p.thumbnail);
+  // Fallback: unit media
+  if (Array.isArray(p.units)) {
+    buckets.push(
+      p.units
+        .filter(Boolean)
+        .map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets)
+    );
+  }
+  // Flatten → absolute → dedupe
+  const seen = new Set<string>();
+  const urls: string[] = [];
+  for (const raw of buckets.flatMap(pickImageStrings)) {
+    const abs = toAbsoluteUrl(String(raw));
+    if (abs && !seen.has(abs)) {
+      seen.add(abs);
+      urls.push(abs);
+    }
+  }
+  return urls;
+}
 
 // Project Card Component
 const ProjectCard = ({ project }: { project: Project }) => {
@@ -219,10 +252,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
     available: "Available",
   } as const;
 
-  const mainImg =
-    project.mainImage ||
-    (project.images && project.images[0]) ||
-    "https://images.pexels.com/photos/1396122/pexels-photo-1396122.jpeg?auto=compress&cs=tinysrgb&w=800";
+  const mainImg = project.mainImage || (project.images && project.images[0]) || "";
 
   const countryChip = project.country
     ? project.country === "Cyprus"
@@ -234,15 +264,35 @@ const ProjectCard = ({ project }: { project: Project }) => {
 
   return (
     <Link
-      to={`/projects/${project.id}`} // ✅ fixed route (was /projects/:id)
+      to={`/projects/${project.id}`}
       className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-500 overflow-hidden group transform hover:-translate-y-2 block"
     >
       <div className="relative h-96 md:h-[500px] overflow-hidden">
-        <img
-          src={mainImg}
-          alt={project.name}
-          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
-        />
+        {mainImg ? (
+          <img
+            src={mainImg}
+            alt={project.name}
+            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700"
+            loading="lazy"
+            onError={(e) => {
+              // If the URL is broken, show the no-image panel instead of a mock stock photo
+              (e.currentTarget as HTMLImageElement).style.display = "none";
+              const fallback = (e.currentTarget.nextSibling as HTMLElement);
+              if (fallback) fallback.classList.remove("hidden");
+            }}
+          />
+        ) : null}
+
+        {/* No Image Panel (hidden if image exists and loads) */}
+        <div className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}>
+          <div className="text-center text-white/90">
+            <div className="mx-auto mb-3 w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
+              <ImageIcon className="w-7 h-7" />
+            </div>
+            <div className="text-lg font-medium">No image available</div>
+          </div>
+        </div>
+
         <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
 
         <div className="absolute top-6 left-6">
@@ -320,24 +370,18 @@ const ProjectCard = ({ project }: { project: Project }) => {
             <div>
               <span className="text-gray-500 text-sm block">Starting from</span>
               <span className="font-bold text-2xl text-gray-900">
-                {project.priceRange?.min
-                  ? `€${project.priceRange.min.toLocaleString()}`
-                  : "—"}
+                {project.priceRange?.min ? `€${project.priceRange.min.toLocaleString()}` : "—"}
               </span>
             </div>
             <div>
               <span className="text-gray-500 text-sm block">Total Units</span>
-              <span className="font-semibold text-lg text-gray-900">
-                {project.totalUnits ?? "—"}
-              </span>
+              <span className="font-semibold text-lg text-gray-900">{project.totalUnits ?? "—"}</span>
             </div>
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-500 mb-1">Available Units</div>
             <div className="flex items-center">
-              <span className="font-bold text-xl text-green-600 mr-2">
-                {project.availableUnits ?? 0}
-              </span>
+              <span className="font-bold text-xl text-green-600 mr-2">{project.availableUnits ?? 0}</span>
               <span className="text-gray-400">/ {project.totalUnits ?? 0}</span>
             </div>
             <div className="w-24 bg-gray-200 rounded-full h-2 mt-2">
@@ -360,8 +404,15 @@ const ProjectCard = ({ project }: { project: Project }) => {
 
 export default DeveloperProjects;
 
-/** Normalize backend Project -> UI Project type */
+/** Normalize backend Project -> UI Project type, with robust image extraction */
 function normalizeProject(p: any): Project {
+  const images = extractProjectImageUrls(p);
+  const mainImage =
+    toAbsoluteUrl(p.main_image) ||
+    toAbsoluteUrl(p.cover_image) ||
+    toAbsoluteUrl(p.hero_image) ||
+    images[0];
+
   return {
     id: String(p.id ?? p.uuid ?? ""),
     developerId: String(p.organization ?? p.developerId ?? ""),
@@ -379,8 +430,8 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: Array.isArray(p.images) ? p.images : p.main_image ? [p.main_image] : [],
-    mainImage: p.main_image ?? undefined,
+    images,        // ✅ absolute URLs collected from many shapes
+    mainImage,     // ✅ robust hero fallback
     features: p.features ?? [],
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
