@@ -119,6 +119,65 @@ function extractProjectImageUrls(p: any): string[] {
 }
 
 /* ===========================
+   Price + Availability Helpers
+   =========================== */
+
+// Format money without .00
+function formatPrice(
+  value?: number | null,
+  currency: string = "EUR",
+  locale?: string
+): string {
+  if (value == null || Number.isNaN(value)) return "—";
+  return new Intl.NumberFormat(locale || undefined, {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+    minimumFractionDigits: 0,
+  }).format(value);
+}
+
+// Normalize any raw unit status to 'available' | 'reserved' | 'sold'
+function normalizeAvailability(u: any): "available" | "reserved" | "sold" | undefined {
+  // direct booleans first
+  if (u.is_available === true) return "available";
+  if (u.is_available === false) return u.reserved || u.on_hold ? "reserved" : "sold";
+  if (u.sold === true) return "sold";
+  if (u.reserved === true || u.on_hold === true) return "reserved";
+
+  // common string fields
+  const raw =
+    u.status ??
+    u.availability ??
+    u.state ??
+    u.sale_status ??
+    u.availability_status ??
+    u.stock_status;
+
+  if (!raw || typeof raw !== "string") return undefined;
+
+  const s = raw.toString().trim().toLowerCase();
+
+  if (
+    ["available", "active", "in stock", "on market", "vacant", "open"].includes(s) ||
+    /^available/.test(s)
+  ) return "available";
+
+  if (
+    ["reserved", "on hold", "pending", "hold", "deposit"].includes(s) ||
+    /^reser/.test(s) ||
+    /^pend/.test(s)
+  ) return "reserved";
+
+  if (
+    ["sold", "unavailable", "closed", "completed", "off market"].includes(s) ||
+    /^sold/.test(s)
+  ) return "sold";
+
+  return undefined;
+}
+
+/* ===========================
    Component
    =========================== */
 
@@ -164,7 +223,14 @@ const ProjectDetail = () => {
             params: { project: id },
           });
           const list = Array.isArray(unitsRaw) ? unitsRaw : unitsRaw?.results ?? [];
-          setUnits(list.map(normalizeUnit));
+          const normalized = list.map(normalizeUnit);
+          setUnits(normalized);
+
+          // (Optional) If project-level counts are missing, derive them
+          // if (proj && (proj.totalUnits === 0 || proj.availableUnits === 0)) {
+          //   const availableCount = normalized.filter(u => u.status === "available").length;
+          //   setProject(prev => prev ? { ...prev, totalUnits: normalized.length, availableUnits: availableCount } : prev);
+          // }
         }
       } catch (e) {
         console.error("Error fetching project/developer/units:", e);
@@ -346,7 +412,7 @@ const ProjectDetail = () => {
               {project.priceRange?.min != null && (
                 <div className="flex items-center">
                   <Euro className="h-4 w-4 mr-2" />
-                  <span>From €{project.priceRange.min.toLocaleString()}</span>
+                  <span>From {formatPrice(project.priceRange.min, project.priceRange.currency)}</span>
                 </div>
               )}
             </div>
@@ -484,9 +550,9 @@ const ProjectDetail = () => {
                         <div>
                           <p className="text-sm text-gray-500">Price Range</p>
                           <p className="text-2xl font-bold text-gray-900">
-                            €{(project.priceRange.min ?? 0).toLocaleString()}{" "}
+                            {formatPrice(project.priceRange.min, project.priceRange.currency)}{" "}
                             {project.priceRange.max
-                              ? `- €${project.priceRange.max.toLocaleString()}`
+                              ? `- ${formatPrice(project.priceRange.max, project.priceRange.currency)}`
                               : ""}
                           </p>
                         </div>
@@ -655,7 +721,7 @@ const ProjectDetail = () => {
                             {u.area_total != null ? u.area_total : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-gray-900 font-medium">
-                            {u.price != null ? `€${u.price.toLocaleString()}` : "—"}
+                            {u.price != null ? formatPrice(u.price, u.currency || "EUR") : "—"}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-right">
                             <span
@@ -664,7 +730,9 @@ const ProjectDetail = () => {
                                   ? "bg-green-100 text-green-800"
                                   : u.status === "reserved"
                                   ? "bg-yellow-100 text-yellow-800"
-                                  : "bg-gray-200 text-gray-700"
+                                  : u.status === "sold"
+                                  ? "bg-gray-200 text-gray-700"
+                                  : "bg-slate-100 text-slate-700"
                               }`}
                             >
                               {u.status ?? "—"}
@@ -789,7 +857,7 @@ const ProjectDetail = () => {
                           <div className="flex items-center justify-between">
                             <span className="text-gray-600">Starting from</span>
                             <span className="text-2xl font-bold text-gray-900">
-                              €{(plan.price ?? 0).toLocaleString()}
+                              {formatPrice(plan.price ?? 0, project.priceRange?.currency || "EUR")}
                             </span>
                           </div>
                         </div>
@@ -822,7 +890,7 @@ const ProjectDetail = () => {
             >
               <div className="mb-6">
                 <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Gallery</h2>
-              <p className="text-gray-600">Explore high-quality images of {project.name}</p>
+                <p className="text-gray-600">Explore high-quality images of {project.name}</p>
               </div>
 
               {hasImages ? (
@@ -929,8 +997,8 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images: imageUrls, // ✅ absolute URLs from many shapes (photos/assets)
-    mainImage, // ✅ robust hero fallback
+    images: imageUrls, // absolute URLs
+    mainImage, // robust hero fallback
     features: p.features ?? [],
     coordinates:
       p.latitude && p.longitude ? { lat: p.latitude, lng: p.longitude } : undefined,
@@ -968,12 +1036,12 @@ function normalizeUnit(u: any): UnitRow {
   return {
     id: String(u.id ?? u.uuid ?? ""),
     code: u.code ?? u.name ?? undefined,
-    unit_type: u.unit_type ?? undefined,
-    bedrooms: u.bedrooms ?? undefined,
-    bathrooms: u.bathrooms ?? undefined,
-    area_total: u.area_total ?? u.area_internal ?? undefined,
-    price: u.price ?? undefined,
-    currency: u.currency ?? "EUR",
-    status: u.status ?? undefined,
+    unit_type: u.unit_type ?? u.type ?? undefined,
+    bedrooms: u.bedrooms ?? u.beds ?? undefined,
+    bathrooms: u.bathrooms ?? u.baths ?? undefined,
+    area_total: u.area_total ?? u.area_internal ?? u.size ?? undefined,
+    price: u.price ?? u.asking_price ?? u.list_price ?? undefined,
+    currency: (u.currency ?? u.price_currency ?? "EUR") as string,
+    status: normalizeAvailability(u),
   };
 }
