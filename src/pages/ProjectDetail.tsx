@@ -314,6 +314,25 @@ const ProjectDetail = () => {
     ? project.images?.[currentImageIndex] || project.mainImage!
     : "";
 
+      // Derive availability when project counts are missing/stale
+  const totalUnitsDerived = project.totalUnits || units.length || 0;
+  const availableFromUnits =
+    units.length ? units.filter((u) => u.status === "available").length : undefined;
+
+  // prefer project.availableUnits if it’s a positive number; otherwise use derived value
+  const availableUnitsDerived =
+    typeof project.availableUnits === "number" && project.availableUnits >= 0
+      ? project.availableUnits
+      : (availableFromUnits ?? 0);
+
+  const soldShare =
+    totalUnitsDerived > 0
+      ? (totalUnitsDerived - availableUnitsDerived) / totalUnitsDerived
+      : 0;
+
+  const soldPct = Math.round(soldShare * 100);
+
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section */}
@@ -542,9 +561,7 @@ const ProjectDetail = () => {
                 <div className="space-y-6">
                   {/* Price & Availability */}
                   <div className="bg-white rounded-xl shadow-sm p-6">
-                    <h3 className="font-semibold text-gray-900 mb-4">
-                      Price & Availability
-                    </h3>
+                    <h3 className="font-semibold text-gray-900 mb-4">Price & Availability</h3>
                     <div className="space-y-4">
                       {project.priceRange && (
                         <div>
@@ -557,35 +574,27 @@ const ProjectDetail = () => {
                           </p>
                         </div>
                       )}
+
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Available Units</span>
                         <span className="font-semibold text-gray-900">
-                          {project.availableUnits} of {project.totalUnits}
+                          {availableUnitsDerived} of {totalUnitsDerived}
                         </span>
                       </div>
+
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
                           className="bg-blue-600 h-2 rounded-full"
-                          style={{
-                            width:
-                              project.totalUnits > 0
-                                ? `${((project.totalUnits - project.availableUnits) / project.totalUnits) * 100}%`
-                                : "0%",
-                          }}
-                        ></div>
+                          style={{ width: `${soldShare * 100}%` }}
+                        />
                       </div>
-                      {project.totalUnits > 0 && (
-                        <p className="text-sm text-gray-500">
-                          {Math.round(
-                            ((project.totalUnits - project.availableUnits) /
-                              project.totalUnits) *
-                              100
-                          )}
-                          % sold
-                        </p>
+
+                      {totalUnitsDerived > 0 && (
+                        <p className="text-sm text-gray-500">{soldPct}% sold</p>
                       )}
                     </div>
                   </div>
+
 
                   {/* Developer Info */}
                   {developer && (
