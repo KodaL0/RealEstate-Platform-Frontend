@@ -525,8 +525,8 @@ export const organizationsApi = {
     devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/unpublish`), {}),
 
   // Public
-  listPublic: (): Promise<DeveloperOrganization[]> =>
-    devApiGet<DeveloperOrganization[]>(formatDevEndpoint('orgs/public')),
+  listPublic: (params?: Record<string, any>): Promise<any> =>
+    devApiGet<any>(formatDevEndpoint('orgs/public'), { params }),
 };
 
 // ────────────────────────────────────────────────────────────────────────────

@@ -9,6 +9,7 @@ import { Building2, MapPin, Filter, Grid, List, ChevronLeft, ChevronRight, Star,
 import { motion, AnimatePresence } from "framer-motion";
 import { Developer } from "../types";
 import api from "../config/api";
+import developersApi from "../config/developers-api";
 
 const PAGE_SIZE = 12;
 
@@ -79,8 +80,8 @@ const Developers = () => {
         if (searchFilters.specialty) qp.specialty = searchFilters.specialty;
         if (searchFilters.minProjects) qp.min_projects = searchFilters.minProjects;
 
-        // 🔌 Real API call — your api wrapper prefixes /api automatically
-        const { data } = await api.get("dev/v1/orgs", { params: qp });
+        // Use centralized developersApi to fetch PUBLIC organizations
+        const data = await developersApi.organizations.listPublic(qp);
 
         // Normalize response (supports DRF-style or plain array)
         const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
