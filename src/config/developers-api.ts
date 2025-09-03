@@ -527,6 +527,8 @@ export const organizationsApi = {
   // Public
   listPublic: (params?: Record<string, any>): Promise<any> =>
     devApiGet<any>(formatDevEndpoint('orgs/public'), { params }),
+  getPublic: (idOrSlug: number | string): Promise<DeveloperOrganization> =>
+    devApiGet<DeveloperOrganization>(formatDevEndpoint(`orgs/${idOrSlug}/public_detail`)),
 };
 
 // ────────────────────────────────────────────────────────────────────────────

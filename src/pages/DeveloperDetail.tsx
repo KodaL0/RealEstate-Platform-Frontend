@@ -19,9 +19,10 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { Developer, Project } from "../types";
 import api from "../config/api";
+import developersApi from "../config/developers-api";
 
 const DeveloperDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, identifier } = useParams<{ id?: string; identifier?: string }>();
   const [developer, setDeveloper] = useState<Developer | null>(null);
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,18 +31,17 @@ const DeveloperDetail = () => {
 
   useEffect(() => {
     const fetchDeveloperData = async () => {
-      if (!id) return;
+      const developerIdOrSlug = id || identifier;
+      if (!developerIdOrSlug) return;
 
       setIsLoading(true);
       setError(null);
 
       try {
-        // org detail
-        const orgReq = api.get(`dev/v1/orgs/${id}`);
-        // org projects (filter by organization)
-        const projectsReq = api.get("dev/v1/projects", { params: { organization: id } });
-
-        const [{ data: orgData }, { data: projData }] = await Promise.all([orgReq, projectsReq]);
+        // org detail - use public endpoint
+        const orgData = await developersApi.organizations.getPublic(developerIdOrSlug);
+        // org projects (filter by organization) - use public endpoint
+        const projData = await developersApi.projects.listPublic({ organization: Number(orgData.id) });
 
         const org = normalizeDeveloperOrg(orgData);
         const projResults: any[] = Array.isArray(projData) ? projData : (projData.results ?? []);
@@ -58,7 +58,7 @@ const DeveloperDetail = () => {
     };
 
     fetchDeveloperData();
-  }, [id]);
+  }, [id, identifier]);
 
   if (isLoading) {
     return (
@@ -584,6 +584,7 @@ function normalizeDeveloperOrg(d: any): Developer {
   return {
     id: String(d.id ?? d.uuid ?? d.slug ?? ""),
     name: d.name ?? d.title ?? "Unnamed Developer",
+    slug: d.slug,
     description: d.description ?? "",
     established: d.established ?? d.founded_year ?? undefined,
     location: d.location ?? d.city ?? "",

@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Developer } from "../types";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
+import { getDeveloperUrl } from "../utils/developerUtils";
 
 const PAGE_SIZE = 12;
 
@@ -447,7 +448,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
     : "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex";
 
   return (
-    <Link to={`/developer/${developer.id}`} className={cardClass}>
+    <Link to={getDeveloperUrl(developer)} className={cardClass}>
       <div className={viewMode === 'grid' ? "" : "w-1/3 flex-shrink-0"}>
         <div className="relative h-48 overflow-hidden">
           <img
@@ -528,6 +529,7 @@ function normalizeDeveloper(d: any): Developer {
   return {
     id: String(d.id ?? d.uuid ?? d.slug ?? ""),
     name: d.name ?? d.title ?? "Unnamed Developer",
+    slug: d.slug,
     description: d.description ?? "",
     established: d.established ?? d.founded_year ?? undefined,
     location: d.location ?? d.city ?? "",

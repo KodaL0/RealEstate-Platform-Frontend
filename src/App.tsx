@@ -74,6 +74,7 @@ function AppContent() {
           <Route path="/developers" element={<Developers />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
+          <Route path="/developers/:identifier" element={<DeveloperDetail />} />
           <Route path="/projects" element={<DeveloperProjects />} />
           <Route
             path="/developer-api/*"

@@ -446,6 +446,7 @@ export const AMENITIES = [
 export interface Developer {
   id: string;
   name: string;
+  slug?: string;
   logo?: string;
   description: string;
   established?: number;
