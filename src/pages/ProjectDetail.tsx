@@ -21,6 +21,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Project, Developer } from "../types";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
 import api from "../config/api";
+import developersApi from "../config/developers-api";
+import { generateProjectSlug } from "../utils/developerUtils";
 
 type UnitRow = {
   id: string;
@@ -147,7 +149,7 @@ function computeAvailability(project: Project | null, units: UnitRow[]) {
    =========================== */
 
 const ProjectDetail = () => {
-  const { id } = useParams<{ id: string }>();
+  const { id, orgSlug, projectSlug } = useParams<{ id?: string; orgSlug?: string; projectSlug?: string }>();
   const [project, setProject] = useState<Project | null>(null);
   const [developer, setDeveloper] = useState<Developer | null>(null);
   const [units, setUnits] = useState<UnitRow[]>([]);
@@ -160,34 +162,41 @@ const ProjectDetail = () => {
 
   useEffect(() => {
     const run = async () => {
-      if (!id) return;
+      const hasSlugRoute = !!(orgSlug && projectSlug);
+      if (!id && !hasSlugRoute) return;
       setIsLoading(true);
       setError(null);
       try {
-        // 1) Project
-        const { data: projectRaw } = await api.get(`dev/v1/projects/${id}`);
+        // 1) Project: prefer public by slug; fallback to id
+        let projectRaw: any;
+        if (hasSlugRoute) {
+          const org = await developersApi.organizations.getPublic(orgSlug!);
+          const projects = await developersApi.projects.listPublic({ organization: Number(org.id) });
+          const list = Array.isArray(projects) ? projects : (projects as any)?.results ?? [];
+          const match = list.find((p: any) => {
+            const slug = (p as any).slug || generateProjectSlug(p.name || p.title || "");
+            return slug === projectSlug;
+          });
+          if (!match) throw new Error("Project not found for slug");
+          projectRaw = match;
+        } else {
+          projectRaw = await developersApi.projects.getPublic(Number(id));
+        }
         const proj = normalizeProject(projectRaw);
         setProject(proj);
 
         // 2) Developer/org
-        const orgId =
-          projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
-        if (orgId) {
-          const { data: orgRaw } = await api.get(`dev/v1/orgs/${orgId}`);
-          setDeveloper(normalizeDeveloper(orgRaw));
-        } else {
-          setDeveloper(null);
-        }
+        // 2) Developer/org (public)
+        const orgId = projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
+        const orgRaw = orgId ? await developersApi.organizations.getPublic(String(orgId)) : null;
+        setDeveloper(orgRaw ? normalizeDeveloper(orgRaw) : null);
 
         // 3) Units: embedded or fetch
         const embeddedUnits = Array.isArray(projectRaw.units) ? projectRaw.units : null;
         if (embeddedUnits && embeddedUnits.length) {
           setUnits(embeddedUnits.map(normalizeUnit));
         } else {
-          const { data: unitsRaw } = await api.get(`dev/v1/units`, {
-            params: { project: id },
-          });
-          const list = Array.isArray(unitsRaw) ? unitsRaw : unitsRaw?.results ?? [];
+          const list = await developersApi.units.listPublic({ project: Number(proj.id) });
           setUnits(list.map(normalizeUnit));
         }
       } catch (e) {

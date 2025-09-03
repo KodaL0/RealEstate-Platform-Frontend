@@ -1,4 +1,5 @@
 import { Developer } from "../types";
+import type { Project } from "../types";
 
 /**
  * Generate a URL-friendly slug from a developer name
@@ -10,6 +11,10 @@ export function generateDeveloperSlug(name: string): string {
     .replace(/\s+/g, '-') // Replace spaces with hyphens
     .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
     .trim();
+}
+
+export function generateProjectSlug(name: string): string {
+  return generateDeveloperSlug(name);
 }
 
 /**
@@ -28,4 +33,13 @@ export function getDeveloperUrl(developer: Developer): string {
 export function getDeveloperUrlWithId(developer: Developer): string {
   const slug = generateDeveloperSlug(developer.name);
   return `/developers/${slug}`;
+}
+
+/**
+ * Generate project URL under developer
+ */
+export function getProjectUrl(developer: Developer, project: Project): string {
+  const orgSlug = (developer as any).slug || generateDeveloperSlug(developer.name);
+  const projectSlug = (project as any).slug || generateProjectSlug(project.name);
+  return `/developers/${orgSlug}/${projectSlug}`;
 }

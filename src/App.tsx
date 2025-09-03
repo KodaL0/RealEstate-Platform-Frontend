@@ -73,6 +73,7 @@ function AppContent() {
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/developers" element={<Developers />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
+          <Route path="/developers/:orgSlug/:projectSlug" element={<ProjectDetail />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
           <Route path="/developers/:identifier" element={<DeveloperDetail />} />
           <Route path="/projects" element={<DeveloperProjects />} />

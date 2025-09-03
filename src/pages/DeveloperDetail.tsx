@@ -20,6 +20,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Developer, Project } from "../types";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
+import { getProjectUrl } from "../utils/developerUtils";
 
 const DeveloperDetail = () => {
   const { id, identifier } = useParams<{ id?: string; identifier?: string }>();
@@ -320,7 +321,7 @@ const DeveloperDetail = () => {
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.1 }}
                     >
-                      <ProjectCard project={project} />
+                      <ProjectCard project={project} developer={developer} />
                     </motion.div>
                   ))}
                 </div>
@@ -480,7 +481,7 @@ function extractProjectImageUrls(p: any): string[] {
 }
 
 // Project Card Component (NO MOCK — uses actual API images)
-const ProjectCard = ({ project }: { project: Project }) => {
+const ProjectCard = ({ project, developer }: { project: Project; developer: Developer }) => {
   const statusColors: Record<Project["status"], string> = {
     planning: 'bg-yellow-100 text-yellow-800',
     construction: 'bg-blue-100 text-blue-800',
@@ -498,7 +499,7 @@ const ProjectCard = ({ project }: { project: Project }) => {
   const mainImg = project.mainImage || (project.images && project.images[0]) || "";
 
   return (
-    <Link to={`/projects/${project.id}`} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+    <Link to={getProjectUrl(developer, project)} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
       <div className="relative h-64 overflow-hidden">
         {mainImg ? (
           <img
