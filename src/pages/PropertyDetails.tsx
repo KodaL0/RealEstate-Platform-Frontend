@@ -19,9 +19,35 @@ import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
 import { geocodeAddress } from '../components/geocode';
 
-
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
+
+// --- responsive helpers for thumbnail row ---
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = React.useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false
+  );
+  React.useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
+    // Safari compat
+    // @ts-ignore
+    mql.addEventListener ? mql.addEventListener("change", onChange) : mql.addListener(onChange);
+    setMatches(mql.matches);
+    return () => {
+      // @ts-ignore
+      mql.removeEventListener ? mql.removeEventListener("change", onChange) : mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+};
+
+const useThumbsPerRow = () => {
+  const isLg = useMediaQuery("(min-width: 1024px)");
+  const isMd = useMediaQuery("(min-width: 768px)");
+  // Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
+  return isLg ? 10 : isMd ? 8 : 5;
+};
 
 const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
@@ -135,36 +161,7 @@ const amenityIcons: Record<string, JSX.Element> = {
   default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
-// --- responsive helpers for thumbnail row ---
-const useMediaQuery = (query: string) => {
-  const [matches, setMatches] = React.useState<boolean>(() =>
-    typeof window !== "undefined" ? window.matchMedia(query).matches : false
-  );
-  React.useEffect(() => {
-    const mql = window.matchMedia(query);
-    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
-    // Safari compat
-    // @ts-ignore
-    mql.addEventListener ? mql.addEventListener("change", onChange) : mql.addListener(onChange);
-    setMatches(mql.matches);
-    return () => {
-      // @ts-ignore
-      mql.removeEventListener ? mql.removeEventListener("change", onChange) : mql.removeListener(onChange);
-    };
-  }, [query]);
-  return matches;
-};
-
-const useThumbsPerRow = () => {
-  const isLg = useMediaQuery("(min-width: 1024px)");
-  const isMd = useMediaQuery("(min-width: 768px)");
-  // Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
-  return isLg ? 10 : isMd ? 8 : 5;
-};
-
 /* ───────────────── component ───────────────── */
-
-const THUMBS_PER_PAGE = 4;
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -177,12 +174,11 @@ const PropertyDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
-  const [thumbPage, setThumbPage] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [imageOrientation, setImageOrientation] = useState<'portrait' | 'landscape' | 'square'>('landscape');
+
+  // thumbnails collapse/expand
   const [showAllThumbs, setShowAllThumbs] = useState(false);
   const thumbsPerRow = useThumbsPerRow();
-
 
   useEffect(() => {
     if (!numericId || userLoading) return;
@@ -198,17 +194,13 @@ const PropertyDetails: React.FC = () => {
   
         // ── COORDINATE LOGIC ───────────────────────────────────────
         if (mapped.latitude != null && mapped.longitude != null) {
-          // 1) Use API‑provided coords if available
           setCoords({ lat: mapped.latitude, lng: mapped.longitude });
-  
         } else if (mapped.location) {
-          // 2) Otherwise forward‑geocode the human address
           try {
             const real = await geocodeAddress(mapped.location, user?.email);
             if (isMounted) setCoords(real);
           } catch (geoErr) {
             console.error('Geocoding failed:', geoErr);
-            // coords remains null → shows "Location coordinates unavailable"
           }
         }
         // ───────────────────────────────────────────────────────────
@@ -220,8 +212,6 @@ const PropertyDetails: React.FC = () => {
   
       } catch (err) {
         console.error('Failed to fetch property details:', err);
-        if (isMounted)
-          setError('Failed to fetch property details. Please try again later.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -234,10 +224,6 @@ const PropertyDetails: React.FC = () => {
   }, [numericId, userLoading, user?.email]);
 
   const totalImages = property?.images.length ?? 0;
-  const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
-  const startIdx = thumbPage * THUMBS_PER_PAGE;
-  const endIdx = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
-  const visibleThumbs = property?.images.slice(startIdx, endIdx) ?? [];
 
   const openLightbox = (idx: number) => {
     if (totalImages > 0) {
@@ -359,22 +345,17 @@ const PropertyDetails: React.FC = () => {
             const startX = touch.clientX;
             const startY = touch.clientY;
             
-            const handleTouchEnd = (e: TouchEvent) => {
-              const touch = e.changedTouches[0];
-              const endX = touch.clientX;
-              const endY = touch.clientY;
+            const handleTouchEnd = (ev: TouchEvent) => {
+              const t = ev.changedTouches[0];
+              const endX = t.clientX;
+              const endY = t.clientY;
               const diffX = startX - endX;
               const diffY = startY - endY;
               
               // Only handle horizontal swipes (ignore vertical swipes)
               if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                if (diffX > 0) {
-                  // Swipe left - next image
-                  nextImg();
-                } else {
-                  // Swipe right - previous image
-                  prevImg();
-                }
+                if (diffX > 0) nextImg();
+                else prevImg();
               }
               
               document.removeEventListener('touchend', handleTouchEnd);
@@ -474,19 +455,19 @@ const PropertyDetails: React.FC = () => {
                 <div className="text-center md:text-right">
                   <button
                     onClick={() => {
-                     if (property.price && property.price > 0) {
-                       navigate(`/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`);
-                     }
-                   }}
-                   disabled={!property.price || property.price <= 0}
-                   className={`inline-flex items-center px-4 py-2 ${
-                     property.price && property.price > 0
-                       ? 'bg-blue-600 hover:bg-blue-700'
-                       : 'bg-gray-300 cursor-not-allowed'
-                   } text-white text-sm font-medium rounded-lg transition-colors shadow-sm`}
-                 >
-                   <Calculator className="w-4 h-4 mr-2" />
-                   Calculate Mortgage
+                      if (property.price && property.price > 0) {
+                        navigate(`/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`);
+                      }
+                    }}
+                    disabled={!property.price || property.price <= 0}
+                    className={`inline-flex items-center px-4 py-2 ${
+                      property.price && property.price > 0
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-gray-300 cursor-not-allowed'
+                    } text-white text-sm font-medium rounded-lg transition-colors shadow-sm`}
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Calculate Mortgage
                   </button>
                 </div>
               )}
@@ -532,42 +513,64 @@ const PropertyDetails: React.FC = () => {
             {/* Additional Images at Bottom */}
             {totalImages > 0 && (
               <div className="bg-gray-50 p-6">
+                {(() => {
+                  const maxThumbs = useThumbsPerRow(); // 5 / 8 / 10 by breakpoint
 
-                
-                <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                    {property.images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className={`relative w-full pt-[100%] overflow-hidden rounded-xl border-2 transition-all duration-200 group cursor-pointer ${
-                          idx === activeImage 
-                            ? 'border-blue-500 shadow-lg scale-105' 
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
-                      >
-                        <img
-                          src={toUrl(img)}
-                          onClick={() => {
-                            setActiveImage(idx);
-                            openLightbox(idx);
-                          }}
-                          className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:scale-110"
-                          alt={`Thumbnail ${idx + 1}`}
-                        />
-                        {/* Active indicator */}
-                        {idx === activeImage && (
-                          <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />
-                        )}
-                        {/* Image number overlay */}
-                        <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {idx + 1}
-                        </div>
+                  // indices we want to show (one row when collapsed)
+                  const indices = showAllThumbs
+                    ? property.images.map((_, i) => i)
+                    : Array.from({ length: Math.min(maxThumbs, totalImages) }, (_, i) => i);
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                        {indices.map((idx) => {
+                          const img = property.images[idx];
+                          return (
+                            <div
+                              key={idx}
+                              className={`relative w-full pt-[100%] overflow-hidden rounded-xl border-2 transition-all duration-200 group cursor-pointer ${
+                                idx === activeImage
+                                  ? 'border-blue-500 shadow-lg scale-105'
+                                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                              }`}
+                            >
+                              <img
+                                src={toUrl(img)}
+                                onClick={() => {
+                                  setActiveImage(idx);
+                                  openLightbox(idx);
+                                }}
+                                className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:scale-110"
+                                alt={`Thumbnail ${idx + 1}`}
+                              />
+                              {idx === activeImage && (
+                                <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />
+                              )}
+                              <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                {idx + 1}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                </div>
-                
 
+                      {totalImages > maxThumbs && (
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            onClick={() => setShowAllThumbs((v) => !v)}
+                            className="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-colors"
+                          >
+                            {showAllThumbs ? 'Show less' : `Show more (${totalImages - maxThumbs})`}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
+
           </div>
         </section>
 
@@ -611,10 +614,7 @@ const PropertyDetails: React.FC = () => {
                   <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">LOT SIZE</p>
                   <p className="text-blue-600 text-xl font-bold">
-                    {Number(property.lot_size) % 1 === 0 
-                      ? Number(property.lot_size).toLocaleString() 
-                      : Number(property.lot_size).toLocaleString()
-                    } m²
+                    {Number(property.lot_size).toLocaleString()} m²
                   </p>
                 </div>
               )}
