@@ -314,7 +314,7 @@ function Home() {
             <div className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full mb-6">
               <TrendingUp className="h-6 w-6 text-blue-600 mr-2" />
               <span className="text-blue-700 font-semibold text-sm uppercase tracking-wider">
-                Financial Partners
+                Financial Services
               </span>
             </div>
             <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
@@ -405,25 +405,93 @@ function Home() {
       </section>
 
       {/* ───────────── CTA Section ───────────── */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
+      <section className="py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+        {/* Enhanced background elements */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-5" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-indigo-600/10 to-purple-600/20" />
+          
+          {/* Animated background shapes */}
+          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500" />
+        </div>
+        
         <div className="container mx-auto px-4 text-center relative z-10">
-          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
-            Take The Next Step
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            Ready to Find Your Perfect Property?
-          </h2>
-          <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you're looking to buy, rent, or invest, our team is here to help you every step of the way.
-          </p>
-          <Link
-            to="/buy"
-            className="group bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl inline-flex items-center justify-center"
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto"
           >
-            Browse Properties
-            <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+            {/* Enhanced badge */}
+            <div className="inline-flex items-center justify-center mb-6">
+              <span className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-white/10 text-white px-6 py-2 rounded-full text-sm font-semibold tracking-wide uppercase">
+                Take The Next Step
+              </span>
+            </div>
+            
+            {/* Enhanced heading */}
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="text-white">Ready to Find Your</span>
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+                Perfect Property?
+              </span>
+            </h2>
+            
+            {/* Enhanced description */}
+            <p className="text-white/80 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
+              Whether you're looking to buy, rent, or invest, our comprehensive platform 
+              connects you with the finest properties across Cyprus and Greece. 
+              Start your journey today.
+            </p>
+            
+            {/* Enhanced CTA buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                to="/buy"
+                className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 inline-flex items-center justify-center min-w-[200px] overflow-hidden"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative flex items-center">
+                  Browse Properties
+                  <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+              
+              <Link
+                to="/rent"
+                className="group bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl inline-flex items-center justify-center min-w-[200px]"
+              >
+                <span className="flex items-center">
+                  Explore Rentals
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+            </div>
+            
+            {/* Trust indicators */}
+            <div className="mt-12 pt-8 border-t border-white/10">
+              <p className="text-white/60 text-sm mb-4">Trusted by thousands of property seekers</p>
+              <div className="flex justify-center items-center space-x-8 text-white/40">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">10K+</div>
+                  <div className="text-xs">Properties Listed</div>
+                </div>
+                <div className="w-px h-8 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">5K+</div>
+                  <div className="text-xs">Happy Clients</div>
+                </div>
+                <div className="w-px h-8 bg-white/20" />
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-white">98%</div>
+                  <div className="text-xs">Success Rate</div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>
