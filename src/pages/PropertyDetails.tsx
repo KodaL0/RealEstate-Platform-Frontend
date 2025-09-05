@@ -165,6 +165,7 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const thumbsPerRow = useThumbsPerRow();
   const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
   const navigate = useNavigate();
@@ -177,8 +178,7 @@ const PropertyDetails: React.FC = () => {
   const [imageOrientation, setImageOrientation] = useState<'portrait' | 'landscape' | 'square'>('landscape');
 
   // thumbnails collapse/expand
-  const [showAllThumbs, setShowAllThumbs] = useState(false);
-  const thumbsPerRow = useThumbsPerRow();
+  const [showAllThumbs, setShowAllThumbs] = useState(false)
 
   useEffect(() => {
     if (!numericId || userLoading) return;
@@ -514,9 +514,9 @@ const PropertyDetails: React.FC = () => {
             {totalImages > 0 && (
               <div className="bg-gray-50 p-6">
                 {(() => {
-                  const maxThumbs = useThumbsPerRow(); // 5 / 8 / 10 by breakpoint
+                  const maxThumbs = thumbsPerRow; // <-- use the hook value from top
 
-                  // indices we want to show (one row when collapsed)
+                  // indices to show (one row when collapsed)
                   const indices = showAllThumbs
                     ? property.images.map((_, i) => i)
                     : Array.from({ length: Math.min(maxThumbs, totalImages) }, (_, i) => i);
@@ -570,7 +570,6 @@ const PropertyDetails: React.FC = () => {
                 })()}
               </div>
             )}
-
           </div>
         </section>
 
