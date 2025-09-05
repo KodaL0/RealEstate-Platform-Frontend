@@ -166,6 +166,10 @@ const amenityIcons: Record<string, JSX.Element> = {
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const thumbsPerRow = useThumbsPerRow();
+  // Narrow unknown/optional values to string | number for TS
+const isStrNum = (v: unknown): v is string | number =>
+  (typeof v === 'string' && v !== '') ||
+  (typeof v === 'number' && !Number.isNaN(v));
   const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
   const navigate = useNavigate();
@@ -277,24 +281,6 @@ const PropertyDetails: React.FC = () => {
       </div>
     );
   }
-
-  const formatOrdinal = (n: string | number): string => {
-    const num = Number(n);
-    if (isNaN(num)) return String(n);
-    const absNum = Math.abs(num);
-    const tens = absNum % 100;
-    if (tens >= 11 && tens <= 13) {
-      return `${num}th`;
-    }
-    const unit = absNum % 10;
-    switch (unit) {
-      case 1: return `${num}st`;
-      case 2: return `${num}nd`;
-      case 3: return `${num}rd`;
-      default: return `${num}th`;
-    }
-  };
-
   const toUrl = (img: { image: string }) => img.image;
   
   // Function to detect image orientation
@@ -636,7 +622,7 @@ const PropertyDetails: React.FC = () => {
                 </p>
               </div>
 
-              {/* Lot Size */}
+              {/* Lot Size (only if provided) */}
               {property.lot_size && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -647,27 +633,27 @@ const PropertyDetails: React.FC = () => {
                 </div>
               )}
 
-              {/* Floor */}
-              {property.floor_level && (
+                {/* Floor — ALWAYS render (shows Ground for 0, N/A when missing) */}
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">FLOOR</p>
                   <p className="text-blue-600 text-xl font-bold">
-                    {hasValue(property.floor_level) ? formatFloor(property.floor_level) : 'N/A'}
+                    {isStrNum(property.floor_level) ? formatFloor(property.floor_level) : 'N/A'}
                   </p>
                 </div>
-              )}
 
-              {/* Total Floors */}
-              {property.total_floors && (
+                {/* Total Floors — ALWAYS render (N/A when missing) */}
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">TOTAL FLOORS</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.total_floors}</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {isStrNum(property.total_floors) ? property.total_floors : 'N/A'}
+                  </p>
                 </div>
-              )}
 
-              {/* Energy */}
+            
+
+              {/* Energy (only if provided) */}
               {property.energy_rating && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Zap className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -676,7 +662,7 @@ const PropertyDetails: React.FC = () => {
                 </div>
               )}
 
-              {/* Construction */}
+              {/* Construction (only if provided) */}
               {property.construction_material && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -687,7 +673,6 @@ const PropertyDetails: React.FC = () => {
             </div>
           </div>
         </section>
-
 
         {/* 4. Description */}
         <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
