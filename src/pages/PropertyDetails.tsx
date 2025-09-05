@@ -335,6 +335,21 @@ const PropertyDetails: React.FC = () => {
     </div>
   ) : null;
 
+  const hasValue = (v: unknown) => v !== null && v !== undefined && v !== '';
+
+  const formatFloor = (v: string | number) => {
+    const n = Number(v);
+    if (Number.isNaN(n)) return String(v ?? 'N/A');
+    if (n === 0) return 'Ground';
+    // reuse your ordinal for 1st/2nd/3rd…
+    const absNum = Math.abs(n);
+    const tens = absNum % 100;
+    if (tens >= 11 && tens <= 13) return `${n}th`;
+    const unit = absNum % 10;
+    return `${n}${unit === 1 ? 'st' : unit === 2 ? 'nd' : unit === 3 ? 'rd' : 'th'}`;
+  };
+
+
   return (
     <div className="pt-14 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
       {lightboxOpen && totalImages > 0 && (
@@ -637,7 +652,9 @@ const PropertyDetails: React.FC = () => {
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">FLOOR</p>
-                  <p className="text-blue-600 text-xl font-bold">{formatOrdinal(property.floor_level)}</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {hasValue(property.floor_level) ? formatFloor(property.floor_level) : 'N/A'}
+                  </p>
                 </div>
               )}
 
