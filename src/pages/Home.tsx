@@ -40,7 +40,7 @@ function Home() {
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
       logoUrl: '/eurobank-logo.png',  // ensure this file is in public/
-      url: 'https://www.eurobank.cy/en/personal/loans/housing',
+      url: 'https://www.eurobank.cy/en/personal/housing',
       color: 'from-blue-500 to-blue-600',
       bgColor: 'bg-blue-50',
       textColor: 'text-blue-700',
