@@ -602,11 +602,15 @@ const PropertyDetails: React.FC = () => {
                 <p className="text-blue-600 text-xl font-bold">{property.year_built || 'N/A'}</p>
               </div>
               {property.parking_spaces > 0 && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.parking_spaces}</p>
-                </div>
+              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                <p className="text-gray-600 text-xs uppercase font-medium mb-1">
+                  PARKING SPACES
+                </p>
+                <p className="text-blue-600 text-xl font-bold">
+                  {Number.isFinite(property.parking_spaces) ? property.parking_spaces : 0}
+                </p>
+              </div>
               )}
               {property.lot_size && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
