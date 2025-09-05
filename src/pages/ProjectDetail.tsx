@@ -18,7 +18,7 @@ import {
   Home,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Project, Developer } from "../types";
+import { Project, Developer, PropertyImage } from "../types";
 import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
@@ -41,10 +41,12 @@ type UnitRow = {
    Image + URL Helpers
    =========================== */
 
+// Base URL (works with axios baseURL or falls back to origin)
 const API_BASE =
   (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
 
-function toAbsoluteUrl(u?: string | null): string | undefined {
+/** Resolve a possibly-relative URL to an absolute URL against API_BASE. */
+export function toAbsoluteUrl(u?: string | null): string | undefined {
   if (!u) return undefined;
   try {
     return new URL(u, API_BASE).href;
@@ -53,7 +55,8 @@ function toAbsoluteUrl(u?: string | null): string | undefined {
   }
 }
 
-function pickImageStrings(input: any): string[] {
+/** Collects any string-like image paths from a loose object/array structure. */
+export function pickImageStrings(input: any): string[] {
   if (!input) return [];
   if (typeof input === "string") return [input];
   if (Array.isArray(input)) return input.flatMap(pickImageStrings);
@@ -72,7 +75,11 @@ function pickImageStrings(input: any): string[] {
   return candidates as string[];
 }
 
-function extractProjectImageUrls(p: any): string[] {
+/**
+ * Walk a "project" (or similar) object and extract all possible image URLs,
+ * returning a de-duplicated absolute-URL list.
+ */
+export function extractProjectImageUrls(p: any): string[] {
   const buckets: any[] = [];
   buckets.push(p.images, p.media, p.gallery, p.photos, p.assets, p.gallery_images);
   buckets.push(p.main_image, p.cover_image, p.hero_image, p.thumbnail);
@@ -97,6 +104,133 @@ function extractProjectImageUrls(p: any): string[] {
     }
   }
   return urls;
+}
+
+/* ===========================
+   Property/thumbnail helpers
+   =========================== */
+
+/** Normalize mixed image inputs to a consistent { image: string } shape. */
+export function normaliseImagesStrict(input: any[] = []): PropertyImage[] {
+  const out: PropertyImage[] = [];
+  const seen = new Set<string>();
+
+  const push = (img: PropertyImage) => {
+    if (!img?.image) return;
+    if (seen.has(img.image)) return;
+    seen.add(img.image);
+    out.push(img);
+  };
+
+  input.forEach((v, idx) => {
+    if (!v) return;
+
+    if (typeof v === "string") {
+      push({ image: v, is_primary: idx === 0 });
+      return;
+    }
+
+    // already a PropertyImage?
+    if (typeof v.image === "string" && typeof v.is_primary === "boolean") {
+      push(v as PropertyImage);
+      return;
+    }
+
+    // pick a possible field
+    const candidate =
+      v.image ?? v.url ?? v.src ?? v.file ?? v.file_url ?? v.path ?? v.thumbnail ?? v.preview;
+
+    if (candidate) {
+      push({
+        image: String(candidate),
+        is_primary:
+          typeof v.is_primary === "boolean" ? v.is_primary : out.length === 0,
+      });
+    }
+  });
+
+  // ensure only one primary
+  if (!out.some((i) => i.is_primary) && out.length) {
+    out[0].is_primary = true;
+  }
+
+  return out;
+}
+
+/** Accepts either a string or {image:string} and returns the absolute URL. */
+export function toImageUrl(
+  img: string | { image: string } | undefined | null
+): string {
+  if (!img) return "";
+  if (typeof img === "string") return toAbsoluteUrl(img) || img;
+  return toAbsoluteUrl(img.image) || img.image;
+}
+
+/** Classify orientation by width/height ratio. */
+export type ImgOrientation = "portrait" | "landscape" | "square";
+
+/** Infer image orientation by loading the image dimensions. */
+export function getImageOrientation(
+  imageUrl: string
+): Promise<ImgOrientation> {
+  return new Promise((resolve) => {
+    const el = new Image();
+    el.onload = () => {
+      const ratio = el.width / el.height;
+      if (ratio > 1.2) resolve("landscape");
+      else if (ratio < 0.8) resolve("portrait");
+      else resolve("square");
+    };
+    el.onerror = () => resolve("landscape"); // sensible fallback
+    el.src = imageUrl;
+  });
+}
+
+/** Tailwind class helper for a lightbox/main image based on orientation. */
+export function imageOrientationClass(orientation: ImgOrientation): string {
+  const base = "object-contain rounded-lg shadow-2xl";
+  switch (orientation) {
+    case "portrait":
+      return `${base} max-h-[85vh] max-w-[70vw] md:min-w-[600px] lg:min-w-[700px] xl:min-w-[800px]`;
+    case "landscape":
+      return `${base} max-h-[85vh] max-w-[90vw] md:min-h-[400px] lg:min-h-[500px]`;
+    case "square":
+    default:
+      return `${base} max-h-[85vh] max-w-[90vw] md:min-w-[400px] md:min-h-[400px] lg:min-w-[500px] lg:min-h-[500px]`;
+  }
+}
+
+/** Ordinal formatter (1 -> 1st, 2 -> 2nd, …) with safe coercion. */
+export function formatOrdinal(n: string | number): string {
+  const num = Number(n);
+  if (Number.isNaN(num)) return String(n);
+  const abs = Math.abs(num);
+  const tens = abs % 100;
+  if (tens >= 11 && tens <= 13) return `${num}th`;
+  switch (abs % 10) {
+    case 1:
+      return `${num}st`;
+    case 2:
+      return `${num}nd`;
+    case 3:
+      return `${num}rd`;
+    default:
+      return `${num}th`;
+  }
+}
+
+/* ===========================
+   Responsive grid utility
+   =========================== */
+
+/**
+ * Returns the number of columns in the thumbnail grid for current viewport.
+ * Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
+ */
+export function computeGridCols(viewportWidth: number): number {
+  if (viewportWidth >= 1024) return 10; // lg
+  if (viewportWidth >= 768) return 8;   // md
+  return 5;                              // base
 }
 
 /* ===========================
