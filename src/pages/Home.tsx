@@ -5,6 +5,8 @@ import {
   ArrowRight,
   ChevronRight,
   Loader2,
+  ExternalLink,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
@@ -34,11 +36,14 @@ function Home() {
   /* ───────────── static mortgage offers ───────────── */
   const mortgages = [
     {
-      name: 'Hellenic Bank',
+      name: 'EuroBank',
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
-      logoUrl: '/unnamed.png',  // ensure this file is in public/
-      url: 'https://www.hellenicbank.com/en/personal/housing',
+      logoUrl: '/eurobank-logo.png',  // ensure this file is in public/
+      url: 'https://www.eurobank.cy/en/personal/loans/housing',
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
     },
     {
       name: 'Bank of Cyprus',
@@ -46,6 +51,9 @@ function Home() {
       rate: '4.66%',
       logoUrl: '/boc-logo-small.png',  // ensure this file is in public/
       url: 'https://www.bankofcyprus.com/en-gb/Personal/loans/Housing/Your-first-home/',
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-700',
     },
     {
       name: 'Alpha Bank',
@@ -53,6 +61,9 @@ function Home() {
       rate: '5.80%',
       logoUrl: '/alpha-bank-vector-logo-400x400.png',  // ensure this file is in public/
       url: 'https://www.alpha.gr/en/retail/loans/housing-loans/Alpha-cash-collateral/',
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
     },
   ];
 
@@ -296,47 +307,98 @@ function Home() {
       </section>
       
      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
-      <section className="pt-24 pb-20 bg-white">
+      <section className="pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white relative">
         <div className="container mx-auto px-4">
-          {/* Widened title area */}
-          <div className="max-w-5xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          {/* Enhanced title area */}
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <div className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full mb-6">
+              <TrendingUp className="h-6 w-6 text-blue-600 mr-2" />
+              <span className="text-blue-700 font-semibold text-sm uppercase tracking-wider">
+                Financial Partners
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Available Mortgages in Cyprus
             </h2>
-            <p className="mt-2 text-gray-500">
-              Compare top bank offers and find the best rate for your home loan.
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Compare top bank offers and find the best rate for your home loan. 
+              Our trusted financial partners offer competitive rates and flexible terms.
             </p>
           </div>
       
-          {/* Wider grid wrapper */}
+          {/* Enhanced grid wrapper */}
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {mortgages.map((m) => (
-                <a
+              {mortgages.map((m, index) => (
+                <motion.div
                   key={m.name}
-                  href={m.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group"
                 >
-                  <div className="flex items-center justify-center mb-4 space-x-2">
-                    <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
-                    {m.logoUrl && (
-                      <img
-                        src={m.logoUrl}
-                        alt={`${m.name} logo`}
-                        className="h-8 w-auto object-contain"
-                      />
-                    )}
-                  </div>
-                  <p className="text-gray-600 flex-grow">{m.description}</p>
-                  {m.rate && (
-                    <p className="mt-4 text-sm font-medium text-gray-900">
-                      Starting rate {m.rate}
+                  <a
+                    href={m.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`block ${m.bgColor} border-2 border-transparent hover:border-gray-200 p-8 rounded-3xl text-center hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 relative overflow-hidden h-full flex flex-col backdrop-blur-sm`}
+                  >
+                    {/* Subtle background pattern */}
+                    <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
+                      <div className={`w-full h-full bg-gradient-to-br ${m.color} rounded-full blur-2xl`} />
+                    </div>
+                    
+                    {/* Header with logo and name */}
+                    <div className="relative z-10 mb-6">
+                      <div className="flex items-center justify-center mb-4 space-x-3">
+                        <h3 className="text-2xl font-bold text-gray-900">{m.name}</h3>
+                        {m.logoUrl && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={m.logoUrl}
+                              alt={`${m.name} logo`}
+                              className="h-10 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Rate badge */}
+                      {m.rate && (
+                        <div className={`inline-block bg-gradient-to-r ${m.color} text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg`}>
+                          Starting at {m.rate}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-gray-700 text-base leading-relaxed flex-grow mb-6 relative z-10">
+                      {m.description}
                     </p>
-                  )}
-                </a>
+                    
+                    {/* CTA section */}
+                    <div className="relative z-10 mt-auto">
+                      <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-800 transition-colors">
+                        <span className="font-semibold">Learn More</span>
+                        <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                    
+                    {/* Hover gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${m.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`} />
+                  </a>
+                </motion.div>
               ))}
+            </div>
+          </div>
+          
+          {/* Additional info section */}
+          <div className="max-w-4xl mx-auto mt-16 text-center">
+            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg">
+              <p className="text-gray-600 text-sm leading-relaxed">
+                <strong className="text-gray-900">Disclaimer:</strong> Interest rates are subject to change and approval. 
+                Terms and conditions apply. Please contact the respective banks for the most current rates and requirements.
+              </p>
             </div>
           </div>
         </div>
