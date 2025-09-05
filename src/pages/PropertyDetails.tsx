@@ -580,38 +580,48 @@ const PropertyDetails: React.FC = () => {
               <Home className="w-6 h-6 mr-2 text-blue-600" />
               Key Features
             </h2>
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Bedrooms */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Bed className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">BEDROOMS</p>
                 <p className="text-blue-600 text-xl font-bold">{property.bedrooms}</p>
               </div>
+
+              {/* Bathrooms */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Bath className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">BATHROOMS</p>
                 <p className="text-blue-600 text-xl font-bold">{property.bathrooms}</p>
               </div>
+
+              {/* Area */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Square className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">AREA</p>
-                <p className="text-blue-600 text-xl font-bold">{property.area.toLocaleString()} m²</p>
+                <p className="text-blue-600 text-xl font-bold">
+                  {property.area.toLocaleString()} m²
+                </p>
               </div>
+
+              {/* Year Built */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">YEAR BUILT</p>
                 <p className="text-blue-600 text-xl font-bold">{property.year_built || 'N/A'}</p>
               </div>
-              {property.parking_spaces > 0 && (
+
+              {/* Parking Spaces — ALWAYS render */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">
-                  PARKING SPACES
-                </p>
+                <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING SPACES</p>
                 <p className="text-blue-600 text-xl font-bold">
-                  {Number.isFinite(property.parking_spaces) ? property.parking_spaces : 0}
+                  {Number.isFinite(Number(property.parking_spaces)) ? Number(property.parking_spaces) : 0}
                 </p>
               </div>
-              )}
+
+              {/* Lot Size */}
               {property.lot_size && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -621,6 +631,8 @@ const PropertyDetails: React.FC = () => {
                   </p>
                 </div>
               )}
+
+              {/* Floor */}
               {property.floor_level && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -628,6 +640,8 @@ const PropertyDetails: React.FC = () => {
                   <p className="text-blue-600 text-xl font-bold">{formatOrdinal(property.floor_level)}</p>
                 </div>
               )}
+
+              {/* Total Floors */}
               {property.total_floors && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -635,6 +649,8 @@ const PropertyDetails: React.FC = () => {
                   <p className="text-blue-600 text-xl font-bold">{property.total_floors}</p>
                 </div>
               )}
+
+              {/* Energy */}
               {property.energy_rating && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Zap className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -642,6 +658,8 @@ const PropertyDetails: React.FC = () => {
                   <p className="text-blue-600 text-xl font-bold">{property.energy_rating}</p>
                 </div>
               )}
+
+              {/* Construction */}
               {property.construction_material && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -652,6 +670,7 @@ const PropertyDetails: React.FC = () => {
             </div>
           </div>
         </section>
+
 
         {/* 4. Description */}
         <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
