@@ -470,27 +470,6 @@ function Home() {
                 </span>
               </Link>
             </div>
-            
-            {/* Trust indicators */}
-            <div className="mt-12 pt-8 border-t border-white/10">
-              <p className="text-white/60 text-sm mb-4">Trusted by thousands of property seekers</p>
-              <div className="flex justify-center items-center space-x-8 text-white/40">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">10K+</div>
-                  <div className="text-xs">Properties Listed</div>
-                </div>
-                <div className="w-px h-8 bg-white/20" />
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">5K+</div>
-                  <div className="text-xs">Happy Clients</div>
-                </div>
-                <div className="w-px h-8 bg-white/20" />
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-white">98%</div>
-                  <div className="text-xs">Success Rate</div>
-                </div>
-              </div>
-            </div>
           </motion.div>
         </div>
       </section>
