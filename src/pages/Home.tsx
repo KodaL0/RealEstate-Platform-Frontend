@@ -60,7 +60,7 @@ function Home() {
       description: 'Buy, build or renovate your home without using up your own funds.',
       rate: '5.80%',
       logoUrl: '/alpha-bank-vector-logo-400x400.png',  // ensure this file is in public/
-      url: 'https://www.alpha.gr/en/retail/loans/housing-loans/Alpha-cash-collateral/',
+      url: 'https://www.alphabank.com.cy/en/individuals/loans/housing-loans',
       color: 'from-purple-500 to-purple-600',
       bgColor: 'bg-purple-50',
       textColor: 'text-purple-700',
