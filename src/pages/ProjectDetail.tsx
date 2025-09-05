@@ -40,7 +40,6 @@ type UnitRow = {
 /* ===========================
    Image + URL Helpers
    =========================== */
-
 // Base URL (works with axios baseURL or falls back to origin)
 const API_BASE =
   (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
@@ -111,50 +110,14 @@ export function extractProjectImageUrls(p: any): string[] {
    =========================== */
 
 /** Normalize mixed image inputs to a consistent { image: string } shape. */
-export function normaliseImagesStrict(input: any[] = []): PropertyImage[] {
-  const out: PropertyImage[] = [];
-  const seen = new Set<string>();
-
-  const push = (img: PropertyImage) => {
-    if (!img?.image) return;
-    if (seen.has(img.image)) return;
-    seen.add(img.image);
-    out.push(img);
-  };
-
-  input.forEach((v, idx) => {
-    if (!v) return;
-
-    if (typeof v === "string") {
-      push({ image: v, is_primary: idx === 0 });
-      return;
-    }
-
-    // already a PropertyImage?
-    if (typeof v.image === "string" && typeof v.is_primary === "boolean") {
-      push(v as PropertyImage);
-      return;
-    }
-
-    // pick a possible field
-    const candidate =
-      v.image ?? v.url ?? v.src ?? v.file ?? v.file_url ?? v.path ?? v.thumbnail ?? v.preview;
-
-    if (candidate) {
-      push({
-        image: String(candidate),
-        is_primary:
-          typeof v.is_primary === "boolean" ? v.is_primary : out.length === 0,
-      });
-    }
-  });
-
-  // ensure only one primary
-  if (!out.some((i) => i.is_primary) && out.length) {
-    out[0].is_primary = true;
-  }
-
-  return out;
+export function normaliseImages(imgs: any[] = []): PropertyImage[] {
+  return imgs
+    .flatMap((i) =>
+      typeof i === "string"
+        ? [{ image: toAbsoluteUrl(i)! }]
+        : pickImageStrings(i).map((s) => ({ image: toAbsoluteUrl(s)! }))
+    )
+    .filter((x) => !!x.image);
 }
 
 /** Accepts either a string or {image:string} and returns the absolute URL. */

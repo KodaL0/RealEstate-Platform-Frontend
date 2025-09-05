@@ -135,6 +135,33 @@ const amenityIcons: Record<string, JSX.Element> = {
   default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
 };
 
+// --- responsive helpers for thumbnail row ---
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = React.useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false
+  );
+  React.useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
+    // Safari compat
+    // @ts-ignore
+    mql.addEventListener ? mql.addEventListener("change", onChange) : mql.addListener(onChange);
+    setMatches(mql.matches);
+    return () => {
+      // @ts-ignore
+      mql.removeEventListener ? mql.removeEventListener("change", onChange) : mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+};
+
+const useThumbsPerRow = () => {
+  const isLg = useMediaQuery("(min-width: 1024px)");
+  const isMd = useMediaQuery("(min-width: 768px)");
+  // Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
+  return isLg ? 10 : isMd ? 8 : 5;
+};
+
 /* ───────────────── component ───────────────── */
 
 const THUMBS_PER_PAGE = 4;
@@ -153,6 +180,9 @@ const PropertyDetails: React.FC = () => {
   const [thumbPage, setThumbPage] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [imageOrientation, setImageOrientation] = useState<'portrait' | 'landscape' | 'square'>('landscape');
+  const [showAllThumbs, setShowAllThumbs] = useState(false);
+  const thumbsPerRow = useThumbsPerRow();
+
 
   useEffect(() => {
     if (!numericId || userLoading) return;
