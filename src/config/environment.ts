@@ -10,7 +10,7 @@ export const environment = {
     // Production: Use production backend
     production: {
       baseUrl: 'https://api.propertpro.com',
-      useProxy: false,
+      useProxy: true,
     },
   },
   

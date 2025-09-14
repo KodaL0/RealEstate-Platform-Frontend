@@ -33,7 +33,7 @@ const OAuthCallback: React.FC = () => {
         // If neither success nor error, this might be the initial OAuth callback from Google
         // Forward it to the backend
         console.log("Forwarding OAuth callback to backend");
-        const callbackUrl = `https://api.propertpro.com/accounts/google/login/callback${location.search}`;
+        const callbackUrl = `/accounts/google/login/callback${location.search}`;
         window.location.href = callbackUrl;
         
       } catch (error) {

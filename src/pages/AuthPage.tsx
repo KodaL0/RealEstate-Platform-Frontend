@@ -12,7 +12,7 @@ export const AuthPage: React.FC = () => {
   const location = useLocation();
 
   const handleGoogleLogin = () => {
-    const loginUrl = 'https://api.propertpro.com/accounts/google/login/';
+    const loginUrl = '/accounts/google/login/';
     console.log("Starting Google OAuth flow:", loginUrl);
     window.location.href = loginUrl;
   };

@@ -17,24 +17,8 @@ const isIOS = () =>
 
 /* ---------- component ---------- */
 const LoginWebViewWarning = () => {
-  /* 1. Escape the in-app browser ASAP */
-  useEffect(() => {
-    if (!isInWebView()) return;
-
-    const alreadyRedirected = new URLSearchParams(location.search).get("r") === "ext";
-    if (alreadyRedirected) return; // stop loops
-
-    let extURL = TARGET_URL;
-    if (isAndroid()) {
-      const stripped = TARGET_URL.replace(/^https?:\/\//, "");
-      extURL =
-        `intent://${stripped}?r=ext#Intent;scheme=https;package=com.android.chrome;end`;
-    } else if (isIOS()) {
-      extURL = `x-safari-${TARGET_URL}?r=ext`;
-    }
-
-    window.location.href = extURL;
-  }, []);
+  /* 1. No auto-redirect: many in-app browsers block intents and break back navigation */
+  // Keep only a user-driven option via the modal below.
 
   /* 2. Fallback modal if still inside the WebView */
   const location = useLocation();
