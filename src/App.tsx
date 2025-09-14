@@ -5,7 +5,6 @@ import { Toaster } from 'react-hot-toast';
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ScrollToTop from "./components/ScrollToTop";
-import LoginWebViewWarning from "./components/LoginWebViewWarning";
 import { RequireAuth } from "./components/RequireAuth";
 
 import Home from "./pages/Home";
@@ -174,7 +173,6 @@ export default function App() {
     <Router>
       <RouteChangeTracker />
       <ScrollToTop />
-      <LoginWebViewWarning />
       <AppContent />
     </Router>
   );
