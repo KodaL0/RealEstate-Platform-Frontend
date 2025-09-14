@@ -19,9 +19,35 @@ import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
 import { geocodeAddress } from '../components/geocode';
 
-
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
+
+// --- responsive helpers for thumbnail row ---
+const useMediaQuery = (query: string) => {
+  const [matches, setMatches] = React.useState<boolean>(() =>
+    typeof window !== "undefined" ? window.matchMedia(query).matches : false
+  );
+  React.useEffect(() => {
+    const mql = window.matchMedia(query);
+    const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
+    // Safari compat
+    // @ts-ignore
+    mql.addEventListener ? mql.addEventListener("change", onChange) : mql.addListener(onChange);
+    setMatches(mql.matches);
+    return () => {
+      // @ts-ignore
+      mql.removeEventListener ? mql.removeEventListener("change", onChange) : mql.removeListener(onChange);
+    };
+  }, [query]);
+  return matches;
+};
+
+const useThumbsPerRow = () => {
+  const isLg = useMediaQuery("(min-width: 1024px)");
+  const isMd = useMediaQuery("(min-width: 768px)");
+  // Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
+  return isLg ? 10 : isMd ? 8 : 5;
+};
 
 const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
@@ -137,10 +163,13 @@ const amenityIcons: Record<string, JSX.Element> = {
 
 /* ───────────────── component ───────────────── */
 
-const THUMBS_PER_PAGE = 4;
-
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
+  const thumbsPerRow = useThumbsPerRow();
+  // Narrow unknown/optional values to string | number for TS
+const isStrNum = (v: unknown): v is string | number =>
+  (typeof v === 'string' && v !== '') ||
+  (typeof v === 'number' && !Number.isNaN(v));
   const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
   const navigate = useNavigate();
@@ -150,9 +179,10 @@ const PropertyDetails: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState(0);
-  const [thumbPage, setThumbPage] = useState(0);
-  const [error, setError] = useState<string | null>(null);
   const [imageOrientation, setImageOrientation] = useState<'portrait' | 'landscape' | 'square'>('landscape');
+
+  // thumbnails collapse/expand
+  const [showAllThumbs, setShowAllThumbs] = useState(false)
 
   useEffect(() => {
     if (!numericId || userLoading) return;
@@ -168,17 +198,13 @@ const PropertyDetails: React.FC = () => {
   
         // ── COORDINATE LOGIC ───────────────────────────────────────
         if (mapped.latitude != null && mapped.longitude != null) {
-          // 1) Use API‑provided coords if available
           setCoords({ lat: mapped.latitude, lng: mapped.longitude });
-  
         } else if (mapped.location) {
-          // 2) Otherwise forward‑geocode the human address
           try {
             const real = await geocodeAddress(mapped.location, user?.email);
             if (isMounted) setCoords(real);
           } catch (geoErr) {
             console.error('Geocoding failed:', geoErr);
-            // coords remains null → shows "Location coordinates unavailable"
           }
         }
         // ───────────────────────────────────────────────────────────
@@ -190,8 +216,6 @@ const PropertyDetails: React.FC = () => {
   
       } catch (err) {
         console.error('Failed to fetch property details:', err);
-        if (isMounted)
-          setError('Failed to fetch property details. Please try again later.');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -204,10 +228,6 @@ const PropertyDetails: React.FC = () => {
   }, [numericId, userLoading, user?.email]);
 
   const totalImages = property?.images.length ?? 0;
-  const lastThumbPage = Math.max(0, Math.ceil(totalImages / THUMBS_PER_PAGE) - 1);
-  const startIdx = thumbPage * THUMBS_PER_PAGE;
-  const endIdx = Math.min(startIdx + THUMBS_PER_PAGE, totalImages);
-  const visibleThumbs = property?.images.slice(startIdx, endIdx) ?? [];
 
   const openLightbox = (idx: number) => {
     if (totalImages > 0) {
@@ -261,24 +281,6 @@ const PropertyDetails: React.FC = () => {
       </div>
     );
   }
-
-  const formatOrdinal = (n: string | number): string => {
-    const num = Number(n);
-    if (isNaN(num)) return String(n);
-    const absNum = Math.abs(num);
-    const tens = absNum % 100;
-    if (tens >= 11 && tens <= 13) {
-      return `${num}th`;
-    }
-    const unit = absNum % 10;
-    switch (unit) {
-      case 1: return `${num}st`;
-      case 2: return `${num}nd`;
-      case 3: return `${num}rd`;
-      default: return `${num}th`;
-    }
-  };
-
   const toUrl = (img: { image: string }) => img.image;
   
   // Function to detect image orientation
@@ -319,6 +321,21 @@ const PropertyDetails: React.FC = () => {
     </div>
   ) : null;
 
+  const hasValue = (v: unknown) => v !== null && v !== undefined && v !== '';
+
+  const formatFloor = (v: string | number) => {
+    const n = Number(v);
+    if (Number.isNaN(n)) return String(v ?? 'N/A');
+    if (n === 0) return 'Ground';
+    // reuse your ordinal for 1st/2nd/3rd…
+    const absNum = Math.abs(n);
+    const tens = absNum % 100;
+    if (tens >= 11 && tens <= 13) return `${n}th`;
+    const unit = absNum % 10;
+    return `${n}${unit === 1 ? 'st' : unit === 2 ? 'nd' : unit === 3 ? 'rd' : 'th'}`;
+  };
+
+
   return (
     <div className="pt-14 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
       {lightboxOpen && totalImages > 0 && (
@@ -329,22 +346,17 @@ const PropertyDetails: React.FC = () => {
             const startX = touch.clientX;
             const startY = touch.clientY;
             
-            const handleTouchEnd = (e: TouchEvent) => {
-              const touch = e.changedTouches[0];
-              const endX = touch.clientX;
-              const endY = touch.clientY;
+            const handleTouchEnd = (ev: TouchEvent) => {
+              const t = ev.changedTouches[0];
+              const endX = t.clientX;
+              const endY = t.clientY;
               const diffX = startX - endX;
               const diffY = startY - endY;
               
               // Only handle horizontal swipes (ignore vertical swipes)
               if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
-                if (diffX > 0) {
-                  // Swipe left - next image
-                  nextImg();
-                } else {
-                  // Swipe right - previous image
-                  prevImg();
-                }
+                if (diffX > 0) nextImg();
+                else prevImg();
               }
               
               document.removeEventListener('touchend', handleTouchEnd);
@@ -444,19 +456,19 @@ const PropertyDetails: React.FC = () => {
                 <div className="text-center md:text-right">
                   <button
                     onClick={() => {
-                     if (property.price && property.price > 0) {
-                       navigate(`/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`);
-                     }
-                   }}
-                   disabled={!property.price || property.price <= 0}
-                   className={`inline-flex items-center px-4 py-2 ${
-                     property.price && property.price > 0
-                       ? 'bg-blue-600 hover:bg-blue-700'
-                       : 'bg-gray-300 cursor-not-allowed'
-                   } text-white text-sm font-medium rounded-lg transition-colors shadow-sm`}
-                 >
-                   <Calculator className="w-4 h-4 mr-2" />
-                   Calculate Mortgage
+                      if (property.price && property.price > 0) {
+                        navigate(`/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`);
+                      }
+                    }}
+                    disabled={!property.price || property.price <= 0}
+                    className={`inline-flex items-center px-4 py-2 ${
+                      property.price && property.price > 0
+                        ? 'bg-blue-600 hover:bg-blue-700'
+                        : 'bg-gray-300 cursor-not-allowed'
+                    } text-white text-sm font-medium rounded-lg transition-colors shadow-sm`}
+                  >
+                    <Calculator className="w-4 h-4 mr-2" />
+                    Calculate Mortgage
                   </button>
                 </div>
               )}
@@ -502,40 +514,61 @@ const PropertyDetails: React.FC = () => {
             {/* Additional Images at Bottom */}
             {totalImages > 0 && (
               <div className="bg-gray-50 p-6">
+                {(() => {
+                  const maxThumbs = thumbsPerRow; // <-- use the hook value from top
 
-                
-                <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
-                    {property.images.map((img, idx) => (
-                      <div
-                        key={idx}
-                        className={`relative w-full pt-[100%] overflow-hidden rounded-xl border-2 transition-all duration-200 group cursor-pointer ${
-                          idx === activeImage 
-                            ? 'border-blue-500 shadow-lg scale-105' 
-                            : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
-                        }`}
-                      >
-                        <img
-                          src={toUrl(img)}
-                          onClick={() => {
-                            setActiveImage(idx);
-                            openLightbox(idx);
-                          }}
-                          className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:scale-110"
-                          alt={`Thumbnail ${idx + 1}`}
-                        />
-                        {/* Active indicator */}
-                        {idx === activeImage && (
-                          <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />
-                        )}
-                        {/* Image number overlay */}
-                        <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                          {idx + 1}
-                        </div>
+                  // indices to show (one row when collapsed)
+                  const indices = showAllThumbs
+                    ? property.images.map((_, i) => i)
+                    : Array.from({ length: Math.min(maxThumbs, totalImages) }, (_, i) => i);
+
+                  return (
+                    <>
+                      <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                        {indices.map((idx) => {
+                          const img = property.images[idx];
+                          return (
+                            <div
+                              key={idx}
+                              className={`relative w-full pt-[100%] overflow-hidden rounded-xl border-2 transition-all duration-200 group cursor-pointer ${
+                                idx === activeImage
+                                  ? 'border-blue-500 shadow-lg scale-105'
+                                  : 'border-gray-200 hover:border-gray-300 hover:shadow-md'
+                              }`}
+                            >
+                              <img
+                                src={toUrl(img)}
+                                onClick={() => {
+                                  setActiveImage(idx);
+                                  openLightbox(idx);
+                                }}
+                                className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:scale-110"
+                                alt={`Thumbnail ${idx + 1}`}
+                              />
+                              {idx === activeImage && (
+                                <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />
+                              )}
+                              <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                                {idx + 1}
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
-                    ))}
-                </div>
-                
 
+                      {totalImages > maxThumbs && (
+                        <div className="mt-4 flex justify-center">
+                          <button
+                            onClick={() => setShowAllThumbs((v) => !v)}
+                            className="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-colors"
+                          >
+                            {showAllThumbs ? 'Show less' : `Show more (${totalImages - maxThumbs})`}
+                          </button>
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
               </div>
             )}
           </div>
@@ -548,60 +581,79 @@ const PropertyDetails: React.FC = () => {
               <Home className="w-6 h-6 mr-2 text-blue-600" />
               Key Features
             </h2>
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              {/* Bedrooms */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Bed className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">BEDROOMS</p>
                 <p className="text-blue-600 text-xl font-bold">{property.bedrooms}</p>
               </div>
+
+              {/* Bathrooms */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Bath className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">BATHROOMS</p>
                 <p className="text-blue-600 text-xl font-bold">{property.bathrooms}</p>
               </div>
+
+              {/* Area */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Square className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">AREA</p>
-                <p className="text-blue-600 text-xl font-bold">{property.area.toLocaleString()} m²</p>
+                <p className="text-blue-600 text-xl font-bold">
+                  {property.area.toLocaleString()} m²
+                </p>
               </div>
+
+              {/* Year Built */}
               <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                 <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                 <p className="text-gray-600 text-xs uppercase font-medium mb-1">YEAR BUILT</p>
                 <p className="text-blue-600 text-xl font-bold">{property.year_built || 'N/A'}</p>
               </div>
-              {property.parking_spaces > 0 && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.parking_spaces}</p>
-                </div>
-              )}
+
+              {/* Parking Spaces — ALWAYS render */}
+              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING SPACES</p>
+                <p className="text-blue-600 text-xl font-bold">
+                  {Number.isFinite(Number(property.parking_spaces)) ? Number(property.parking_spaces) : 0}
+                </p>
+              </div>
+
+              {/* Lot Size (only if provided) */}
               {property.lot_size && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">LOT SIZE</p>
                   <p className="text-blue-600 text-xl font-bold">
-                    {Number(property.lot_size) % 1 === 0 
-                      ? Number(property.lot_size).toLocaleString() 
-                      : Number(property.lot_size).toLocaleString()
-                    } m²
+                    {Number(property.lot_size).toLocaleString()} m²
                   </p>
                 </div>
               )}
-              {property.floor_level && (
+
+                {/* Floor — ALWAYS render (shows Ground for 0, N/A when missing) */}
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">FLOOR</p>
-                  <p className="text-blue-600 text-xl font-bold">{formatOrdinal(property.floor_level)}</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {isStrNum(property.floor_level) ? formatFloor(property.floor_level) : 'N/A'}
+                  </p>
                 </div>
-              )}
-              {property.total_floors && (
+
+                {/* Total Floors — ALWAYS render (N/A when missing) */}
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">TOTAL FLOORS</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.total_floors}</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {isStrNum(property.total_floors) ? property.total_floors : 'N/A'}
+                  </p>
                 </div>
-              )}
+
+            
+
+              {/* Energy (only if provided) */}
               {property.energy_rating && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Zap className="w-6 h-6 mx-auto mb-2 text-gray-900" />
@@ -609,6 +661,8 @@ const PropertyDetails: React.FC = () => {
                   <p className="text-blue-600 text-xl font-bold">{property.energy_rating}</p>
                 </div>
               )}
+
+              {/* Construction (only if provided) */}
               {property.construction_material && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />

@@ -5,6 +5,8 @@ import {
   ArrowRight,
   ChevronRight,
   Loader2,
+  ExternalLink,
+  TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/PropertyCard";
@@ -34,11 +36,14 @@ function Home() {
   /* ───────────── static mortgage offers ───────────── */
   const mortgages = [
     {
-      name: 'Hellenic Bank',
+      name: 'EuroBank',
       description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
       rate: '3.80%',
-      logoUrl: '/unnamed.png',  // ensure this file is in public/
-      url: 'https://www.hellenicbank.com/en/personal/housing',
+      logoUrl: '/eurobank-logo.png',  // ensure this file is in public/
+      url: 'https://www.eurobank.cy/en/personal/housing',
+      color: 'from-blue-500 to-blue-600',
+      bgColor: 'bg-blue-50',
+      textColor: 'text-blue-700',
     },
     {
       name: 'Bank of Cyprus',
@@ -46,13 +51,19 @@ function Home() {
       rate: '4.66%',
       logoUrl: '/boc-logo-small.png',  // ensure this file is in public/
       url: 'https://www.bankofcyprus.com/en-gb/Personal/loans/Housing/Your-first-home/',
+      color: 'from-green-500 to-green-600',
+      bgColor: 'bg-green-50',
+      textColor: 'text-green-700',
     },
     {
       name: 'Alpha Bank',
       description: 'Buy, build or renovate your home without using up your own funds.',
       rate: '5.80%',
       logoUrl: '/alpha-bank-vector-logo-400x400.png',  // ensure this file is in public/
-      url: 'https://www.alpha.gr/en/retail/loans/housing-loans/Alpha-cash-collateral/',
+      url: 'https://www.alphabank.com.cy/en/individuals/loans/housing-loans',
+      color: 'from-purple-500 to-purple-600',
+      bgColor: 'bg-purple-50',
+      textColor: 'text-purple-700',
     },
   ];
 
@@ -296,72 +307,170 @@ function Home() {
       </section>
       
      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
-      <section className="pt-24 pb-20 bg-white">
+      <section className="pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white relative">
         <div className="container mx-auto px-4">
-          {/* Widened title area */}
-          <div className="max-w-5xl mx-auto text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
+          {/* Enhanced title area */}
+          <div className="max-w-4xl mx-auto text-center mb-16">
+            <div className="inline-flex items-center justify-center p-2 bg-gradient-to-r from-blue-100 to-indigo-100 rounded-full mb-6">
+              <TrendingUp className="h-6 w-6 text-blue-600 mr-2" />
+              <span className="text-blue-700 font-semibold text-sm uppercase tracking-wider">
+                Financial Services
+              </span>
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
               Available Mortgages in Cyprus
             </h2>
-            <p className="mt-2 text-gray-500">
-              Compare top bank offers and find the best rate for your home loan.
+            <p className="text-lg text-gray-600 leading-relaxed">
+              Compare top bank offers and find the best rate for your home loan. 
+              Our trusted financial partners offer competitive rates and flexible terms.
             </p>
           </div>
       
-          {/* Wider grid wrapper */}
+          {/* Enhanced grid wrapper */}
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {mortgages.map((m) => (
-                <a
+              {mortgages.map((m, index) => (
+                <motion.div
                   key={m.name}
-                  href={m.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="block bg-gray-50 p-8 rounded-xl text-center hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 flex flex-col"
+                  initial={{ opacity: 0, y: 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.6, delay: index * 0.1 }}
+                  className="group"
                 >
-                  <div className="flex items-center justify-center mb-4 space-x-2">
-                    <h3 className="text-xl font-bold text-gray-900">{m.name}</h3>
-                    {m.logoUrl && (
-                      <img
-                        src={m.logoUrl}
-                        alt={`${m.name} logo`}
-                        className="h-8 w-auto object-contain"
-                      />
-                    )}
-                  </div>
-                  <p className="text-gray-600 flex-grow">{m.description}</p>
-                  {m.rate && (
-                    <p className="mt-4 text-sm font-medium text-gray-900">
-                      Starting rate {m.rate}
+                  <a
+                    href={m.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`block ${m.bgColor} border-2 border-transparent hover:border-gray-200 p-8 rounded-3xl text-center hover:shadow-2xl transition-all duration-500 hover:-translate-y-2 relative overflow-hidden h-full flex flex-col backdrop-blur-sm`}
+                  >
+                    {/* Subtle background pattern */}
+                    <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
+                      <div className={`w-full h-full bg-gradient-to-br ${m.color} rounded-full blur-2xl`} />
+                    </div>
+                    
+                    {/* Header with logo and name */}
+                    <div className="relative z-10 mb-6">
+                      <div className="flex items-center justify-center mb-4 space-x-3">
+                        <h3 className="text-2xl font-bold text-gray-900">{m.name}</h3>
+                        {m.logoUrl && (
+                          <div className="flex-shrink-0">
+                            <img
+                              src={m.logoUrl}
+                              alt={`${m.name} logo`}
+                              className="h-10 w-auto object-contain group-hover:scale-110 transition-transform duration-300"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Rate badge */}
+                      {m.rate && (
+                        <div className={`inline-block bg-gradient-to-r ${m.color} text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg`}>
+                          Starting at {m.rate}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Description */}
+                    <p className="text-gray-700 text-base leading-relaxed flex-grow mb-6 relative z-10">
+                      {m.description}
                     </p>
-                  )}
-                </a>
+                    
+                    {/* CTA section */}
+                    <div className="relative z-10 mt-auto">
+                      <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-800 transition-colors">
+                        <span className="font-semibold">Learn More</span>
+                        <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </div>
+                    </div>
+                    
+                    {/* Hover gradient overlay */}
+                    <div className={`absolute inset-0 bg-gradient-to-br ${m.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`} />
+                  </a>
+                </motion.div>
               ))}
+            </div>
+          </div>
+          
+          {/* Additional info section */}
+          <div className="max-w-4xl mx-auto mt-16 text-center">
+            <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg">
+              <p className="text-gray-600 text-sm leading-relaxed">
+                <strong className="text-gray-900">Disclaimer:</strong> Interest rates are subject to change and approval. 
+                Terms and conditions apply. Please contact the respective banks for the most current rates and requirements.
+              </p>
             </div>
           </div>
         </div>
       </section>
 
       {/* ───────────── CTA Section ───────────── */}
-      <section className="py-20 bg-gradient-to-r from-blue-600 to-indigo-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-10" />
+      <section className="py-24 bg-gradient-to-br from-slate-900 via-blue-900 to-indigo-900 relative overflow-hidden">
+        {/* Enhanced background elements */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-5" />
+          <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-indigo-600/10 to-purple-600/20" />
+          
+          {/* Animated background shapes */}
+          <div className="absolute top-10 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500" />
+        </div>
+        
         <div className="container mx-auto px-4 text-center relative z-10">
-          <span className="inline-block bg-white/20 backdrop-blur-md text-white px-4 py-1 rounded-full text-sm font-medium mb-4">
-            Take The Next Step
-          </span>
-          <h2 className="text-3xl md:text-5xl font-bold text-white mb-6">
-            Ready to Find Your Perfect Property?
-          </h2>
-          <p className="text-white/90 text-xl max-w-2xl mx-auto mb-8">
-            Whether you're looking to buy, rent, or invest, our team is here to help you every step of the way.
-          </p>
-          <Link
-            to="/buy"
-            className="group bg-white text-blue-600 hover:bg-gray-100 px-8 py-4 rounded-lg font-medium transition-all shadow-lg hover:shadow-xl inline-flex items-center justify-center"
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+            className="max-w-4xl mx-auto"
           >
-            Browse Properties
-            <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
-          </Link>
+            {/* Enhanced badge */}
+            <div className="inline-flex items-center justify-center mb-6">
+              <span className="bg-gradient-to-r from-blue-500/20 to-indigo-500/20 backdrop-blur-xl border border-white/10 text-white px-6 py-2 rounded-full text-sm font-semibold tracking-wide uppercase">
+                Take The Next Step
+              </span>
+            </div>
+            
+            {/* Enhanced heading */}
+            <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
+              <span className="text-white">Ready to Find Your</span>
+              <br />
+              <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+                Perfect Property?
+              </span>
+            </h2>
+            
+            {/* Enhanced description */}
+            <p className="text-white/80 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
+              Whether you're looking to buy, rent, or invest, our comprehensive platform 
+              connects you with the finest properties across Cyprus and Greece. 
+              Start your journey today.
+            </p>
+            
+            {/* Enhanced CTA buttons */}
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                to="/buy"
+                className="group relative bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-2xl hover:shadow-blue-500/25 inline-flex items-center justify-center min-w-[200px] overflow-hidden"
+              >
+                <span className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
+                <span className="relative flex items-center">
+                  Browse Properties
+                  <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+              
+              <Link
+                to="/rent"
+                className="group bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl inline-flex items-center justify-center min-w-[200px]"
+              >
+                <span className="flex items-center">
+                  Explore Rentals
+                  <ArrowRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
+                </span>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </section>
     </div>
