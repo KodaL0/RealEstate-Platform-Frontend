@@ -12,7 +12,6 @@ import Buy from "./pages/Buy";
 import Rent from "./pages/Rent";
 import PropertyDetails from "./pages/PropertyDetails";
 import { AuthPage } from "./pages/AuthPage";
-import OAuthCallback from "./pages/OAuthCallback";
 import ProfilePage from "./pages/ProfilePage";
 import Favourites from "./pages/Favourites";
 import CreateListing from "./pages/CreateListing";
@@ -63,7 +62,7 @@ function AppContent() {
           <Route path="/rent" element={<Rent />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/login" element={<AuthPage />} />
-          <Route path="/oauth/callback" element={<OAuthCallback />} />
+          {/* OAuth callback route no longer needed; handled entirely server-side */}
           <Route path="/verify-email" element={<EmailVerification />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/terms" element={<TermsandConditions />} />
