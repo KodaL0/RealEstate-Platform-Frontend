@@ -48,7 +48,7 @@ const Footer = () => {
                 </li>
                 <li>
                   <Link to="/rent-vs-buy" className="text-gray-400 hover:text-blue-500 transition-colors">
-                    Rent vs Buy Calculator
+                    Rent vs Buy
                   </Link>
                 </li>
               </ul>
