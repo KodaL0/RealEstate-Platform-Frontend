@@ -262,7 +262,8 @@ const Navbar: React.FC = () => {
               </button>
             </div>
           )}
-
+        </div>
+      </div>
 
       {/* Main Navbar */}
       <nav className="fixed w-full z-[9999] bg-white shadow-md" style={{ height: 'var(--navbar-height)' }}>
