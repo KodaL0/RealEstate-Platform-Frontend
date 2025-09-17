@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { User as UserIcon, Save, MapPin, Phone, Building, Globe, Camera, FileText, Loader2 } from 'lucide-react';
+import { User as UserIcon, Save, MapPin, Phone, Building, Globe, Camera, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
 import api from '../config/api';
 
 interface ProfileData {
@@ -307,62 +307,101 @@ const ProfilePage: React.FC = () => {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-4 min-h-screen">
-      <div className="bg-white shadow rounded-lg p-6 mb-6">
-        <div className="flex items-center justify-center mb-6">
-          <UserIcon className="h-10 w-10 text-blue-600 mr-3" />
-          <h1 className="text-3xl font-bold">Profile Management</h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+        {/* Header Section */}
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4 shadow-lg">
+            <UserIcon className="h-8 w-8 text-white" />
+          </div>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Profile Management</h1>
+          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            Manage your account settings and personal information
+          </p>
         </div>
 
+        {/* Developer Portal Link */}
         {user?.is_developer && (
-          <div className="mb-6">
+          <div className="mb-8 flex justify-center">
             <Link
               to="/developer-api"
-              className="inline-flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold px-4 py-2 rounded-lg transition-colors"
+              className="group inline-flex items-center space-x-3 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-semibold px-6 py-3 rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105"
             >
-              <Building className="h-4 w-4" />
+              <Building className="h-5 w-5" />
               <span>Open Developer Portal</span>
             </Link>
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-8">
+        {/* Main Content Grid */}
+        <div className="grid lg:grid-cols-2 gap-8">
           {/* Username Section */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <UserIcon className="h-5 w-5 mr-2" />
-              Username
-            </h2>
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center mb-6">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl mr-4">
+                <UserIcon className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Username Settings</h2>
+            </div>
             
-            {usernameMessage && <p className="text-green-600 mb-4">{usernameMessage}</p>}
-            {usernameError && <p className="text-red-600 mb-4">{usernameError}</p>}
+            {/* Success/Error Messages */}
+            {usernameMessage && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <p className="text-emerald-800 font-medium">{usernameMessage}</p>
+              </div>
+            )}
+            {usernameError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-800 font-medium">{usernameError}</p>
+              </div>
+            )}
             
-            <form onSubmit={handleUpdateUsername} className="space-y-4">
+            <form onSubmit={handleUpdateUsername} className="space-y-6">
               <div>
-                <label className="block mb-2 font-medium text-gray-700">
-                  Current: <span className="font-normal text-blue-600">{user.username}</span>
+                <label className="block mb-3 text-sm font-semibold text-gray-700">
+                  Current Username
                 </label>
-                <input 
-                  type="text" 
-                  value={newUsername} 
-                  onChange={handleUsernameChange}
-                  className={`border rounded w-full p-3 ${validationError ? 'border-red-500' : 'border-gray-300'} focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
-                  placeholder="Enter new username"
-                />
+                <div className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl border border-blue-200">
+                  <span className="text-lg font-semibold text-blue-700">{user.username}</span>
+                </div>
+              </div>
+              
+              <div>
+                <label className="block mb-3 text-sm font-semibold text-gray-700">
+                  New Username
+                </label>
+                <div className="relative">
+                  <input 
+                    type="text" 
+                    value={newUsername} 
+                    onChange={handleUsernameChange}
+                    className={`w-full px-4 py-4 text-lg border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-4 ${
+                      validationError 
+                        ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
+                        : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300'
+                    }`}
+                    placeholder="Enter new username"
+                  />
+                </div>
                 {validationError && (
-                  <p className="text-red-500 text-sm mt-1">{validationError}</p>
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-700 text-sm font-medium">{validationError}</p>
+                  </div>
                 )}
-                <p className="text-gray-500 text-xs mt-1">
-                  Lowercase letters, numbers, underscores, and hyphens only
+                <p className="text-gray-500 text-sm mt-2 italic">
+                  Use lowercase letters, numbers, underscores, and hyphens only
                 </p>
               </div>
+              
               <button 
                 type="submit" 
                 disabled={!!validationError || !newUsername.trim()}
-                className={`w-full font-bold py-2 px-4 rounded transition-colors ${
+                className={`w-full py-4 px-6 text-lg font-semibold rounded-xl transition-all duration-200 transform ${
                   validationError || !newUsername.trim()
-                    ? 'bg-gray-400 cursor-not-allowed text-gray-700'
-                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
                 }`}
               >
                 Update Username
@@ -371,101 +410,126 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* Profile Information Section */}
-          <div className="bg-gray-50 p-6 rounded-lg">
-            <h2 className="text-xl font-semibold mb-4 flex items-center">
-              <FileText className="h-5 w-5 mr-2" />
-              Profile Information
-            </h2>
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center mb-6">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl mr-4">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+            </div>
             
-            {profileMessage && <p className="text-green-600 mb-4">{profileMessage}</p>}
-            {profileError && <p className="text-red-600 mb-4">{profileError}</p>}
+            {/* Success/Error Messages */}
+            {profileMessage && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <p className="text-emerald-800 font-medium">{profileMessage}</p>
+              </div>
+            )}
+            {profileError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-800 font-medium">{profileError}</p>
+              </div>
+            )}
             
             {isLoadingProfile ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-                <span className="ml-2 text-gray-600">Loading profile...</span>
+              <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                </div>
+                <p className="text-gray-600 font-medium">Loading your profile...</p>
               </div>
             ) : (
-              <form onSubmit={handleUpdateProfile} className="space-y-4">
-                <div>
-                  <label className="block mb-1 font-medium text-gray-700">Full Name</label>
-                  <input 
-                    type="text" 
-                    value={profileData.name}
-                    onChange={(e) => handleProfileChange('name', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Enter your full name"
-                  />
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
+                    <input 
+                      type="text" 
+                      value={profileData.name}
+                      onChange={(e) => handleProfileChange('name', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                      placeholder="Enter your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                      <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                      Location
+                    </label>
+                    <input 
+                      type="text" 
+                      value={profileData.location}
+                      onChange={(e) => handleProfileChange('location', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                      placeholder="City, Country"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div>
+                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                      <Phone className="h-4 w-4 mr-1 text-gray-500" />
+                      Phone Number
+                    </label>
+                    <input 
+                      type="tel" 
+                      value={profileData.phone}
+                      onChange={(e) => handleProfileChange('phone', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                      <Building className="h-4 w-4 mr-1 text-gray-500" />
+                      Office/Workplace
+                    </label>
+                    <input 
+                      type="text" 
+                      value={profileData.office}
+                      onChange={(e) => handleProfileChange('office', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                      placeholder="Company or office name"
+                    />
+                  </div>
                 </div>
 
                 <div>
-                  <label className="mb-1 font-medium text-gray-700 flex items-center">
-                    <MapPin className="h-4 w-4 mr-1" />
-                    Location
-                  </label>
-                  <input 
-                    type="text" 
-                    value={profileData.location}
-                    onChange={(e) => handleProfileChange('location', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="City, Country"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 font-medium text-gray-700 flex items-center">
-                    <Phone className="h-4 w-4 mr-1" />
-                    Phone Number
-                  </label>
-                  <input 
-                    type="tel" 
-                    value={profileData.phone}
-                    onChange={(e) => handleProfileChange('phone', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="+1234567890"
-                  />
-                </div>
-
-                <div>
-                  <label className="mb-1 font-medium text-gray-700 flex items-center">
-                    <Building className="h-4 w-4 mr-1" />
-                    Office/Workplace
-                  </label>
-                  <input 
-                    type="text" 
-                    value={profileData.office}
-                    onChange={(e) => handleProfileChange('office', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="Company or office name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block mb-1 font-medium text-gray-700">Bio</label>
-                  <textarea 
-                    value={profileData.bio}
-                    onChange={(e) => handleProfileChange('bio', e.target.value)}
-                    className="border border-gray-300 rounded w-full p-3 h-24 focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-                    placeholder="Tell us about yourself..."
-                    maxLength={500}
-                  />
-                  <p className="text-xs text-gray-500 mt-1">{profileData.bio.length}/500 characters</p>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">Bio</label>
+                  <div className="relative">
+                    <textarea 
+                      value={profileData.bio}
+                      onChange={(e) => handleProfileChange('bio', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
+                      placeholder="Tell us about yourself..."
+                      maxLength={500}
+                      rows={4}
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white px-2 py-1 rounded-lg shadow-sm">
+                      {profileData.bio.length}/500
+                    </div>
+                  </div>
                 </div>
 
                 <button 
                   type="submit" 
                   disabled={isSavingProfile}
-                  className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white font-bold py-2 px-4 rounded transition-colors flex items-center justify-center"
+                  className="w-full py-4 px-6 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
                   {isSavingProfile ? (
                     <>
-                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                      Saving...
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saving Profile...</span>
                     </>
                   ) : (
                     <>
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Profile
+                      <Save className="h-5 w-5" />
+                      <span>Save Profile</span>
                     </>
                   )}
                 </button>
