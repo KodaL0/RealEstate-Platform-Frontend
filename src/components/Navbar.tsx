@@ -197,71 +197,70 @@ const Navbar: React.FC = () => {
 
             {/* User Menu Items */}
             {user && (
-              <div className="p-4 border-t border-gray-200">
-                <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
-                  Account
-                </h4>
-                <nav className="space-y-1">
-                  {userMenuItems.map((item) => {
-                    const Icon = item.icon;
-                    return (
+              <>
+                <div className="p-4 border-t border-gray-200">
+                  <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                    Account
+                  </h4>
+                  <nav className="space-y-1">
+                    {userMenuItems.map((item) => {
+                      const Icon = item.icon;
+                      return (
+                        <Link
+                          key={item.path}
+                          to={item.path}
+                          onClick={() => setIsSidebarOpen(false)}
+                          className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
+                            isActive(item.path)
+                              ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600"
+                              : "text-gray-700 hover:bg-gray-50"
+                          }`}
+                        >
+                          <div className="flex items-center space-x-3">
+                            <Icon className="h-5 w-5" />
+                            <span className="font-medium">{item.label}</span>
+                          </div>
+                          {item.badge && item.badge > 0 && (
+                            <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
+                              {item.badge}
+                            </span>
+                          )}
+                        </Link>
+                      );
+                    })}
+
+                    {user?.is_developer && (
                       <Link
-                        key={item.path}
-                        to={item.path}
+                        to="/developer-api"
                         onClick={() => setIsSidebarOpen(false)}
                         className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
-                          isActive(item.path)
-                            ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                          isActive("/developer-api")
+                            ? "bg-blue-50 text-blue-700 border-r-2 border-blue-600"
+                            : "text-gray-700 hover:bg-gray-50"
                         }`}
                       >
                         <div className="flex items-center space-x-3">
-                          <Icon className="h-5 w-5" />
-                          <span className="font-medium">{item.label}</span>
+                          <Building2 className="h-5 w-5" />
+                          <span className="font-medium">Developer Portal</span>
                         </div>
-                        {item.badge && item.badge > 0 && (
-                          <span className="bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                            {item.badge}
-                          </span>
-                        )}
                       </Link>
-                    );
-                  })}
-                  {user?.is_developer && (
-                    <Link
-                      to="/developer-api"
-                      onClick={() => setIsSidebarOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
-                        isActive('/developer-api')
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
-                          : 'text-gray-700 hover:bg-gray-50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <Building2 className="h-5 w-5" />
-                        <span className="font-medium">Developer Portal</span>
-                      </div>
-                    </Link>
-                  )}
-                </nav>
-              </div>
+                    )}
+                  </nav>
+                </div>
+
+                {/* Sidebar Footer (always with divider) */}
+                <div className="p-4 border-t border-gray-200">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                  >
+                    <LogOut className="h-5 w-5" />
+                    <span className="font-medium">Sign Out</span>
+                  </button>
+                </div>
+              </>
             )}
           </div>
-
-          {/* Sidebar Footer */}
-          {user && (
-            <div
-              className={`p-4 ${user?.is_developer ? "border-t border-gray-200" : ""}`}
-            >
-              <button
-                onClick={handleLogout}
-                className="w-full flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              >
-                <LogOut className="h-5 w-5" />
-                <span className="font-medium">Sign Out</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -270,7 +269,6 @@ const Navbar: React.FC = () => {
         <div className="container mx-auto px-4 md:px-6 h-full flex items-center justify-between">
           {/* Left Section */}
           <div className="flex items-center space-x-4">
-            {/* Desktop Sidebar Toggle */}
             <button
               onClick={toggleSidebar}
               className="hidden md:block p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -279,7 +277,6 @@ const Navbar: React.FC = () => {
               <Menu className="h-6 w-6 text-gray-700" />
             </button>
 
-            {/* Logo */}
             <Link to="/" className="flex items-center space-x-2">
               <Building2 className="h-8 w-8 text-blue-600" />
               <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-500 bg-clip-text text-transparent hidden sm:block">
@@ -295,7 +292,6 @@ const Navbar: React.FC = () => {
 
           {/* Right Section */}
           <div className="flex items-center space-x-3">
-            {/* Mobile Sidebar Toggle */}
             <button
               onClick={toggleSidebar}
               className="md:hidden p-2 hover:bg-gray-100 rounded-lg transition-colors"
@@ -304,7 +300,6 @@ const Navbar: React.FC = () => {
               <Menu className="h-6 w-6 text-gray-700" />
             </button>
 
-            {/* Mobile Search */}
             {user && (
               <button
                 onClick={toggleSearch}
@@ -315,7 +310,6 @@ const Navbar: React.FC = () => {
               </button>
             )}
 
-            {/* Messages */}
             {user && (
               <Link to="/chat" className="relative p-2 hover:bg-gray-100 rounded-lg transition-colors" onClick={handleChatClick}>
                 <MessageCircle className="h-5 w-5 text-gray-700" />
@@ -349,7 +343,6 @@ const Navbar: React.FC = () => {
           </div>
         </div>
 
-        {/* Mobile Search Dropdown */}
         {isSearchOpen && user && (
           <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg border-t border-gray-200 p-4 z-20">
             <UserSearch />
