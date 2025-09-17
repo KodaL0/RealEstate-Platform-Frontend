@@ -79,14 +79,18 @@ const Navbar: React.FC = () => {
   };
 
 
-  const navigationItems = [
-    { path: "/", label: "Home", icon: Home },
-    { path: "/buy", label: "Buy", icon: ShoppingCart },
-    { path: "/rent", label: "Rent", icon: Calendar },
-    { path: "/developers", label: "Developers", icon: Building2 },
-    { path: "/mortgage-calculator", label: "Mortgage Calculator", icon: Calculator },
-    { path: "/rent-vs-buy", label: "Rent vs Buy", icon: TrendingUp },
-  ];
+const navigationItems = [
+  { path: "/", label: "Home", icon: Home },
+  { path: "/buy", label: "Buy", icon: ShoppingCart },
+  { path: "/rent", label: "Rent", icon: Calendar },
+  { path: "/developers", label: "Developers", icon: Building2 },
+];
+
+const toolItems = [
+  { path: "/mortgage-calculator", label: "Mortgage Calculator", icon: Calculator },
+  { path: "/rent-vs-buy", label: "Rent vs Buy", icon: TrendingUp },
+];
+
 
   const userMenuItems = user ? [
     { path: "/profile", label: "Profile", icon: User },
@@ -160,7 +164,7 @@ const Navbar: React.FC = () => {
 
           {/* Navigation */}
           <div className="flex-1 overflow-y-auto">
-            <div className="p-4">
+            `<div className="p-4">
               <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
                 Navigation
               </h4>
@@ -185,6 +189,33 @@ const Navbar: React.FC = () => {
                 })}
               </nav>
             </div>
+
+            <div className="p-4 border-t border-gray-200">
+              <h4 className="text-sm font-semibold text-gray-400 uppercase tracking-wider mb-3">
+                Tools
+              </h4>
+              <nav className="space-y-1">
+                {toolItems.map((item) => {
+                  const Icon = item.icon;
+                  return (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      onClick={() => setIsSidebarOpen(false)}
+                      className={`flex items-center space-x-3 px-3 py-2 rounded-lg transition-colors ${
+                        isActive(item.path)
+                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-600'
+                          : 'text-gray-700 hover:bg-gray-50'
+                      }`}
+                    >
+                      <Icon className="h-5 w-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  );
+                })}
+              </nav>
+            </div>`
+
 
             {/* User Menu Items */}
             {user && (
