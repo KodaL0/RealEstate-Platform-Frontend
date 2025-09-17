@@ -83,6 +83,7 @@ const Navbar: React.FC = () => {
     { path: "/", label: "Home", icon: Home },
     { path: "/buy", label: "Buy Properties", icon: ShoppingCart },
     { path: "/rent", label: "Rent Properties", icon: Calendar },
+    { path: "/developers", label: "Developers", icon: Building2 },
     { path: "/mortgage-calculator", label: "Mortgage Calculator", icon: Calculator },
     { path: "/rent-vs-buy", label: "Rent vs Buy", icon: TrendingUp },
   ];
