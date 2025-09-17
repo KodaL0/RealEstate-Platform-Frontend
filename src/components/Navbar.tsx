@@ -250,7 +250,9 @@ const Navbar: React.FC = () => {
 
           {/* Sidebar Footer */}
           {user && (
-            <div className="p-4 border-t border-gray-200">
+            <div
+              className={`p-4 ${user?.is_developer ? "border-t border-gray-200" : ""}`}
+            >
               <button
                 onClick={handleLogout}
                 className="w-full flex items-center space-x-3 px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
@@ -260,8 +262,7 @@ const Navbar: React.FC = () => {
               </button>
             </div>
           )}
-        </div>
-      </div>
+
 
       {/* Main Navbar */}
       <nav className="fixed w-full z-[9999] bg-white shadow-md" style={{ height: 'var(--navbar-height)' }}>
