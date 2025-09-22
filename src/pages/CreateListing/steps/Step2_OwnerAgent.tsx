@@ -538,6 +538,41 @@ const Step2_OwnerAgent: React.FC<Props> = ({
               </div>
             </div>
 
+            {/* Floor Level */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="floorLevel" className="text-sm font-medium">Floor Level</label>
+              <input
+                id="floorLevel"
+                name="floorLevel"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={formData.floorLevel}
+                onChange={onChange}
+                className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="e.g., 3"
+              />
+            </div>
+
+            {/* Total Floors */}
+            <div className="flex flex-col gap-2">
+              <label htmlFor="totalFloors" className="text-sm font-medium">Total Floors</label>
+              <input
+                id="totalFloors"
+                name="totalFloors"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={formData.totalFloors}
+                onChange={onChange}
+                className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+                placeholder="e.g., 10"
+              />
+            </div>
+
+
             {/* Year Built */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
