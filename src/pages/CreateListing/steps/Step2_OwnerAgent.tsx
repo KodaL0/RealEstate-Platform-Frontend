@@ -421,7 +421,8 @@ const Step2_OwnerAgent: React.FC<Props> = ({
               </span>
             )}
           </h3>
-          
+
+          {/* Make ALL spec fields the same size by keeping them in the same two-column grid */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Property Type */}
             <div>
@@ -449,7 +450,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
               </div>
             </div>
 
-            {/* Status */}
+            {/* Property Status */}
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">
                 Property Status <span className="text-red-500">*</span>
@@ -539,8 +540,8 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             </div>
 
             {/* Floor Level */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="floorLevel" className="text-sm font-medium">Floor Level</label>
+            <div>
+              <label htmlFor="floorLevel" className="block text-sm font-semibold text-gray-700 mb-2">Floor Level</label>
               <input
                 id="floorLevel"
                 name="floorLevel"
@@ -550,14 +551,14 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                 step={1}
                 value={formData.floorLevel}
                 onChange={onChange}
-                className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                 placeholder="e.g., 3"
               />
             </div>
 
             {/* Total Floors */}
-            <div className="flex flex-col gap-2">
-              <label htmlFor="totalFloors" className="text-sm font-medium">Total Floors</label>
+            <div>
+              <label htmlFor="totalFloors" className="block text-sm font-semibold text-gray-700 mb-2">Total Floors</label>
               <input
                 id="totalFloors"
                 name="totalFloors"
@@ -567,11 +568,10 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                 step={1}
                 value={formData.totalFloors}
                 onChange={onChange}
-                className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                 placeholder="e.g., 10"
               />
             </div>
-
 
             {/* Year Built */}
             <div>
@@ -595,93 +595,93 @@ const Step2_OwnerAgent: React.FC<Props> = ({
                 />
               </div>
             </div>
-          </div>
 
-          {/* Parking Spaces */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="parkingSpaces" className="text-sm font-medium">Parking Spaces</label>
-            <input
-              id="parkingSpaces"
-              name="parkingSpaces"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              step={1}
-              value={formData.parkingSpaces}
-              onChange={onChange}
-              className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="e.g., 2"
-            />
-          </div>
+            {/* Parking Spaces */}
+            <div>
+              <label htmlFor="parkingSpaces" className="block text-sm font-semibold text-gray-700 mb-2">Parking Spaces</label>
+              <input
+                id="parkingSpaces"
+                name="parkingSpaces"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                step={1}
+                value={formData.parkingSpaces}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                placeholder="e.g., 2"
+              />
+            </div>
 
-          {/* Energy Rating */}
-          <div className="flex flex-col gap-2">
-            <label htmlFor="energyRating" className="text-sm font-medium">Energy Rating</label>
-            <input
-              id="energyRating"
-              name="energyRating"
-              type="text"
-              value={formData.energyRating}
-              onChange={onChange}
-              className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
-              placeholder="e.g., A+"
-            />
-          </div>
+            {/* Energy Rating */}
+            <div>
+              <label htmlFor="energyRating" className="block text-sm font-semibold text-gray-700 mb-2">Energy Rating</label>
+              <input
+                id="energyRating"
+                name="energyRating"
+                type="text"
+                value={formData.energyRating}
+                onChange={onChange}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
+                placeholder="e.g., A+"
+              />
+            </div>
 
-
-          {/* Available From */}
-          <div className="relative mt-6">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
-              Available From <span className="text-red-500">*</span>
-            </label>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                setShowCalendar(v => !v);
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left transition-all duration-200 hover:border-gray-400"
-            >
-              <div className="flex items-center justify-between">
-                <span className={availableFromDate ? 'text-gray-900' : 'text-gray-500'}>
-                  {availableFromDate ? format(availableFromDate, 'MMMM dd, yyyy') : 'Select availability date'}
-                </span>
-                <CalendarIcon className="ml-2 h-5 w-5 text-gray-400" />
-              </div>
-            </button>
-
-            {showCalendar && (
-              <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4">
-                <div className="mb-4">
-                  <input
-                    type="date"
-                    value={availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : ''}
-                    onChange={(e) => {
-                      const date = e.target.value ? new Date(e.target.value) : undefined;
-                      handleDateSelect(date);
-                    }}
-                    min={format(new Date(), 'yyyy-MM-dd')}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  />
+            {/* Available From */}
+            <div className="relative">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
+                Available From <span className="text-red-500">*</span>
+              </label>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  setShowCalendar(v => !v);
+                }}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg bg-white focus:ring-2 focus:ring-blue-500 focus:border-transparent text-left transition-all duration-200 hover:border-gray-400"
+              >
+                <div className="flex items-center justify-between">
+                  <span className={availableFromDate ? 'text-gray-900' : 'text-gray-500'}>
+                    {availableFromDate ? format(availableFromDate, 'MMMM dd, yyyy') : 'Select availability date'}
+                  </span>
+                  <CalendarIcon className="ml-2 h-5 w-5 text-gray-400" />
                 </div>
-                <div className="flex justify-end">
-                  <button
-                    type="button"
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      setShowCalendar(false);
-                    }}
-                    className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
-                  >
-                    Close
-                  </button>
+              </button>
+
+              {showCalendar && (
+                <div className="absolute z-50 mt-2 bg-white border border-gray-200 rounded-xl shadow-xl p-4">
+                  <div className="mb-4">
+                    <input
+                      type="date"
+                      value={availableFromDate ? format(availableFromDate, 'yyyy-MM-dd') : ''}
+                      onChange={(e) => {
+                        const date = e.target.value ? new Date(e.target.value) : undefined;
+                        handleDateSelect(date);
+                      }}
+                      min={format(new Date(), 'yyyy-MM-dd')}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+                  <div className="flex justify-end">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setShowCalendar(false);
+                      }}
+                      className="px-4 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
+
 
         {/* Enhanced Amenities Card */}
         <div className={`bg-white p-6 rounded-xl shadow-md border transition-all duration-200 ${
