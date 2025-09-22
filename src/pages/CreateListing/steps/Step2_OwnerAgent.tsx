@@ -49,6 +49,9 @@ const Step2_OwnerAgent: React.FC<Props> = ({
   setLocationCoords,
 }) => {
   const { next, back } = useListingWizard();
+
+  const ENERGY_RATINGS = ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+
   
   // Helper function to find amenity by ID
   const findAmenityById = (amenityId: string) => {
@@ -616,16 +619,27 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             {/* Energy Rating */}
             <div>
               <label htmlFor="energyRating" className="block text-sm font-semibold text-gray-700 mb-2">Energy Rating</label>
-              <input
-                id="energyRating"
-                name="energyRating"
-                type="text"
-                value={formData.energyRating}
-                onChange={onChange}
-                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
-                placeholder="e.g., A+"
-              />
+              <div className="relative">
+                <select
+                  id="energyRating"
+                  name="energyRating"
+                  value={formData.energyRating}
+                  onChange={onChange}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white appearance-none"
+                >
+                  <option value="" disabled>Select rating</option>
+                  {ENERGY_RATINGS.map(r => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
+                <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                  </svg>
+                </div>
+              </div>
             </div>
+
 
             {/* Available From */}
             <div className="relative">
