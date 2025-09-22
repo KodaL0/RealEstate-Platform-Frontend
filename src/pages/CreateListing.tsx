@@ -10,7 +10,8 @@ import { useUser } from '../context/UserContext';
 import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
 
-import Step1_UserType   from './CreateListing/steps/Step1_UserType';
+// ⬇️ Removed Step1_UserType import
+// import Step1_UserType   from './CreateListing/steps/Step1_UserType';
 import Step2_Developer  from './CreateListing/steps/Step2_Developer';
 import Step2_OwnerAgent from './CreateListing/steps/Step2_OwnerAgent';
 import Step3_Images     from './CreateListing/steps/Step3_Images';
@@ -84,34 +85,19 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       />
     );
 
-  const steps = props.isEditing 
-    ? [
-        // When editing, skip step 1 (User Type) and start from step 2
-        step2,
-        <Step3_Images {...props} />,
-        <Step4_Contact
-          formData={props.formData}
-          onChange={props.handleInputChange}
-          countryCode={props.countryCode}
-          setCountryCode={props.setCountryCode}
-          isSubmitting={props.isSubmitting}
-          isEditing={props.isEditing}
-        />,
-      ]
-    : [
-        // When creating, include all steps
-        <Step1_UserType formData={props.formData} setFormData={props.setFormData} />,
-        step2,
-        <Step3_Images {...props} />,
-        <Step4_Contact
-          formData={props.formData}
-          onChange={props.handleInputChange}
-          countryCode={props.countryCode}
-          setCountryCode={props.setCountryCode}
-          isSubmitting={props.isSubmitting}
-          isEditing={props.isEditing}
-        />,
-      ];
+  // ⬇️ Steps now always: Step 2, Step 3, Step 4 (no Step 1)
+  const steps = [
+    step2,
+    <Step3_Images {...props} />,
+    <Step4_Contact
+      formData={props.formData}
+      onChange={props.handleInputChange}
+      countryCode={props.countryCode}
+      setCountryCode={props.setCountryCode}
+      isSubmitting={props.isSubmitting}
+      isEditing={props.isEditing}
+    />,
+  ];
 
   return (
     <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
@@ -142,7 +128,6 @@ const CreateListing: React.FC = () => {
   // Initialize form data from localStorage or default
   const [formData, setFormData] = useState<ListingForm>(() => {
     if (isEditing) return DEFAULT_FORM_STATE;
-    
     const saved = localStorage.getItem('createListing_formData');
     if (saved) {
       try {
@@ -155,10 +140,17 @@ const CreateListing: React.FC = () => {
     }
     return DEFAULT_FORM_STATE;
   });
+
+  // Ensure userType has a safe default since Step 1 is gone
+  useEffect(() => {
+    if (!formData.userType) {
+      setFormData(p => ({ ...p, userType: 'owner_Agent' }));
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
-    
     const saved = localStorage.getItem('createListing_locationCoords');
     if (saved) {
       try {
@@ -173,7 +165,6 @@ const CreateListing: React.FC = () => {
   
   const [countryCode, setCountryCode] = useState(() => {
     if (isEditing) return COUNTRY_CODES[0].code;
-    
     const saved = localStorage.getItem('createListing_countryCode');
     return saved || COUNTRY_CODES[0].code;
   });
@@ -185,7 +176,6 @@ const CreateListing: React.FC = () => {
   // Step 2 date picker states
   const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(() => {
     if (isEditing) return undefined;
-    
     const saved = localStorage.getItem('createListing_availableFromDate');
     if (saved) {
       try {
@@ -320,6 +310,8 @@ const CreateListing: React.FC = () => {
           virtualTourUrl: d.virtual_tour_url || '',
           videoUrl: d.video_url || '',
           images: [],
+          // keep existing userType if returned, otherwise keep whatever we already have
+          userType: d.user_type || prev.userType || 'owner_agent',
         }));
 
         // Set available from date if it exists
@@ -363,7 +355,7 @@ const CreateListing: React.FC = () => {
       }
       fd.append('primary_is_first', 'true');
 
-      // other fields
+      // other fields (generic loop)
       Object.entries(formData).forEach(([k, v]) => {
         if (k === 'images') return;
         if (k === 'amenities') {
@@ -377,10 +369,10 @@ const CreateListing: React.FC = () => {
         if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
       });
 
-      // Ensure phone prefix is included
+      // normalize phone
       fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
       
-      // Use coordinates from form data if available, otherwise from locationCoords state
+      // coords: prefer explicit lat/lng from form; else from map picker
       if (formData.latitude && formData.longitude) {
         fd.set('latitude', formData.latitude);
         fd.set('longitude', formData.longitude);
@@ -389,17 +381,16 @@ const CreateListing: React.FC = () => {
         fd.append('longitude', String(locationCoords.lng));
       }
 
-      // ---- IMPORTANT: Normalize floor fields to snake_case for the backend ----
+      // 🔁 Normalize floor fields to snake_case for backend
       if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
         fd.set('floor_level', String(formData.floorLevel));
       }
       if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
         fd.set('total_floors', String(formData.totalFloors));
       }
-      // Remove camelCase duplicates if they were appended by the generic loop above
+      // avoid duplicate camelCase keys if appended by generic loop
       fd.delete('floorLevel');
       fd.delete('totalFloors');
-      // ------------------------------------------------------------------------
 
       const res = isEditing
         ? await api.formPut(`properties/${username}/property/${id}/edit`, fd)
@@ -440,8 +431,9 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
+  // ⬇️ totalSteps is always 3 now; initialStep remains 0
   return (
-    <ListingWizardProvider initialStep={isEditing ? 0 : 0} totalSteps={isEditing ? 3 : 4}>
+    <ListingWizardProvider initialStep={0} totalSteps={3}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
