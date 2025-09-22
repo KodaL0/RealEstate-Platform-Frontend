@@ -50,7 +50,7 @@ const Step2_OwnerAgent: React.FC<Props> = ({
 }) => {
   const { next, back } = useListingWizard();
 
-  const ENERGY_RATINGS = ['A+', 'A', 'B', 'C', 'D', 'E', 'F', 'G'];
+  const ENERGY_RATINGS = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
 
   
   // Helper function to find amenity by ID
