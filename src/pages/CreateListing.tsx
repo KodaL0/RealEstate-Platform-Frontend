@@ -59,30 +59,30 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-const step2 =
-  props.formData.userType === 'developer' ? (
-    <Step2_Developer
-      formData={props.formData}
-      setFormData={props.setFormData}
-      onChange={props.handleInputChange}
-      availableFromDate={props.availableFromDate}
-      setAvailableFromDate={props.setAvailableFromDate}
-      showCalendar={props.showCalendar}
-      setShowCalendar={props.setShowCalendar}
-      setLocationCoords={props.setLocationCoords}
-    />
-  ) : (
-    <Step2_OwnerAgent
-      formData={props.formData}
-      setFormData={props.setFormData}
-      onChange={props.handleInputChange}
-      availableFromDate={props.availableFromDate}
-      setAvailableFromDate={props.setAvailableFromDate}
-      showCalendar={props.showCalendar}
-      setShowCalendar={props.setShowCalendar}
-      setLocationCoords={props.setLocationCoords}
-    />
-  );
+  const step2 =
+    props.formData.userType === 'developer' ? (
+      <Step2_Developer
+        formData={props.formData}
+        setFormData={props.setFormData}
+        onChange={props.handleInputChange}
+        availableFromDate={props.availableFromDate}
+        setAvailableFromDate={props.setAvailableFromDate}
+        showCalendar={props.showCalendar}
+        setShowCalendar={props.setShowCalendar}
+        setLocationCoords={props.setLocationCoords}
+      />
+    ) : (
+      <Step2_OwnerAgent
+        formData={props.formData}
+        setFormData={props.setFormData}
+        onChange={props.handleInputChange}
+        availableFromDate={props.availableFromDate}
+        setAvailableFromDate={props.setAvailableFromDate}
+        showCalendar={props.showCalendar}
+        setShowCalendar={props.setShowCalendar}
+        setLocationCoords={props.setLocationCoords}
+      />
+    );
 
   const steps = props.isEditing 
     ? [
@@ -377,6 +377,7 @@ const CreateListing: React.FC = () => {
         if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
       });
 
+      // Ensure phone prefix is included
       fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
       
       // Use coordinates from form data if available, otherwise from locationCoords state
@@ -387,6 +388,18 @@ const CreateListing: React.FC = () => {
         fd.append('latitude', String(locationCoords.lat));
         fd.append('longitude', String(locationCoords.lng));
       }
+
+      // ---- IMPORTANT: Normalize floor fields to snake_case for the backend ----
+      if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
+        fd.set('floor_level', String(formData.floorLevel));
+      }
+      if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
+        fd.set('total_floors', String(formData.totalFloors));
+      }
+      // Remove camelCase duplicates if they were appended by the generic loop above
+      fd.delete('floorLevel');
+      fd.delete('totalFloors');
+      // ------------------------------------------------------------------------
 
       const res = isEditing
         ? await api.formPut(`properties/${username}/property/${id}/edit`, fd)
