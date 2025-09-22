@@ -597,6 +597,38 @@ const Step2_OwnerAgent: React.FC<Props> = ({
             </div>
           </div>
 
+          {/* Parking Spaces */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="parkingSpaces" className="text-sm font-medium">Parking Spaces</label>
+            <input
+              id="parkingSpaces"
+              name="parkingSpaces"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              step={1}
+              value={formData.parkingSpaces}
+              onChange={onChange}
+              className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="e.g., 2"
+            />
+          </div>
+
+          {/* Energy Rating */}
+          <div className="flex flex-col gap-2">
+            <label htmlFor="energyRating" className="text-sm font-medium">Energy Rating</label>
+            <input
+              id="energyRating"
+              name="energyRating"
+              type="text"
+              value={formData.energyRating}
+              onChange={onChange}
+              className="w-full rounded-xl border border-gray-300 bg-white p-3 pr-10 outline-none focus:ring-2 focus:ring-primary-500"
+              placeholder="e.g., A+"
+            />
+          </div>
+
+
           {/* Available From */}
           <div className="relative mt-6">
             <label className="block text-sm font-semibold text-gray-700 mb-2">
