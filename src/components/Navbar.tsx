@@ -83,14 +83,18 @@ const Navbar: React.FC = () => {
     <>
       {/* Sidebar Overlay */}
       {isSidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[9998] transition-opacity duration-300"
+        <div
+          className="fixed inset-0 bg-black/50 z-[9998] transition-opacity duration-200"
           onClick={() => setIsSidebarOpen(false)}
         />
       )}
 
       {/* Sidebar */}
-      <div className={`fixed left-0 top-0 h-full w-80 bg-white shadow-2xl transform transition-transform duration-300 ease-in-out z-[9999] ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div
+        className={`fixed left-0 top-0 h-full w-80 bg-white shadow-xl transform-gpu will-change-transform
+                    transition-transform duration-200 ease-out z-[9999]
+                    ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}
+>
         <div className="flex flex-col h-full">
           {/* Sidebar Header */}
           <div className="flex items-center justify-between p-6 border-b border-gray-200">
