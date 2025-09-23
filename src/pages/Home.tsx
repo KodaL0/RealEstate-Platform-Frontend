@@ -9,7 +9,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import PropertyCard from "../components/PropertyCard";
+import PropertyCard from "../components/cards/PropertyCard";
 import { Property } from "../types";
 import api from "../config/api";
 

@@ -1,16 +1,8 @@
 import axios from 'axios';
 import api from '../config/api';
 
-// Get the axios instance for interceptors
-const apiClient = axios.create({
-  baseURL: 'https://api.propertpro.com',
-  withCredentials: true,
-  headers: {
-    'Accept': 'application/json',
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
-  },
-});
+// Get the axios instance for interceptors - use the same configuration as the main API client
+const apiClient = api.apiClient;
 
 // Functions to manage auth tokens and cookies
 
@@ -152,57 +144,8 @@ export async function fetchUser() {
   }
 }
 
-// Add a request interceptor to handle token refreshing
-apiClient.interceptors.response.use(
-  (response) => response,
-  async (error) => {
-    const originalRequest = error.config;
-    const url = originalRequest?.url || '';
-
-    // Prevent infinite loop for refresh endpoint errors:
-    if (url.includes('users/refresh')) {
-      console.error("Refresh token request itself failed. Clearing auth cookies.");
-      clearAuthCookies(); // Clear tokens if refresh fails
-      return Promise.reject(error);
-    }
-
-    // Only attempt refresh if we got a 401 (Unauthorized) error
-    if (error.response && error.response.status === 401 && !originalRequest._retry) {
-      // Set a flag to prevent infinite retry loops
-      originalRequest._retry = true;
-      
-      // Get current refresh token from cookie
-      const cookieString = document.cookie;
-      const refreshTokenMatch = cookieString.match(/refresh_token=([^;]*)/);
-      const currentRefreshToken = refreshTokenMatch ? refreshTokenMatch[1] : null;
-      
-      if (!currentRefreshToken) {
-        console.error("No refresh token available");
-        clearAuthCookies();
-        return Promise.reject(error);
-      }
-      
-      try {
-        console.log("Attempting to refresh token with refresh_token from cookie...");
-        const refreshResponse = await api.auth.refreshToken();
-        console.log("Token refresh successful");
-        
-        // The backend should set the new access_token cookie via Set-Cookie header
-        // We don't need to manually set it here
-
-        // Now retry the original request with the new token
-        return apiClient(originalRequest);
-      } catch (refreshError) {
-        console.error("Token refresh failed:", refreshError);
-        clearAuthCookies(); // Clear tokens if refresh fails
-        return Promise.reject(error); // Reject with the original error
-      }
-    }
-    
-    // For any other error, just pass it through
-    return Promise.reject(error);
-  }
-);
+// Note: The response interceptor for token refreshing is already configured in api.ts
+// We don't need to duplicate it here since we're using the same apiClient instance
 
 // Export the API client for use in other files
 export { apiClient };

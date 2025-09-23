@@ -9,7 +9,7 @@ import {
   CheckCircle, ExternalLink, Copy, MapIcon
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import PropertyCard from '../components/PropertyCard';
+import PropertyCard from '../components/cards/PropertyCard';
 import ReviewForm from '../components/ReviewForm';
 import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus, Review, ReviewStats, ReviewCategory, CanReviewResponse } from '../types';
 import api from '../config/api';

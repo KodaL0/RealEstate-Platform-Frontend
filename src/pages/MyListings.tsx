@@ -1,18 +1,13 @@
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Home, Plus, Bed, Bath, Square } from 'lucide-react';
+import { Home, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
-
-/* ───────────── helper ───────────── */
-const cleanNumber = (val: unknown) => {
-  const n = Number(val);
-  return Number.isFinite(n) && Number.isInteger(n) ? n : val;
-};
+import MyPropertyCard from '../components/cards/MyPropertyCard';
 
 /* ───────────── type ───────────── */
-interface Property {
+interface MyListingsProperty {
   id: number;
   title: string;
   description: string;
@@ -31,9 +26,8 @@ interface Property {
 }
 
 function MyListings() {
-  const { user, loading: userLoading } = useUser();
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [loading, setLoading] = useState(true);
+  const { user, isLoading: userLoading } = useUser();
+  const [properties, setProperties] = useState<MyListingsProperty[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   /* pagination */
@@ -58,12 +52,9 @@ function MyListings() {
   /* fetch */
   useEffect(() => {
     if (userLoading) return;
-    if (!user) {
-      setLoading(false);
-      return;
-    }
+    if (!user) return;
+    
     (async () => {
-      setLoading(true);
       try {
         const data = await api.properties.myProperties();
         setProperties((Array.isArray(data) ? data : []).map(p => ({ ...p, price: Number(p.price) || 0 })));
@@ -73,14 +64,12 @@ function MyListings() {
         setError(
           err?.response?.data?.message || 'Failed to fetch your listings. Please try again later.'
         );
-      } finally {
-        setLoading(false);
       }
     })();
   }, [user, userLoading]);
 
   /* publish / remove */
-  const handlePublish = async (id: number) => {
+  const handlePublish = async (id: string | number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Publish this listing?')) return;
     try {
@@ -92,7 +81,7 @@ function MyListings() {
     }
   };
   
-  const handleUnpublish = async (id: number) => {
+  const handleUnpublish = async (id: string | number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Unpublish this listing? It will no longer be visible to the public.')) return;
     try {
@@ -104,7 +93,7 @@ function MyListings() {
     }
   };
   
-  const handleRemove = async (id: number) => {
+  const handleRemove = async (id: string | number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Remove this listing?')) return;
     try {
@@ -118,7 +107,7 @@ function MyListings() {
   };
 
   /* early states */
-  if (loading || userLoading)
+  if (userLoading)
     return (
       <div className="min-h-screen pt-20 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
@@ -182,182 +171,17 @@ function MyListings() {
                 transition={{ duration: 0.45, ease: 'easeOut' }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
               >
-                {view.map(p => {
-                  const beds = cleanNumber(p.bedrooms);
-                  const baths = cleanNumber(p.bathrooms);
-                  const area = cleanNumber(p.area);
-
-                  return (
-                    <div
-                      key={p.id}
-                      onClick={() => navigate(`/property/${p.id}`)}
-                      className="
-                        relative bg-white rounded-xl border border-gray-200
-                        overflow-hidden shadow-md hover:shadow-lg
-                        cursor-pointer transition-shadow
-                        flex flex-col h-full
-                      "
-                    >
-                      <img
-                        src={p.images[0]?.image || '/placeholder-property.jpg'}
-                        alt={p.title}
-                        className="w-full h-64 object-cover"
-                      />
-
-                      {/* badges */}
-                      <div className="absolute top-4 left-4 flex space-x-2 z-10">
-                        <span
-                          className={`
-                            px-3 py-1 rounded-full text-xs font-semibold
-                            ${
-                              p.property_status === 'for_sale'
-                                ? 'bg-emerald-500 text-white'
-                                : p.property_status === 'for_rent'
-                                ? 'bg-blue-500 text-white'
-                                : 'bg-gray-300 text-gray-700'
-                            }
-                          `}
-                        >
-                          {p.property_status === 'for_sale'
-                            ? 'For Sale'
-                            : p.property_status === 'for_rent'
-                            ? 'For Rent'
-                            : 'Draft'}
-                        </span>
-                        <span
-                          className={`
-                            px-3 py-1 rounded-full text-xs font-semibold
-                            ${
-                              p.is_published
-                                ? 'bg-green-500 text-white'
-                                : 'bg-red-500 text-white'
-                            }
-                          `}
-                        >
-                          {p.is_published ? 'Published' : 'Unpublished'}
-                        </span>
-                        <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-600 text-white">
-                          {p.property_type.charAt(0).toUpperCase() + p.property_type.slice(1)}
-                        </span>
-                      </div>
-
-                      {/* content */}
-                      <div
-                        className="p-5 flex flex-col flex-1"
-                        onClick={e => e.stopPropagation()}
-                      >
-                        {/* Title + Price */}
-                        <div className="flex justify-between items-start">
-                          <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600">
-                            {p.title}
-                          </h3>
-                          <p className="text-lg font-bold text-blue-600">
-                            €{Number(p.price).toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                          </p>
-                        </div>
-
-                        {/* spacer */}
-                        <div className="flex-1" />
-
-                        {/* Location */}
-                        <div className="flex items-center text-gray-500 mb-2">
-                          <svg
-                            className="w-4 h-4 mr-1"
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
-                            />
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              strokeWidth={2}
-                              d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"
-                            />
-                          </svg>
-                          <span className="text-sm">{p.location}</span>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="flex flex-wrap gap-6 pt-4 border-t border-gray-100 text-sm text-gray-500">
-                          {beds !== undefined && beds !== null && beds !== '' && (
-                            <div className="flex items-center">
-                              <Bed className="h-4 w-4 mr-2 text-gray-500" />
-                              <span>{beds} {beds === 1 ? 'Bed' : 'Beds'}</span>
-                            </div>
-                          )}
-                          
-                          {baths !== undefined && baths !== null && baths !== '' && (
-                            <div className="flex items-center">
-                              <Bath className="h-4 w-4 mr-2 text-gray-500" />
-                              <span>{baths} {baths === 1 ? 'Bath' : 'Baths'}</span>
-                            </div>
-                          )}
-
-                          {area !== undefined && area !== null && area !== '' && (
-                            <div className="flex items-center">
-                              <Square className="h-4 w-4 mr-2 text-gray-500" />
-                              <span>{area} m²</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Actions & Date */}
-                        <div className="flex justify-between items-center mt-2">
-                          <div>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                navigate(`/edit-listing/${p.id}`);
-                              }}
-                              className="text-blue-600 hover:text-blue-700 font-medium"
-                            >
-                              Edit
-                            </button>
-                            <button
-                              onClick={e => {
-                                e.stopPropagation();
-                                handleRemove(p.id);
-                              }}
-                              className="ml-4 text-red-600 hover:text-red-700 font-medium"
-                            >
-                              Remove
-                            </button>
-                            {p.is_published ? (
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handleUnpublish(p.id);
-                                }}
-                                className="ml-4 text-orange-600 hover:text-orange-700 font-medium"
-                              >
-                                Unpublish
-                              </button>
-                            ) : (
-                              <button
-                                onClick={e => {
-                                  e.stopPropagation();
-                                  handlePublish(p.id);
-                                }}
-                                className="ml-4 text-green-600 hover:text-green-700 font-medium"
-                              >
-                                Publish
-                              </button>
-                            )}
-                          </div>
-                          <span className="text-sm text-gray-500">
-                            Listed {new Date(p.created_at).toLocaleDateString()}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
+                {view.map(property => (
+                  <MyPropertyCard
+                    key={property.id}
+                    property={property}
+                    onEdit={(id) => navigate(`/edit-listing/${id}`)}
+                    onRemove={handleRemove}
+                    onPublish={handlePublish}
+                    onUnpublish={handleUnpublish}
+                    onNavigate={(id) => navigate(`/property/${id}`)}
+                  />
+                ))}
               </motion.div>
             </AnimatePresence>
 

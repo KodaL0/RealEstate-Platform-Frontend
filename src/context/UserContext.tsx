@@ -1,6 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
-// Import the custom fetchUser function from your auth.ts file
-import { fetchUser as apiFetchUser } from "../middleware/auth";
+import api from "../config/api";
 
 // Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
@@ -41,17 +40,18 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Use the custom fetchUser from auth.ts which includes token handling
+  // Direct API call without auth.ts wrapper
   const fetchUser = async () => {
     setIsLoading(true);
     try {
-      const data = await apiFetchUser();
-      console.log("UserContext: Response from fetchUser:", data);
+      const response = await api.auth.getUser();
+      console.log("UserContext: Response from API:", response.data);
       
-      // fetchUser now returns: {user: {...}, authenticated: true}
-      if (data && data.authenticated && data.user) {
-        console.log("Setting user from fetchUser response:", data.user);
-        setUser(data.user);
+      // Extract user data from API response
+      const userData = response.data.user || response.data;
+      if (userData) {
+        console.log("Setting user from API response:", userData);
+        setUser(userData);
       } else {
         console.log("No valid user data found in response");
         setUser(null);

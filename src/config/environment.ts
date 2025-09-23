@@ -4,7 +4,7 @@ export const environment = {
   api: {
     // Development: Use local backend
     development: {
-      baseUrl: 'http://127.0.0.1:8000',
+      baseUrl: 'http://localhost:8000',
       useProxy: true,
     },
     // Production: Use production backend

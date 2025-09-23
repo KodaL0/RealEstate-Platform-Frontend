@@ -7,8 +7,8 @@ import {
 import { useSearchParams } from "react-router-dom";
 import { MapPin, Filter, Grid, List, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import SearchFilters from "../components/SearchFilters";
-import PropertyCard from "../components/PropertyCard";
+import SearchFilters from "../components/sort&filter/SearchFilters";
+import PropertyCard from "../components/cards/PropertyCard";
 import { normalizePropertyData, Property, COUNTRY_OPTIONS } from "../types";
 import api from "../config/api";
 

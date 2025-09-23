@@ -2,26 +2,28 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { MapPin, Bed, Bath, Square, ArrowLeft, ArrowRight } from 'lucide-react';
-import { Property } from '../types';
-import FavouriteButton from './FavouriteButton';
+import { Property } from '../../types';
+import FavouriteButton from '../FavouriteButton';
 
 interface PropertyCardProps {
   property: Property;
   featured?: boolean;
   onUnlikeSuccess?: (propertyId: number) => void;
+  showFavoriteButton?: boolean;
 }
 
 /* helper: turn "2.0" → "2", keep 1 ½ etc. */
-const cleanNumber = (value: unknown) => {
+const cleanNumber = (value: unknown): number | string => {
   const num = Number(value);
-  if (!Number.isFinite(num)) return value; // fallback to raw
+  if (!Number.isFinite(num)) return String(value); // fallback to string
   return Number.isInteger(num) ? num : num; // 1.5 stays 1.5
 };
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
   property,
   featured = false,
-  onUnlikeSuccess
+  onUnlikeSuccess,
+  showFavoriteButton = true
 }) => {
   const {
     id,
@@ -34,8 +36,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     bedrooms,
     bathrooms,
     area,
-    listing_type,
-    forSale,
     is_favourite,
   } = property;
 
@@ -61,28 +61,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const imageUrl =
     (imgCount > 0 && images[currentImage]?.image) || '/placeholder-property.jpg';
 
-  const isForSale = property_status
-    ? property_status === 'for_sale'
-    : typeof forSale === 'boolean'
-    ? forSale
-    : listing_type?.toLowerCase() === 'sale';
+  const isForSale = property_status === 'for_sale';
 
   const bedsDisp = cleanNumber(bedrooms);
   const bathsDisp = cleanNumber(bathrooms);
   const areaDisp = Number.isFinite(Number(area))
     ? Number(area).toLocaleString()
     : area;
-
-  const countryDisplay = (country: string) => {
-    switch (country) {
-      case 'Cyprus':
-        return '🇨🇾 Cyprus';
-      case 'Greece':
-        return '🇬🇷 Greece';
-      default:
-        return country;
-    }
-  };
   
   return (
     <div
@@ -93,7 +78,41 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         ${featured ? 'col-span-2' : ''}
       `}
     >
-      {/* image + badges + arrows + favourite */}
+      {/* Exclusive Header Section - Compact */}
+      <div className="bg-white/95 backdrop-blur-sm border-b border-gray-200 px-3 py-1.5">
+        <div className="flex items-center justify-between">
+          {/* Left: Property Type */}
+          <span className="px-1.5 py-0.5 bg-gray-700 text-white text-xs font-medium rounded-full">
+            {property_type.charAt(0).toUpperCase() + property_type.slice(1)}
+          </span>
+          
+          {/* Right: Country & Status */}
+          <div className="flex items-center space-x-1.5">
+            <span
+              className={`
+                px-1.5 py-0.5 text-white text-xs font-medium rounded-full
+                ${property.country === 'Greece' ? 'bg-blue-600' : ''}
+                ${property.country === 'Cyprus' ? 'bg-orange-500' : ''}
+                ${property.country !== 'Greece' && property.country !== 'Cyprus' ? 'bg-gray-600' : ''}
+              `}
+            >
+              {property.country === 'Greece' && '🇬🇷 Greece'}
+              {property.country === 'Cyprus' && '🇨🇾 Cyprus'}
+              {property.country !== 'Greece' && property.country !== 'Cyprus' && property.country}
+            </span>
+            <span
+              className={`
+                px-1.5 py-0.5 text-white text-xs font-medium rounded-full
+                ${isForSale ? 'bg-emerald-500' : 'bg-blue-500'}
+              `}
+            >
+              {isForSale ? 'For Sale' : 'For Rent'}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Image Section with Navigation */}
       <div className="relative">
         {imgCount > 1 && (
           <>
@@ -120,55 +139,29 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           />
         </Link>
 
-        <div className="absolute top-4 left-4 flex space-x-2">
-          {/* Country Bubble with Flag */}
-          <span
-            className={`
-              px-3 py-1 rounded-full text-white text-xs font-semibold flex items-center space-x-1
-              ${property.country === 'Greece' ? 'bg-blue-600' : ''}
-              ${property.country === 'Cyprus' ? 'bg-orange-500' : ''}
-            `}
-          >
-            <span>
-              {property.country === 'Greece' && '🇬🇷 Greece'}
-              {property.country === 'Cyprus' && '🇨🇾 Cyprus'}
-              {property.country !== 'Greece' && property.country !== 'Cyprus' && property.country}
-            </span>
-          </span>
-        
-          {/* For Sale / For Rent */}
-          <span
-            className={`
-              px-3 py-1 rounded-full text-xs font-semibold
-              ${isForSale ? 'bg-emerald-500 text-white' : 'bg-blue-500 text-white'}
-            `}
-          >
-            {isForSale ? 'For Sale' : 'For Rent'}
-          </span>
-        
-          {/* Property Type */}
-          <span className="px-3 py-1 rounded-full bg-gray-900/70 text-white text-xs font-semibold">
-            {property_type.charAt(0).toUpperCase() + property_type.slice(1)}
-          </span>
-        </div>
-
-        <div className="absolute top-4 right-4 z-20">
-          <FavouriteButton
-            propertyId={id}
-            defaultLiked={!!is_favourite}
-            onUnlikeSuccess={onUnlikeSuccess}
-          />
-        </div>
+        {showFavoriteButton && (
+          <div className="absolute top-4 right-4 z-20">
+            <FavouriteButton
+              propertyId={id}
+              defaultLiked={!!is_favourite}
+              onUnlikeSuccess={onUnlikeSuccess}
+            />
+          </div>
+        )}
       </div>
 
       {/* content */}
       <div className="p-5 flex flex-col flex-1">
-        {/* title + price */}
-        <div className="flex justify-between items-start">
-          <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors">
+        {/* Title Section */}
+        <div className="mb-3">
+          <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 line-clamp-2 leading-tight">
             <Link to={`/property/${id}`}>{title}</Link>
           </h3>
-          <p className="text-lg font-bold text-blue-600 whitespace-nowrap">
+        </div>
+
+        {/* Price Section */}
+        <div className="mb-4">
+          <p className="text-2xl font-bold text-gray-900 text-left">
             {Number.isFinite(Number(price))
               ? isForSale
                 ? `€${Number(price).toLocaleString()}`

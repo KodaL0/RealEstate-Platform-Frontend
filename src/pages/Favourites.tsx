@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../config/api'; // Use the main API client
 import { Property } from '../types';
-import PropertyCard from '../components/PropertyCard';
+import PropertyCard from '../components/cards/PropertyCard';
 import { Link } from 'react-router-dom'; // Import Link for login prompt
 
 const Favourites: React.FC = () => {
