@@ -40,9 +40,10 @@ const asInt = (v: unknown) =>
 type Stat = {
   key: string;
   label: string;
-  value: string;            // <-- make value always a string
+  value: string;            // always a string for TS safety
   icon: JSX.Element;
   iconWrapClass: string;    // the colored bubble behind the icon
+  extraClasses?: string;    // optional layout helpers (e.g. center single stat)
 };
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -210,53 +211,44 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           : null,
     };
 
-    let stats: Array<Stat | null> = [];
-
-    switch (t) {
-      case 'land':
-        stats = [S.lot(), S.area(), S.year()];
-        break;
-      case 'hotel':
-        stats = [S.area(), S.floors(), S.year()];
-        break;
-      case 'shop':
-      case 'office':
-        stats = [S.area(), S.floor(), S.floors()];
-        break;
-      case 'residential_building':
-        stats = [S.area(), S.floors(), S.year()];
-        break;
-      case 'house':
-      case 'apartment':
-      case 'condo':
-      case 'townhouse': {
-        const primary = [S.beds(), S.baths(), S.area()].filter(Boolean) as Stat[];
-        if (primary.length >= 3) return primary.slice(0, 3);
-        const fallback = [S.year(), S.floor(), S.parking(), S.floors(), S.lot(), S.area()]
-          .filter(Boolean) as Stat[];
-        return [...primary, ...fallback].slice(0, 3);
-      }
-      default: {
-        const any = [S.area(), S.year(), S.floor(), S.floors(), S.beds(), S.baths(), S.parking(), S.lot()]
-          .filter(Boolean) as Stat[];
-        return any.slice(0, 3);
-      }
+    // LAND: show **only area**, and center it in the 3-col grid
+    if (t === 'land') {
+      const a = S.area();
+      if (!a) return []; // if no area, show nothing
+      return [{ ...a, extraClasses: 'col-start-2' }]; // center in grid-cols-3
     }
 
-    const filtered = stats.filter(Boolean) as Stat[];
-    if (filtered.length >= 3) return filtered.slice(0, 3);
+    // HOTEL
+    if (t === 'hotel') {
+      const stats = [S.area(), S.floors(), S.year()].filter(Boolean) as Stat[];
+      return stats.slice(0, 3);
+    }
 
-    const fillers = [S.area(), S.year(), S.floor(), S.floors(), S.parking(), S.beds(), S.baths(), S.lot()]
+    // SHOP / OFFICE
+    if (t === 'shop' || t === 'office') {
+      const stats = [S.area(), S.floor(), S.floors()].filter(Boolean) as Stat[];
+      return stats.slice(0, 3);
+    }
+
+    // RESIDENTIAL BUILDING
+    if (t === 'residential_building') {
+      const stats = [S.area(), S.floors(), S.year()].filter(Boolean) as Stat[];
+      return stats.slice(0, 3);
+    }
+
+    // HOMES
+    if (t === 'house' || t === 'apartment' || t === 'condo' || t === 'townhouse') {
+      const primary = [S.beds(), S.baths(), S.area()].filter(Boolean) as Stat[];
+      if (primary.length >= 3) return primary.slice(0, 3);
+      const fallback = [S.year(), S.floor(), S.parking(), S.floors(), S.lot(), S.area()]
+        .filter(Boolean) as Stat[];
+      return [...primary, ...fallback].slice(0, 3);
+    }
+
+    // DEFAULT
+    const any = [S.area(), S.year(), S.floor(), S.floors(), S.beds(), S.baths(), S.parking(), S.lot()]
       .filter(Boolean) as Stat[];
-    const seen = new Set(filtered.map(s => s.key));
-    for (const s of fillers) {
-      if (filtered.length >= 3) break;
-      if (!seen.has(s.key)) {
-        filtered.push(s);
-        seen.add(s.key);
-      }
-    }
-    return filtered.slice(0, 3);
+    return any.slice(0, 3);
   };
 
   const stats = getCardStats(property);
@@ -414,11 +406,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         <div className="flex-1" />
 
-        {/* Dynamic 3 stats */}
+        {/* Dynamic 3 stats (land = only 1, centered) */}
         <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
           <div className="grid grid-cols-3 gap-4">
             {stats.map((s) => (
-              <div key={s.key} className="text-center">
+              <div key={s.key} className={`text-center ${s.extraClasses || ''}`}>
                 <div className="flex items-center justify-center mb-2">
                   <div className={s.iconWrapClass}>{s.icon}</div>
                 </div>
