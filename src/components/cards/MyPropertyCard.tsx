@@ -26,14 +26,16 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
     created_at
   } = property;
 
-  // Convert MyListings property to PropertyCard format
+  // Normalize fields so PropertyCard's dynamic stats work for all types.
+  // (PropertyCard already handles: land → only area centered, others → 3 best stats)
   const propertyCardData = {
     ...property,
-    // Ensure required fields for PropertyCard
+    // make sure these exist in the shape PropertyCard reads:
+    property_type: property.property_type ?? property.propertyType ?? '',
     country: property.country || 'Unknown',
     listing_type: property.property_status,
     forSale: property.property_status === 'for_sale',
-    is_favourite: false, // Not relevant for own listings
+    is_favourite: false, // not relevant for own listings
   };
 
   // Enhanced badges overlay for MyListings
