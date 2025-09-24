@@ -48,41 +48,42 @@ const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
   ],
   house: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   apartment: [
     'title','price','country','location','propertyStatus',
-    'area','bedrooms','bathrooms','floorLevel','totalFloors','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   condo: [
     'title','price','country','location','propertyStatus',
-    'area','bedrooms','bathrooms','floorLevel','totalFloors','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   townhouse: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   hotel: [
     'title','price','country','location','propertyStatus',
-    'area','totalFloors','yearBuilt','amenities','description'
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
   ],
   shop: [
     'title','price','country','location','propertyStatus',
-    'area','floorLevel','totalFloors','yearBuilt','description'
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   office: [
     'title','price','country','location','propertyStatus',
-    'area','floorLevel','totalFloors','yearBuilt','description'
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   residential_building: [
     'title','price','country','location','propertyStatus',
-    'area','totalFloors','yearBuilt','amenities','description'
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
   ],
 };
+
 
 const Step2_PropertyDetails: React.FC<Props> = ({
   formData,

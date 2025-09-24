@@ -92,16 +92,17 @@ const PTYPE_FIELDS: Record<string, Array<
   'parking_spaces' | 'lot_size' | 'floor_level' | 'total_floors' |
   'energy_rating' | 'construction_material'
 >> = {
-  land:               ['lot_size','year_built','energy_rating','construction_material'],
+  land:               ['lot_size','year_built','construction_material'], // no energy for land
   house:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material','lot_size'],
   apartment:          ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
   condo:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
   townhouse:          ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material','lot_size'],
   hotel:              ['area','year_built','total_floors','energy_rating','construction_material'],
-  shop:               ['area','year_built','floor_level','total_floors','construction_material','parking_spaces'],
-  office:             ['area','year_built','floor_level','total_floors','construction_material','parking_spaces'],
+  shop:               ['area','year_built','floor_level','total_floors','energy_rating','construction_material','parking_spaces'],
+  office:             ['area','year_built','floor_level','total_floors','energy_rating','construction_material','parking_spaces'],
   residential_building:['area','year_built','total_floors','energy_rating','construction_material'],
 };
+
 
 // accept both strings ("15") and numbers; treat 0/"" as missing
 const hasNum = (v: any) => v !== undefined && v !== null && String(v).trim() !== '' && Number(v) > 0;
