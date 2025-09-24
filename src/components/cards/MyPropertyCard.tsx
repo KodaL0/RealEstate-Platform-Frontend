@@ -38,7 +38,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
 
   // Enhanced badges overlay for MyListings
   const renderMyListingsBadges = () => (
-    <div className="absolute top-4 left-4 flex flex-col space-y-2 z-20">
+    <div className="absolute top-4 right-4 flex flex-col space-y-2 z-30">
       {/* Publication Status Badge - Enhanced */}
       <div className="flex items-center space-x-1">
         <span
@@ -177,7 +177,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
         <PropertyCard 
           property={propertyCardData}
           onUnlikeSuccess={() => {}} // Not needed for own listings
-          showFavoriteButton={false} // Hide favorite button for own listings
+          showFavoriteButton={false} // Hide favorite button for own listings - badges will replace it
         />
         
         {/* Overlay MyListings-specific badges */}
