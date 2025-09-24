@@ -11,7 +11,7 @@ import {
   Calendar,
   Car,
   ArrowUpCircle,
-  Building2,
+  Layers, // for Total Floors
 } from 'lucide-react';
 import { Property } from '../../types';
 import FavouriteButton from '../FavouriteButton';
@@ -40,10 +40,9 @@ const asInt = (v: unknown) =>
 type Stat = {
   key: string;
   label: string;
-  value: string | number;
+  value: string;            // <-- make value always a string
   icon: JSX.Element;
-  bgClass: string;      // keep the same card CSS look
-  iconWrapClass: string; // color for icon wrapper (same pattern as existing)
+  iconWrapClass: string;    // the colored bubble behind the icon
 };
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -96,7 +95,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const bathsDisp = cleanNumber(bathrooms);
   const areaDisp = Number.isFinite(Number(area))
     ? Number(area).toLocaleString()
-    : area;
+    : (area as any);
 
   const getCountryFlag = (country: string) => {
     switch (country) {
@@ -127,7 +126,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     const _year = isSet(p.year_built) ? String(p.year_built) : '';
     const _parking = asInt(p.parking_spaces);
 
-    // unified builders so CSS stays same
+    // unified builders with colored icon bubbles — ALL values returned as strings
     const S = {
       area: (): Stat | null =>
         _area !== undefined
@@ -136,8 +135,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               label: 'sq m',
               value: _area.toLocaleString(),
               icon: <Square className="h-5 w-5 text-purple-600" />,
-              bgClass: 'bg-purple-100',
-              iconWrapClass: 'p-2 bg-purple-100 rounded-lg',
+              iconWrapClass: 'p-2 rounded-lg bg-purple-100',
             }
           : null,
       beds: (): Stat | null =>
@@ -145,10 +143,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           ? {
               key: 'beds',
               label: _beds === 1 ? 'Bedroom' : 'Bedrooms',
-              value: _beds,
+              value: String(_beds),
               icon: <Bed className="h-5 w-5 text-blue-600" />,
-              bgClass: 'bg-blue-100',
-              iconWrapClass: 'p-2 bg-blue-100 rounded-lg',
+              iconWrapClass: 'p-2 rounded-lg bg-blue-100',
             }
           : null,
       baths: (): Stat | null =>
@@ -156,10 +153,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           ? {
               key: 'baths',
               label: _baths === 1 ? 'Bathroom' : 'Bathrooms',
-              value: _baths,
+              value: String(_baths),
               icon: <Bath className="h-5 w-5 text-emerald-600" />,
-              bgClass: 'bg-emerald-100',
-              iconWrapClass: 'p-2 bg-emerald-100 rounded-lg',
+              iconWrapClass: 'p-2 rounded-lg bg-emerald-100',
             }
           : null,
       lot: (): Stat | null =>
@@ -168,9 +164,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               key: 'lot',
               label: 'Lot m²',
               value: _lot.toLocaleString(),
-              icon: <MapPin className="h-5 w-5 text-purple-600" />,
-              bgClass: 'bg-purple-100',
-              iconWrapClass: 'p-2 bg-purple-100 rounded-lg',
+              icon: <MapPin className="h-5 w-5 text-fuchsia-600" />,
+              iconWrapClass: 'p-2 rounded-lg bg-fuchsia-100',
             }
           : null,
       floor: (): Stat | null =>
@@ -179,9 +174,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               key: 'floor',
               label: 'Floor',
               value: _floor,
-              icon: <ArrowUpCircle className="h-5 w-5 text-gray-700" />,
-              bgClass: 'bg-gray-100',
-              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+              icon: <ArrowUpCircle className="h-5 w-5 text-slate-700" />,
+              iconWrapClass: 'p-2 rounded-lg bg-slate-100',
             }
           : null,
       floors: (): Stat | null =>
@@ -189,10 +183,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           ? {
               key: 'floors',
               label: 'Total Floors',
-              value: _floors,
-              icon: <Building2 className="h-5 w-5 text-gray-700" />,
-              bgClass: 'bg-gray-100',
-              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+              value: String(_floors),
+              icon: <Layers className="h-5 w-5 text-indigo-600" />,
+              iconWrapClass: 'p-2 rounded-lg bg-indigo-100',
             }
           : null,
       year: (): Stat | null =>
@@ -201,9 +194,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               key: 'year',
               label: 'Year Built',
               value: _year,
-              icon: <Calendar className="h-5 w-5 text-gray-700" />,
-              bgClass: 'bg-gray-100',
-              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+              icon: <Calendar className="h-5 w-5 text-amber-600" />,
+              iconWrapClass: 'p-2 rounded-lg bg-amber-100',
             }
           : null,
       parking: (): Stat | null =>
@@ -211,10 +203,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           ? {
               key: 'parking',
               label: 'Parking',
-              value: _parking,
-              icon: <Car className="h-5 w-5 text-gray-700" />,
-              bgClass: 'bg-gray-100',
-              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+              value: String(_parking),
+              icon: <Car className="h-5 w-5 text-rose-600" />,
+              iconWrapClass: 'p-2 rounded-lg bg-rose-100',
             }
           : null,
     };
@@ -225,42 +216,33 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       case 'land':
         stats = [S.lot(), S.area(), S.year()];
         break;
-
       case 'hotel':
         stats = [S.area(), S.floors(), S.year()];
         break;
-
       case 'shop':
       case 'office':
         stats = [S.area(), S.floor(), S.floors()];
         break;
-
       case 'residential_building':
         stats = [S.area(), S.floors(), S.year()];
         break;
-
-      // residential types
       case 'house':
       case 'apartment':
       case 'condo':
       case 'townhouse': {
         const primary = [S.beds(), S.baths(), S.area()].filter(Boolean) as Stat[];
         if (primary.length >= 3) return primary.slice(0, 3);
-
         const fallback = [S.year(), S.floor(), S.parking(), S.floors(), S.lot(), S.area()]
           .filter(Boolean) as Stat[];
         return [...primary, ...fallback].slice(0, 3);
       }
-
       default: {
-        // Unknown type → pick whatever is available
         const any = [S.area(), S.year(), S.floor(), S.floors(), S.beds(), S.baths(), S.parking(), S.lot()]
           .filter(Boolean) as Stat[];
         return any.slice(0, 3);
       }
     }
 
-    // ensure exactly 3 items (fill with sensible fallbacks if needed)
     const filtered = stats.filter(Boolean) as Stat[];
     if (filtered.length >= 3) return filtered.slice(0, 3);
 
@@ -294,7 +276,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       {/* Enhanced Header Section */}
       <div className="relative bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
-          {/* Left: Property Type with Icon */}
+          {/* Left: Property Type */}
           <div className="flex items-center space-x-2">
             <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
             <span className="px-3 py-1.5 bg-gradient-to-r from-slate-700 to-slate-800 text-white text-xs font-semibold rounded-full tracking-wide uppercase">
@@ -327,7 +309,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* Enhanced Image Section */}
       <div className="relative overflow-hidden">
-        {/* Image Navigation - Only show on hover if multiple images */}
         {imgCount > 1 && isHovered && (
           <>
             <button
@@ -345,7 +326,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </>
         )}
 
-        {/* Image Indicators */}
         {imgCount > 1 && (
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
             {images.map((_, index) => (
@@ -379,10 +359,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                 ${featured ? 'h-80' : 'h-64'}
               `}
             />
-            {/* Subtle overlay on hover */}
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
-            
-            {/* View Property overlay on hover */}
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
               <div className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center space-x-2">
                 <Eye className="h-4 w-4 text-gray-700" />
@@ -405,7 +382,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* Enhanced Content Section */}
       <div className="p-6 flex flex-col flex-1">
-        {/* Title Section */}
+        {/* Title */}
         <div className="mb-4">
           <Link to={`/property/${id}`}>
             <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors duration-300 line-clamp-2 leading-tight">
@@ -420,32 +397,30 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           <span className="text-sm font-medium">{location}</span>
         </div>
 
-        {/* Price Section - Enhanced */}
+        {/* Price */}
         <div className="mb-6">
           <div className="flex items-baseline space-x-1">
             <span className="text-3xl font-bold text-gray-900">
               €{Number.isFinite(Number(price)) ? Number(price).toLocaleString() : '0'}
             </span>
-            {!isForSale && (
+            {property_status !== 'for_sale' && (
               <span className="text-lg font-semibold text-gray-600">/mo</span>
             )}
           </div>
-          {isForSale && (
+          {property_status === 'for_sale' && (
             <p className="text-sm text-emerald-600 font-medium mt-1">Purchase Price</p>
           )}
         </div>
 
         <div className="flex-1" />
 
-        {/* Enhanced Stats Section (dynamic 3 stats) */}
+        {/* Dynamic 3 stats */}
         <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
           <div className="grid grid-cols-3 gap-4">
             {stats.map((s) => (
               <div key={s.key} className="text-center">
                 <div className="flex items-center justify-center mb-2">
-                  <div className={s.iconWrapClass}>
-                    {s.icon}
-                  </div>
+                  <div className={s.iconWrapClass}>{s.icon}</div>
                 </div>
                 <div className="text-lg font-bold text-gray-900">{s.value}</div>
                 <div className="text-xs text-gray-600 font-medium">{s.label}</div>
