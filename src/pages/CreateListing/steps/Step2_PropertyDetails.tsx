@@ -303,7 +303,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="floorLevel"
                 value={formData.floorLevel}
                 onChange={onChange}
-                placeholder="e.g. Ground, 1, 2"
+                placeholder="e.g. 0, 1, 2"
                 className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
