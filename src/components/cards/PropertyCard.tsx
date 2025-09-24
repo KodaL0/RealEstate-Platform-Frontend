@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { MapPin, Bed, Bath, Square, ArrowLeft, ArrowRight, Heart, Eye } from 'lucide-react';
+import {
+  MapPin,
+  Bed,
+  Bath,
+  Square,
+  ArrowLeft,
+  ArrowRight,
+  Eye,
+  Calendar,
+  Car,
+  ArrowUpCircle,
+  Building2,
+} from 'lucide-react';
 import { Property } from '../../types';
 import FavouriteButton from '../FavouriteButton';
 
@@ -16,6 +28,22 @@ const cleanNumber = (value: unknown): number | string => {
   const num = Number(value);
   if (!Number.isFinite(num)) return String(value);
   return Number.isInteger(num) ? num : num;
+};
+
+// tiny helpers for stats
+const isSet = (v: unknown) =>
+  v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
+
+const asInt = (v: unknown) =>
+  Number.isFinite(Number(v)) ? Number(v) : undefined;
+
+type Stat = {
+  key: string;
+  label: string;
+  value: string | number;
+  icon: JSX.Element;
+  bgClass: string;      // keep the same card CSS look
+  iconWrapClass: string; // color for icon wrapper (same pattern as existing)
 };
 
 const PropertyCard: React.FC<PropertyCardProps> = ({
@@ -85,7 +113,172 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       default: return 'from-gray-600 to-gray-700';
     }
   };
-  
+
+  // ────────────────────────── DYNAMIC STATS (3 items) ──────────────────────────
+  const getCardStats = (p: Property): Stat[] => {
+    const t = String(p.property_type || '').toLowerCase();
+
+    const _area = asInt(p.area);
+    const _beds = asInt(p.bedrooms);
+    const _baths = asInt(p.bathrooms);
+    const _lot = asInt(p.lot_size);
+    const _floor = isSet(p.floor_level) ? String(p.floor_level) : '';
+    const _floors = asInt(p.total_floors);
+    const _year = isSet(p.year_built) ? String(p.year_built) : '';
+    const _parking = asInt(p.parking_spaces);
+
+    // unified builders so CSS stays same
+    const S = {
+      area: (): Stat | null =>
+        _area !== undefined
+          ? {
+              key: 'area',
+              label: 'sq m',
+              value: _area.toLocaleString(),
+              icon: <Square className="h-5 w-5 text-purple-600" />,
+              bgClass: 'bg-purple-100',
+              iconWrapClass: 'p-2 bg-purple-100 rounded-lg',
+            }
+          : null,
+      beds: (): Stat | null =>
+        _beds !== undefined
+          ? {
+              key: 'beds',
+              label: _beds === 1 ? 'Bedroom' : 'Bedrooms',
+              value: _beds,
+              icon: <Bed className="h-5 w-5 text-blue-600" />,
+              bgClass: 'bg-blue-100',
+              iconWrapClass: 'p-2 bg-blue-100 rounded-lg',
+            }
+          : null,
+      baths: (): Stat | null =>
+        _baths !== undefined
+          ? {
+              key: 'baths',
+              label: _baths === 1 ? 'Bathroom' : 'Bathrooms',
+              value: _baths,
+              icon: <Bath className="h-5 w-5 text-emerald-600" />,
+              bgClass: 'bg-emerald-100',
+              iconWrapClass: 'p-2 bg-emerald-100 rounded-lg',
+            }
+          : null,
+      lot: (): Stat | null =>
+        _lot !== undefined
+          ? {
+              key: 'lot',
+              label: 'Lot m²',
+              value: _lot.toLocaleString(),
+              icon: <MapPin className="h-5 w-5 text-purple-600" />,
+              bgClass: 'bg-purple-100',
+              iconWrapClass: 'p-2 bg-purple-100 rounded-lg',
+            }
+          : null,
+      floor: (): Stat | null =>
+        _floor
+          ? {
+              key: 'floor',
+              label: 'Floor',
+              value: _floor,
+              icon: <ArrowUpCircle className="h-5 w-5 text-gray-700" />,
+              bgClass: 'bg-gray-100',
+              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+            }
+          : null,
+      floors: (): Stat | null =>
+        _floors !== undefined
+          ? {
+              key: 'floors',
+              label: 'Total Floors',
+              value: _floors,
+              icon: <Building2 className="h-5 w-5 text-gray-700" />,
+              bgClass: 'bg-gray-100',
+              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+            }
+          : null,
+      year: (): Stat | null =>
+        _year
+          ? {
+              key: 'year',
+              label: 'Year Built',
+              value: _year,
+              icon: <Calendar className="h-5 w-5 text-gray-700" />,
+              bgClass: 'bg-gray-100',
+              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+            }
+          : null,
+      parking: (): Stat | null =>
+        _parking !== undefined
+          ? {
+              key: 'parking',
+              label: 'Parking',
+              value: _parking,
+              icon: <Car className="h-5 w-5 text-gray-700" />,
+              bgClass: 'bg-gray-100',
+              iconWrapClass: 'p-2 bg-gray-100 rounded-lg',
+            }
+          : null,
+    };
+
+    let stats: Array<Stat | null> = [];
+
+    switch (t) {
+      case 'land':
+        stats = [S.lot(), S.area(), S.year()];
+        break;
+
+      case 'hotel':
+        stats = [S.area(), S.floors(), S.year()];
+        break;
+
+      case 'shop':
+      case 'office':
+        stats = [S.area(), S.floor(), S.floors()];
+        break;
+
+      case 'residential_building':
+        stats = [S.area(), S.floors(), S.year()];
+        break;
+
+      // residential types
+      case 'house':
+      case 'apartment':
+      case 'condo':
+      case 'townhouse': {
+        const primary = [S.beds(), S.baths(), S.area()].filter(Boolean) as Stat[];
+        if (primary.length >= 3) return primary.slice(0, 3);
+
+        const fallback = [S.year(), S.floor(), S.parking(), S.floors(), S.lot(), S.area()]
+          .filter(Boolean) as Stat[];
+        return [...primary, ...fallback].slice(0, 3);
+      }
+
+      default: {
+        // Unknown type → pick whatever is available
+        const any = [S.area(), S.year(), S.floor(), S.floors(), S.beds(), S.baths(), S.parking(), S.lot()]
+          .filter(Boolean) as Stat[];
+        return any.slice(0, 3);
+      }
+    }
+
+    // ensure exactly 3 items (fill with sensible fallbacks if needed)
+    const filtered = stats.filter(Boolean) as Stat[];
+    if (filtered.length >= 3) return filtered.slice(0, 3);
+
+    const fillers = [S.area(), S.year(), S.floor(), S.floors(), S.parking(), S.beds(), S.baths(), S.lot()]
+      .filter(Boolean) as Stat[];
+    const seen = new Set(filtered.map(s => s.key));
+    for (const s of fillers) {
+      if (filtered.length >= 3) break;
+      if (!seen.has(s.key)) {
+        filtered.push(s);
+        seen.add(s.key);
+      }
+    }
+    return filtered.slice(0, 3);
+  };
+
+  const stats = getCardStats(property);
+
   return (
     <div
       className={`
@@ -244,42 +437,20 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         <div className="flex-1" />
 
-        {/* Enhanced Stats Section */}
+        {/* Enhanced Stats Section (dynamic 3 stats) */}
         <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
           <div className="grid grid-cols-3 gap-4">
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-blue-100 rounded-lg">
-                  <Bed className="h-5 w-5 text-blue-600" />
+            {stats.map((s) => (
+              <div key={s.key} className="text-center">
+                <div className="flex items-center justify-center mb-2">
+                  <div className={s.iconWrapClass}>
+                    {s.icon}
+                  </div>
                 </div>
+                <div className="text-lg font-bold text-gray-900">{s.value}</div>
+                <div className="text-xs text-gray-600 font-medium">{s.label}</div>
               </div>
-              <div className="text-lg font-bold text-gray-900">{bedsDisp}</div>
-              <div className="text-xs text-gray-600 font-medium">
-                {bedsDisp === 1 ? 'Bedroom' : 'Bedrooms'}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-emerald-100 rounded-lg">
-                  <Bath className="h-5 w-5 text-emerald-600" />
-                </div>
-              </div>
-              <div className="text-lg font-bold text-gray-900">{bathsDisp}</div>
-              <div className="text-xs text-gray-600 font-medium">
-                {bathsDisp === 1 ? 'Bathroom' : 'Bathrooms'}
-              </div>
-            </div>
-            
-            <div className="text-center">
-              <div className="flex items-center justify-center mb-2">
-                <div className="p-2 bg-purple-100 rounded-lg">
-                  <Square className="h-5 w-5 text-purple-600" />
-                </div>
-              </div>
-              <div className="text-lg font-bold text-gray-900">{areaDisp}</div>
-              <div className="text-xs text-gray-600 font-medium">sq m</div>
-            </div>
+            ))}
           </div>
         </div>
       </div>
