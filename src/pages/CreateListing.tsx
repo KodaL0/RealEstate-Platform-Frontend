@@ -59,6 +59,8 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
+  const idx = Math.min(Math.max(currentStep, 0), 3); // 4 steps → last index = 3
+
   const steps = [
     <Step1_PropertyType
       formData={props.formData}
@@ -84,6 +86,8 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       isEditing={props.isEditing}
     />,
   ];
+
+  {steps[idx]}
 
   return (
     <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
@@ -196,6 +200,14 @@ const CreateListing: React.FC = () => {
       localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
     }
   }, [availableFromDate, isEditing]);
+
+  // ✅ Always start the wizard from step 0 when this page mounts
+  useEffect(() => {
+    // use whatever key your ListingWizardContext persists under
+    localStorage.setItem('createListing_currentStep', '0');
+    localStorage.setItem('listing_wizard_currentStep', '0'); // harmless if unused
+  }, []);
+
 
   const onDrop = useCallback((files: File[]) => {
     setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
