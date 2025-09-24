@@ -38,23 +38,21 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
 
   // Enhanced badges overlay for MyListings
   const renderMyListingsBadges = () => (
-    <div className="absolute top-4 right-4 flex flex-col space-y-2 z-30">
+    <div className="absolute top-16 left-4 flex space-x-2 z-30">
       {/* Publication Status Badge - Enhanced */}
-      <div className="flex items-center space-x-1">
-        <span
-          className={`
-            px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm
-            flex items-center space-x-1.5 border-2
-            ${is_published 
-              ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300/50' 
-              : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300/50'
-            }
-          `}
-        >
-          <div className={`w-2 h-2 rounded-full ${is_published ? 'bg-emerald-200' : 'bg-red-200'}`}></div>
-          <span>{is_published ? 'Live' : 'Draft'}</span>
-        </span>
-      </div>
+      <span
+        className={`
+          px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm
+          flex items-center space-x-1.5 border-2
+          ${is_published 
+            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300/50' 
+            : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300/50'
+          }
+        `}
+      >
+        <div className={`w-2 h-2 rounded-full ${is_published ? 'bg-emerald-200' : 'bg-red-200'}`}></div>
+        <span>{is_published ? 'Live' : 'Draft'}</span>
+      </span>
       
       {/* Property Status Badge */}
       {property_status === 'draft' && (
