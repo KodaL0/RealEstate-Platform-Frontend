@@ -15,7 +15,7 @@ import {
 } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
-import LocationAutocomplete from './LocationAutocomplete';
+import LocationAutocomplete from '../../LocationAutocomplete';
 
 type Props = {
   formData: ListingForm;
