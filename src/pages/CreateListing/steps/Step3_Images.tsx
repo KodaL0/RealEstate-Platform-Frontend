@@ -25,7 +25,7 @@ const Step3_Images: React.FC<Props> = ({
   removeImage
 }) => {
   const { next, back } = useListingWizard();
-  const valid = previewImages.length > 0 || formData.images.length > 0;
+  const valid = previewImages.length > 0;
 
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto pb-8">

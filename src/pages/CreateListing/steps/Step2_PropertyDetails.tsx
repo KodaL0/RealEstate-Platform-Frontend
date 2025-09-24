@@ -30,26 +30,49 @@ type Props = {
   setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-type PT = 'house_apartment' | 'land' | 'shop' | 'hotel';
+type PT = 'house' | 'apartment' | 'condo' | 'townhouse' | 'land' | 'hotel' | 'shop' | 'office' | 'residential_building';
 
 // Only use keys that exist on your ListingForm
 const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
-  house_apartment: [
+  land: [
+    'title','price','country','location','propertyStatus',
+    'lotSize','description'
+  ],
+  house: [
     'title','price','country','location','propertyStatus',
     'area','lotSize','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
     'amenities','description'
   ],
-  land: [
+  apartment: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','description'
+    'area','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
+    'amenities','description'
+  ],
+  condo: [
+    'title','price','country','location','propertyStatus',
+    'area','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
+    'amenities','description'
+  ],
+  townhouse: [
+    'title','price','country','location','propertyStatus',
+    'area','lotSize','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
+    'amenities','description'
+  ],
+  hotel: [
+    'title','price','country','location','propertyStatus',
+    'area','yearBuilt','amenities','description'
   ],
   shop: [
     'title','price','country','location','propertyStatus',
     'area','floorLevel','yearBuilt','description'
   ],
-  hotel: [
+  office: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','yearBuilt','amenities','description'
+    'area','floorLevel','yearBuilt','description'
+  ],
+  residential_building: [
+    'title','price','country','location','propertyStatus',
+    'area','yearBuilt','amenities','description'
   ],
 };
 
@@ -74,10 +97,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     !!ptype;
 
   const validSpecs = (() => {
-    if (ptype === 'house_apartment') return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
-    if (ptype === 'land')           return !!formData.area || !!formData.lotSize;
-    if (ptype === 'shop')           return !!formData.area;
-    if (ptype === 'hotel')          return !!formData.area;
+    if (['house', 'apartment', 'condo', 'townhouse'].includes(ptype)) 
+      return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
+    if (ptype === 'land') 
+      return !!formData.lotSize; // Land requires lot_size, not area
+    if (['hotel', 'shop', 'office', 'residential_building'].includes(ptype)) 
+      return !!formData.area;
     return false;
   })();
 
@@ -339,7 +364,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         )}
 
         {/* Amenities (house/apartment + hotel) */}
-        {(ptype === 'house_apartment' || ptype === 'hotel') && showField('amenities') && (
+        {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) && showField('amenities') && (
           <div className="lg:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Amenities</label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">

@@ -1,20 +1,25 @@
 import React from 'react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
-import { Home, Trees, Store, Hotel, ChevronRight } from 'lucide-react';
+import { Home, Trees, Store, Hotel, Building, ChevronRight } from 'lucide-react';
 
 type Props = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
 };
 
-type PT = 'house_apartment' | 'land' | 'shop' | 'hotel';
+type PT = 'house' | 'apartment' | 'condo' | 'townhouse' | 'land' | 'hotel' | 'shop' | 'office' | 'residential_building';
 
 const OPTIONS: { value: PT; label: string; desc: string; icon: React.ReactNode }[] = [
-  { value: 'house_apartment', label: 'House / Apartment', desc: 'Residential unit', icon: <Home className="w-5 h-5" /> },
-  { value: 'land',             label: 'Land / Plot',       desc: 'Vacant land or plot', icon: <Trees className="w-5 h-5" /> },
-  { value: 'shop',             label: 'Shop / Retail',     desc: 'Retail or commercial shop', icon: <Store className="w-5 h-5" /> },
-  { value: 'hotel',            label: 'Hotel',             desc: 'Tourist accommodation', icon: <Hotel className="w-5 h-5" /> },
+  { value: 'house', label: 'House', desc: 'Single family house', icon: <Home className="w-5 h-5" /> },
+  { value: 'apartment', label: 'Apartment', desc: 'Apartment unit', icon: <Building className="w-5 h-5" /> },
+  { value: 'condo', label: 'Condo', desc: 'Condominium unit', icon: <Building className="w-5 h-5" /> },
+  { value: 'townhouse', label: 'Townhouse', desc: 'Townhouse unit', icon: <Home className="w-5 h-5" /> },
+  { value: 'land', label: 'Land', desc: 'Vacant land or plot', icon: <Trees className="w-5 h-5" /> },
+  { value: 'hotel', label: 'Hotel', desc: 'Hotel property', icon: <Hotel className="w-5 h-5" /> },
+  { value: 'shop', label: 'Shop', desc: 'Retail shop', icon: <Store className="w-5 h-5" /> },
+  { value: 'office', label: 'Office', desc: 'Office space', icon: <Building className="w-5 h-5" /> },
+  { value: 'residential_building', label: 'Residential Building', desc: 'Multi-unit residential building', icon: <Building className="w-5 h-5" /> },
 ];
 
 const Step1_PropertyType: React.FC<Props> = ({ formData, setFormData }) => {

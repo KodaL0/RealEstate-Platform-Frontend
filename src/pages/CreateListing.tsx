@@ -1,5 +1,5 @@
 // src/pages/CreateListing.tsx
-import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
@@ -59,9 +59,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // clamp index so stale values can't jump ahead
-  const idx = Math.min(Math.max(currentStep, 0), 3); // 4 steps → last index = 3
-
+  // ⬇️ Steps: Step 1 (Property Type), Step 2 (Property Details), Step 3 (Images), Step 4 (Contact)
   const steps = [
     <Step1_PropertyType
       formData={props.formData}
@@ -71,11 +69,11 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       formData={props.formData}
       setFormData={props.setFormData}
       onChange={props.handleInputChange}
-      setLocationCoords={props.setLocationCoords}
       availableFromDate={props.availableFromDate}
       setAvailableFromDate={props.setAvailableFromDate}
       showCalendar={props.showCalendar}
       setShowCalendar={props.setShowCalendar}
+      setLocationCoords={props.setLocationCoords}
     />,
     <Step3_Images {...props} />,
     <Step4_Contact
@@ -95,7 +93,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       </div>
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 px-2 sm:mt-4 pt-12 sm:pt-0">
         <div className="w-full">
-          {steps[idx]}
+          {steps[currentStep]}
         </div>
       </div>
     </form>
@@ -109,20 +107,6 @@ const CreateListing: React.FC = () => {
   const isEditing = Boolean(id);
   const { user } = useUser();
   const username = user?.username || '';
-
-  // 🔁 One-time reset of any persisted wizard step BEFORE Provider mounts
-  const stepResetRef = useRef(false);
-  if (!stepResetRef.current) {
-    // Remove common keys your wizard might use
-    ['createListing_currentStep','listing_wizard_currentStep','wizard_currentStep','currentStep','wizardStep','create_listing_step']
-      .forEach(k => localStorage.removeItem(k));
-    // Set the key your context might read to 0 (harmless if unused)
-    localStorage.setItem('createListing_currentStep', '0');
-    stepResetRef.current = true;
-  }
-
-  // Make the Provider remount fresh each time this page mounts
-  const providerKey = useMemo(() => 'create-listing-' + Date.now(), []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -144,6 +128,13 @@ const CreateListing: React.FC = () => {
     return DEFAULT_FORM_STATE;
   });
 
+  // Ensure userType has a safe default since Step 1 is gone
+  useEffect(() => {
+    if (!formData.userType) {
+      setFormData(prev => ({ ...prev, userType: 'owner_Agent' as typeof prev.userType }));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
     const saved = localStorage.getItem('createListing_locationCoords');
@@ -236,24 +227,29 @@ const CreateListing: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev: ListingForm) => {
       let updated: ListingForm = { ...prev, [name]: value } as ListingForm;
-
-      // When switching propertyType, clear irrelevant specs (Step 2 will only show valid fields anyway)
       if (name === 'propertyType') {
+        // Reset fields based on property type
         const reset = {
           bedrooms: '',
           bathrooms: '',
-          floor: '',
-          parking: '',
-          furnished: '',
+          floorLevel: '',
+          totalFloors: '',
+          parkingSpaces: '',
           energyRating: '',
-          rooms: '',
-          stars: '',
-          lotArea: '',
+          lotSize: '',
           area: '',
           amenities: [] as string[],
           yearBuilt: '',
+          constructionMaterial: '',
+          availableFrom: '',
         };
-        updated = { ...updated, ...reset };
+        
+        // For land properties, we don't need bedrooms/bathrooms
+        if (value === 'land') {
+          updated = { ...updated, ...reset };
+        } else {
+          updated = { ...updated, ...reset };
+        }
       }
       return updated;
     });
@@ -318,9 +314,11 @@ const CreateListing: React.FC = () => {
           virtualTourUrl: d.virtual_tour_url || '',
           videoUrl: d.video_url || '',
           images: [],
+          // keep existing userType if returned, otherwise keep whatever we already have
           userType: d.user_type || prev.userType || 'owner_agent',
         }));
 
+        // Set available from date if it exists
         if (d.available_from) {
           const date = new Date(d.available_from);
           if (!isNaN(date.getTime())) {
@@ -361,55 +359,24 @@ const CreateListing: React.FC = () => {
       }
       fd.append('primary_is_first', 'true');
 
-      // --- map frontend camelCase -> backend snake_case ---
-      const statusMap: Record<string, string> = { forSale: 'for_sale', forRent: 'for_rent' };
+      // other fields (generic loop)
+      Object.entries(formData).forEach(([k, v]) => {
+        if (k === 'images') return;
+        if (k === 'amenities') {
+          (v as string[]).forEach(a => fd.append('amenities[]', a));
+          return;
+        }
+        if (k === 'devUnits') {
+          fd.append('devUnits', JSON.stringify(v));
+          return;
+        }
+        if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
+      });
 
-      // 1) arrays / complex first
-      if (Array.isArray(formData.amenities)) {
-        formData.amenities.forEach(a => fd.append('amenities[]', a));
-      }
-      if ((formData as any).devUnits) {
-        fd.append('devUnits', JSON.stringify((formData as any).devUnits));
-      }
-
-      // 2) direct fields (only send non-empty)
-      const setIf = (key: string, val: any) => {
-        if (val !== undefined && val !== null && String(val) !== '') fd.set(key, String(val));
-      };
-
-      // required mapping to satisfy backend
-      setIf('property_type', formData.propertyType);                      // <— FIX for 400
-      if (formData.propertyStatus) setIf('property_status', statusMap[formData.propertyStatus] ?? formData.propertyStatus);
-
-      // common snake_case mappings your API expects
-      setIf('lot_size', formData.lotSize);
-      setIf('parking_spaces', formData.parkingSpaces);
-      setIf('year_built', formData.yearBuilt);
-      setIf('energy_rating', formData.energyRating);
-      setIf('floor_level', formData.floorLevel);
-      setIf('total_floors', formData.totalFloors);
-      setIf('available_from', formData.availableFrom);
-      setIf('construction_material', formData.constructionMaterial);
-      setIf('contact_phone', `${countryCode} ${formData.contactPhone}`.trim());
-      setIf('contact_email', formData.contactEmail);
-      setIf('virtual_tour_url', formData.virtualTourUrl);
-      setIf('video_url', formData.videoUrl);
-
-      // passthroughs that already match backend keys
-      [
-        'title','description','price','location','country','region','city',
-        'postal_code','street','latitude','longitude','bedrooms','bathrooms','area'
-      ].forEach(k => setIf(k, (formData as any)[k]));
-
-      // 3) (optional) if your backend ignores camelCase, delete them; harmless if it doesn’t
-      [
-        'propertyType','propertyStatus','lotSize','parkingSpaces','yearBuilt','energyRating',
-        'floorLevel','totalFloors','availableFrom','constructionMaterial','contactPhone',
-        'contactEmail','virtualTourUrl','videoUrl'
-      ].forEach(k => fd.delete(k));
-
+      // normalize phone
+      fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
       
-      // coords
+      // coords: prefer explicit lat/lng from form; else from map picker
       if (formData.latitude && formData.longitude) {
         fd.set('latitude', formData.latitude);
         fd.set('longitude', formData.longitude);
@@ -418,13 +385,14 @@ const CreateListing: React.FC = () => {
         fd.append('longitude', String(locationCoords.lng));
       }
 
-      // snake_case for backend
+      // 🔁 Normalize floor fields to snake_case for backend
       if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
         fd.set('floor_level', String(formData.floorLevel));
       }
       if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
         fd.set('total_floors', String(formData.totalFloors));
       }
+      // avoid duplicate camelCase keys if appended by generic loop
       fd.delete('floorLevel');
       fd.delete('totalFloors');
 
@@ -433,6 +401,7 @@ const CreateListing: React.FC = () => {
         : await api.properties.create(fd);
 
       if (res.status >= 200 && res.status < 300) {
+        // Clear saved form data on successful submission
         if (!isEditing) {
           localStorage.removeItem('createListing_formData');
           localStorage.removeItem('createListing_locationCoords');
@@ -466,9 +435,9 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // ⬇️ totalSteps is 4 now; initialStep remains 0
+  // ⬇️ totalSteps is always 3 now; initialStep remains 0
   return (
-    <ListingWizardProvider key={providerKey} initialStep={0} totalSteps={4}>
+    <ListingWizardProvider initialStep={0} totalSteps={4}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
