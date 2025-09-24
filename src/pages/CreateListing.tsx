@@ -10,12 +10,11 @@ import { useUser } from '../context/UserContext';
 import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
 
-// ⬇️ Removed Step1_UserType import
-// import Step1_UserType   from './CreateListing/steps/Step1_UserType';
-import Step2_Developer  from './CreateListing/steps/Step2_Developer';
-import Step2_OwnerAgent from './CreateListing/steps/Step2_OwnerAgent';
-import Step3_Images     from './CreateListing/steps/Step3_Images';
-import Step4_Contact    from './CreateListing/steps/Step4_Contact';
+// ⬇️ New step order imports
+import Step1_PropertyType from './CreateListing/steps/Step1_PropertyType';
+import Step2_PropertyDetails from './CreateListing/steps/Step2_PropertyDetails';
+import Step3_Images from './CreateListing/steps/Step3_Images';
+import Step4_Contact from './CreateListing/steps/Step4_Contact';
 
 import {
   DEFAULT_FORM_STATE,
@@ -60,34 +59,21 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  const step2 =
-    props.formData.userType === 'developer' ? (
-      <Step2_Developer
-        formData={props.formData}
-        setFormData={props.setFormData}
-        onChange={props.handleInputChange}
-        availableFromDate={props.availableFromDate}
-        setAvailableFromDate={props.setAvailableFromDate}
-        showCalendar={props.showCalendar}
-        setShowCalendar={props.setShowCalendar}
-        setLocationCoords={props.setLocationCoords}
-      />
-    ) : (
-      <Step2_OwnerAgent
-        formData={props.formData}
-        setFormData={props.setFormData}
-        onChange={props.handleInputChange}
-        availableFromDate={props.availableFromDate}
-        setAvailableFromDate={props.setAvailableFromDate}
-        showCalendar={props.showCalendar}
-        setShowCalendar={props.setShowCalendar}
-        setLocationCoords={props.setLocationCoords}
-      />
-    );
-
-  // ⬇️ Steps now always: Step 2, Step 3, Step 4 (no Step 1)
   const steps = [
-    step2,
+    <Step1_PropertyType
+      formData={props.formData}
+      setFormData={props.setFormData}
+    />,
+    <Step2_PropertyDetails
+      formData={props.formData}
+      setFormData={props.setFormData}
+      onChange={props.handleInputChange}
+      setLocationCoords={props.setLocationCoords}
+      availableFromDate={props.availableFromDate}
+      setAvailableFromDate={props.setAvailableFromDate}
+      showCalendar={props.showCalendar}
+      setShowCalendar={props.setShowCalendar}
+    />,
     <Step3_Images {...props} />,
     <Step4_Contact
       formData={props.formData}
@@ -141,14 +127,8 @@ const CreateListing: React.FC = () => {
     return DEFAULT_FORM_STATE;
   });
 
-  // Ensure userType has a safe default since Step 1 is gone
-  useEffect(() => {
-    if (!formData.userType) {
-      setFormData(p => ({ ...p, userType: 'owner_Agent' }));
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-  
+  // ⛔️ Removed userType defaulting effect (no 'who are you' step anymore)
+
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
     const saved = localStorage.getItem('createListing_locationCoords');
@@ -241,11 +221,24 @@ const CreateListing: React.FC = () => {
     const { name, value } = e.target;
     setFormData((prev: ListingForm) => {
       let updated: ListingForm = { ...prev, [name]: value } as ListingForm;
+
+      // When switching propertyType, clear irrelevant specs (Step 2 will only show valid fields anyway)
       if (name === 'propertyType') {
-        updated =
-          value === 'land'
-            ? { ...updated, bedrooms: '0', bathrooms: '0', yearBuilt: '' }
-            : { ...updated, bedrooms: '', bathrooms: '', yearBuilt: '' };
+        const reset = {
+          bedrooms: '',
+          bathrooms: '',
+          floor: '',
+          parking: '',
+          furnished: '',
+          energyRating: '',
+          rooms: '',
+          stars: '',
+          lotArea: '',
+          area: '',
+          amenities: [] as string[],
+          yearBuilt: '',
+        };
+        updated = { ...updated, ...reset };
       }
       return updated;
     });
@@ -310,7 +303,7 @@ const CreateListing: React.FC = () => {
           virtualTourUrl: d.virtual_tour_url || '',
           videoUrl: d.video_url || '',
           images: [],
-          // keep existing userType if returned, otherwise keep whatever we already have
+          // userType kept if backend returns it; otherwise harmless
           userType: d.user_type || prev.userType || 'owner_agent',
         }));
 
@@ -431,9 +424,9 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // ⬇️ totalSteps is always 3 now; initialStep remains 0
+  // ⬇️ totalSteps is 4 now; initialStep remains 0
   return (
-    <ListingWizardProvider initialStep={0} totalSteps={3}>
+    <ListingWizardProvider initialStep={0} totalSteps={4}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
