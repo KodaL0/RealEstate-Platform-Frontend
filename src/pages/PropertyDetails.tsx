@@ -92,7 +92,7 @@ const PTYPE_FIELDS: Record<string, Array<
   'parking_spaces' | 'lot_size' | 'floor_level' | 'total_floors' |
   'energy_rating' | 'construction_material'
 >> = {
-  land:               ['lot_size','year_built','construction_material'], // no energy for land
+  land:               ['lot_size','construction_material'], // no energy for land
   house:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material','lot_size'],
   apartment:          ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
   condo:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
