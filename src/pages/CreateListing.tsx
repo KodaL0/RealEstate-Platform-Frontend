@@ -1,5 +1,5 @@
 // src/pages/CreateListing.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
@@ -59,6 +59,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
+  // clamp index so stale values can't jump ahead
   const idx = Math.min(Math.max(currentStep, 0), 3); // 4 steps → last index = 3
 
   const steps = [
@@ -87,8 +88,6 @@ const WizardContent: React.FC<WizardProps> = (props) => {
     />,
   ];
 
-  {steps[idx]}
-
   return (
     <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
       <div className="flex-shrink-0">
@@ -96,7 +95,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       </div>
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto mt-4 px-2 sm:mt-4 pt-12 sm:pt-0">
         <div className="w-full">
-          {steps[currentStep]}
+          {steps[idx]}
         </div>
       </div>
     </form>
@@ -110,6 +109,20 @@ const CreateListing: React.FC = () => {
   const isEditing = Boolean(id);
   const { user } = useUser();
   const username = user?.username || '';
+
+  // 🔁 One-time reset of any persisted wizard step BEFORE Provider mounts
+  const stepResetRef = useRef(false);
+  if (!stepResetRef.current) {
+    // Remove common keys your wizard might use
+    ['createListing_currentStep','listing_wizard_currentStep','wizard_currentStep','currentStep','wizardStep','create_listing_step']
+      .forEach(k => localStorage.removeItem(k));
+    // Set the key your context might read to 0 (harmless if unused)
+    localStorage.setItem('createListing_currentStep', '0');
+    stepResetRef.current = true;
+  }
+
+  // Make the Provider remount fresh each time this page mounts
+  const providerKey = useMemo(() => 'create-listing-' + Date.now(), []);
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -130,8 +143,6 @@ const CreateListing: React.FC = () => {
     }
     return DEFAULT_FORM_STATE;
   });
-
-  // ⛔️ Removed userType defaulting effect (no 'who are you' step anymore)
 
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
@@ -200,14 +211,6 @@ const CreateListing: React.FC = () => {
       localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
     }
   }, [availableFromDate, isEditing]);
-
-  // ✅ Always start the wizard from step 0 when this page mounts
-  useEffect(() => {
-    // use whatever key your ListingWizardContext persists under
-    localStorage.setItem('createListing_currentStep', '0');
-    localStorage.setItem('listing_wizard_currentStep', '0'); // harmless if unused
-  }, []);
-
 
   const onDrop = useCallback((files: File[]) => {
     setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
@@ -315,11 +318,9 @@ const CreateListing: React.FC = () => {
           virtualTourUrl: d.virtual_tour_url || '',
           videoUrl: d.video_url || '',
           images: [],
-          // userType kept if backend returns it; otherwise harmless
           userType: d.user_type || prev.userType || 'owner_agent',
         }));
 
-        // Set available from date if it exists
         if (d.available_from) {
           const date = new Date(d.available_from);
           if (!isNaN(date.getTime())) {
@@ -377,7 +378,7 @@ const CreateListing: React.FC = () => {
       // normalize phone
       fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
       
-      // coords: prefer explicit lat/lng from form; else from map picker
+      // coords
       if (formData.latitude && formData.longitude) {
         fd.set('latitude', formData.latitude);
         fd.set('longitude', formData.longitude);
@@ -386,14 +387,13 @@ const CreateListing: React.FC = () => {
         fd.append('longitude', String(locationCoords.lng));
       }
 
-      // 🔁 Normalize floor fields to snake_case for backend
+      // snake_case for backend
       if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
         fd.set('floor_level', String(formData.floorLevel));
       }
       if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
         fd.set('total_floors', String(formData.totalFloors));
       }
-      // avoid duplicate camelCase keys if appended by generic loop
       fd.delete('floorLevel');
       fd.delete('totalFloors');
 
@@ -402,7 +402,6 @@ const CreateListing: React.FC = () => {
         : await api.properties.create(fd);
 
       if (res.status >= 200 && res.status < 300) {
-        // Clear saved form data on successful submission
         if (!isEditing) {
           localStorage.removeItem('createListing_formData');
           localStorage.removeItem('createListing_locationCoords');
@@ -438,7 +437,7 @@ const CreateListing: React.FC = () => {
 
   // ⬇️ totalSteps is 4 now; initialStep remains 0
   return (
-    <ListingWizardProvider initialStep={0} totalSteps={4}>
+    <ListingWizardProvider key={providerKey} initialStep={0} totalSteps={4}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
