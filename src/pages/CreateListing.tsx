@@ -361,22 +361,53 @@ const CreateListing: React.FC = () => {
       }
       fd.append('primary_is_first', 'true');
 
-      // other fields (generic loop)
-      Object.entries(formData).forEach(([k, v]) => {
-        if (k === 'images') return;
-        if (k === 'amenities') {
-          (v as string[]).forEach(a => fd.append('amenities[]', a));
-          return;
-        }
-        if (k === 'devUnits') {
-          fd.append('devUnits', JSON.stringify(v));
-          return;
-        }
-        if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
-      });
+      // --- map frontend camelCase -> backend snake_case ---
+      const statusMap: Record<string, string> = { forSale: 'for_sale', forRent: 'for_rent' };
 
-      // normalize phone
-      fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
+      // 1) arrays / complex first
+      if (Array.isArray(formData.amenities)) {
+        formData.amenities.forEach(a => fd.append('amenities[]', a));
+      }
+      if ((formData as any).devUnits) {
+        fd.append('devUnits', JSON.stringify((formData as any).devUnits));
+      }
+
+      // 2) direct fields (only send non-empty)
+      const setIf = (key: string, val: any) => {
+        if (val !== undefined && val !== null && String(val) !== '') fd.set(key, String(val));
+      };
+
+      // required mapping to satisfy backend
+      setIf('property_type', formData.propertyType);                      // <— FIX for 400
+      if (formData.propertyStatus) setIf('property_status', statusMap[formData.propertyStatus] ?? formData.propertyStatus);
+
+      // common snake_case mappings your API expects
+      setIf('lot_size', formData.lotSize);
+      setIf('parking_spaces', formData.parkingSpaces);
+      setIf('year_built', formData.yearBuilt);
+      setIf('energy_rating', formData.energyRating);
+      setIf('floor_level', formData.floorLevel);
+      setIf('total_floors', formData.totalFloors);
+      setIf('available_from', formData.availableFrom);
+      setIf('construction_material', formData.constructionMaterial);
+      setIf('contact_phone', `${countryCode} ${formData.contactPhone}`.trim());
+      setIf('contact_email', formData.contactEmail);
+      setIf('virtual_tour_url', formData.virtualTourUrl);
+      setIf('video_url', formData.videoUrl);
+
+      // passthroughs that already match backend keys
+      [
+        'title','description','price','location','country','region','city',
+        'postal_code','street','latitude','longitude','bedrooms','bathrooms','area'
+      ].forEach(k => setIf(k, (formData as any)[k]));
+
+      // 3) (optional) if your backend ignores camelCase, delete them; harmless if it doesn’t
+      [
+        'propertyType','propertyStatus','lotSize','parkingSpaces','yearBuilt','energyRating',
+        'floorLevel','totalFloors','availableFrom','constructionMaterial','contactPhone',
+        'contactEmail','virtualTourUrl','videoUrl'
+      ].forEach(k => fd.delete(k));
+
       
       // coords
       if (formData.latitude && formData.longitude) {

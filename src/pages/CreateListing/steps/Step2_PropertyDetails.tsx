@@ -15,13 +15,14 @@ import {
 } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
+import LocationAutocomplete from './LocationAutocomplete';
 
 type Props = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   onChange: (e: React.ChangeEvent<any>) => void;
 
-  // Optional in case you want to use them later (CreateListing passes them)
+  // Optional (passed from CreateListing)
   setLocationCoords?: (coords: { lat: number; lng: number } | null) => void;
   availableFromDate?: Date;
   setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
@@ -31,7 +32,7 @@ type Props = {
 
 type PT = 'house_apartment' | 'land' | 'shop' | 'hotel';
 
-// Only use keys that exist on your ListingForm: lotSize, parkingSpaces, floorLevel, etc.
+// Only use keys that exist on your ListingForm
 const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
   house_apartment: [
     'title','price','country','location','propertyStatus',
@@ -56,6 +57,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   formData,
   setFormData,
   onChange,
+  setLocationCoords,
 }) => {
   const { next, back } = useListingWizard();
   const ptype = (formData.propertyType || '') as PT;
@@ -75,7 +77,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     if (ptype === 'house_apartment') return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
     if (ptype === 'land')           return !!formData.area || !!formData.lotSize;
     if (ptype === 'shop')           return !!formData.area;
-    if (ptype === 'hotel')          return !!formData.area; // keep minimal to match your ListingForm
+    if (ptype === 'hotel')          return !!formData.area;
     return false;
   })();
 
@@ -88,7 +90,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-2">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to purple-600 rounded-full mb-2">
           <Home className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-xl font-bold text-gray-800">Property Details</h2>
@@ -146,17 +148,34 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           </select>
         </div>
 
-        {/* Location */}
+        {/* Location (Mapbox autocomplete) */}
         <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Location <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Address <span className="text-red-500">*</span>
+          </label>
           <div className="relative">
-            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
-            <input
-              name="location"
+            <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 z-10" size={18} />
+            <LocationAutocomplete
               value={formData.location}
-              onChange={onChange}
+              onChange={(val: string) => update({ location: val })}
+              onSelect={(addr: string, lat: number, lng: number, structured?: any) => {
+                update({
+                  location: addr,
+                  latitude: lat.toString(),
+                  longitude: lng.toString(),
+                  ...(structured && {
+                    country: structured.country || formData.country,
+                    region: structured.region || '',
+                    city: structured.city || '',
+                    postal_code: structured.postal_code || '',
+                    street: structured.street || ''
+                  }),
+                });
+                setLocationCoords?.({ lat, lng });
+              }}
+              selectedCountry={formData.country}
               placeholder="Type address…"
-              className="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+              inputClassName="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
             />
           </div>
         </div>
