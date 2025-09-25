@@ -22,7 +22,6 @@ type Props = {
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   onChange: (e: React.ChangeEvent<any>) => void;
 
-  // Optional (passed from CreateListing)
   setLocationCoords?: (coords: { lat: number; lng: number } | null) => void;
   availableFromDate?: Date;
   setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
@@ -30,7 +29,16 @@ type Props = {
   setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
 };
 
-type PT = 'house' | 'apartment' | 'condo' | 'townhouse' | 'land' | 'hotel' | 'shop' | 'office' | 'residential_building';
+type PT =
+  | 'house'
+  | 'apartment'
+  | 'condo'
+  | 'townhouse'
+  | 'land'
+  | 'hotel'
+  | 'shop'
+  | 'office'
+  | 'residential_building';
 
 // Only use keys that exist on your ListingForm
 const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
@@ -40,41 +48,42 @@ const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
   ],
   house: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   apartment: [
     'title','price','country','location','propertyStatus',
-    'area','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   condo: [
     'title','price','country','location','propertyStatus',
-    'area','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   townhouse: [
     'title','price','country','location','propertyStatus',
-    'area','lotSize','bedrooms','bathrooms','floorLevel','parkingSpaces','energyRating','yearBuilt',
-    'amenities','description'
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   hotel: [
     'title','price','country','location','propertyStatus',
-    'area','yearBuilt','amenities','description'
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
   ],
   shop: [
     'title','price','country','location','propertyStatus',
-    'area','floorLevel','yearBuilt','description'
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   office: [
     'title','price','country','location','propertyStatus',
-    'area','floorLevel','yearBuilt','description'
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   residential_building: [
     'title','price','country','location','propertyStatus',
-    'area','yearBuilt','amenities','description'
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
   ],
 };
+
 
 const Step2_PropertyDetails: React.FC<Props> = ({
   formData,
@@ -97,11 +106,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     !!ptype;
 
   const validSpecs = (() => {
-    if (['house', 'apartment', 'condo', 'townhouse'].includes(ptype)) 
+    if (['house', 'apartment', 'condo', 'townhouse'].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
-    if (ptype === 'land') 
+    if (ptype === 'land')
       return !!formData.lotSize; // Land requires lot_size, not area
-    if (['hotel', 'shop', 'office', 'residential_building'].includes(ptype)) 
+    if (['hotel', 'shop', 'office', 'residential_building'].includes(ptype))
       return !!formData.area;
     return false;
   })();
@@ -115,13 +124,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
       {/* Header */}
       <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to purple-600 rounded-full mb-2">
+        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-2">
           <Home className="w-5 h-5 text-white" />
         </div>
         <h2 className="text-xl font-bold text-gray-800">Property Details</h2>
         <p className="text-gray-600 text-sm">
-          Only the relevant fields are shown for <span className="font-semibold">
-            {formData.propertyType?.replace('_',' / ')}
+          Only the relevant fields are shown for{' '}
+          <span className="font-semibold">
+            {formData.propertyType?.replace('_', ' / ')}
           </span>.
         </p>
       </div>
@@ -129,7 +139,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
         {/* Title */}
         <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Property Title <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Property Title <span className="text-red-500">*</span>
+          </label>
           <input
             name="title"
             value={formData.title}
@@ -141,9 +153,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Price */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Price (€) <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Price (€) <span className="text-red-500">*</span>
+          </label>
           <div className="relative">
-            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
             <input
               type="number"
               name="price"
@@ -159,16 +173,22 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Country */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Country <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Country <span className="text-red-500">*</span>
+          </label>
           <select
             name="country"
             value={formData.country}
             onChange={onChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="" disabled>Select country</option>
+            <option value="" disabled>
+              Select country
+            </option>
             {COUNTRY_OPTIONS.map((c: { value: string; label: string }) => (
-              <option key={c.value} value={c.value}>{c.label}</option>
+              <option key={c.value} value={c.value}>
+                {c.label}
+              </option>
             ))}
           </select>
         </div>
@@ -207,16 +227,22 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Status */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Property Status <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Property Status <span className="text-red-500">*</span>
+          </label>
           <select
             name="propertyStatus"
             value={formData.propertyStatus}
             onChange={onChange}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
-            <option value="" disabled>Select status</option>
+            <option value="" disabled>
+              Select status
+            </option>
             {PROPERTY_STATUS.map((s: { value: string; label: string }) => (
-              <option key={s.value} value={s.value}>{s.label}</option>
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
             ))}
           </select>
         </div>
@@ -224,9 +250,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Area */}
         {showField('area') && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Area (m²){ptype !== 'land' ? ' *' : ''}</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Area (m²){ptype !== 'land' ? ' *' : ''}
+            </label>
             <div className="relative">
-              <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Ruler className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="area"
@@ -244,7 +272,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Lot Area (m²)</label>
             <div className="relative">
-              <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Layers className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="lotSize"
@@ -262,7 +290,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Bedrooms</label>
             <div className="relative">
-              <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="bedrooms"
@@ -280,7 +308,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Bathrooms</label>
             <div className="relative">
-              <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="bathrooms"
@@ -298,13 +326,31 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Floor</label>
             <div className="relative">
-              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 name="floorLevel"
                 value={formData.floorLevel}
                 onChange={onChange}
-                placeholder="e.g. Ground, 1, 2"
+                placeholder="e.g. 0, 1, 2"
                 className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* Total Floors */}
+        {showField('totalFloors') && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">Total Floors</label>
+            <div className="relative">
+              <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="number"
+                name="totalFloors"
+                value={formData.totalFloors}
+                onChange={onChange}
+                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                min={0}
               />
             </div>
           </div>
@@ -315,7 +361,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Parking Spaces</label>
             <div className="relative">
-              <ParkingCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <ParkingCircle className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="parkingSpaces"
@@ -339,7 +385,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="">Select</option>
-              {['A','B','C','D','E','F','G'].map((r: string) => <option key={r} value={r}>{r}</option>)}
+              {['A','B','C','D','E','F','G'].map((r: string) => (
+                <option key={r} value={r}>{r}</option>
+              ))}
             </select>
           </div>
         )}
@@ -349,7 +397,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Year Built</label>
             <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18}/>
+              <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
                 type="number"
                 name="yearBuilt"
@@ -363,18 +411,21 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Amenities (house/apartment + hotel) */}
-        {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) && showField('amenities') && (
+        {/* Amenities */}
+        {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
+          showField('amenities') && (
           <div className="lg:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Amenities</label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {AMENITIES.map((a: { id: string; label: string }) => {
                 const selected = formData.amenities.includes(a.id);
                 return (
-                  <label key={a.id}
+                  <label
+                    key={a.id}
                     className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition ${
                       selected ? 'bg-green-50 border-green-400' : 'bg-white border-gray-300 hover:border-blue-400'
-                    }`}>
+                    }`}
+                  >
                     <input
                       type="checkbox"
                       className="sr-only"
@@ -382,7 +433,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                       onChange={() => {
                         setFormData((f: ListingForm) => ({
                           ...f,
-                          amenities: selected ? f.amenities.filter((x: string) => x !== a.id) : [...f.amenities, a.id],
+                          amenities: selected
+                            ? f.amenities.filter((x: string) => x !== a.id)
+                            : [...f.amenities, a.id],
                         }));
                       }}
                     />
@@ -397,7 +450,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Description */}
         <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Description <span className="text-red-500">*</span></label>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Description <span className="text-red-500">*</span>
+          </label>
           <textarea
             name="description"
             value={formData.description}
@@ -426,7 +481,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             valid ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gray-300 cursor-not-allowed'
           }`}
         >
-          <span className="flex items-center">Continue <ChevronRight className="w-5 h-5 ml-2" /></span>
+          <span className="flex items-center">
+            Continue <ChevronRight className="w-5 h-5 ml-2" />
+          </span>
         </button>
       </div>
     </section>

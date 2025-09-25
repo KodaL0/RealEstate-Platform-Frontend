@@ -29,6 +29,7 @@ function MyListings() {
   const { user, isLoading: userLoading } = useUser();
   const [properties, setProperties] = useState<MyListingsProperty[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
   /* pagination */
   const [page, setPage] = useState(1);
@@ -53,17 +54,26 @@ function MyListings() {
   useEffect(() => {
     if (userLoading) return;
     if (!user) return;
-    
+
     (async () => {
       try {
+        setLoading(true);
         const data = await api.properties.myProperties();
-        setProperties((Array.isArray(data) ? data : []).map(p => ({ ...p, price: Number(p.price) || 0 })));
+        setProperties(
+          (Array.isArray(data) ? data : []).map(p => ({
+            ...p,
+            price: Number(p.price) || 0,
+          }))
+        );
         setError(null);
       } catch (err: any) {
         console.error(err);
         setError(
-          err?.response?.data?.message || 'Failed to fetch your listings. Please try again later.'
+          err?.response?.data?.message ||
+            'Failed to fetch your listings. Please try again later.'
         );
+      } finally {
+        setLoading(false);
       }
     })();
   }, [user, userLoading]);
@@ -74,32 +84,43 @@ function MyListings() {
     if (!window.confirm('Publish this listing?')) return;
     try {
       await api.put(`properties/${username}/property/${id}/publish`);
-      setProperties(ps => ps.map(p => (p.id === id ? { ...p, is_published: true } : p)));
+      setProperties(ps =>
+        ps.map(p => (p.id === id ? { ...p, is_published: true } : p))
+      );
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.error || 'Failed to publish listing.');
     }
   };
-  
+
   const handleUnpublish = async (id: string | number) => {
     if (!username) return alert('User info unavailable');
-    if (!window.confirm('Unpublish this listing? It will no longer be visible to the public.')) return;
+    if (
+      !window.confirm(
+        'Unpublish this listing? It will no longer be visible to the public.'
+      )
+    )
+      return;
     try {
       await api.put(`properties/${username}/property/${id}/unpublish`);
-      setProperties(ps => ps.map(p => (p.id === id ? { ...p, is_published: false } : p)));
+      setProperties(ps =>
+        ps.map(p => (p.id === id ? { ...p, is_published: false } : p))
+      );
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.error || 'Failed to unpublish listing.');
     }
   };
-  
+
   const handleRemove = async (id: string | number) => {
     if (!username) return alert('User info unavailable');
     if (!window.confirm('Remove this listing?')) return;
     try {
       await api.delete(`properties/${username}/property/${id}/delete`);
       setProperties(ps => ps.filter(p => p.id !== id));
-      setPage(p => Math.min(p, Math.max(1, Math.ceil((properties.length - 1) / PER_PAGE))));
+      setPage(p =>
+        Math.min(p, Math.max(1, Math.ceil((properties.length - 1) / PER_PAGE)))
+      );
     } catch (err: any) {
       console.error(err);
       setError(err?.response?.data?.error || 'Failed to remove listing.');
@@ -107,12 +128,13 @@ function MyListings() {
   };
 
   /* early states */
-  if (userLoading)
+  if (userLoading || loading)
     return (
       <div className="min-h-screen pt-20 flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600" />
       </div>
     );
+
   if (error)
     return (
       <div className="min-h-screen pt-20 px-4">
@@ -149,8 +171,12 @@ function MyListings() {
         {properties.length === 0 ? (
           <div className="text-center py-16 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
             <Home className="mx-auto h-16 w-16 text-gray-400 mb-6" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-3">No Properties Listed Yet</h2>
-            <p className="text-gray-600 mb-8">Get started by creating your first listing.</p>
+            <h2 className="text-2xl font-bold text-gray-900 mb-3">
+              No Properties Listed Yet
+            </h2>
+            <p className="text-gray-600 mb-8">
+              Get started by creating your first listing.
+            </p>
             <button
               onClick={() => navigate('/create-listing')}
               className="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
@@ -175,11 +201,11 @@ function MyListings() {
                   <MyPropertyCard
                     key={property.id}
                     property={property}
-                    onEdit={(id) => navigate(`/edit-listing/${id}`)}
+                    onEdit={id => navigate(`/edit-listing/${id}`)}
                     onRemove={handleRemove}
                     onPublish={handlePublish}
                     onUnpublish={handleUnpublish}
-                    onNavigate={(id) => navigate(`/property/${id}`)}
+                    onNavigate={id => navigate(`/property/${id}`)}
                   />
                 ))}
               </motion.div>

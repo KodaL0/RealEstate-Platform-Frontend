@@ -86,6 +86,29 @@ const mapPropertyData = (raw: any): Property => ({
   longitude: raw?.longitude != null ? +raw.longitude : undefined,
 });
 
+// Which specs are relevant per property_type
+const PTYPE_FIELDS: Record<string, Array<
+  'bedrooms' | 'bathrooms' | 'area' | 'year_built' |
+  'parking_spaces' | 'lot_size' | 'floor_level' | 'total_floors' |
+  'energy_rating' | 'construction_material'
+>> = {
+  land:               ['lot_size','construction_material'], // no energy for land
+  house:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material','lot_size'],
+  apartment:          ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
+  condo:              ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material'],
+  townhouse:          ['bedrooms','bathrooms','area','year_built','parking_spaces','floor_level','total_floors','energy_rating','construction_material','lot_size'],
+  hotel:              ['area','year_built','total_floors','energy_rating','construction_material'],
+  shop:               ['area','year_built','floor_level','total_floors','energy_rating','construction_material','parking_spaces'],
+  office:             ['area','year_built','floor_level','total_floors','energy_rating','construction_material','parking_spaces'],
+  residential_building:['area','year_built','total_floors','energy_rating','construction_material'],
+};
+
+
+// accept both strings ("15") and numbers; treat 0/"" as missing
+const hasNum = (v: any) => v !== undefined && v !== null && String(v).trim() !== '' && Number(v) > 0;
+const hasText = (v: any) => v !== undefined && v !== null && String(v).trim() !== '';
+
+
 const amenityIcons: Record<string, JSX.Element> = {
   // Building & Infrastructure
   elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
@@ -281,6 +304,11 @@ const isStrNum = (v: unknown): v is string | number =>
       </div>
     );
   }
+
+  const pTypeKey = String(property.property_type || '').toLowerCase();
+  const allowed = new Set(PTYPE_FIELDS[pTypeKey] || []);
+  const allowedField = (k: string) => allowed.has(k as any);
+  
   const toUrl = (img: { image: string }) => img.image;
   
   // Function to detect image orientation
@@ -323,17 +351,18 @@ const isStrNum = (v: unknown): v is string | number =>
 
   const hasValue = (v: unknown) => v !== null && v !== undefined && v !== '';
 
-  const formatFloor = (v: string | number) => {
+  const formatFloor = (v: string | number | undefined | null) => {
+    if (v === undefined || v === null || String(v).trim() === '') return 'N/A';
     const n = Number(v);
-    if (Number.isNaN(n)) return String(v ?? 'N/A');
+    if (Number.isNaN(n)) return String(v);
     if (n === 0) return 'Ground';
-    // reuse your ordinal for 1st/2nd/3rd…
     const absNum = Math.abs(n);
     const tens = absNum % 100;
     if (tens >= 11 && tens <= 13) return `${n}th`;
     const unit = absNum % 10;
     return `${n}${unit === 1 ? 'st' : unit === 2 ? 'nd' : unit === 3 ? 'rd' : 'th'}`;
   };
+
 
 
   return (
@@ -584,46 +613,56 @@ const isStrNum = (v: unknown): v is string | number =>
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {/* Bedrooms */}
-              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                <Bed className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">BEDROOMS</p>
-                <p className="text-blue-600 text-xl font-bold">{property.bedrooms}</p>
-              </div>
+              {allowedField('bedrooms') && hasNum(property.bedrooms) && (
+                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                  <Bed className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">BEDROOMS</p>
+                  <p className="text-blue-600 text-xl font-bold">{Number(property.bedrooms)}</p>
+                </div>
+              )}
 
               {/* Bathrooms */}
-              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                <Bath className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">BATHROOMS</p>
-                <p className="text-blue-600 text-xl font-bold">{property.bathrooms}</p>
-              </div>
+              {allowedField('bathrooms') && hasNum(property.bathrooms) && (
+                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                  <Bath className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">BATHROOMS</p>
+                  <p className="text-blue-600 text-xl font-bold">{Number(property.bathrooms)}</p>
+                </div>
+              )}
 
               {/* Area */}
-              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                <Square className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">AREA</p>
-                <p className="text-blue-600 text-xl font-bold">
-                  {property.area.toLocaleString()} m²
-                </p>
-              </div>
+              {allowedField('area') && hasNum(property.area) && (
+                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                  <Square className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">AREA</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {Number(property.area).toLocaleString()} m²
+                  </p>
+                </div>
+              )}
 
               {/* Year Built */}
-              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">YEAR BUILT</p>
-                <p className="text-blue-600 text-xl font-bold">{property.year_built || 'N/A'}</p>
-              </div>
+              {allowedField('year_built') && hasText(property.year_built) && (
+                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                  <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">YEAR BUILT</p>
+                  <p className="text-blue-600 text-xl font-bold">{property.year_built}</p>
+                </div>
+              )}
 
-              {/* Parking Spaces — ALWAYS render */}
-              <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING SPACES</p>
-                <p className="text-blue-600 text-xl font-bold">
-                  {Number.isFinite(Number(property.parking_spaces)) ? Number(property.parking_spaces) : 0}
-                </p>
-              </div>
+              {/* Parking Spaces */}
+              {allowedField('parking_spaces') && hasNum(property.parking_spaces) && (
+                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                  <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
+                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING SPACES</p>
+                  <p className="text-blue-600 text-xl font-bold">
+                    {Number(property.parking_spaces)}
+                  </p>
+                </div>
+              )}
 
-              {/* Lot Size (only if provided) */}
-              {property.lot_size && (
+              {/* Lot Size */}
+              {allowedField('lot_size') && hasNum(property.lot_size) && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">LOT SIZE</p>
@@ -633,28 +672,30 @@ const isStrNum = (v: unknown): v is string | number =>
                 </div>
               )}
 
-                {/* Floor — ALWAYS render (shows Ground for 0, N/A when missing) */}
+              {/* Floor */}
+              {allowedField('floor_level') && hasText(property.floor_level) && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">FLOOR</p>
                   <p className="text-blue-600 text-xl font-bold">
-                    {isStrNum(property.floor_level) ? formatFloor(property.floor_level) : 'N/A'}
+                    {formatFloor(property.floor_level)}
                   </p>
                 </div>
+              )}
 
-                {/* Total Floors — ALWAYS render (N/A when missing) */}
+              {/* Total Floors */}
+              {allowedField('total_floors') && hasNum(property.total_floors) && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">TOTAL FLOORS</p>
                   <p className="text-blue-600 text-xl font-bold">
-                    {isStrNum(property.total_floors) ? property.total_floors : 'N/A'}
+                    {Number(property.total_floors)}
                   </p>
                 </div>
+              )}
 
-            
-
-              {/* Energy (only if provided) */}
-              {property.energy_rating && (
+              {/* Energy */}
+              {allowedField('energy_rating') && hasText(property.energy_rating) && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Zap className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">ENERGY</p>
@@ -662,8 +703,8 @@ const isStrNum = (v: unknown): v is string | number =>
                 </div>
               )}
 
-              {/* Construction (only if provided) */}
-              {property.construction_material && (
+              {/* Construction */}
+              {allowedField('construction_material') && hasText(property.construction_material) && (
                 <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
                   <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
                   <p className="text-gray-600 text-xs uppercase font-medium mb-1">CONSTRUCTION</p>
