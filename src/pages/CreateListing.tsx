@@ -211,7 +211,7 @@ const CreateListing: React.FC = () => {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
-    maxFiles: 10,
+    maxFiles: 20,
     maxSize: 5 * 1024 * 1024,
   });
 
