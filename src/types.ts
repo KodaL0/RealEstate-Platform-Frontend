@@ -85,6 +85,8 @@ export interface Property {
   latitude?: number;
   longitude?: number;
   is_favourite?: boolean;
+  city?: string;
+  region?: string;
 }
 
 /* Normalize helper */

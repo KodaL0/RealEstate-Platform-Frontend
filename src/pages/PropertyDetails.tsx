@@ -3,14 +3,13 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Link, useParams, useNavigate } from 'react-router-dom';
 import {
   MapPin, Bed, Bath, Square, Calendar,
-  Share2, CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
+  CheckCircle, Car, Droplet, Dumbbell, Shield, Wind, Flame,
   Smile, DoorOpen, Archive, Wifi, Package, ArrowUpCircle,
   Flower, Sun, UserCheck, Anchor,
-  X, ArrowLeft, ArrowRight, Layers, Ruler, CalendarDays, Calculator,
+  X, ArrowLeft, ArrowRight, Calculator,
   TreePine, Glasses, Palette, Crown, Baby, Thermometer, Zap,
   Umbrella, Utensils, Bell, Satellite, Eye, Home, Building2, Accessibility,
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
 import { Property, PropertyImage, AMENITIES } from '../types';
@@ -19,6 +18,8 @@ import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
 import PropertyDocuments from '../components/PropertyDocuments';
 import { geocodeAddress } from '../components/geocode';
+import LLMPropertyData from '../components/llm-properties';
+import SEO from '../components/SEO';
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
@@ -191,10 +192,6 @@ const amenityIcons: Record<string, JSX.Element> = {
 const PropertyDetails: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const thumbsPerRow = useThumbsPerRow();
-  // Narrow unknown/optional values to string | number for TS
-const isStrNum = (v: unknown): v is string | number =>
-  (typeof v === 'string' && v !== '') ||
-  (typeof v === 'number' && !Number.isNaN(v));
   const numericId = Number(id);
   const { user, isLoading: userLoading } = useUser();
   const navigate = useNavigate();
@@ -351,8 +348,6 @@ const isStrNum = (v: unknown): v is string | number =>
     </div>
   ) : null;
 
-  const hasValue = (v: unknown) => v !== null && v !== undefined && v !== '';
-
   const formatFloor = (v: string | number | undefined | null) => {
     if (v === undefined || v === null || String(v).trim() === '') return 'N/A';
     const n = Number(v);
@@ -367,8 +362,47 @@ const isStrNum = (v: unknown): v is string | number =>
 
 
 
+  // Generate SEO data
+  const propertyUrl = `/property/${property.id}`;
+  const primaryImage = property.images?.[0];
+  const imageUrl = primaryImage ? (typeof primaryImage === 'string' ? primaryImage : primaryImage.image) : undefined;
+  
+  // Generate rich description for SEO
+  const seoDescription = `${property.property_type} for ${property.property_status.replace('_', ' ')} in ${property.city || property.location}. ${property.bedrooms} bed, ${property.bathrooms} bath, ${property.area}m². Price: €${property.price.toLocaleString()}. ${property.description.substring(0, 100)}...`;
+  
+  // Generate keywords
+  const seoKeywords = [
+    property.city,
+    property.region,
+    property.property_type,
+    `${property.bedrooms} bedroom`,
+    property.property_status.replace('_', ' '),
+    'Cyprus property',
+    'real estate Cyprus'
+  ].filter(Boolean).join(', ');
+
   return (
     <div className="pt-14 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
+      {/* SEO Meta Tags for Google Search */}
+      <SEO 
+        title={property.title}
+        description={seoDescription}
+        keywords={seoKeywords}
+        image={imageUrl}
+        imageAlt={`${property.title} - ${property.city}`}
+        url={propertyUrl}
+        type="property"
+        price={property.price}
+        currency="EUR"
+        location={`${property.city}, ${property.region}, Cyprus`}
+        propertyType={property.property_type}
+        publishedTime={property.created_at}
+        modifiedTime={property.updated_at}
+      />
+      
+      {/* LLM structured data for AI agents and search engines */}
+      <LLMPropertyData property={property} />
+      
       {lightboxOpen && totalImages > 0 && (
         <div 
           className="fixed inset-0 bg-black z-[9999] flex flex-col justify-center items-center"

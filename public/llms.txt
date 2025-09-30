@@ -1,0 +1,270 @@
+# PropertPro - Cyprus Real Estate Platform
+
+> Cyprus's leading real estate platform for property listings (buy & rent)
+
+## API Endpoints
+
+### Property Search
+```
+GET https://api.propertpro.com/api/properties/ai/
+```
+
+Search and filter properties across Cyprus with comprehensive filtering options.
+
+**Parameters:**
+- `bedrooms` (int): Minimum number of bedrooms
+- `bathrooms` (float): Minimum number of bathrooms
+- `min_price` (int): Minimum price in EUR
+- `max_price` (int): Maximum price in EUR
+- `location` (string): City or region name (e.g., "Limassol", "Paphos")
+- `property_type` (string): apartment, house, villa, commercial, land
+- `property_status` (string): for_sale, for_rent
+- `search` (string): General search across title and description
+- `limit` (int): Max results (default: 50, max: 100)
+
+**Example Request:**
+```
+GET /api/properties/ai/?bedrooms=3&location=Limassol&max_price=300000&property_status=for_sale
+```
+
+**Example Response:**
+```json
+{
+  "properties": [
+    {
+      "id": 123,
+      "title": "Modern 3BR Apartment in Limassol",
+      "description": "Beautiful modern apartment with sea views...",
+      "price": 250000,
+      "property_type": "apartment",
+      "property_status": "for_sale",
+      "bedrooms": 3,
+      "bathrooms": 2,
+      "area": 120,
+      "city": "Limassol",
+      "region": "Limassol",
+      "country": "Cyprus",
+      "url": "https://propertpro.com/property/123"
+    }
+  ],
+  "meta": {
+    "total_available": 45,
+    "returned": 50,
+    "currency": "EUR",
+    "market": "Cyprus"
+  }
+}
+```
+
+### Featured Properties
+```
+GET https://api.propertpro.com/api/properties/featured/
+```
+
+Get featured property listings.
+
+### Properties for Sale
+```
+GET https://api.propertpro.com/api/properties/buy/
+```
+
+All properties available for sale (supports same filtering as AI endpoint).
+
+### Properties for Rent
+```
+GET https://api.propertpro.com/api/properties/rent/
+```
+
+All properties available for rent (supports same filtering as AI endpoint).
+
+### User Profile Search
+```
+GET https://api.propertpro.com/api/users/ai/profiles/
+```
+
+Search for user profiles on the platform.
+
+**Parameters:**
+- `search` (string): Search in username, name, bio, location
+- `location` (string): Filter by user location
+- `is_developer` (boolean): Filter developer accounts (true/false)
+- `limit` (int): Max results (default: 20, max: 50)
+
+**Example Request:**
+```
+GET /api/users/ai/profiles/?search=real estate&location=Limassol
+```
+
+**Example Response:**
+```json
+{
+  "profiles": [
+    {
+      "id": 123,
+      "username": "john_realty",
+      "name": "John Smith",
+      "bio": "Real estate agent in Limassol",
+      "location": "Limassol, Cyprus",
+      "is_developer": false,
+      "properties_count": 15,
+      "date_joined": "2024-01-15",
+      "url": "https://propertpro.com/john_realty"
+    }
+  ],
+  "meta": {
+    "total_available": 5,
+    "returned": 5
+  }
+}
+```
+
+### User Profile Detail
+```
+GET https://api.propertpro.com/api/users/ai/profiles/{username}/
+```
+
+Get detailed profile information and user's property listings.
+
+**Example Request:**
+```
+GET /api/users/ai/profiles/john_realty/
+```
+
+**Example Response:**
+```json
+{
+  "profile": {
+    "id": 123,
+    "username": "john_realty",
+    "name": "John Smith",
+    "bio": "Real estate agent in Limassol",
+    "location": "Limassol, Cyprus",
+    "is_developer": false,
+    "properties_count": 15,
+    "date_joined": "2024-01-15",
+    "url": "https://propertpro.com/john_realty"
+  },
+  "properties": [
+    {
+      "id": 456,
+      "title": "Modern 3BR Apartment",
+      "price": 250000,
+      "bedrooms": 3,
+      "city": "Limassol",
+      "url": "https://propertpro.com/property/456"
+    }
+  ],
+  "meta": {
+    "total_properties": 15,
+    "currency": "EUR"
+  }
+}
+```
+
+## Common Use Cases
+
+### Find Properties by Requirements
+"Find 3 bedroom apartments in Limassol under €300,000"
+```
+GET /api/properties/ai/?bedrooms=3&location=Limassol&max_price=300000&property_status=for_sale
+```
+
+### Search by Location
+"Show me houses in Paphos"
+```
+GET /api/properties/ai/?property_type=house&location=Paphos
+```
+
+### General Search
+"Find properties with sea view"
+```
+GET /api/properties/ai/?search=sea view
+```
+
+### Investment Properties
+"What commercial properties are available?"
+```
+GET /api/properties/ai/?property_type=commercial&property_status=for_sale
+```
+
+### Find Real Estate Agents
+"Show me real estate agents in Paphos"
+```
+GET /api/users/ai/profiles/?location=Paphos
+```
+
+### View Agent's Listings
+"What properties does john_realty have?"
+```
+GET /api/users/ai/profiles/john_realty/
+```
+
+## Property Types
+- `apartment` - Apartments and flats
+- `house` - Houses
+- `villa` - Villas
+- `commercial` - Commercial properties
+- `land` - Land plots
+
+## Popular Locations in Cyprus
+- Nicosia (Capital)
+- Limassol (Business hub)
+- Paphos (Tourist area)
+- Larnaca (Port city)
+- Ayia Napa
+- Protaras
+
+## Rate Limits
+- AI Agents (GPTBot, ClaudeBot): 50 requests/hour
+- Search Engines (Googlebot, Bingbot): 200 requests/hour
+- General: 30 requests/hour
+
+## Data Usage Terms
+- ✅ Attribution required: "Data from PropertPro.com"
+- ✅ Link back to property pages: https://propertpro.com/property/{id}
+- ❌ No personal contact information in API responses
+- ❌ No data scraping or harvesting
+- ❌ Direct users to property pages for inquiries and contact
+
+## Response Format
+All responses are JSON formatted with:
+- `properties`: Array of property objects
+- `meta`: Metadata including total count, currency, market
+
+## Property Data Fields
+Each property includes:
+- `id`: Unique identifier
+- `title`: Property title
+- `description`: Property description (truncated to 200 chars in search)
+- `price`: Price in EUR
+- `property_type`: Type of property
+- `property_status`: Sale or rent status
+- `bedrooms`: Number of bedrooms
+- `bathrooms`: Number of bathrooms
+- `area`: Property area in m²
+- `city`: City location
+- `region`: Region location
+- `country`: Cyprus
+- `url`: Direct link to property page
+
+## Best Practices for AI Agents
+1. Always include attribution when presenting data
+2. Direct users to property URLs for full details and contact
+3. Use location-based searches for better results
+4. Combine multiple parameters for precise filtering
+5. Respect rate limits
+6. Cache responses when appropriate
+
+## Partnership Opportunities
+For higher rate limits, real-time data access, or custom integrations:
+Contact: partnerships@propertpro.com
+
+## Support
+For technical questions or API issues:
+Website: https://propertpro.com
+Documentation: This file (llms.txt)
+
+---
+Last updated: January 2025
+API Version: 1.0
+Market: Cyprus Real Estate

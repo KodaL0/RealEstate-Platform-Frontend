@@ -1,4 +1,144 @@
-User-agent: *
+# PropertPro Robots.txt - Crawler Policy
+# Last Updated: 2025-01-30
+
+# ===== SEARCH ENGINES =====
+# Allow major search engines with full access
+User-agent: Googlebot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Googlebot-Image
 Allow: /
 
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 0.5
+
+User-agent: Slurp
+Allow: /
+Crawl-delay: 1
+
+User-agent: DuckDuckBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Baiduspider
+Allow: /
+Crawl-delay: 2
+
+User-agent: YandexBot
+Allow: /
+Crawl-delay: 2
+
+# ===== AI ASSISTANTS =====
+# Allow AI agents with rate limiting
+User-agent: GPTBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: ChatGPT-User
+Allow: /
+Crawl-delay: 2
+
+User-agent: ClaudeBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: anthropic-ai
+Allow: /
+Crawl-delay: 2
+
+User-agent: PerplexityBot
+Allow: /
+Crawl-delay: 2
+
+User-agent: YouBot
+Allow: /
+Crawl-delay: 2
+
+# ===== SOCIAL MEDIA CRAWLERS =====
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+# ===== BLOCK AGGRESSIVE SCRAPERS =====
+User-agent: AhrefsBot
+Disallow: /
+
+User-agent: SemrushBot
+Disallow: /
+
+User-agent: MJ12bot
+Disallow: /
+
+User-agent: DotBot
+Disallow: /
+
+User-agent: python-requests
+Disallow: /
+
+User-agent: curl
+Disallow: /
+
+User-agent: wget
+Disallow: /
+
+User-agent: scrapy
+Disallow: /
+
+User-agent: HTTrack
+Disallow: /
+
+User-agent: WebCopier
+Disallow: /
+
+# ===== CRAWL RULES =====
+# Allow all authenticated user pages
+Allow: /buy
+Allow: /rent
+Allow: /developers
+Allow: /projects
+Allow: /property/*
+Allow: /*/
+
+# Disallow admin and API endpoints
+Disallow: /admin
+Disallow: /api/
+Disallow: /developer-api/
+
+# Disallow user authentication pages
+Disallow: /login
+Disallow: /register
+Disallow: /profile
+Disallow: /favourites
+Disallow: /my-listings
+Disallow: /create-listing
+Disallow: /edit-listing
+Disallow: /chat
+
+# ===== DEFAULT =====
+# Allow all other bots with rate limiting
+User-agent: *
+Allow: /
+Crawl-delay: 1
+
+# ===== SPECIAL FILES =====
+# AI/LLM Discovery
+# See https://propertpro.com/llms.txt for AI agent API access
+
+# Sitemap
 Sitemap: https://www.propertpro.com/sitemap.xml
+
+# ===== NOTES =====
+# - For API access, see /llms.txt
+# - Properties API: https://api.propertpro.com/api/properties/ai/
+# - Profiles API: https://api.propertpro.com/api/users/ai/profiles/
+# - Rate limits apply to all endpoints

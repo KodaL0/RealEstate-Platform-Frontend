@@ -1,40 +1,19 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect } from 'react';
 import './PublicProfile.css';
 import { useParams, useNavigate } from 'react-router-dom';
 import { 
-  Calendar, Home, User, AlertCircle, MessageCircle, Heart, Edit, 
-  Star, BarChart3, MapPin, Mail, Phone, Globe, Award, TrendingUp, 
-  Clock, Eye, ThumbsUp, Share2, Send, UserPlus, Shield, Flag, 
-  Bookmark, Activity, MessageSquare, StarIcon, Target, Users,
-  CheckCircle, ExternalLink, Copy, MapIcon
+  Calendar, Home, User, AlertCircle, 
+  Star, MapPin, Mail, Phone, Globe, 
+  Clock, ThumbsUp, Send, UserPlus, Flag, 
+  Bookmark, CheckCircle, Copy
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import PropertyCard from '../components/cards/PropertyCard';
 import ReviewForm from '../components/ReviewForm';
-import { normalizePropertyData, Property, PublicProfileData, ConnectionStatus, Review, ReviewStats, ReviewCategory, CanReviewResponse } from '../types';
+import { normalizePropertyData, Property, PublicProfileData, Review, ReviewStats, CanReviewResponse } from '../types';
 import api from '../config/api';
 import { useChat } from '../context/ChatContext';
-
-// Mock data for enhanced features (keeping some for features not yet implemented)
-const mockAnalytics = {
-  profileViews: 1247,
-  listingsViewed: 3891,
-  totalLikes: 156,
-  messagesReceived: 89,
-  responseRate: 94,
-  avgResponseTime: '1.2 hours',
-  monthlyGrowth: 12.5
-};
-
-const mockActivities = [
-  { id: 1, action: 'Listed new property', details: '3-bedroom apartment in Downtown', time: '2 hours ago', type: 'listing', icon: Home },
-  { id: 2, action: 'Received 5-star review', details: 'From Sarah Johnson', time: '1 day ago', type: 'review', icon: Star },
-  { id: 3, action: 'Updated profile bio', details: 'Added new specializations and certifications', time: '3 days ago', type: 'profile', icon: User },
-  { id: 4, action: 'Responded to inquiry', details: 'About Sunset Villa property', time: '5 days ago', type: 'message', icon: MessageCircle },
-  { id: 5, action: 'Posted market update', details: 'Q1 2024 market insights and trends', time: '1 week ago', type: 'post', icon: Edit },
-  { id: 6, action: 'Connected with new client', details: 'Added to professional network', time: '1 week ago', type: 'connection', icon: UserPlus },
-  { id: 7, action: 'Property sold', details: 'Successfully closed Maple Street listing', time: '2 weeks ago', type: 'sale', icon: Award }
-];
+import LLMProfileData from '../components/llm-profile';
 
 const formatDateOnly = (dateString: string) => {
   const date = new Date(dateString);
@@ -50,12 +29,10 @@ const PublicProfile: React.FC = () => {
   const [properties, setProperties] = useState<Property[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [reviewStats, setReviewStats] = useState<ReviewStats | null>(null);
-  const [reviewCategories, setReviewCategories] = useState<ReviewCategory[]>([]);
   const [canReview, setCanReview] = useState<CanReviewResponse | null>(null);
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
@@ -71,22 +48,6 @@ const PublicProfile: React.FC = () => {
     lastUpdated: number;
   } | null>(null);
 
-  // Enhanced profile data
-  const enhancedProfile = {
-    bio: "Experienced real estate professional with over 8 years in the industry. Specializing in residential and commercial properties in the downtown area. Committed to providing exceptional service and finding the perfect match for every client.",
-    location: "San Francisco, CA",
-    website: "www.realtor-pro.com",
-    phone: "+1 (555) 123-4567",
-    email: "contact@realtor-pro.com",
-    verified: true,
-    averageRating: 4.8,
-    totalReviews: 127,
-    responseRate: 94,
-    memberSince: "2019",
-    specializations: ["Residential Sales", "Commercial Properties", "Investment Properties"],
-    languages: ["English", "Spanish", "Mandarin"],
-    certifications: ["Licensed Real Estate Agent", "Certified Negotiation Expert"]
-  };
 
   const sidebarTabs = [
     { id: 'overview', label: 'Overview', icon: User },
@@ -232,6 +193,10 @@ const PublicProfile: React.FC = () => {
     try {
       // Use cached connection data to avoid repeated API calls
       const connectionData = await getConnectionData();
+      
+      if (!connectionData) {
+        return 'none';
+      }
       
       // Check if user is in our accepted connections
       const isConnected = connectionData.connections.some((conn: any) => 
@@ -485,6 +450,14 @@ const PublicProfile: React.FC = () => {
       case 'overview':
         return (
           <div className="space-y-6">
+            {/* LLM structured data for AI agents and search engines */}
+            {profileData && (
+              <LLMProfileData 
+                user={profileData} 
+                propertiesCount={profileData.properties_count}
+              />
+            )}
+            
             {/* Bio Section */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
