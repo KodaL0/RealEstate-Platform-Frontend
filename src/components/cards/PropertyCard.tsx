@@ -58,7 +58,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
   // slideshow state
   const [currentImage, setCurrentImage] = useState(0);
-  const [isHovered, setIsHovered] = useState(false);
   const imgCount = images.length;
 
   const prevImage = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -106,7 +105,9 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     const _beds = asInt(p.bedrooms);
     const _baths = asInt(p.bathrooms);
     const _lot = asInt(p.lot_size);
-    const _floor = isSet(p.floor_level) ? String(p.floor_level) : '';
+    // Display "G" for ground floor (0), otherwise show the floor number
+    const _floorRaw = asInt(p.floor_level);
+    const _floor = _floorRaw !== undefined ? (_floorRaw === 0 ? 'G' : String(_floorRaw)) : '';
     const _floors = asInt(p.total_floors);
     const _year = isSet(p.year_built) ? String(p.year_built) : '';
     const _parking = asInt(p.parking_spaces);
@@ -195,10 +196,14 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           : null,
     };
 
-    // LAND: show **only area**, and center it in the 3-col grid
+    // LAND: show lot size if available, otherwise area
     if (t === 'land') {
+      const lot = S.lot();
+      if (lot) {
+        return [{ ...lot, extraClasses: 'col-start-2' }]; // center in grid-cols-3
+      }
       const a = S.area();
-      if (!a) return []; // if no area, show nothing
+      if (!a) return []; // if no area or lot, show nothing
       return [{ ...a, extraClasses: 'col-start-2' }]; // center in grid-cols-3
     }
 
@@ -246,8 +251,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         hover:-translate-y-1 hover:border-gray-200
         ${featured ? 'col-span-2' : ''}
       `}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
     >
       {/* Enhanced Header Section */}
       <div className="relative bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100">
@@ -285,32 +288,18 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* Enhanced Image Section */}
       <div className="relative overflow-hidden">
-        {/* Navigation Arrows - Always visible on mobile, hover on desktop */}
+        {/* Navigation Arrows - Always visible */}
         {imgCount > 1 && (
           <>
             <button
               onClick={prevImage}
-              className={`
-                absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 
-                bg-white/95 backdrop-blur-sm hover:bg-white 
-                p-2 sm:p-2.5 rounded-full shadow-lg z-10 
-                transition-all duration-300 hover:scale-110 active:scale-95
-                ${isHovered ? 'opacity-100' : 'opacity-0 sm:opacity-100'}
-                sm:opacity-0 sm:group-hover:opacity-100
-              `}
+              className="absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white p-2 sm:p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110 active:scale-95"
             >
               <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
             </button>
             <button
               onClick={nextImage}
-              className={`
-                absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 
-                bg-white/95 backdrop-blur-sm hover:bg-white 
-                p-2 sm:p-2.5 rounded-full shadow-lg z-10 
-                transition-all duration-300 hover:scale-110 active:scale-95
-                ${isHovered ? 'opacity-100' : 'opacity-0 sm:opacity-100'}
-                sm:opacity-0 sm:group-hover:opacity-100
-              `}
+              className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white p-2 sm:p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110 active:scale-95"
             >
               <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
             </button>
