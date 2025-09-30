@@ -2,8 +2,11 @@
 
 /* ---------- Shared property/media types ---------- */
 export interface PropertyImage {
+  id?: number;
   image: string;
   is_primary: boolean;
+  display_order?: number;
+  created_at?: string;
 }
 
 export interface Owner {

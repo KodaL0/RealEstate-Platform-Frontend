@@ -1,5 +1,5 @@
-import React from 'react';
-import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import React, { useState } from 'react';
+import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera, GripVertical } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
 
@@ -12,6 +12,7 @@ interface Props {
   getInputProps: any;
   isDragActive: boolean;
   removeImage: (idx: number) => void;
+  reorderImages: (fromIndex: number, toIndex: number) => void;
 }
 
 const Step3_Images: React.FC<Props> = ({
@@ -22,10 +23,39 @@ const Step3_Images: React.FC<Props> = ({
   getRootProps,
   getInputProps,
   isDragActive,
-  removeImage
+  removeImage,
+  reorderImages
 }) => {
   const { next, back } = useListingWizard();
   const valid = previewImages.length > 0;
+  
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragOverIndex(index);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e: React.DragEvent, toIndex: number) => {
+    e.preventDefault();
+    if (draggedIndex !== null && draggedIndex !== toIndex) {
+      reorderImages(draggedIndex, toIndex);
+    }
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
 
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 max-w-6xl mx-auto pb-8">
@@ -82,25 +112,46 @@ const Step3_Images: React.FC<Props> = ({
               <Image className="w-5 h-5 mr-2 text-blue-600" />
               Uploaded Images ({previewImages.length})
             </h3>
-            <div className="text-sm text-gray-500 flex items-center">
-              <Star className="w-4 h-4 mr-1 text-yellow-500" />
-              Click "Primary" to set main image
+            <div className="text-sm text-gray-500 flex items-center gap-4">
+              <span className="flex items-center">
+                <GripVertical className="w-4 h-4 mr-1 text-gray-400" />
+                Drag to reorder
+              </span>
+              <span className="flex items-center">
+                <Star className="w-4 h-4 mr-1 text-yellow-500" />
+                Click "Primary" to set main image
+              </span>
             </div>
           </div>
           
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
             {previewImages.map((preview, index) => (
-              <div key={preview} className="relative group">
-                <div className={`relative overflow-hidden rounded-xl transition-all duration-300 ${
+              <div 
+                key={preview} 
+                className="relative group"
+                draggable
+                onDragStart={(e) => handleDragStart(e, index)}
+                onDragOver={(e) => handleDragOver(e, index)}
+                onDragEnd={handleDragEnd}
+                onDrop={(e) => handleDrop(e, index)}
+              >
+                <div className={`relative overflow-hidden rounded-xl transition-all duration-300 cursor-move ${
                   index === primaryIndex 
                     ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
+                    : dragOverIndex === index && draggedIndex !== index
+                    ? 'ring-2 ring-green-400 ring-offset-2'
                     : 'hover:shadow-lg hover:scale-105'
-                }`}>
+                } ${draggedIndex === index ? 'opacity-50 scale-95' : ''}`}>
                   <img 
                     src={preview} 
                     alt={`Preview ${index + 1}`} 
                     className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110" 
                   />
+                  
+                  {/* Drag Handle */}
+                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
+                    <GripVertical className="w-4 h-4 text-gray-600" />
+                  </div>
                   
                   {/* Primary Badge */}
                   {index === primaryIndex && (

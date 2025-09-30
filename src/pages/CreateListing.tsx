@@ -40,6 +40,7 @@ type WizardProps = {
   getInputProps: any;
   isDragActive: boolean;
   removeImage: (idx: number) => void;
+  reorderImages: (fromIndex: number, toIndex: number) => void;
 
   // misc
   countryCode: string;
@@ -223,6 +224,39 @@ const CreateListing: React.FC = () => {
     setPrimaryIndex((i: number) => (idx === i ? 0 : idx < i ? i - 1 : i));
   };
 
+  const reorderImages = (fromIndex: number, toIndex: number) => {
+    if (fromIndex === toIndex) return;
+    
+    setFormData((p: ListingForm) => {
+      const newImages = [...p.images];
+      const [removed] = newImages.splice(fromIndex, 1);
+      newImages.splice(toIndex, 0, removed);
+      return { ...p, images: newImages };
+    });
+    
+    setPreviewImages((p: string[]) => {
+      const newPreviews = [...p];
+      const [removed] = newPreviews.splice(fromIndex, 1);
+      newPreviews.splice(toIndex, 0, removed);
+      return newPreviews;
+    });
+    
+    setExistingImageIds((p: string[]) => {
+      const newIds = [...p];
+      const [removed] = newIds.splice(fromIndex, 1);
+      newIds.splice(toIndex, 0, removed);
+      return newIds;
+    });
+    
+    // Update primary index if needed
+    setPrimaryIndex((i: number) => {
+      if (i === fromIndex) return toIndex;
+      if (fromIndex < i && toIndex >= i) return i - 1;
+      if (fromIndex > i && toIndex <= i) return i + 1;
+      return i;
+    });
+  };
+
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
     setFormData((prev: ListingForm) => {
@@ -342,12 +376,12 @@ const CreateListing: React.FC = () => {
     try {
       const fd = new FormData();
 
-      // images
+      // images - maintain order and set primary index
       if (formData.images.length) {
-        const prim = Math.min(primaryIndex, formData.images.length - 1);
-        [formData.images[prim], ...formData.images.filter((_, i) => i !== prim)].forEach(f =>
-          fd.append('images[]', f)
-        );
+        // Append images in their current order
+        formData.images.forEach(f => fd.append('images[]', f));
+        // Set which index is primary (backend will use display_order)
+        fd.append('primary_image_index', String(primaryIndex));
       }
       if (isEditing && previewImages.length) {
         previewImages.forEach((url, i) => {
@@ -357,7 +391,6 @@ const CreateListing: React.FC = () => {
           }
         });
       }
-      fd.append('primary_is_first', 'true');
 
       // other fields (generic loop)
       Object.entries(formData).forEach(([k, v]) => {
@@ -447,31 +480,32 @@ const CreateListing: React.FC = () => {
           )}
 
           <div className="flex-1 overflow-hidden">
-            <WizardContent
-              formData={formData}
-              setFormData={setFormData}
-              handleInputChange={handleInputChange}
-              handleSubmit={handleSubmit}
-              previewImages={previewImages}
-              setPreviewImages={setPreviewImages}
-              primaryIndex={primaryIndex}
-              setPrimaryIndex={setPrimaryIndex}
-              existingImageIds={existingImageIds}
-              setExistingImageIds={setExistingImageIds}
-              getRootProps={getRootProps}
-              getInputProps={getInputProps}
-              isDragActive={isDragActive}
-              removeImage={removeImage}
-              countryCode={countryCode}
-              setCountryCode={setCountryCode}
-              isSubmitting={isSubmitting}
-              isEditing={isEditing}
-              availableFromDate={availableFromDate}
-              setAvailableFromDate={setAvailableFromDate}
-              showCalendar={showCalendar}
-              setShowCalendar={setShowCalendar}
-              setLocationCoords={setLocationCoords}
-            />
+      <WizardContent
+        formData={formData}
+        setFormData={setFormData}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        previewImages={previewImages}
+        setPreviewImages={setPreviewImages}
+        primaryIndex={primaryIndex}
+        setPrimaryIndex={setPrimaryIndex}
+        existingImageIds={existingImageIds}
+        setExistingImageIds={setExistingImageIds}
+        getRootProps={getRootProps}
+        getInputProps={getInputProps}
+        isDragActive={isDragActive}
+        removeImage={removeImage}
+        reorderImages={reorderImages}
+        countryCode={countryCode}
+        setCountryCode={setCountryCode}
+        isSubmitting={isSubmitting}
+        isEditing={isEditing}
+        availableFromDate={availableFromDate}
+        setAvailableFromDate={setAvailableFromDate}
+        showCalendar={showCalendar}
+        setShowCalendar={setShowCalendar}
+        setLocationCoords={setLocationCoords}
+      />
           </div>
         </div>
       </div>
