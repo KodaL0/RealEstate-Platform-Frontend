@@ -3,12 +3,13 @@ import React from 'react';
 import { Check } from 'lucide-react';
 import { useListingWizard } from '../context/ListingWizardContext';
 
-// Standard 4-step wizard for both create and edit modes
+// Standard 5-step wizard for both create and edit modes
 const STEPS = [
   { id: 0, name: 'Property Type' },
   { id: 1, name: 'Details' },
   { id: 2, name: 'Images' },
-  { id: 3, name: 'Contact' },
+  { id: 3, name: 'Documents' },
+  { id: 4, name: 'Contact' },
 ];
 
 interface ProgressBarProps {
@@ -16,8 +17,8 @@ interface ProgressBarProps {
   scrollContainerRef?: React.RefObject<HTMLElement>;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollContainerRef }) => {
-  const { currentStep, goto, totalSteps } = useListingWizard();
+const ProgressBar: React.FC<ProgressBarProps> = () => {
+  const { currentStep, goto } = useListingWizard();
 
   return (
     <>
@@ -81,7 +82,6 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollCont
           {STEPS.map((step, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
-            const isUpcoming = index > currentStep;
             
             return (
               <div key={step.id} className="flex items-center">

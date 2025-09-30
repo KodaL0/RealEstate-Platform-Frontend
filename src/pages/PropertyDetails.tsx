@@ -17,6 +17,7 @@ import { Property, PropertyImage, AMENITIES } from '../types';
 import MapView from '../components/MapView';
 import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
+import PropertyDocuments from '../components/PropertyDocuments';
 import { geocodeAddress } from '../components/geocode';
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
@@ -80,6 +81,7 @@ const mapPropertyData = (raw: any): Property => ({
   created_at: raw?.created_at ?? '',
   updated_at: raw?.updated_at ?? '',
   images: normaliseImages(raw?.images),
+  documents: raw?.documents ?? [],
   is_favourite: raw?.is_favourite ?? false,
   // Add latitude/longitude if API returns them:
   latitude: raw?.latitude != null ? +raw.latitude : undefined,
@@ -733,6 +735,9 @@ const isStrNum = (v: unknown): v is string | number =>
             </div>
           </div>
         </section>
+
+        {/* 4.5. Property Documents - Conditionally rendered */}
+        <PropertyDocuments documents={property.documents || []} />
 
         {/* 5. Amenities */}
         {property.amenities.length > 0 && (

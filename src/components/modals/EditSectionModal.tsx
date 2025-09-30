@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, Home, FileText, Image, Phone } from 'lucide-react';
+import { X, Home, FileText, Image, Phone, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EditSectionModalProps {
@@ -48,6 +48,16 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
     },
     {
       id: 3,
+      title: 'Documents',
+      description: 'Upload property documents and certificates',
+      icon: File,
+      color: 'from-indigo-500 to-indigo-600',
+      borderColor: 'border-indigo-200',
+      hoverColor: 'hover:border-indigo-400',
+      bgColor: 'bg-indigo-50'
+    },
+    {
+      id: 4,
       title: 'Contact Information',
       description: 'Update contact details and preferences',
       icon: Phone,

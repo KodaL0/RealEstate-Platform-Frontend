@@ -9,6 +9,18 @@ export interface PropertyImage {
   created_at?: string;
 }
 
+export interface PropertyDocument {
+  id: number;
+  document: string;
+  document_type: string;
+  title: string;
+  description?: string;
+  file_size?: number;
+  file_extension?: string;
+  formatted_file_size?: string;
+  uploaded_at: string;
+}
+
 export interface Owner {
   id: string;
   email: string;
@@ -68,6 +80,7 @@ export interface Property {
   created_at: string;
   updated_at: string;
   images: PropertyImage[];
+  documents?: PropertyDocument[];
   // Additional fields that may be present in API responses
   latitude?: number;
   longitude?: number;

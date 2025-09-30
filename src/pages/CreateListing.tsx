@@ -14,6 +14,7 @@ import ProgressBar from '../components/ProgressBar';
 import Step1_PropertyType from './CreateListing/steps/Step1_PropertyType';
 import Step2_PropertyDetails from './CreateListing/steps/Step2_PropertyDetails';
 import Step3_Images from './CreateListing/steps/Step3_Images';
+import Step5_Documents from './CreateListing/steps/Step5_Documents';
 import Step4_Contact from './CreateListing/steps/Step4_Contact';
 
 import {
@@ -27,7 +28,7 @@ type WizardProps = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   handleInputChange: (e: React.ChangeEvent<any>) => void;
-  handleSubmit: (e: React.FormEvent) => Promise<void> | void;
+  handleSubmit: (e: React.FormEvent) => Promise<void>;
 
   // images
   previewImages: string[];
@@ -41,6 +42,10 @@ type WizardProps = {
   isDragActive: boolean;
   removeImage: (idx: number) => void;
   reorderImages: (fromIndex: number, toIndex: number) => void;
+
+  // documents
+  documents: any[];
+  setDocuments: React.Dispatch<React.SetStateAction<any[]>>;
 
   // misc
   countryCode: string;
@@ -60,7 +65,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   const { currentStep } = useListingWizard();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // ⬇️ Steps: Step 1 (Property Type), Step 2 (Property Details), Step 3 (Images), Step 4 (Contact)
+  // ⬇️ Steps: 1=Type, 2=Details, 3=Images, 4=Documents, 5=Contact
   const steps = [
     <Step1_PropertyType
       formData={props.formData}
@@ -77,6 +82,12 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setLocationCoords={props.setLocationCoords}
     />,
     <Step3_Images {...props} />,
+    <Step5_Documents
+      documents={props.documents}
+      setDocuments={props.setDocuments}
+      isSubmitting={props.isSubmitting}
+      isEditing={props.isEditing}
+    />,
     <Step4_Contact
       formData={props.formData}
       onChange={props.handleInputChange}
@@ -134,13 +145,16 @@ const CreateListing: React.FC = () => {
     return DEFAULT_FORM_STATE;
   });
 
-  // Ensure userType has a safe default for the 4-step wizard
+  // Ensure userType has a safe default for the 5-step wizard
   useEffect(() => {
     if (!formData.userType) {
       setFormData(prev => ({ ...prev, userType: 'owner_Agent' as typeof prev.userType }));
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Document state
+  const [documents, setDocuments] = useState<any[]>([]);
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
     const saved = localStorage.getItem('createListing_locationCoords');
@@ -397,6 +411,16 @@ const CreateListing: React.FC = () => {
         });
       }
 
+      // documents - append to FormData
+      if (documents.length > 0) {
+        documents.forEach((doc) => {
+          fd.append('documents[]', doc.file);
+          fd.append('document_types[]', doc.type);
+          fd.append('document_titles[]', doc.title);
+          fd.append('document_descriptions[]', doc.description || '');
+        });
+      }
+
       // other fields (generic loop)
       Object.entries(formData).forEach(([k, v]) => {
         if (k === 'images') return;
@@ -473,9 +497,9 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // ⬇️ totalSteps is always 4 now; initialStep from URL or 0
+  // ⬇️ totalSteps is now 5 (Type, Details, Images, Documents, Contact); initialStep from URL or 0
   return (
-    <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={4}>
+    <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={5}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
@@ -485,32 +509,34 @@ const CreateListing: React.FC = () => {
           )}
 
           <div className="flex-1 overflow-hidden">
-      <WizardContent
-        formData={formData}
-        setFormData={setFormData}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        previewImages={previewImages}
-        setPreviewImages={setPreviewImages}
-        primaryIndex={primaryIndex}
-        setPrimaryIndex={setPrimaryIndex}
-        existingImageIds={existingImageIds}
-        setExistingImageIds={setExistingImageIds}
-        getRootProps={getRootProps}
-        getInputProps={getInputProps}
-        isDragActive={isDragActive}
-        removeImage={removeImage}
-        reorderImages={reorderImages}
-        countryCode={countryCode}
-        setCountryCode={setCountryCode}
-        isSubmitting={isSubmitting}
-        isEditing={isEditing}
-        availableFromDate={availableFromDate}
-        setAvailableFromDate={setAvailableFromDate}
-        showCalendar={showCalendar}
-        setShowCalendar={setShowCalendar}
-        setLocationCoords={setLocationCoords}
-      />
+        <WizardContent
+          formData={formData}
+          setFormData={setFormData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          previewImages={previewImages}
+          setPreviewImages={setPreviewImages}
+          primaryIndex={primaryIndex}
+          setPrimaryIndex={setPrimaryIndex}
+          existingImageIds={existingImageIds}
+          setExistingImageIds={setExistingImageIds}
+          getRootProps={getRootProps}
+          getInputProps={getInputProps}
+          isDragActive={isDragActive}
+          removeImage={removeImage}
+          reorderImages={reorderImages}
+          documents={documents}
+          setDocuments={setDocuments}
+          countryCode={countryCode}
+          setCountryCode={setCountryCode}
+          isSubmitting={isSubmitting}
+          isEditing={isEditing}
+          availableFromDate={availableFromDate}
+          setAvailableFromDate={setAvailableFromDate}
+          showCalendar={showCalendar}
+          setShowCalendar={setShowCalendar}
+          setLocationCoords={setLocationCoords}
+        />
           </div>
         </div>
       </div>
