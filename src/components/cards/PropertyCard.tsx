@@ -23,13 +23,6 @@ interface PropertyCardProps {
   showFavoriteButton?: boolean;
 }
 
-/* helper: turn "2.0" → "2", keep 1.5 etc. */
-const cleanNumber = (value: unknown): number | string => {
-  const num = Number(value);
-  if (!Number.isFinite(num)) return String(value);
-  return Number.isInteger(num) ? num : num;
-};
-
 // tiny helpers for stats
 const isSet = (v: unknown) =>
   v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
@@ -60,9 +53,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     images = [],
     property_status,
     property_type,
-    bedrooms,
-    bathrooms,
-    area,
     is_favourite,
   } = property;
 
@@ -91,12 +81,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     (imgCount > 0 && images[currentImage]?.image) || '/placeholder-property.jpg';
 
   const isForSale = property_status === 'for_sale';
-
-  const bedsDisp = cleanNumber(bedrooms);
-  const bathsDisp = cleanNumber(bathrooms);
-  const areaDisp = Number.isFinite(Number(area))
-    ? Number(area).toLocaleString()
-    : (area as any);
 
   const getCountryFlag = (country: string) => {
     switch (country) {
@@ -301,25 +285,41 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
       {/* Enhanced Image Section */}
       <div className="relative overflow-hidden">
-        {imgCount > 1 && isHovered && (
+        {/* Navigation Arrows - Always visible on mobile, hover on desktop */}
+        {imgCount > 1 && (
           <>
             <button
               onClick={prevImage}
-              className="absolute top-1/2 left-3 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110"
+              className={`
+                absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 
+                bg-white/95 backdrop-blur-sm hover:bg-white 
+                p-2 sm:p-2.5 rounded-full shadow-lg z-10 
+                transition-all duration-300 hover:scale-110 active:scale-95
+                ${isHovered ? 'opacity-100' : 'opacity-0 sm:opacity-100'}
+                sm:opacity-0 sm:group-hover:opacity-100
+              `}
             >
-              <ArrowLeft className="h-4 w-4 text-gray-700" />
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
             </button>
             <button
               onClick={nextImage}
-              className="absolute top-1/2 right-3 -translate-y-1/2 bg-white/90 backdrop-blur-sm hover:bg-white p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110"
+              className={`
+                absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 
+                bg-white/95 backdrop-blur-sm hover:bg-white 
+                p-2 sm:p-2.5 rounded-full shadow-lg z-10 
+                transition-all duration-300 hover:scale-110 active:scale-95
+                ${isHovered ? 'opacity-100' : 'opacity-0 sm:opacity-100'}
+                sm:opacity-0 sm:group-hover:opacity-100
+              `}
             >
-              <ArrowRight className="h-4 w-4 text-gray-700" />
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
             </button>
           </>
         )}
 
+        {/* Image Indicators - Always visible */}
         {imgCount > 1 && (
-          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10">
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full">
             {images.map((_, index) => (
               <button
                 key={index}
@@ -328,10 +328,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                   e.preventDefault();
                   setCurrentImage(index);
                 }}
+                aria-label={`View image ${index + 1}`}
                 className={`
                   w-2 h-2 rounded-full transition-all duration-300
                   ${index === currentImage 
-                    ? 'bg-white shadow-lg' 
+                    ? 'bg-white shadow-lg w-6' 
                     : 'bg-white/60 hover:bg-white/80'
                   }
                 `}
