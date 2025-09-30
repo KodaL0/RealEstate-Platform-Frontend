@@ -1,5 +1,5 @@
-import React from 'react';
-import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera, ArrowUp, ArrowDown, GripVertical } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
@@ -29,8 +29,19 @@ const Step3_Images: React.FC<Props> = ({
 }) => {
   const { next, back } = useListingWizard();
   const valid = previewImages.length > 0;
+  const [isMobile, setIsMobile] = useState(false);
 
-  // Handle drag end (reorder logic)
+  // Detect mobile devices
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // Handle drag end (reorder logic) - Desktop only
   const onDragEnd = (result: any) => {
     if (!result.destination) return;
     
@@ -39,6 +50,19 @@ const Step3_Images: React.FC<Props> = ({
     
     // Use the parent's reorderImages function which handles all state updates
     reorderImages(fromIndex, toIndex);
+  };
+
+  // Mobile reorder handlers
+  const moveImageUp = (index: number) => {
+    if (index > 0) {
+      reorderImages(index, index - 1);
+    }
+  };
+
+  const moveImageDown = (index: number) => {
+    if (index < previewImages.length - 1) {
+      reorderImages(index, index + 1);
+    }
   };
 
   return (
@@ -99,83 +123,176 @@ const Step3_Images: React.FC<Props> = ({
             </h3>
             <div className="text-sm text-gray-500 flex items-center">
               <Star className="w-4 h-4 mr-1 text-yellow-500" />
-              Drag to reorder • Click "Primary" to set main image
+              <span className="hidden sm:inline">Drag to reorder • </span>
+              <span className="sm:hidden">Use arrows • </span>
+              Set main image
             </div>
           </div>
           
-          <DragDropContext onDragEnd={onDragEnd}>
-            <Droppable droppableId="images" direction="horizontal">
-              {(provided) => (
-                <div 
-                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                >
-                  {previewImages.map((preview, index) => (
-                    <Draggable key={preview} draggableId={preview} index={index}>
-                      {(provided) => (
-                        <div
-                          ref={provided.innerRef}
-                          {...provided.draggableProps}
-                          {...provided.dragHandleProps}
-                          className="relative group"
+          {/* Desktop: Drag and Drop / Mobile: Arrow Buttons */}
+          {isMobile ? (
+            // Mobile: Simple grid without drag-and-drop
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+              {previewImages.map((preview, index) => (
+                <div key={preview} className="relative group">
+                  {/* Reorder Buttons - Mobile Only */}
+                  <div className="absolute -top-2 -left-2 z-20 flex flex-col gap-1">
+                    <button
+                      type="button"
+                      onClick={() => moveImageUp(index)}
+                      disabled={index === 0}
+                      className={`p-1.5 rounded-full shadow-lg transition-all duration-200 ${
+                        index === 0
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                      }`}
+                    >
+                      <ArrowUp className="w-4 h-4" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => moveImageDown(index)}
+                      disabled={index === previewImages.length - 1}
+                      className={`p-1.5 rounded-full shadow-lg transition-all duration-200 ${
+                        index === previewImages.length - 1
+                          ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                          : 'bg-blue-500 text-white hover:bg-blue-600 active:scale-95'
+                      }`}
+                    >
+                      <ArrowDown className="w-4 h-4" />
+                    </button>
+                  </div>
+                  <div className={`relative overflow-hidden rounded-xl transition-all duration-200 ${
+                    index === primaryIndex 
+                      ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
+                      : 'shadow-md'
+                  }`}>
+                    <img 
+                      src={preview} 
+                      alt={`Preview ${index + 1}`} 
+                      className="h-32 w-full object-cover" 
+                    />
+                    
+                    {/* Primary Badge */}
+                    {index === primaryIndex && (
+                      <div className="absolute top-2 right-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
+                        <Star className="w-3 h-3 mr-1 fill-current" />
+                        Primary
+                      </div>
+                    )}
+                    
+                    {/* Bottom Controls - Always visible on mobile */}
+                    <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2 flex justify-between items-center">
+                      {index !== primaryIndex && (
+                        <button 
+                          type="button" 
+                          onClick={() => setPrimaryIndex(index)} 
+                          className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded text-xs font-semibold transition-colors duration-200 flex items-center"
                         >
-                          <div className={`relative overflow-hidden rounded-xl transition-all duration-300 ${
-                            index === primaryIndex 
-                              ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
-                              : 'hover:shadow-lg hover:scale-105'
-                          }`}>
-                            <img 
-                              src={preview} 
-                              alt={`Preview ${index + 1}`} 
-                              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110" 
-                            />
-                            
-                            {/* Primary Badge */}
-                            {index === primaryIndex && (
-                              <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
-                                <Star className="w-3 h-3 mr-1 fill-current" />
-                                Primary
-                              </div>
-                            )}
-                            
-                            {/* Overlay Controls */}
-                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
-                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
-                                {index !== primaryIndex && (
+                          <Star className="w-3 h-3 mr-1" />
+                          Primary
+                        </button>
+                      )}
+                      <button 
+                        type="button" 
+                        onClick={() => removeImage(index)} 
+                        className="bg-red-500 hover:bg-red-600 text-white p-1.5 rounded transition-colors duration-200 ml-auto"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                  
+                  {/* Image Info */}
+                  <div className="mt-2 text-center">
+                    <p className="text-xs text-gray-500">Image {index + 1}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            // Desktop: Drag and Drop
+            <DragDropContext onDragEnd={onDragEnd}>
+              <Droppable droppableId="images">
+                {(provided) => (
+                  <div 
+                    className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                  >
+                    {previewImages.map((preview, index) => (
+                      <Draggable key={preview} draggableId={preview} index={index}>
+                        {(provided, snapshot) => (
+                          <div
+                            ref={provided.innerRef}
+                            {...provided.draggableProps}
+                            {...provided.dragHandleProps}
+                            className="relative group"
+                          >
+                            {/* Drag Handle Indicator - Desktop Only */}
+                            <div className="absolute -top-2 -left-2 z-20 bg-gray-700 text-white p-1.5 rounded-full shadow-lg cursor-grab active:cursor-grabbing">
+                              <GripVertical className="w-4 h-4" />
+                            </div>
+
+                            <div className={`relative overflow-hidden rounded-xl transition-all duration-200 ${
+                              snapshot.isDragging ? 'scale-105 shadow-2xl rotate-2' : ''
+                            } ${
+                              index === primaryIndex 
+                                ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
+                                : 'hover:shadow-lg'
+                            }`}>
+                              <img 
+                                src={preview} 
+                                alt={`Preview ${index + 1}`} 
+                                className="h-32 w-full object-cover" 
+                              />
+                              
+                              {/* Primary Badge */}
+                              {index === primaryIndex && (
+                                <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
+                                  <Star className="w-3 h-3 mr-1 fill-current" />
+                                  Primary
+                                </div>
+                              )}
+                              
+                              {/* Overlay Controls - Desktop hover */}
+                              <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-50 transition-all duration-200 flex items-center justify-center">
+                                <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex space-x-2">
+                                  {index !== primaryIndex && (
+                                    <button 
+                                      type="button" 
+                                      onClick={() => setPrimaryIndex(index)} 
+                                      className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 flex items-center"
+                                    >
+                                      <Star className="w-3 h-3 mr-1" />
+                                      Set Primary
+                                    </button>
+                                  )}
                                   <button 
                                     type="button" 
-                                    onClick={() => setPrimaryIndex(index)} 
-                                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 flex items-center"
+                                    onClick={() => removeImage(index)} 
+                                    className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
                                   >
-                                    <Star className="w-3 h-3 mr-1" />
-                                    Set Primary
+                                    <X className="w-4 h-4" />
                                   </button>
-                                )}
-                                <button 
-                                  type="button" 
-                                  onClick={() => removeImage(index)} 
-                                  className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
-                                >
-                                  <X className="w-4 h-4" />
-                                </button>
+                                </div>
                               </div>
                             </div>
+                            
+                            {/* Image Info */}
+                            <div className="mt-2 text-center">
+                              <p className="text-xs text-gray-500">Image {index + 1}</p>
+                            </div>
                           </div>
-                          
-                          {/* Image Info */}
-                          <div className="mt-2 text-center">
-                            <p className="text-xs text-gray-500">Image {index + 1}</p>
-                          </div>
-                        </div>
-                      )}
-                    </Draggable>
-                  ))}
-                  {provided.placeholder}
-                </div>
-              )}
-            </Droppable>
-          </DragDropContext>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
+          )}
         </div>
       )}
       

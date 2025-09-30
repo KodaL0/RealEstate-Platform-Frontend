@@ -1,5 +1,5 @@
 // src/components/ProgressBar.tsx
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Check } from 'lucide-react';
 import { useListingWizard } from '../context/ListingWizardContext';
 
@@ -18,42 +18,11 @@ interface ProgressBarProps {
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollContainerRef }) => {
   const { currentStep, goto, totalSteps } = useListingWizard();
-  
-  const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
-
-  useEffect(() => {
-    const handleScroll = (e: Event) => {
-      const target = e.target as HTMLElement;
-      const currentScrollY = target.scrollTop;
-      
-      // Show progress bar when scrolling up or at the top
-      if (currentScrollY < lastScrollY || currentScrollY < 50) {
-        setIsVisible(true);
-      } 
-      // Hide progress bar when scrolling down (after 50px from top)
-      else if (currentScrollY > lastScrollY && currentScrollY > 50) {
-        setIsVisible(false);
-      }
-      
-      setLastScrollY(currentScrollY);
-    };
-
-    // Use the provided ref or find the scrollable container
-    const scrollContainer = scrollContainerRef?.current || document.querySelector('.flex-1.overflow-y-auto');
-    
-    if (scrollContainer) {
-      scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-      return () => scrollContainer.removeEventListener('scroll', handleScroll);
-    }
-  }, [lastScrollY, scrollContainerRef]);
 
   return (
     <>
-      {/* Desktop */}
-      <div className={`hidden sm:block w-full transition-all duration-300 ease-in-out overflow-hidden ${
-        isVisible ? 'py-1 opacity-100 max-h-16' : 'py-0 opacity-0 max-h-0'
-      }`}>
+      {/* Desktop - Always visible, no scroll animations */}
+      <div className="hidden sm:block w-full py-4 bg-white border-b border-gray-100">
         <nav className="flex items-center justify-center" aria-label="Progress">
           <ol className="flex items-center space-x-16">
             {STEPS.map(step => {
@@ -106,8 +75,8 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollCont
         </nav>
       </div>
 
-      {/* Mobile - Fixed and Small with Visual Stages */}
-      <div className="sm:hidden fixed top-20 left-0 right-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-200 px-4 py-3">
+      {/* Mobile - Simpler, always visible */}
+      <div className="sm:hidden w-full bg-white border-b border-gray-200 px-4 py-3">
         <div className="flex items-center justify-center space-x-2">
           {STEPS.map((step, index) => {
             const isCompleted = index < currentStep;
