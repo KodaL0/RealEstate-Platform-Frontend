@@ -134,7 +134,7 @@ const CreateListing: React.FC = () => {
     return DEFAULT_FORM_STATE;
   });
 
-  // Ensure userType has a safe default since Step 1 is gone
+  // Ensure userType has a safe default for the 4-step wizard
   useEffect(() => {
     if (!formData.userType) {
       setFormData(prev => ({ ...prev, userType: 'owner_Agent' as typeof prev.userType }));

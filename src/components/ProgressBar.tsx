@@ -3,17 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { Check } from 'lucide-react';
 import { useListingWizard } from '../context/ListingWizardContext';
 
-const CREATE_STEPS = [
-  { id: 0, name: 'User Type' },
+// Standard 4-step wizard for both create and edit modes
+const STEPS = [
+  { id: 0, name: 'Property Type' },
   { id: 1, name: 'Details' },
   { id: 2, name: 'Images' },
   { id: 3, name: 'Contact' },
-];
-
-const EDIT_STEPS = [
-  { id: 0, name: 'Details' },
-  { id: 1, name: 'Images' },
-  { id: 2, name: 'Contact' },
 ];
 
 interface ProgressBarProps {
@@ -23,7 +18,6 @@ interface ProgressBarProps {
 
 const ProgressBar: React.FC<ProgressBarProps> = ({ isEditing = false, scrollContainerRef }) => {
   const { currentStep, goto, totalSteps } = useListingWizard();
-  const STEPS = isEditing ? EDIT_STEPS : CREATE_STEPS;
   
   const [isVisible, setIsVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
