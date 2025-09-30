@@ -108,6 +108,11 @@ const CreateListing: React.FC = () => {
   const isEditing = Boolean(id);
   const { user } = useUser();
   const username = user?.username || '';
+  
+  // Get initial step from URL query parameter
+  const searchParams = new URLSearchParams(window.location.search);
+  const stepParam = searchParams.get('step');
+  const initialStep = stepParam ? parseInt(stepParam, 10) : 0;
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -468,9 +473,9 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // ⬇️ totalSteps is always 3 now; initialStep remains 0
+  // ⬇️ totalSteps is always 4 now; initialStep from URL or 0
   return (
-    <ListingWizardProvider initialStep={0} totalSteps={4}>
+    <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={4}>
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (

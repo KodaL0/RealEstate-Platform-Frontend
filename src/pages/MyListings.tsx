@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
 import MyPropertyCard from '../components/cards/MyPropertyCard';
+import EditSectionModal from '../components/modals/EditSectionModal';
 
 /* ───────────── type ───────────── */
 interface MyListingsProperty {
@@ -36,6 +37,11 @@ function MyListings() {
   const PER_PAGE = 6;
   const total = Math.ceil(properties.length / PER_PAGE);
   const view = properties.slice((page - 1) * PER_PAGE, page * PER_PAGE);
+
+  /* edit section modal */
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | number | null>(null);
+  const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>('');
 
   const navigate = useNavigate();
   const username = user?.username ?? '';
@@ -127,6 +133,21 @@ function MyListings() {
     }
   };
 
+  const handleEditClick = (id: string | number) => {
+    const property = properties.find(p => p.id === id);
+    setSelectedPropertyId(id);
+    setSelectedPropertyTitle(property?.title || 'Property');
+    setIsEditModalOpen(true);
+  };
+
+  const handleSectionSelect = (section: number) => {
+    if (selectedPropertyId !== null) {
+      navigate(`/edit-listing/${selectedPropertyId}?step=${section}`);
+    }
+    setIsEditModalOpen(false);
+    setSelectedPropertyId(null);
+  };
+
   /* early states */
   if (userLoading || loading)
     return (
@@ -156,6 +177,16 @@ function MyListings() {
   return (
     <div className="min-h-screen pt-20 px-4">
       <div className="container mx-auto">
+        {/* Edit Section Modal */}
+        <EditSectionModal
+          isOpen={isEditModalOpen}
+          onClose={() => {
+            setIsEditModalOpen(false);
+            setSelectedPropertyId(null);
+          }}
+          onSelectSection={handleSectionSelect}
+          propertyTitle={selectedPropertyTitle}
+        />
         {/* header */}
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
@@ -201,7 +232,7 @@ function MyListings() {
                   <MyPropertyCard
                     key={property.id}
                     property={property}
-                    onEdit={id => navigate(`/edit-listing/${id}`)}
+                    onEdit={handleEditClick}
                     onRemove={handleRemove}
                     onPublish={handlePublish}
                     onUnpublish={handleUnpublish}
