@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
-import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera, GripVertical } from 'lucide-react';
+import React from 'react';
+import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 interface Props {
   formData: ListingForm;
@@ -28,33 +29,16 @@ const Step3_Images: React.FC<Props> = ({
 }) => {
   const { next, back } = useListingWizard();
   const valid = previewImages.length > 0;
-  
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
 
-  const handleDragStart = (e: React.DragEvent, index: number) => {
-    setDraggedIndex(index);
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
-    setDragOverIndex(index);
-  };
-
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
-  };
-
-  const handleDrop = (e: React.DragEvent, toIndex: number) => {
-    e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== toIndex) {
-      reorderImages(draggedIndex, toIndex);
-    }
-    setDraggedIndex(null);
-    setDragOverIndex(null);
+  // Handle drag end (reorder logic)
+  const onDragEnd = (result: any) => {
+    if (!result.destination) return;
+    
+    const fromIndex = result.source.index;
+    const toIndex = result.destination.index;
+    
+    // Use the parent's reorderImages function which handles all state updates
+    reorderImages(fromIndex, toIndex);
   };
 
   return (
@@ -83,7 +67,8 @@ const Step3_Images: React.FC<Props> = ({
               : 'border-gray-300 hover:border-blue-400 hover:bg-gray-50'
           }`}
         >
-          <input {...getInputProps()} />
+          {/* MULTIPLE upload enabled here */}
+          <input {...getInputProps()} multiple />
           <div className="flex flex-col items-center">
             <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-4 transition-all duration-300 ${
               isDragActive 
@@ -104,7 +89,7 @@ const Step3_Images: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Image Gallery */}
+      {/* Image Gallery with Drag & Drop */}
       {previewImages.length > 0 && (
         <div className="bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
           <div className="flex items-center justify-between mb-6">
@@ -112,86 +97,85 @@ const Step3_Images: React.FC<Props> = ({
               <Image className="w-5 h-5 mr-2 text-blue-600" />
               Uploaded Images ({previewImages.length})
             </h3>
-            <div className="text-sm text-gray-500 flex items-center gap-4">
-              <span className="flex items-center">
-                <GripVertical className="w-4 h-4 mr-1 text-gray-400" />
-                Drag to reorder
-              </span>
-              <span className="flex items-center">
-                <Star className="w-4 h-4 mr-1 text-yellow-500" />
-                Click "Primary" to set main image
-              </span>
+            <div className="text-sm text-gray-500 flex items-center">
+              <Star className="w-4 h-4 mr-1 text-yellow-500" />
+              Drag to reorder • Click "Primary" to set main image
             </div>
           </div>
           
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-            {previewImages.map((preview, index) => (
-              <div 
-                key={preview} 
-                className="relative group"
-                draggable
-                onDragStart={(e) => handleDragStart(e, index)}
-                onDragOver={(e) => handleDragOver(e, index)}
-                onDragEnd={handleDragEnd}
-                onDrop={(e) => handleDrop(e, index)}
-              >
-                <div className={`relative overflow-hidden rounded-xl transition-all duration-300 cursor-move ${
-                  index === primaryIndex 
-                    ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
-                    : dragOverIndex === index && draggedIndex !== index
-                    ? 'ring-2 ring-green-400 ring-offset-2'
-                    : 'hover:shadow-lg hover:scale-105'
-                } ${draggedIndex === index ? 'opacity-50 scale-95' : ''}`}>
-                  <img 
-                    src={preview} 
-                    alt={`Preview ${index + 1}`} 
-                    className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110" 
-                  />
-                  
-                  {/* Drag Handle */}
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm p-1 rounded-lg shadow-sm">
-                    <GripVertical className="w-4 h-4 text-gray-600" />
-                  </div>
-                  
-                  {/* Primary Badge */}
-                  {index === primaryIndex && (
-                    <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
-                      <Star className="w-3 h-3 mr-1 fill-current" />
-                      Primary
-                    </div>
-                  )}
-                  
-                  {/* Overlay Controls */}
-                  <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
-                    <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
-                      {index !== primaryIndex && (
-                        <button 
-                          type="button" 
-                          onClick={() => setPrimaryIndex(index)} 
-                          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 flex items-center"
+          <DragDropContext onDragEnd={onDragEnd}>
+            <Droppable droppableId="images" direction="horizontal">
+              {(provided) => (
+                <div 
+                  className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6"
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                >
+                  {previewImages.map((preview, index) => (
+                    <Draggable key={preview} draggableId={preview} index={index}>
+                      {(provided) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          {...provided.dragHandleProps}
+                          className="relative group"
                         >
-                          <Star className="w-3 h-3 mr-1" />
-                          Set Primary
-                        </button>
+                          <div className={`relative overflow-hidden rounded-xl transition-all duration-300 ${
+                            index === primaryIndex 
+                              ? 'ring-4 ring-blue-500 ring-offset-2 shadow-lg' 
+                              : 'hover:shadow-lg hover:scale-105'
+                          }`}>
+                            <img 
+                              src={preview} 
+                              alt={`Preview ${index + 1}`} 
+                              className="h-32 w-full object-cover transition-transform duration-300 group-hover:scale-110" 
+                            />
+                            
+                            {/* Primary Badge */}
+                            {index === primaryIndex && (
+                              <div className="absolute top-2 left-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white px-2 py-1 rounded-full text-xs font-semibold flex items-center">
+                                <Star className="w-3 h-3 mr-1 fill-current" />
+                                Primary
+                              </div>
+                            )}
+                            
+                            {/* Overlay Controls */}
+                            <div className="absolute inset-0 bg-black bg-opacity-0 group-hover:bg-opacity-40 transition-all duration-300 flex items-center justify-center">
+                              <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex space-x-2">
+                                {index !== primaryIndex && (
+                                  <button 
+                                    type="button" 
+                                    onClick={() => setPrimaryIndex(index)} 
+                                    className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded-lg text-xs font-semibold transition-colors duration-200 flex items-center"
+                                  >
+                                    <Star className="w-3 h-3 mr-1" />
+                                    Set Primary
+                                  </button>
+                                )}
+                                <button 
+                                  type="button" 
+                                  onClick={() => removeImage(index)} 
+                                  className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
+                                >
+                                  <X className="w-4 h-4" />
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                          
+                          {/* Image Info */}
+                          <div className="mt-2 text-center">
+                            <p className="text-xs text-gray-500">Image {index + 1}</p>
+                          </div>
+                        </div>
                       )}
-                      <button 
-                        type="button" 
-                        onClick={() => removeImage(index)} 
-                        className="bg-red-500 hover:bg-red-600 text-white p-2 rounded-lg transition-colors duration-200"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
                 </div>
-                
-                {/* Image Info */}
-                <div className="mt-2 text-center">
-                  <p className="text-xs text-gray-500">Image {index + 1}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              )}
+            </Droppable>
+          </DragDropContext>
         </div>
       )}
       
@@ -239,8 +223,6 @@ const Step3_Images: React.FC<Props> = ({
           )}
         </button>
       </div>
-
-
     </section>
   );
 };
