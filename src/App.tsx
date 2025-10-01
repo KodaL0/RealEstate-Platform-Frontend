@@ -145,7 +145,7 @@ function AppContent() {
           />
 
           {/* Public profile route - must be last to avoid conflicts */}
-          <Route path="/:username" element={<PublicProfile />} />
+          <Route path="/:username/:tab?" element={<PublicProfile />} />
         </Routes>
       </main>
 
