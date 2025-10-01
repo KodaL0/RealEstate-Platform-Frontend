@@ -21,7 +21,7 @@ const formatDateOnly = (dateString: string) => {
 };
 
 const PublicProfile: React.FC = () => {
-  const { username } = useParams<{ username: string }>();
+  const { username, tab } = useParams<{ username: string; tab?: string }>();
   const navigate = useNavigate();
   const { getOrCreateDmThread } = useChat();
   
@@ -35,7 +35,7 @@ const PublicProfile: React.FC = () => {
   const [isLoadingReviews, setIsLoadingReviews] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(tab || 'overview');
   const [overallRating, setOverallRating] = useState<number | null>(null);
   const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(null);
   const [hasLoadedReviews, setHasLoadedReviews] = useState(false);
@@ -57,6 +57,22 @@ const PublicProfile: React.FC = () => {
     // { id: 'activity', label: 'Activity Log', icon: Activity },
     { id: 'contact', label: 'Contact Info', icon: Mail },
   ];
+
+  // Handle tab changes from URL
+  useEffect(() => {
+    if (tab && tab !== activeTab) {
+      setActiveTab(tab);
+    } else if (!tab && activeTab !== 'overview') {
+      setActiveTab('overview');
+    }
+  }, [tab, activeTab]);
+
+  // Navigate to overview if no tab is specified
+  useEffect(() => {
+    if (username && !tab) {
+      navigate(`/${username}/overview`, { replace: true });
+    }
+  }, [username, tab, navigate]);
 
   useEffect(() => {
     if (!username) {
@@ -443,6 +459,12 @@ const PublicProfile: React.FC = () => {
         ))}
       </div>
     );
+  };
+
+  const handleTabClick = (tabId: string) => {
+    if (username) {
+      navigate(`/${username}/${tabId}`);
+    }
   };
 
   const renderTabContent = () => {
@@ -1072,7 +1094,7 @@ const PublicProfile: React.FC = () => {
                 return (
                   <button
                     key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => handleTabClick(tab.id)}
                     className={`flex-shrink-0 flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-colors min-w-[80px] ${
                       activeTab === tab.id
                         ? 'bg-blue-100 text-blue-600 font-medium'
@@ -1098,7 +1120,7 @@ const PublicProfile: React.FC = () => {
                   return (
                     <button
                       key={tab.id}
-                      onClick={() => setActiveTab(tab.id)}
+                      onClick={() => handleTabClick(tab.id)}
                       className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
                         activeTab === tab.id
                           ? 'bg-blue-100 text-blue-600 font-medium'

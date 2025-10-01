@@ -120,3 +120,4 @@ export const LLMPropertyData: React.FC<LLMPropertyDataProps> = ({ property }) =>
 };
 
 export default LLMPropertyData;
+
