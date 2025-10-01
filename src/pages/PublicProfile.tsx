@@ -40,6 +40,10 @@ const PublicProfile: React.FC = () => {
   const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(null);
   const [hasLoadedReviews, setHasLoadedReviews] = useState(false);
   
+  // Cache state for faster tab navigation
+  const [isDataCached, setIsDataCached] = useState(false);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
   // Cache connection data to avoid repeated API calls
   const [connectionCache, setConnectionCache] = useState<{
     connections: any[];
@@ -62,10 +66,17 @@ const PublicProfile: React.FC = () => {
   useEffect(() => {
     if (tab && tab !== activeTab) {
       setActiveTab(tab);
+      // Don't show loading spinner for tab switches with cached data
+      if (isDataCached) {
+        setIsLoadingProfile(false);
+      }
     } else if (!tab && activeTab !== 'overview') {
       setActiveTab('overview');
+      if (isDataCached) {
+        setIsLoadingProfile(false);
+      }
     }
-  }, [tab, activeTab]);
+  }, [tab, activeTab, isDataCached]);
 
   // Navigate to overview if no tab is specified
   useEffect(() => {
@@ -130,9 +141,18 @@ const PublicProfile: React.FC = () => {
             console.error('Error fetching overall rating:', ratingErr);
           }
           
-          // NOTE: We defer fetching full reviews until the Reviews tab is opened
+          // Preload all data for faster tab navigation
+          console.log('Preloading all profile data for faster navigation...');
+          
+          // Preload reviews data in background
+          fetchReviews(profileData.id, false);
+          
           // Check if current user can review this profile (needed on reviews tab)
           checkCanReview(profileData.id);
+          
+          // Mark data as cached after initial load
+          setIsDataCached(true);
+          setIsInitialLoad(false);
         } else {
           console.log('PublicProfile: Invalid response structure - no profile data found');
           console.log('PublicProfile: Full response structure:', data);
@@ -408,7 +428,12 @@ const PublicProfile: React.FC = () => {
     }
   };
 
-  const fetchReviews = async (userId: number) => {
+  const fetchReviews = async (userId: number, useCache: boolean = false) => {
+    // Skip loading if we already have cached reviews and we're using cache
+    if (useCache && hasLoadedReviews && reviews.length > 0) {
+      return;
+    }
+    
     setIsLoadingReviews(true);
     try {
       const [reviewsResponse, statsResponse] = await Promise.all([
@@ -438,7 +463,7 @@ const PublicProfile: React.FC = () => {
   const handleReviewSuccess = () => {
     // Refresh reviews and check can review status
     if (profileData) {
-      fetchReviews(profileData.id);
+      fetchReviews(profileData.id, false); // Force refresh, don't use cache
       checkCanReview(profileData.id);
     }
   };
@@ -463,6 +488,10 @@ const PublicProfile: React.FC = () => {
 
   const handleTabClick = (tabId: string) => {
     if (username) {
+      // If we have cached data, navigation should be instant
+      if (isDataCached) {
+        console.log('Using cached data for instant tab navigation');
+      }
       navigate(`/${username}/${tabId}`);
     }
   };
@@ -938,12 +967,15 @@ const PublicProfile: React.FC = () => {
 
   // Lazy-load reviews when the Reviews tab is opened
   useEffect(() => {
-    if (activeTab === 'reviews' && profileData && !hasLoadedReviews) {
-      fetchReviews(profileData.id);
+    if (activeTab === 'reviews' && profileData) {
+      // Use cache if available, otherwise fetch fresh data
+      const useCache = isDataCached && hasLoadedReviews;
+      fetchReviews(profileData.id, useCache);
     }
-  }, [activeTab, profileData, hasLoadedReviews]);
+  }, [activeTab, profileData, isDataCached, hasLoadedReviews]);
 
-  if (isLoadingProfile) {
+  // Show loading only on initial load, not on tab switches with cached data
+  if (isLoadingProfile && isInitialLoad) {
     return (
       <div className="pt-20 bg-gray-50 min-h-screen">
         <div className="container mx-auto px-4 py-12">
