@@ -906,7 +906,7 @@ const PropertyDetails: React.FC = () => {
                       <div>
                         <p className="text-gray-500 text-sm uppercase font-medium">PROPERTY OWNER</p>
                         <Link 
-                          to={`/profile/${property.owner.id}`}
+                          to={`/${property.owner.username}/listings`}
                           className="text-purple-600 font-semibold hover:text-purple-700 transition-colors duration-200"
                         >
                           {property.owner.username || property.owner.email || 'Property Owner'}

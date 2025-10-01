@@ -22,6 +22,7 @@ export interface PropertyDocument {
 }
 
 export interface Owner {
+  username: string;
   id: string;
   email: string;
   // add additional owner fields if needed
