@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import {
   MapPin,
@@ -58,13 +58,78 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
   // slideshow state
   const [currentImage, setCurrentImage] = useState(0);
+  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
+  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
   const imgCount = images.length;
+  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
+
+  // Preload images for faster navigation
+  useEffect(() => {
+    if (images.length === 0) return;
+
+    const preloadImage = (src: string): Promise<void> => {
+      return new Promise((resolve, reject) => {
+        // Check if already cached
+        if (imageCacheRef.current.has(src)) {
+          resolve();
+          return;
+        }
+
+        // Check if already loaded
+        if (loadedImages.has(src)) {
+          resolve();
+          return;
+        }
+
+        // Set loading state
+        setImageLoadingStates(prev => ({ ...prev, [src]: true }));
+
+        const img = new Image();
+        img.onload = () => {
+          // Cache the image
+          imageCacheRef.current.set(src, img);
+          setLoadedImages(prev => new Set(prev).add(src));
+          setImageLoadingStates(prev => ({ ...prev, [src]: false }));
+          resolve();
+        };
+        img.onerror = () => {
+          setImageLoadingStates(prev => ({ ...prev, [src]: false }));
+          reject(new Error(`Failed to load image: ${src}`));
+        };
+        img.src = src;
+      });
+    };
+
+    // Preload all images
+    const preloadPromises = images.map(img => preloadImage(img.image));
+    
+    Promise.allSettled(preloadPromises).then(() => {
+      console.log(`Preloaded ${images.length} images for property ${id}`);
+    });
+
+    // Cleanup function
+    return () => {
+      // Don't clear cache on unmount to keep images cached for other instances
+    };
+  }, [images, id, loadedImages]);
 
   const prevImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
     if (imgCount > 0) {
-      setCurrentImage(i => (i - 1 + imgCount) % imgCount);
+      const newIndex = (currentImage - 1 + imgCount) % imgCount;
+      setCurrentImage(newIndex);
+      
+      // Preload adjacent images for smoother navigation
+      const prevIndex = (newIndex - 1 + imgCount) % imgCount;
+      if (images[prevIndex] && !loadedImages.has(images[prevIndex].image)) {
+        const img = new Image();
+        img.src = images[prevIndex].image;
+        img.onload = () => {
+          imageCacheRef.current.set(images[prevIndex].image, img);
+          setLoadedImages(prev => new Set(prev).add(images[prevIndex].image));
+        };
+      }
     }
   };
   
@@ -72,12 +137,26 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
     if (imgCount > 0) {
-      setCurrentImage(i => (i + 1) % imgCount);
+      const newIndex = (currentImage + 1) % imgCount;
+      setCurrentImage(newIndex);
+      
+      // Preload adjacent images for smoother navigation
+      const nextIndex = (newIndex + 1) % imgCount;
+      if (images[nextIndex] && !loadedImages.has(images[nextIndex].image)) {
+        const img = new Image();
+        img.src = images[nextIndex].image;
+        img.onload = () => {
+          imageCacheRef.current.set(images[nextIndex].image, img);
+          setLoadedImages(prev => new Set(prev).add(images[nextIndex].image));
+        };
+      }
     }
   };
 
-  const imageUrl =
-    (imgCount > 0 && images[currentImage]?.image) || '/placeholder-property.jpg';
+  const currentImageData = imgCount > 0 ? images[currentImage] : null;
+  const imageUrl = currentImageData?.image || '/placeholder-property.jpg';
+  const isCurrentImageLoaded = loadedImages.has(imageUrl);
+  const isCurrentImageLoading = imageLoadingStates[imageUrl] || false;
 
   const isForSale = property_status === 'for_sale';
 
@@ -332,14 +411,26 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         <Link to={`/property/${id}`} className="block">
           <div className="relative overflow-hidden">
+            {/* Loading overlay */}
+            {isCurrentImageLoading && (
+              <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center z-10">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+            
             <img
               src={imageUrl}
               alt={title}
               className={`
-                w-full object-cover transition-transform duration-700 ease-out
+                w-full object-cover transition-all duration-300 ease-out
                 group-hover:scale-105
                 ${featured ? 'h-80' : 'h-64'}
+                ${isCurrentImageLoaded ? 'opacity-100' : 'opacity-0'}
+                ${isCurrentImageLoading ? 'opacity-50' : ''}
               `}
+              style={{
+                transition: isCurrentImageLoaded ? 'opacity 0.3s ease-in-out' : 'none'
+              }}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
             <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
