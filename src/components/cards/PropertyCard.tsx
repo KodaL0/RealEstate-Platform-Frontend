@@ -85,7 +85,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     switch (country) {
       case 'Greece': return '🇬🇷';
       case 'Cyprus': return '🇨🇾';
-      case 'Unknown': return '🌍';
       default: return '🌍';
     }
   };
@@ -94,7 +93,6 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     switch (country) {
       case 'Greece': return 'from-blue-600 to-blue-700';
       case 'Cyprus': return 'from-orange-500 to-orange-600';
-      case 'Unknown': return 'from-gray-600 to-gray-700';
       default: return 'from-gray-600 to-gray-700';
     }
   };

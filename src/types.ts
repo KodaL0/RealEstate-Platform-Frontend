@@ -101,7 +101,7 @@ export const normalizePropertyData = (property: any): Property => ({
   lot_size:        typeof property.lot_size === 'string'       ? parseFloat(property.lot_size)        : property.lot_size,
   floor_level:     typeof property.floor_level === 'string'    ? parseInt(property.floor_level, 10)   : property.floor_level,
   total_floors:    typeof property.total_floors === 'string'   ? parseInt(property.total_floors, 10)  : property.total_floors,
-  country: property.country || 'Unknown',
+  country: property.country || '',
 });
 
 /* ---------- Form model used by the wizard ---------- */
