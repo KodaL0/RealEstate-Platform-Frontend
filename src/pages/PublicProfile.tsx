@@ -129,6 +129,7 @@ const PublicProfile: React.FC = () => {
           setProfileData(profileData);
           // Normalize properties
           const normalizedProps = profileData.published_properties.map(normalizePropertyData);
+          console.log('PublicProfile: Normalized properties:', normalizedProps.map((p: Property) => ({ id: p.id, title: p.title, country: p.country })));
           setProperties(normalizedProps);
           
           // Fetch lightweight overall rating
