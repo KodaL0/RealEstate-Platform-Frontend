@@ -895,6 +895,26 @@ const PropertyDetails: React.FC = () => {
               // Authenticated user - show contact information
               (property.contact_phone || property.contact_email) ? (
                 <div className="space-y-6">
+                  {/* Property Owner */}
+                  {property.owner && (
+                    <div className="flex items-center p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
+                      <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                        <svg className="w-6 h-6 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-gray-500 text-sm uppercase font-medium">PROPERTY OWNER</p>
+                        <Link 
+                          to={`/profile/${property.owner.id}`}
+                          className="text-purple-600 font-semibold hover:text-purple-700 transition-colors duration-200"
+                        >
+                          {property.owner.username || property.owner.email || 'Property Owner'}
+                        </Link>
+                      </div>
+                    </div>
+                  )}
+
                   {property.contact_phone && (
                     <div className="flex items-center p-4 rounded-xl bg-blue-50 border border-blue-100">
                       <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
