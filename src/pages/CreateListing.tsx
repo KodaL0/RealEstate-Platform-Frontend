@@ -179,6 +179,35 @@ const CreateListing: React.FC = () => {
   const [primaryIndex, setPrimaryIndex] = useState(0);
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
   
+  // Wrapper to update primary image via API when editing
+  const handleSetPrimaryIndex = async (newIndexOrFn: React.SetStateAction<number>) => {
+    const oldIndex = primaryIndex;
+    const newIndex = typeof newIndexOrFn === 'function' ? newIndexOrFn(oldIndex) : newIndexOrFn;
+    
+    if (newIndex === oldIndex) return;
+    
+    // Update local state immediately
+    setPrimaryIndex(newIndex);
+    
+    // If editing and we have existing images, update via API
+    if (isEditing && existingImageIds.length > 0) {
+      try {
+        const imageId = existingImageIds[newIndex];
+        if (imageId) {
+          // Set new primary
+          await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
+            is_primary: true
+          });
+          console.log(`Set image ${imageId} as primary`);
+        }
+      } catch (error) {
+        console.error('Failed to update primary image:', error);
+        // Revert on error
+        setPrimaryIndex(oldIndex);
+      }
+    }
+  };
+  
   // Step 2 date picker states
   const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(() => {
     if (isEditing) return undefined;
@@ -243,37 +272,85 @@ const CreateListing: React.FC = () => {
     setPrimaryIndex((i: number) => (idx === i ? 0 : idx < i ? i - 1 : i));
   };
 
-  const reorderImages = (fromIndex: number, toIndex: number) => {
+  const reorderImages = async (fromIndex: number, toIndex: number) => {
     if (fromIndex === toIndex) return;
     
-    setFormData((p: ListingForm) => {
-      const newImages = [...p.images];
-      const [removed] = newImages.splice(fromIndex, 1);
-      newImages.splice(toIndex, 0, removed);
-      return { ...p, images: newImages };
-    });
-    
-    setPreviewImages((p: string[]) => {
-      const newPreviews = [...p];
-      const [removed] = newPreviews.splice(fromIndex, 1);
-      newPreviews.splice(toIndex, 0, removed);
-      return newPreviews;
-    });
-    
-    setExistingImageIds((p: string[]) => {
-      const newIds = [...p];
-      const [removed] = newIds.splice(fromIndex, 1);
-      newIds.splice(toIndex, 0, removed);
-      return newIds;
-    });
-    
-    // Update primary index if needed
-    setPrimaryIndex((i: number) => {
-      if (i === fromIndex) return toIndex;
-      if (fromIndex < i && toIndex >= i) return i - 1;
-      if (fromIndex > i && toIndex <= i) return i + 1;
-      return i;
-    });
+    // For new images (not yet saved), handle locally
+    if (!isEditing || formData.images.length > 0) {
+      setFormData((p: ListingForm) => {
+        const newImages = [...p.images];
+        const [removed] = newImages.splice(fromIndex, 1);
+        newImages.splice(toIndex, 0, removed);
+        return { ...p, images: newImages };
+      });
+      
+      setPreviewImages((p: string[]) => {
+        const newPreviews = [...p];
+        const [removed] = newPreviews.splice(fromIndex, 1);
+        newPreviews.splice(toIndex, 0, removed);
+        return newPreviews;
+      });
+      
+      setExistingImageIds((p: string[]) => {
+        const newIds = [...p];
+        const [removed] = newIds.splice(fromIndex, 1);
+        newIds.splice(toIndex, 0, removed);
+        return newIds;
+      });
+      
+      // Update primary index if needed
+      setPrimaryIndex((i: number) => {
+        if (i === fromIndex) return toIndex;
+        if (fromIndex < i && toIndex >= i) return i - 1;
+        if (fromIndex > i && toIndex <= i) return i + 1;
+        return i;
+      });
+    } else {
+      // For existing images, update via API
+      try {
+        const imageId = existingImageIds[fromIndex];
+        if (!imageId) {
+          console.error('No image ID found for reordering');
+          return;
+        }
+        
+        // Calculate new display_order (0-based)
+        const newDisplayOrder = toIndex;
+        
+        // Update via API
+        await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
+          display_order: newDisplayOrder
+        });
+        
+        // Update local state
+        setPreviewImages((p: string[]) => {
+          const newPreviews = [...p];
+          const [removed] = newPreviews.splice(fromIndex, 1);
+          newPreviews.splice(toIndex, 0, removed);
+          return newPreviews;
+        });
+        
+        setExistingImageIds((p: string[]) => {
+          const newIds = [...p];
+          const [removed] = newIds.splice(fromIndex, 1);
+          newIds.splice(toIndex, 0, removed);
+          return newIds;
+        });
+        
+        // Update primary index if needed
+        setPrimaryIndex((i: number) => {
+          if (i === fromIndex) return toIndex;
+          if (fromIndex < i && toIndex >= i) return i - 1;
+          if (fromIndex > i && toIndex <= i) return i + 1;
+          return i;
+        });
+        
+        console.log(`Image reordered from position ${fromIndex} to ${toIndex}`);
+      } catch (error) {
+        console.error('Failed to reorder image:', error);
+        // Could show a toast notification here
+      }
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
@@ -326,7 +403,7 @@ const CreateListing: React.FC = () => {
           // If no valid ID, we'll need to handle this case
           console.warn('Image missing valid ID:', i);
           return null;
-        }).filter(id => id !== null));
+        }).filter((id: string | null) => id !== null));
         const primary = imgs.find((i: any) => i.is_primary);
         setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
@@ -410,34 +487,8 @@ const CreateListing: React.FC = () => {
         // Set which index is primary (backend will use display_order)
         fd.append('primary_image_index', String(primaryIndex));
       }
-      if (isEditing && previewImages.length) {
-        // Send image order for reordering
-        fd.append('reorder_images', 'true');
-        
-        // Validate that we have valid image IDs before sending
-        const validImageIds = existingImageIds.filter(id => id && typeof id === 'string' && !isNaN(Number(id)));
-        if (validImageIds.length !== previewImages.length) {
-          console.error('Mismatch between preview images and valid image IDs:', {
-            previewImages: previewImages.length,
-            validImageIds: validImageIds.length,
-            existingImageIds
-          });
-          throw new Error('Invalid image data: missing or invalid image IDs');
-        }
-        
-        previewImages.forEach((url, i) => {
-          if (!formData.images.length || i >= formData.images.length) {
-            const imageId = existingImageIds[i];
-            if (!imageId || isNaN(Number(imageId))) {
-              console.error('Invalid image ID at index', i, ':', imageId);
-              throw new Error(`Invalid image ID at position ${i}: ${imageId}`);
-            }
-            fd.append('existing_images[]', imageId);
-            fd.append('image_order[]', imageId);
-            if (i === primaryIndex) fd.append('primary_image_id', imageId);
-          }
-        });
-      }
+      // For editing: primary image is already set via reorderImages API calls
+      // No need to send image order here as reordering happens in real-time
 
       // documents - append to FormData
       if (documents.length > 0) {
@@ -545,7 +596,7 @@ const CreateListing: React.FC = () => {
           previewImages={previewImages}
           setPreviewImages={setPreviewImages}
           primaryIndex={primaryIndex}
-          setPrimaryIndex={setPrimaryIndex}
+          setPrimaryIndex={handleSetPrimaryIndex}
           existingImageIds={existingImageIds}
           setExistingImageIds={setExistingImageIds}
           getRootProps={getRootProps}

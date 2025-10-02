@@ -216,6 +216,8 @@ const api = {
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProperty: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
+    updateImageOrder: (u: string, pid: number, imageId: number, data: { display_order?: number, is_primary?: boolean }) => 
+      apiPut(`properties/${u}/property/${pid}/image/${imageId}/update`, data),
     myFavorites:    () => 
       apiGet('properties/my-favourites')
         .then(res => {
