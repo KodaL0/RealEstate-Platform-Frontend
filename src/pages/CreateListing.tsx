@@ -1,7 +1,6 @@
 // src/pages/CreateListing.tsx
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
 
 import api from '../config/api';
@@ -37,11 +36,6 @@ type WizardProps = {
   setPrimaryIndex: React.Dispatch<React.SetStateAction<number>>;
   existingImageIds: string[];
   setExistingImageIds: React.Dispatch<React.SetStateAction<string[]>>;
-  getRootProps: any;
-  getInputProps: any;
-  isDragActive: boolean;
-  removeImage: (idx: number) => void;
-  reorderImages: (fromIndex: number, toIndex: number) => void;
 
   // documents
   documents: any[];
@@ -52,6 +46,8 @@ type WizardProps = {
   setCountryCode: (v: string) => void;
   isSubmitting: boolean;
   isEditing: boolean;
+  propertyId?: string;
+  username: string;
 
   // step2 extras
   availableFromDate: Date | undefined;
@@ -81,7 +77,19 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setShowCalendar={props.setShowCalendar}
       setLocationCoords={props.setLocationCoords}
     />,
-    <Step3_Images {...props} />,
+    <Step3_Images
+      formData={props.formData}
+      setFormData={props.setFormData}
+      previewImages={props.previewImages}
+      setPreviewImages={props.setPreviewImages}
+      primaryIndex={props.primaryIndex}
+      setPrimaryIndex={props.setPrimaryIndex}
+      existingImageIds={props.existingImageIds}
+      setExistingImageIds={props.setExistingImageIds}
+      isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
+    />,
     <Step5_Documents
       documents={props.documents}
       setDocuments={props.setDocuments}
@@ -179,53 +187,6 @@ const CreateListing: React.FC = () => {
   const [primaryIndex, setPrimaryIndex] = useState(0);
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
   
-  // Wrapper to update primary image via API when editing
-  const handleSetPrimaryIndex = async (newIndexOrFn: React.SetStateAction<number>) => {
-    const oldIndex = primaryIndex;
-    const newIndex = typeof newIndexOrFn === 'function' ? newIndexOrFn(oldIndex) : newIndexOrFn;
-    
-    if (newIndex === oldIndex) return;
-    
-    // If editing and we have existing images, update via API
-    if (isEditing && existingImageIds.length > 0) {
-      try {
-        const imageId = existingImageIds[newIndex];
-        if (imageId) {
-          // Set new primary - backend will move it to position 0
-          await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
-            is_primary: true
-          });
-          
-          // Reorder local state to reflect the change - move selected to front
-          setPreviewImages((prev) => {
-            const newPreviews = [...prev];
-            const [removed] = newPreviews.splice(newIndex, 1);
-            newPreviews.unshift(removed);  // Add to beginning
-            return newPreviews;
-          });
-          
-          setExistingImageIds((prev) => {
-            const newIds = [...prev];
-            const [removed] = newIds.splice(newIndex, 1);
-            newIds.unshift(removed);
-            return newIds;
-          });
-          
-          // Primary is now at index 0
-          setPrimaryIndex(0);
-          
-          console.log(`Set image ${imageId} as primary and moved to position 0`);
-        }
-      } catch (error) {
-        console.error('Failed to update primary image:', error);
-        // Don't revert - let user try again
-      }
-    } else {
-      // For new images, just update local state
-      setPrimaryIndex(newIndex);
-    }
-  };
-  
   // Step 2 date picker states
   const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(() => {
     if (isEditing) return undefined;
@@ -269,132 +230,6 @@ const CreateListing: React.FC = () => {
       localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
     }
   }, [availableFromDate, isEditing]);
-
-  const onDrop = useCallback((files: File[]) => {
-    setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
-    setPreviewImages((p: string[]) => [...p, ...files.map(f => URL.createObjectURL(f))]);
-  }, []);
-
-  const { getRootProps, getInputProps, isDragActive } = useDropzone({
-    onDrop,
-    accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
-    maxFiles: 20,
-    maxSize: 5 * 1024 * 1024,
-  });
-
-  const removeImage = async (idx: number) => {
-    console.log(`🗑️ removeImage called: idx=${idx}`);
-    
-    // If editing and this is an existing image, delete via API
-    if (isEditing && existingImageIds[idx]) {
-      const imageId = existingImageIds[idx];
-      
-      if (imageId && !isNaN(Number(imageId))) {
-        try {
-          console.log(`📤 Deleting image via API: imageId=${imageId}`);
-          await api.properties.deleteImage(username, Number(id), Number(imageId));
-          console.log(`✅ Image ${imageId} deleted successfully`);
-          toast.success('Image deleted successfully');
-        } catch (error: any) {
-          console.error('❌ Failed to delete image:', error);
-          const errorMsg = error?.response?.data?.detail || 'Failed to delete image';
-          toast.error(errorMsg);
-          return; // Don't update local state if API call failed
-        }
-      }
-    }
-    
-    // Update local state
-    setFormData((p: ListingForm) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
-    if (idx < previewImages.length) URL.revokeObjectURL(previewImages[idx]);
-    setPreviewImages((p: string[]) => p.filter((_, i) => i !== idx));
-    setExistingImageIds((p: string[]) => p.filter((_, i) => i !== idx));
-    setPrimaryIndex((i: number) => (idx === i ? 0 : idx < i ? i - 1 : i));
-  };
-
-  const reorderImages = async (fromIndex: number, toIndex: number) => {
-    console.log(`🔄 reorderImages: ${fromIndex} → ${toIndex}`);
-    if (fromIndex === toIndex) return;
-    
-    // Helper function to reorder an array
-    const reorderArray = <T,>(arr: T[], from: number, to: number): T[] => {
-      const result = [...arr];
-      const [item] = result.splice(from, 1);
-      result.splice(to, 0, item);
-      return result;
-    };
-    
-    // Helper to calculate new primary index after reordering
-    const calculateNewPrimary = (currentPrimary: number, from: number, to: number): number => {
-      if (currentPrimary === from) return to;
-      if (from < to) {
-        // Moving right: items between from+1 and to shift left
-        if (currentPrimary > from && currentPrimary <= to) return currentPrimary - 1;
-      } else {
-        // Moving left: items between to and from-1 shift right
-        if (currentPrimary >= to && currentPrimary < from) return currentPrimary + 1;
-      }
-      return currentPrimary;
-    };
-    
-    // For new images (not yet saved) or mixed state, handle locally only
-    if (!isEditing || formData.images.length > 0) {
-      console.log('📦 Local reorder (new images)');
-      setFormData(p => ({ ...p, images: reorderArray(p.images, fromIndex, toIndex) }));
-      setPreviewImages(p => reorderArray(p, fromIndex, toIndex));
-      setExistingImageIds(p => reorderArray(p, fromIndex, toIndex));
-      setPrimaryIndex(curr => calculateNewPrimary(curr, fromIndex, toIndex));
-      return;
-    }
-    
-    // For existing images only (editing mode)
-    const imageId = existingImageIds[fromIndex];
-    
-    if (!imageId || isNaN(Number(imageId))) {
-      console.error('❌ Invalid image ID:', imageId);
-      toast.error('Cannot reorder: invalid image ID');
-      return;
-    }
-    
-    console.log(`📋 Reordering existing image: ID=${imageId}`);
-    
-    // Store state for rollback
-    const snapshot = {
-      previews: [...previewImages],
-      ids: [...existingImageIds],
-      primary: primaryIndex,
-    };
-    
-    // Optimistic update
-    const newPreviews = reorderArray(previewImages, fromIndex, toIndex);
-    const newIds = reorderArray(existingImageIds, fromIndex, toIndex);
-    const newPrimary = calculateNewPrimary(primaryIndex, fromIndex, toIndex);
-    
-    setPreviewImages(newPreviews);
-    setExistingImageIds(newIds);
-    setPrimaryIndex(newPrimary);
-    
-    console.log(`📸 New order:`, newIds);
-    console.log(`⭐ New primary index: ${newPrimary}`);
-    
-    // Sync with backend
-    try {
-      await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
-        display_order: toIndex
-      });
-      console.log(`✅ Synced with backend`);
-    } catch (error: any) {
-      console.error('❌ Reorder failed:', error);
-      
-      // Rollback
-      setPreviewImages(snapshot.previews);
-      setExistingImageIds(snapshot.ids);
-      setPrimaryIndex(snapshot.primary);
-      
-      const msg = error?.response?.data?.detail || 'Failed to reorder image';
-      toast.error(msg);
-    }
-  };
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
@@ -649,20 +484,17 @@ const CreateListing: React.FC = () => {
           previewImages={previewImages}
           setPreviewImages={setPreviewImages}
           primaryIndex={primaryIndex}
-          setPrimaryIndex={handleSetPrimaryIndex}
+          setPrimaryIndex={setPrimaryIndex}
           existingImageIds={existingImageIds}
           setExistingImageIds={setExistingImageIds}
-          getRootProps={getRootProps}
-          getInputProps={getInputProps}
-          isDragActive={isDragActive}
-          removeImage={removeImage}
-          reorderImages={reorderImages}
           documents={documents}
           setDocuments={setDocuments}
           countryCode={countryCode}
           setCountryCode={setCountryCode}
           isSubmitting={isSubmitting}
           isEditing={isEditing}
+          propertyId={id}
+          username={username}
           availableFromDate={availableFromDate}
           setAvailableFromDate={setAvailableFromDate}
           showCalendar={showCalendar}
