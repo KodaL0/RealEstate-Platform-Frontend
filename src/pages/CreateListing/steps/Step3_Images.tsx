@@ -300,7 +300,36 @@ const Step3_Images: React.FC<Props> = ({
     syncToParent(updatedItems);
   };
 
-  // Reorder images handler - FIXED: proper rollback for all state
+  // Helper: persist ALL existing image orders in their current index order
+  const persistAllExistingOrders = async (items: ImageItem[]) => {
+    if (!propertyId) {
+      toast.error('Missing propertyId');
+      return Promise.reject(new Error('Missing propertyId'));
+    }
+
+    // Build {imageId, display_order} for every existing image
+    const payloads = items
+      .map((item, idx) => ({
+        imageId: item.existingImageId ? Number(item.existingImageId) : NaN,
+        order: idx,
+      }))
+      .filter(x => !isNaN(x.imageId));
+
+    if (!payloads.length) return; // nothing to persist (e.g., only new images)
+
+    console.log(`📋 Persisting order for ${payloads.length} existing images:`, payloads);
+
+    // Fan-out per-image calls to update ALL display orders
+    await Promise.all(
+      payloads.map(p =>
+        api.properties.updateImageOrder(username, Number(propertyId), p.imageId, {
+          display_order: p.order,
+        })
+      )
+    );
+  };
+
+  // Reorder images handler - FIXED: persists FULL order to backend
   const reorderImages = async (fromIndex: number, toIndex: number) => {
     console.log(`🔄 reorderImages: ${fromIndex} → ${toIndex}`);
     if (fromIndex === toIndex) return;
@@ -324,30 +353,27 @@ const Step3_Images: React.FC<Props> = ({
     setImageItems(reordered);
     syncToParent(reordered);
     
-    // If editing and this is an existing server image, sync with backend
-    if (isEditing && movedItem.existingImageId) {
+    // If editing and we have any existing images, persist FULL order to backend
+    if (isEditing && reordered.some(item => item.existingImageId)) {
       try {
-        console.log(`📋 Syncing reorder to backend: ID=${movedItem.existingImageId} to position ${toIndex}`);
-        await api.properties.updateImageOrder(username, Number(propertyId), Number(movedItem.existingImageId), {
-          display_order: toIndex
-        });
-        console.log(`✅ Synced with backend`);
+        await persistAllExistingOrders(reordered);
+        console.log('✅ Order synced (all images)');
       } catch (error: any) {
-        console.error('❌ Reorder failed:', error);
+        console.error('❌ Reorder persist failed:', error);
         
-        // FIXED: Complete rollback
+        // Complete rollback
         setImageItems(snapshot);
         syncToParent(snapshot);
         
-        const msg = error?.response?.data?.detail || 'Failed to reorder image';
+        const msg = error?.response?.data?.detail || 'Failed to reorder images';
         toast.error(msg);
       }
     } else {
-      console.log('📦 Local reorder (new image or not in edit mode)');
+      console.log('📦 Local reorder (new images or not in edit mode)');
     }
   };
 
-  // Set primary image handler - FIXED: handles both new and existing images
+  // Set primary image handler - FIXED: handles both new and existing images + persists full order
   const handleSetPrimary = async (itemId: string) => {
     console.log(`⭐ handleSetPrimary called: itemId=${itemId}`);
     
@@ -372,14 +398,22 @@ const Step3_Images: React.FC<Props> = ({
     setImageItems(updatedItems);
     syncToParent(updatedItems);
     
-    // If editing and this is an existing server image, sync with backend
-    if (isEditing && targetItem.existingImageId) {
+    // If editing and we have existing images, persist FULL order (primary is now at index 0)
+    if (isEditing && updatedItems.some(item => item.existingImageId)) {
       try {
-        console.log(`📤 Setting image ${targetItem.existingImageId} as primary via API`);
-        await api.properties.updateImageOrder(username, Number(propertyId), Number(targetItem.existingImageId), {
-          is_primary: true
-        });
-        console.log(`✅ Primary image updated successfully`);
+        console.log(`📤 Setting primary and persisting full order`);
+        
+        // Set as primary
+        if (targetItem.existingImageId) {
+          await api.properties.updateImageOrder(username, Number(propertyId), Number(targetItem.existingImageId), {
+            is_primary: true
+          });
+        }
+        
+        // Persist all orders (primary is now at 0, others at 1..N-1)
+        await persistAllExistingOrders(updatedItems);
+        
+        console.log(`✅ Primary image and order updated successfully`);
       } catch (error) {
         console.error('❌ Failed to update primary image:', error);
         
@@ -390,7 +424,7 @@ const Step3_Images: React.FC<Props> = ({
         toast.error('Failed to set primary image');
       }
     } else {
-      console.log('📦 Local primary update (new image or not in edit mode)');
+      console.log('📦 Local primary update (new images or not in edit mode)');
     }
   };
 
@@ -431,6 +465,25 @@ const Step3_Images: React.FC<Props> = ({
 
   const handleDragCancel = () => {
     setActiveId(null);
+  };
+
+  // Handle navigation: persist order before moving to next step
+  const handleNext = async () => {
+    // If editing and we have existing images, persist their order before leaving
+    if (isEditing && imageItems.some(item => item.existingImageId)) {
+      try {
+        console.log('💾 Persisting image order before navigation...');
+        await persistAllExistingOrders(imageItems);
+        console.log('✅ Order saved successfully');
+      } catch (error: any) {
+        console.error('❌ Failed to save image order:', error);
+        const msg = error?.response?.data?.detail || 'Could not save image order';
+        toast.error(msg);
+        // Block navigation on error
+        return;
+      }
+    }
+    next();
   };
 
   return (
@@ -566,7 +619,7 @@ const Step3_Images: React.FC<Props> = ({
         <button
           type="button"
           disabled={!valid}
-          onClick={next}
+          onClick={handleNext}
           className={`group relative px-6 sm:px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform ${
             valid
               ? 'bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0'
