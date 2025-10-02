@@ -318,7 +318,15 @@ const CreateListing: React.FC = () => {
         const d = res.data;
         const imgs = d.images || [];
         setPreviewImages(imgs.map((i: any) => i.image));
-        setExistingImageIds(imgs.map((i: any) => i.id || i.image));
+        setExistingImageIds(imgs.map((i: any) => {
+          // Ensure we only store numeric IDs, not URLs
+          if (i.id && typeof i.id === 'number') {
+            return String(i.id);
+          }
+          // If no valid ID, we'll need to handle this case
+          console.warn('Image missing valid ID:', i);
+          return null;
+        }).filter(id => id !== null));
         const primary = imgs.find((i: any) => i.is_primary);
         setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
@@ -405,11 +413,28 @@ const CreateListing: React.FC = () => {
       if (isEditing && previewImages.length) {
         // Send image order for reordering
         fd.append('reorder_images', 'true');
+        
+        // Validate that we have valid image IDs before sending
+        const validImageIds = existingImageIds.filter(id => id && typeof id === 'string' && !isNaN(Number(id)));
+        if (validImageIds.length !== previewImages.length) {
+          console.error('Mismatch between preview images and valid image IDs:', {
+            previewImages: previewImages.length,
+            validImageIds: validImageIds.length,
+            existingImageIds
+          });
+          throw new Error('Invalid image data: missing or invalid image IDs');
+        }
+        
         previewImages.forEach((url, i) => {
           if (!formData.images.length || i >= formData.images.length) {
-            fd.append('existing_images[]', existingImageIds[i] || url);
-            fd.append('image_order[]', existingImageIds[i] || url);
-            if (i === primaryIndex) fd.append('primary_image_id', existingImageIds[i] || url);
+            const imageId = existingImageIds[i];
+            if (!imageId || isNaN(Number(imageId))) {
+              console.error('Invalid image ID at index', i, ':', imageId);
+              throw new Error(`Invalid image ID at position ${i}: ${imageId}`);
+            }
+            fd.append('existing_images[]', imageId);
+            fd.append('image_order[]', imageId);
+            if (i === primaryIndex) fd.append('primary_image_id', imageId);
           }
         });
       }
