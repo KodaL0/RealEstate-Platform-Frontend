@@ -186,25 +186,43 @@ const CreateListing: React.FC = () => {
     
     if (newIndex === oldIndex) return;
     
-    // Update local state immediately
-    setPrimaryIndex(newIndex);
-    
     // If editing and we have existing images, update via API
     if (isEditing && existingImageIds.length > 0) {
       try {
         const imageId = existingImageIds[newIndex];
         if (imageId) {
-          // Set new primary
+          // Set new primary - backend will move it to position 0
           await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
             is_primary: true
           });
-          console.log(`Set image ${imageId} as primary`);
+          
+          // Reorder local state to reflect the change - move selected to front
+          setPreviewImages((prev) => {
+            const newPreviews = [...prev];
+            const [removed] = newPreviews.splice(newIndex, 1);
+            newPreviews.unshift(removed);  // Add to beginning
+            return newPreviews;
+          });
+          
+          setExistingImageIds((prev) => {
+            const newIds = [...prev];
+            const [removed] = newIds.splice(newIndex, 1);
+            newIds.unshift(removed);
+            return newIds;
+          });
+          
+          // Primary is now at index 0
+          setPrimaryIndex(0);
+          
+          console.log(`Set image ${imageId} as primary and moved to position 0`);
         }
       } catch (error) {
         console.error('Failed to update primary image:', error);
-        // Revert on error
-        setPrimaryIndex(oldIndex);
+        // Don't revert - let user try again
       }
+    } else {
+      // For new images, just update local state
+      setPrimaryIndex(newIndex);
     }
   };
   
