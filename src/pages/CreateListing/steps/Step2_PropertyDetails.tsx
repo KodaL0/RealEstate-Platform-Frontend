@@ -141,13 +141,26 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           setCountryCode(cc);
         }
 
-        console.log('📋 Step2: Loaded amenities from backend:', d.amenities, 'Type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
-        console.log('📋 Step2: Current formData.amenities before update:', formData.amenities);
+        console.log('📋 Step2: RAW DATA from backend:', JSON.stringify(d.amenities, null, 2));
+        console.log('📋 Step2: Amenities type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
+        console.log('📋 Step2: Current formData.amenities:', formData.amenities);
         
         // Update form data with property details
         setFormData(prev => {
           const amenitiesFromBackend = Array.isArray(d.amenities) ? d.amenities : [];
-          console.log('📋 Step2: Setting amenities in formData:', amenitiesFromBackend);
+          console.log('📋 Step2: Will set these amenities:', amenitiesFromBackend);
+          console.log('📋 Step2: AMENITIES constant has these IDs:', AMENITIES.map(a => a.id));
+          
+          // Check for mismatches
+          amenitiesFromBackend.forEach((amenityId: string) => {
+            const found = AMENITIES.find(a => a.id === amenityId);
+            if (!found) {
+              console.error(`❌ MISMATCH: Backend sent "${amenityId}" but it's not in AMENITIES array!`);
+            } else {
+              console.log(`✅ MATCH: "${amenityId}" found as "${found.label}"`);
+            }
+          });
+          
           return {
           ...prev,
           title: d.title || '',
@@ -183,6 +196,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           userType: d.user_type || prev.userType || 'owner_agent',
         };
         });
+        
+        // Log what was actually set
+        setTimeout(() => {
+          console.log('📋 Step2: After setState, formData.amenities is now:', formData.amenities);
+        }, 100);
 
         // Call callback to let parent handle images and other data
         if (onPropertyDataLoaded) {
