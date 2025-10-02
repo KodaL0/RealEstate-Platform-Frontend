@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Upload, FileText, X, ChevronLeft, File, AlertCircle, ArrowRight } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
+import toast from 'react-hot-toast';
+import api from '../../../config/api';
 
 interface DocumentFile {
   id: string;
@@ -20,6 +22,8 @@ interface Props {
   setDocuments: React.Dispatch<React.SetStateAction<DocumentFile[]>>;
   isSubmitting: boolean;
   isEditing: boolean;
+  propertyId?: string;
+  username: string;
 }
 
 const DOCUMENT_TYPES = [
@@ -45,6 +49,9 @@ const ALLOWED_TYPES = [
 const Step5_Documents: React.FC<Props> = ({
   documents,
   setDocuments,
+  isEditing,
+  propertyId,
+  username,
 }) => {
   const { back, next } = useListingWizard();
   const [uploadError, setUploadError] = useState<string>('');
@@ -94,8 +101,23 @@ const Step5_Documents: React.FC<Props> = ({
     e.target.value = '';
   };
 
-  const removeDocument = (id: string) => {
-    setDocuments(documents.filter(doc => doc.id !== id));
+  const removeDocument = async (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return;
+
+    // If editing and this is an existing document, delete via API
+    if (isEditing && doc.existingDocId && propertyId) {
+      try {
+        await api.properties.deleteDocument(username, Number(propertyId), doc.existingDocId);
+        toast.success('Document deleted');
+      } catch (error: any) {
+        toast.error(error?.response?.data?.detail || 'Failed to delete document');
+        return; // Don't remove from local state if API call failed
+      }
+    }
+
+    // Remove from local state
+    setDocuments(documents.filter(d => d.id !== id));
   };
 
   const updateDocument = (id: string, field: keyof DocumentFile, value: string) => {

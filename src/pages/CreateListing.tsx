@@ -95,6 +95,8 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setDocuments={props.setDocuments}
       isSubmitting={props.isSubmitting}
       isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
     <Step4_Contact
       formData={props.formData}
@@ -298,7 +300,7 @@ const CreateListing: React.FC = () => {
         }
         setCountryCode(cc);
 
-        // Log amenities for debugging
+        // Backend now sends amenity IDs directly (no conversion needed)
         console.log('📋 Loaded amenities from backend:', d.amenities, 'Type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
         
         setFormData(prev => ({

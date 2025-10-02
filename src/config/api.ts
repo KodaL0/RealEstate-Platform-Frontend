@@ -228,6 +228,9 @@ const api = {
     
     deleteImage: (u: string, pid: number, imageId: number) =>
       apiDelete(`properties/${u}/property/${pid}/image/${imageId}/delete`),
+    
+    deleteDocument: (u: string, pid: number, documentId: number) =>
+      apiDelete(`properties/${u}/property/${pid}/document/${documentId}/delete`),
     myFavorites:    () => 
       apiGet('properties/my-favourites')
         .then(res => {
