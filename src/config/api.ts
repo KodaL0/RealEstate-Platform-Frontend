@@ -216,8 +216,16 @@ const api = {
     getUserProp:    (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProperty: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
-    updateImageOrder: (u: string, pid: number, imageId: number, data: { display_order?: number, is_primary?: boolean }) => 
-      apiPut(`properties/${u}/property/${pid}/image/${imageId}/update`, data),
+    
+    // Bulk reorder API - reorders all images and sets primary in one call
+    reorderImages: (u: string, pid: number, imageIds: number[], primaryIndex: number = 0) => {
+      const formData = new FormData();
+      formData.append('reorder_images', 'true');
+      formData.append('primary_image_index', primaryIndex.toString());
+      imageIds.forEach(id => formData.append('image_order[]', id.toString()));
+      return apiFormPut(`properties/${u}/property/${pid}/edit`, formData);
+    },
+    
     deleteImage: (u: string, pid: number, imageId: number) =>
       apiDelete(`properties/${u}/property/${pid}/image/${imageId}/delete`),
     myFavorites:    () => 

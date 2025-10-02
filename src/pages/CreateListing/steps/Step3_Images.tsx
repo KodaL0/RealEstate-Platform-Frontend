@@ -253,33 +253,27 @@ const Step3_Images: React.FC<Props> = ({
     syncToParent(updatedItems);
   }, [imageItems, syncToParent]);
 
-  // Dropzone configuration - FIXED: 10MB (not 5MB)
+  // Dropzone configuration
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 20,
-    maxSize: 10 * 1024 * 1024, // 10MB to match UI text
+    maxSize: 10 * 1024 * 1024, // 10MB
   });
 
-  // Remove image handler - FIXED: works with stable IDs
+  // Remove image handler
   const removeImage = async (itemId: string) => {
-    console.log(`🗑️ removeImage called: itemId=${itemId}`);
-    
     const item = imageItems.find(i => i.id === itemId);
     if (!item) return;
     
-    // If editing and this is an existing image, delete via API
+    // Delete existing image via API
     if (isEditing && item.existingImageId) {
       try {
-        console.log(`📤 Deleting image via API: imageId=${item.existingImageId}`);
         await api.properties.deleteImage(username, Number(propertyId), Number(item.existingImageId));
-        console.log(`✅ Image ${item.existingImageId} deleted successfully`);
-        toast.success('Image deleted successfully');
+        toast.success('Image deleted');
       } catch (error: any) {
-        console.error('❌ Failed to delete image:', error);
-        const errorMsg = error?.response?.data?.detail || 'Failed to delete image';
-        toast.error(errorMsg);
-        return; // Don't update local state if API call failed
+        toast.error(error?.response?.data?.detail || 'Failed to delete image');
+        return;
       }
     }
     
@@ -288,10 +282,10 @@ const Step3_Images: React.FC<Props> = ({
       URL.revokeObjectURL(item.preview);
     }
     
-    // Remove from items
+    // Remove from local state
     const updatedItems = imageItems.filter(i => i.id !== itemId);
     
-    // If removed item was primary, set first item as primary
+    // Set first item as primary if we removed the primary
     if (item.isPrimary && updatedItems.length > 0) {
       updatedItems[0].isPrimary = true;
     }
@@ -300,131 +294,97 @@ const Step3_Images: React.FC<Props> = ({
     syncToParent(updatedItems);
   };
 
-  // Helper: persist ALL existing image orders in their current index order
-  const persistAllExistingOrders = async (items: ImageItem[]) => {
+  // Persist image order using bulk reorder API
+  const persistImageOrder = async (items: ImageItem[]) => {
     if (!propertyId) {
-      toast.error('Missing propertyId');
-      return Promise.reject(new Error('Missing propertyId'));
+      throw new Error('Missing propertyId');
     }
 
-    // Build {imageId, display_order} for every existing image
-    const payloads = items
-      .map((item, idx) => ({
-        imageId: item.existingImageId ? Number(item.existingImageId) : NaN,
-        order: idx,
-      }))
-      .filter(x => !isNaN(x.imageId));
+    // Extract existing image IDs in their current order
+    const existingImageIds = items
+      .map(item => item.existingImageId ? Number(item.existingImageId) : null)
+      .filter((id): id is number => id !== null);
 
-    if (!payloads.length) return; // nothing to persist (e.g., only new images)
+    if (!existingImageIds.length) return; // Only new images, nothing to persist
 
-    console.log(`📋 Persisting order for ${payloads.length} existing images:`, payloads);
+    // Find primary image index
+    const primaryIndex = items.findIndex(item => item.isPrimary && item.existingImageId);
 
-    // Fan-out per-image calls to update ALL display orders
-    await Promise.all(
-      payloads.map(p =>
-        api.properties.updateImageOrder(username, Number(propertyId), p.imageId, {
-          display_order: p.order,
-        })
-      )
+    // Single API call to reorder all images and set primary
+    await api.properties.reorderImages(
+      username, 
+      Number(propertyId), 
+      existingImageIds, 
+      primaryIndex >= 0 ? primaryIndex : 0
     );
   };
 
-  // Reorder images handler - FIXED: persists FULL order to backend
+  // Reorder images handler
   const reorderImages = async (fromIndex: number, toIndex: number) => {
-    console.log(`🔄 reorderImages: ${fromIndex} → ${toIndex}`);
     if (fromIndex === toIndex) return;
     
-    const movedItem = imageItems[fromIndex];
-    if (!movedItem) return;
-    
-    // Helper to reorder array
-    const reorderArray = <T,>(arr: T[], from: number, to: number): T[] => {
+    // Reorder array helper
+    const reorder = <T,>(arr: T[], from: number, to: number): T[] => {
       const result = [...arr];
       const [item] = result.splice(from, 1);
       result.splice(to, 0, item);
       return result;
     };
     
-    // Snapshot for rollback
     const snapshot = [...imageItems];
+    const reordered = reorder(imageItems, fromIndex, toIndex);
     
-    // Optimistic reorder
-    const reordered = reorderArray(imageItems, fromIndex, toIndex);
+    // Update local state optimistically
     setImageItems(reordered);
     syncToParent(reordered);
     
-    // If editing and we have any existing images, persist FULL order to backend
+    // Persist to backend if editing
     if (isEditing && reordered.some(item => item.existingImageId)) {
       try {
-        await persistAllExistingOrders(reordered);
-        console.log('✅ Order synced (all images)');
+        await persistImageOrder(reordered);
       } catch (error: any) {
-        console.error('❌ Reorder persist failed:', error);
-        
-        // Complete rollback
+        // Rollback on error
         setImageItems(snapshot);
         syncToParent(snapshot);
-        
-        const msg = error?.response?.data?.detail || 'Failed to reorder images';
-        toast.error(msg);
+        toast.error(error?.response?.data?.detail || 'Failed to reorder images');
       }
-    } else {
-      console.log('📦 Local reorder (new images or not in edit mode)');
     }
   };
 
-  // Set primary image handler - FIXED: handles both new and existing images + persists full order
+  // Set primary image handler
   const handleSetPrimary = async (itemId: string) => {
-    console.log(`⭐ handleSetPrimary called: itemId=${itemId}`);
-    
     const targetItem = imageItems.find(i => i.id === itemId);
     if (!targetItem || targetItem.isPrimary) return;
     
     const snapshot = [...imageItems];
     
-    // Update local state: mark new item as primary, unmark others
+    // Mark target as primary, move to position 0
     const updatedItems = imageItems.map(item => ({
       ...item,
       isPrimary: item.id === itemId,
     }));
     
-    // Move primary to position 0
     const targetIndex = updatedItems.findIndex(i => i.id === itemId);
     if (targetIndex > 0) {
       const [removed] = updatedItems.splice(targetIndex, 1);
       updatedItems.unshift(removed);
     }
     
+    // Update local state optimistically
     setImageItems(updatedItems);
     syncToParent(updatedItems);
     
-    // If editing and we have existing images, persist FULL order (primary is now at index 0)
+    // Persist to backend if editing
     if (isEditing && updatedItems.some(item => item.existingImageId)) {
       try {
-        console.log(`📤 Setting primary and persisting full order`);
-        
-        // Set as primary
-        if (targetItem.existingImageId) {
-          await api.properties.updateImageOrder(username, Number(propertyId), Number(targetItem.existingImageId), {
-            is_primary: true
-          });
-        }
-        
-        // Persist all orders (primary is now at 0, others at 1..N-1)
-        await persistAllExistingOrders(updatedItems);
-        
-        console.log(`✅ Primary image and order updated successfully`);
+        await persistImageOrder(updatedItems);
+        toast.success('Primary image updated');
       } catch (error) {
-        console.error('❌ Failed to update primary image:', error);
-        
-        // Rollback
+        // Rollback on error
         setImageItems(snapshot);
         syncToParent(snapshot);
-        
         toast.error('Failed to set primary image');
       }
-    } else {
-      console.log('📦 Local primary update (new images or not in edit mode)');
     }
   };
 
@@ -450,13 +410,11 @@ const Step3_Images: React.FC<Props> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      // FIXED: Use stable IDs, convert to indices for reorder
       const oldIndex = imageItems.findIndex(i => i.id === active.id);
       const newIndex = imageItems.findIndex(i => i.id === over.id);
       
       if (oldIndex !== -1 && newIndex !== -1) {
-      console.log(`Drag ended: ${oldIndex} → ${newIndex}`);
-      reorderImages(oldIndex, newIndex);
+        reorderImages(oldIndex, newIndex);
       }
     }
 
@@ -469,17 +427,11 @@ const Step3_Images: React.FC<Props> = ({
 
   // Handle navigation: persist order before moving to next step
   const handleNext = async () => {
-    // If editing and we have existing images, persist their order before leaving
     if (isEditing && imageItems.some(item => item.existingImageId)) {
       try {
-        console.log('💾 Persisting image order before navigation...');
-        await persistAllExistingOrders(imageItems);
-        console.log('✅ Order saved successfully');
+        await persistImageOrder(imageItems);
       } catch (error: any) {
-        console.error('❌ Failed to save image order:', error);
-        const msg = error?.response?.data?.detail || 'Could not save image order';
-        toast.error(msg);
-        // Block navigation on error
+        toast.error(error?.response?.data?.detail || 'Could not save image order');
         return;
       }
     }
@@ -533,7 +485,7 @@ const Step3_Images: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Image Gallery with Drag & Drop - FIXED: using stable IDs */}
+      {/* Image Gallery with Drag & Drop */}
       {imageItems.length > 0 && (
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-gray-100 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
