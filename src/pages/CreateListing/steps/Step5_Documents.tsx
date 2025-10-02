@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, FileText, X, ChevronLeft, ChevronRight, File, AlertCircle, ArrowRight } from 'lucide-react';
+import { Upload, FileText, X, ChevronLeft, File, AlertCircle, ArrowRight } from 'lucide-react';
 import { useListingWizard } from '../../../context/ListingWizardContext';
 
 interface DocumentFile {
@@ -40,8 +40,6 @@ const ALLOWED_TYPES = [
 const Step5_Documents: React.FC<Props> = ({
   documents,
   setDocuments,
-  isSubmitting,
-  isEditing,
 }) => {
   const { back, next } = useListingWizard();
   const [uploadError, setUploadError] = useState<string>('');

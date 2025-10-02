@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera, GripVertical } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
@@ -23,6 +23,15 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
+// Stable image item with unique ID
+interface ImageItem {
+  id: string; // Stable unique ID
+  preview: string; // Object URL or server URL
+  file?: File; // Only present for new uploads
+  existingImageId?: string; // Only present for server images
+  isPrimary: boolean;
+}
 
 interface Props {
   formData: ListingForm;
@@ -151,60 +160,155 @@ const Step3_Images: React.FC<Props> = ({
   username,
 }) => {
   const { next, back } = useListingWizard();
-  const valid = previewImages.length > 0;
   const [activeId, setActiveId] = useState<string | null>(null);
+  
+  // Single source of truth: unified image items with stable IDs
+  const [imageItems, setImageItems] = useState<ImageItem[]>([]);
+
+  // Initialize imageItems from parent state (on mount and when parent changes)
+  useEffect(() => {
+    const items: ImageItem[] = [];
+    
+    // Add existing server images
+    for (let i = 0; i < previewImages.length && i < existingImageIds.length; i++) {
+      if (existingImageIds[i]) {
+        items.push({
+          id: `existing-${existingImageIds[i]}`,
+          preview: previewImages[i],
+          existingImageId: existingImageIds[i],
+          isPrimary: i === primaryIndex,
+        });
+      }
+    }
+    
+    // Add new local images
+    const newStartIndex = existingImageIds.filter(id => id).length;
+    for (let i = newStartIndex; i < previewImages.length; i++) {
+      items.push({
+        id: `new-${Date.now()}-${i}`,
+        preview: previewImages[i],
+        file: formData.images[i - newStartIndex],
+        isPrimary: i === primaryIndex,
+      });
+    }
+    
+    setImageItems(items);
+  }, [previewImages, existingImageIds, primaryIndex, formData.images]);
+
+  // Cleanup: Revoke all object URLs on unmount
+  useEffect(() => {
+    return () => {
+      imageItems.forEach(item => {
+        if (item.file && item.preview.startsWith('blob:')) {
+          URL.revokeObjectURL(item.preview);
+        }
+      });
+    };
+  }, [imageItems]);
+
+  // Sync imageItems back to parent state
+  const syncToParent = useCallback((items: ImageItem[]) => {
+    const newPreviews: string[] = [];
+    const newExistingIds: string[] = [];
+    const newFiles: File[] = [];
+    let newPrimaryIndex = 0;
+
+    items.forEach((item, idx) => {
+      newPreviews.push(item.preview);
+      
+      if (item.existingImageId) {
+        newExistingIds.push(item.existingImageId);
+      } else {
+        newExistingIds.push('');
+      }
+      
+      if (item.file) {
+        newFiles.push(item.file);
+      }
+      
+      if (item.isPrimary) {
+        newPrimaryIndex = idx;
+      }
+    });
+
+    setPreviewImages(newPreviews);
+    setExistingImageIds(newExistingIds);
+    setFormData(p => ({ ...p, images: newFiles }));
+    setPrimaryIndex(newPrimaryIndex);
+  }, [setPreviewImages, setExistingImageIds, setFormData, setPrimaryIndex]);
+
+  const valid = imageItems.length > 0;
 
   // Image upload handler
   const onDrop = useCallback((files: File[]) => {
-    setFormData((p: ListingForm) => ({ ...p, images: [...p.images, ...files] }));
-    setPreviewImages((p: string[]) => [...p, ...files.map(f => URL.createObjectURL(f))]);
-  }, [setFormData, setPreviewImages]);
+    const newItems: ImageItem[] = files.map((file, idx) => ({
+      id: `new-${Date.now()}-${idx}`,
+      preview: URL.createObjectURL(file),
+      file,
+      isPrimary: false,
+    }));
+    
+    const updatedItems = [...imageItems, ...newItems];
+    setImageItems(updatedItems);
+    syncToParent(updatedItems);
+  }, [imageItems, syncToParent]);
 
-  // Dropzone configuration
+  // Dropzone configuration - FIXED: 10MB (not 5MB)
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: { 'image/*': ['.jpeg', '.jpg', '.png', '.webp'] },
     maxFiles: 20,
-    maxSize: 5 * 1024 * 1024,
+    maxSize: 10 * 1024 * 1024, // 10MB to match UI text
   });
 
-  // Remove image handler
-  const removeImage = async (idx: number) => {
-    console.log(`🗑️ removeImage called: idx=${idx}`);
+  // Remove image handler - FIXED: works with stable IDs
+  const removeImage = async (itemId: string) => {
+    console.log(`🗑️ removeImage called: itemId=${itemId}`);
+    
+    const item = imageItems.find(i => i.id === itemId);
+    if (!item) return;
     
     // If editing and this is an existing image, delete via API
-    if (isEditing && existingImageIds[idx]) {
-      const imageId = existingImageIds[idx];
-      
-      if (imageId && !isNaN(Number(imageId))) {
-        try {
-          console.log(`📤 Deleting image via API: imageId=${imageId}`);
-          await api.properties.deleteImage(username, Number(propertyId), Number(imageId));
-          console.log(`✅ Image ${imageId} deleted successfully`);
-          toast.success('Image deleted successfully');
-        } catch (error: any) {
-          console.error('❌ Failed to delete image:', error);
-          const errorMsg = error?.response?.data?.detail || 'Failed to delete image';
-          toast.error(errorMsg);
-          return; // Don't update local state if API call failed
-        }
+    if (isEditing && item.existingImageId) {
+      try {
+        console.log(`📤 Deleting image via API: imageId=${item.existingImageId}`);
+        await api.properties.deleteImage(username, Number(propertyId), Number(item.existingImageId));
+        console.log(`✅ Image ${item.existingImageId} deleted successfully`);
+        toast.success('Image deleted successfully');
+      } catch (error: any) {
+        console.error('❌ Failed to delete image:', error);
+        const errorMsg = error?.response?.data?.detail || 'Failed to delete image';
+        toast.error(errorMsg);
+        return; // Don't update local state if API call failed
       }
     }
     
-    // Update local state
-    setFormData((p: ListingForm) => ({ ...p, images: p.images.filter((_, i) => i !== idx) }));
-    if (idx < previewImages.length) URL.revokeObjectURL(previewImages[idx]);
-    setPreviewImages((p: string[]) => p.filter((_, i) => i !== idx));
-    setExistingImageIds((p: string[]) => p.filter((_, i) => i !== idx));
-    setPrimaryIndex((i: number) => (idx === i ? 0 : idx < i ? i - 1 : i));
+    // Revoke object URL if it's a blob
+    if (item.file && item.preview.startsWith('blob:')) {
+      URL.revokeObjectURL(item.preview);
+    }
+    
+    // Remove from items
+    const updatedItems = imageItems.filter(i => i.id !== itemId);
+    
+    // If removed item was primary, set first item as primary
+    if (item.isPrimary && updatedItems.length > 0) {
+      updatedItems[0].isPrimary = true;
+    }
+    
+    setImageItems(updatedItems);
+    syncToParent(updatedItems);
   };
 
-  // Reorder images handler
+  // Reorder images handler - FIXED: proper rollback for all state
   const reorderImages = async (fromIndex: number, toIndex: number) => {
     console.log(`🔄 reorderImages: ${fromIndex} → ${toIndex}`);
     if (fromIndex === toIndex) return;
     
-    // Helper function to reorder an array
+    const movedItem = imageItems[fromIndex];
+    if (!movedItem) return;
+    
+    // Helper to reorder array
     const reorderArray = <T,>(arr: T[], from: number, to: number): T[] => {
       const result = [...arr];
       const [item] = result.splice(from, 1);
@@ -212,121 +316,81 @@ const Step3_Images: React.FC<Props> = ({
       return result;
     };
     
-    // Helper to calculate new primary index after reordering
-    const calculateNewPrimary = (currentPrimary: number, from: number, to: number): number => {
-      if (currentPrimary === from) return to;
-      if (from < to) {
-        // Moving right: items between from+1 and to shift left
-        if (currentPrimary > from && currentPrimary <= to) return currentPrimary - 1;
-      } else {
-        // Moving left: items between to and from-1 shift right
-        if (currentPrimary >= to && currentPrimary < from) return currentPrimary + 1;
+    // Snapshot for rollback
+    const snapshot = [...imageItems];
+    
+    // Optimistic reorder
+    const reordered = reorderArray(imageItems, fromIndex, toIndex);
+    setImageItems(reordered);
+    syncToParent(reordered);
+    
+    // If editing and this is an existing server image, sync with backend
+    if (isEditing && movedItem.existingImageId) {
+      try {
+        console.log(`📋 Syncing reorder to backend: ID=${movedItem.existingImageId} to position ${toIndex}`);
+        await api.properties.updateImageOrder(username, Number(propertyId), Number(movedItem.existingImageId), {
+          display_order: toIndex
+        });
+        console.log(`✅ Synced with backend`);
+      } catch (error: any) {
+        console.error('❌ Reorder failed:', error);
+        
+        // FIXED: Complete rollback
+        setImageItems(snapshot);
+        syncToParent(snapshot);
+        
+        const msg = error?.response?.data?.detail || 'Failed to reorder image';
+        toast.error(msg);
       }
-      return currentPrimary;
-    };
-    
-    // For new images (not yet saved) or mixed state, handle locally only
-    if (!isEditing || formData.images.length > 0) {
-      console.log('📦 Local reorder (new images)');
-      setFormData(p => ({ ...p, images: reorderArray(p.images, fromIndex, toIndex) }));
-      setPreviewImages(p => reorderArray(p, fromIndex, toIndex));
-      setExistingImageIds(p => reorderArray(p, fromIndex, toIndex));
-      setPrimaryIndex(curr => calculateNewPrimary(curr, fromIndex, toIndex));
-      return;
-    }
-    
-    // For existing images only (editing mode)
-    const imageId = existingImageIds[fromIndex];
-    
-    if (!imageId || isNaN(Number(imageId))) {
-      console.error('❌ Invalid image ID:', imageId);
-      toast.error('Cannot reorder: invalid image ID');
-      return;
-    }
-    
-    console.log(`📋 Reordering existing image: ID=${imageId}`);
-    
-    // Store state for rollback
-    const snapshot = {
-      previews: [...previewImages],
-      ids: [...existingImageIds],
-      primary: primaryIndex,
-    };
-    
-    // Optimistic update
-    const newPreviews = reorderArray(previewImages, fromIndex, toIndex);
-    const newIds = reorderArray(existingImageIds, fromIndex, toIndex);
-    const newPrimary = calculateNewPrimary(primaryIndex, fromIndex, toIndex);
-    
-    setPreviewImages(newPreviews);
-    setExistingImageIds(newIds);
-    setPrimaryIndex(newPrimary);
-    
-    console.log(`📸 New order:`, newIds);
-    console.log(`⭐ New primary index: ${newPrimary}`);
-    
-    // Sync with backend
-    try {
-      await api.properties.updateImageOrder(username, Number(propertyId), Number(imageId), {
-        display_order: toIndex
-      });
-      console.log(`✅ Synced with backend`);
-    } catch (error: any) {
-      console.error('❌ Reorder failed:', error);
-      
-      // Rollback
-      setPreviewImages(snapshot.previews);
-      setExistingImageIds(snapshot.ids);
-      setPrimaryIndex(snapshot.primary);
-      
-      const msg = error?.response?.data?.detail || 'Failed to reorder image';
-      toast.error(msg);
+    } else {
+      console.log('📦 Local reorder (new image or not in edit mode)');
     }
   };
 
-  // Set primary image handler
-  const handleSetPrimary = async (newIndex: number) => {
-    const oldIndex = primaryIndex;
+  // Set primary image handler - FIXED: handles both new and existing images
+  const handleSetPrimary = async (itemId: string) => {
+    console.log(`⭐ handleSetPrimary called: itemId=${itemId}`);
     
-    if (newIndex === oldIndex) return;
+    const targetItem = imageItems.find(i => i.id === itemId);
+    if (!targetItem || targetItem.isPrimary) return;
     
-    // If editing and we have existing images, update via API
-    if (isEditing && existingImageIds.length > 0) {
+    const snapshot = [...imageItems];
+    
+    // Update local state: mark new item as primary, unmark others
+    const updatedItems = imageItems.map(item => ({
+      ...item,
+      isPrimary: item.id === itemId,
+    }));
+    
+    // Move primary to position 0
+    const targetIndex = updatedItems.findIndex(i => i.id === itemId);
+    if (targetIndex > 0) {
+      const [removed] = updatedItems.splice(targetIndex, 1);
+      updatedItems.unshift(removed);
+    }
+    
+    setImageItems(updatedItems);
+    syncToParent(updatedItems);
+    
+    // If editing and this is an existing server image, sync with backend
+    if (isEditing && targetItem.existingImageId) {
       try {
-        const imageId = existingImageIds[newIndex];
-        if (imageId) {
-          // Set new primary - backend will move it to position 0
-          await api.properties.updateImageOrder(username, Number(propertyId), Number(imageId), {
-            is_primary: true
-          });
-          
-          // Reorder local state to reflect the change - move selected to front
-          setPreviewImages((prev) => {
-            const newPreviews = [...prev];
-            const [removed] = newPreviews.splice(newIndex, 1);
-            newPreviews.unshift(removed);  // Add to beginning
-            return newPreviews;
-          });
-          
-          setExistingImageIds((prev) => {
-            const newIds = [...prev];
-            const [removed] = newIds.splice(newIndex, 1);
-            newIds.unshift(removed);
-            return newIds;
-          });
-          
-          // Primary is now at index 0
-          setPrimaryIndex(0);
-          
-          console.log(`Set image ${imageId} as primary and moved to position 0`);
-        }
+        console.log(`📤 Setting image ${targetItem.existingImageId} as primary via API`);
+        await api.properties.updateImageOrder(username, Number(propertyId), Number(targetItem.existingImageId), {
+          is_primary: true
+        });
+        console.log(`✅ Primary image updated successfully`);
       } catch (error) {
-        console.error('Failed to update primary image:', error);
-        // Don't revert - let user try again
+        console.error('❌ Failed to update primary image:', error);
+        
+        // Rollback
+        setImageItems(snapshot);
+        syncToParent(snapshot);
+        
+        toast.error('Failed to set primary image');
       }
     } else {
-      // For new images, just update local state
-      setPrimaryIndex(newIndex);
+      console.log('📦 Local primary update (new image or not in edit mode)');
     }
   };
 
@@ -352,12 +416,14 @@ const Step3_Images: React.FC<Props> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      // IDs are indices, so we can use them directly
-      const oldIndex = Number(active.id);
-      const newIndex = Number(over.id);
+      // FIXED: Use stable IDs, convert to indices for reorder
+      const oldIndex = imageItems.findIndex(i => i.id === active.id);
+      const newIndex = imageItems.findIndex(i => i.id === over.id);
       
+      if (oldIndex !== -1 && newIndex !== -1) {
       console.log(`Drag ended: ${oldIndex} → ${newIndex}`);
       reorderImages(oldIndex, newIndex);
+      }
     }
 
     setActiveId(null);
@@ -414,13 +480,13 @@ const Step3_Images: React.FC<Props> = ({
         </div>
       </div>
 
-      {/* Image Gallery with Drag & Drop */}
-      {previewImages.length > 0 && (
+      {/* Image Gallery with Drag & Drop - FIXED: using stable IDs */}
+      {imageItems.length > 0 && (
         <div className="bg-white p-4 sm:p-6 rounded-xl shadow-md border border-gray-100 mb-8">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-2">
             <h3 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
               <Image className="w-5 h-5 mr-2 text-blue-600" />
-              Uploaded Images ({previewImages.length})
+              Uploaded Images ({imageItems.length})
             </h3>
             <div className="text-sm text-gray-500 flex items-center">
               <GripVertical className="w-4 h-4 mr-1 text-gray-400" />
@@ -435,17 +501,17 @@ const Step3_Images: React.FC<Props> = ({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <SortableContext items={previewImages.map((_, idx) => String(idx))} strategy={rectSortingStrategy}>
+            <SortableContext items={imageItems.map(item => item.id)} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-                {previewImages.map((preview, index) => (
+                {imageItems.map((item, index) => (
                   <SortableImage
-                    key={index}
-                    id={String(index)}
-                    preview={preview}
+                    key={item.id}
+                    id={item.id}
+                    preview={item.preview}
                     index={index}
-                    isPrimary={index === primaryIndex}
-                    onSetPrimary={() => handleSetPrimary(index)}
-                    onRemove={() => removeImage(index)}
+                    isPrimary={item.isPrimary}
+                    onSetPrimary={() => handleSetPrimary(item.id)}
+                    onRemove={() => removeImage(item.id)}
                   />
                 ))}
               </div>
@@ -453,10 +519,13 @@ const Step3_Images: React.FC<Props> = ({
 
             <DragOverlay dropAnimation={null}>
               {activeId !== null ? (
+                (() => {
+                  const draggedItem = imageItems.find(i => i.id === activeId);
+                  return draggedItem ? (
                 <div className="relative opacity-95 scale-110 rotate-2 shadow-2xl transition-transform duration-150">
                   <div className="relative overflow-hidden rounded-xl ring-4 ring-blue-500 ring-offset-2">
                     <img
-                      src={previewImages[Number(activeId)]}
+                          src={draggedItem.preview}
                       alt="Dragging"
                       className="h-32 w-full object-cover"
                     />
@@ -464,6 +533,8 @@ const Step3_Images: React.FC<Props> = ({
                     <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 pointer-events-none" />
                   </div>
                 </div>
+                  ) : null;
+                })()
               ) : null}
             </DragOverlay>
           </DndContext>
@@ -471,7 +542,7 @@ const Step3_Images: React.FC<Props> = ({
       )}
       
       {/* Empty State */}
-      {previewImages.length === 0 && (
+      {imageItems.length === 0 && (
         <div className="bg-white p-8 rounded-xl shadow-md border border-gray-100 mb-8">
           <div className="text-center text-gray-500">
             <Image className="w-16 h-16 mx-auto mb-4 text-gray-300" />
