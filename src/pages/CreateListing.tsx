@@ -324,49 +324,59 @@ const CreateListing: React.FC = () => {
         return i;
       });
     } else {
-      // For existing images, update via API
+      // For existing images, optimistic update then sync with API
+      const imageId = existingImageIds[fromIndex];
+      if (!imageId || isNaN(Number(imageId))) {
+        console.error('Invalid image ID for reordering:', imageId);
+        return;
+      }
+      
+      // Store current state for rollback
+      const rollbackState = {
+        previews: [...previewImages],
+        ids: [...existingImageIds],
+        primary: primaryIndex,
+      };
+      
+      // Update UI immediately (optimistic update for smooth UX)
+      setPreviewImages((p: string[]) => {
+        const newPreviews = [...p];
+        const [removed] = newPreviews.splice(fromIndex, 1);
+        newPreviews.splice(toIndex, 0, removed);
+        return newPreviews;
+      });
+      
+      setExistingImageIds((p: string[]) => {
+        const newIds = [...p];
+        const [removed] = newIds.splice(fromIndex, 1);
+        newIds.splice(toIndex, 0, removed);
+        return newIds;
+      });
+      
+      // Update primary index
+      setPrimaryIndex((i: number) => {
+        if (i === fromIndex) return toIndex;
+        if (fromIndex < i && toIndex >= i) return i - 1;
+        if (fromIndex > i && toIndex <= i) return i + 1;
+        return i;
+      });
+      
       try {
-        const imageId = existingImageIds[fromIndex];
-        if (!imageId) {
-          console.error('No image ID found for reordering');
-          return;
-        }
-        
-        // Calculate new display_order (0-based)
-        const newDisplayOrder = toIndex;
-        
-        // Update via API
+        // Sync with backend
         await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
-          display_order: newDisplayOrder
+          display_order: toIndex
         });
         
-        // Update local state
-        setPreviewImages((p: string[]) => {
-          const newPreviews = [...p];
-          const [removed] = newPreviews.splice(fromIndex, 1);
-          newPreviews.splice(toIndex, 0, removed);
-          return newPreviews;
-        });
-        
-        setExistingImageIds((p: string[]) => {
-          const newIds = [...p];
-          const [removed] = newIds.splice(fromIndex, 1);
-          newIds.splice(toIndex, 0, removed);
-          return newIds;
-        });
-        
-        // Update primary index if needed
-        setPrimaryIndex((i: number) => {
-          if (i === fromIndex) return toIndex;
-          if (fromIndex < i && toIndex >= i) return i - 1;
-          if (fromIndex > i && toIndex <= i) return i + 1;
-          return i;
-        });
-        
-        console.log(`Image reordered from position ${fromIndex} to ${toIndex}`);
+        console.log(`✓ Image ${imageId} reordered: ${fromIndex} → ${toIndex}`);
       } catch (error) {
         console.error('Failed to reorder image:', error);
-        // Could show a toast notification here
+        
+        // Rollback on error
+        setPreviewImages(rollbackState.previews);
+        setExistingImageIds(rollbackState.ids);
+        setPrimaryIndex(rollbackState.primary);
+        
+        toast.error('Failed to reorder image. Please try again.');
       }
     }
   };

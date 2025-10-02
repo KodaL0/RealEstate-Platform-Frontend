@@ -63,8 +63,9 @@ const SortableImage: React.FC<SortableImageProps> = ({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
+    transition: transition || 'transform 200ms ease',
+    opacity: isDragging ? 0.3 : 1,
+    zIndex: isDragging ? 1000 : 'auto',
   };
 
   return (
@@ -147,11 +148,13 @@ const Step3_Images: React.FC<Props> = ({
   const valid = previewImages.length > 0;
   const [activeId, setActiveId] = React.useState<string | null>(null);
 
-  // Configure sensors for both pointer (mouse) and touch
+  // Configure sensors for both pointer (mouse) and touch with optimized activation
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px of movement required before drag starts
+        distance: 5, // 5px of movement required before drag starts (was 8)
+        tolerance: 5,
+        delay: 0,
       },
     }),
     useSensor(KeyboardSensor, {
@@ -264,15 +267,17 @@ const Step3_Images: React.FC<Props> = ({
               </div>
             </SortableContext>
 
-            <DragOverlay>
+            <DragOverlay dropAnimation={null}>
               {activeId ? (
-                <div className="relative opacity-90 scale-105 rotate-3 shadow-2xl">
-                  <div className="relative overflow-hidden rounded-xl ring-4 ring-blue-400">
+                <div className="relative opacity-95 scale-110 rotate-2 shadow-2xl transition-transform duration-150">
+                  <div className="relative overflow-hidden rounded-xl ring-4 ring-blue-500 ring-offset-2">
                     <img
                       src={activeId}
                       alt="Dragging"
                       className="h-32 w-full object-cover"
                     />
+                    {/* Visual feedback during drag */}
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-500/20 to-purple-500/20 pointer-events-none" />
                   </div>
                 </div>
               ) : null}
