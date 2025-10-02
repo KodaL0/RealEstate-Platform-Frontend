@@ -4,10 +4,15 @@ import { useListingWizard } from '../../../context/ListingWizardContext';
 
 interface DocumentFile {
   id: string;
-  file: File;
+  file?: File; // Optional for existing documents
+  existingDocId?: number; // For existing documents from backend
+  documentUrl?: string; // URL for existing documents
+  fileName?: string; // Name for existing documents
+  fileSize?: number; // Size for existing documents
   type: string;
   title: string;
   description: string;
+  uploadedAt?: string; // When document was uploaded
 }
 
 interface Props {
@@ -192,23 +197,44 @@ const Step5_Documents: React.FC<Props> = ({
           </h3>
 
           <div className="space-y-4">
-            {documents.map((doc) => (
+            {documents.map((doc) => {
+              const isExisting = !!doc.existingDocId;
+              const fileName = doc.file?.name || doc.fileName || 'Document';
+              const fileSize = doc.file?.size || doc.fileSize || 0;
+              
+              return (
               <div
                 key={doc.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors duration-200"
+                className={`border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors duration-200 ${isExisting ? 'bg-blue-50' : ''}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center flex-1">
-                    <span className="text-2xl mr-3">{getFileIcon(doc.file.name)}</span>
+                    <span className="text-2xl mr-3">{getFileIcon(fileName)}</span>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-800">{doc.file.name}</p>
-                      <p className="text-sm text-gray-500">{formatFileSize(doc.file.size)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-800">{fileName}</p>
+                        {isExisting && (
+                          <span className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded">Existing</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">{formatFileSize(fileSize)}</p>
+                      {isExisting && doc.documentUrl && (
+                        <a 
+                          href={doc.documentUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          View document
+                        </a>
+                      )}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeDocument(doc.id)}
                     className="p-2 hover:bg-red-50 rounded-full transition-colors duration-200"
+                    title={isExisting ? "Remove from listing (will be deleted)" : "Remove from upload"}
                   >
                     <X className="w-5 h-5 text-red-500" />
                   </button>
@@ -262,7 +288,8 @@ const Step5_Documents: React.FC<Props> = ({
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}

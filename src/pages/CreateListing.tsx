@@ -298,6 +298,9 @@ const CreateListing: React.FC = () => {
         }
         setCountryCode(cc);
 
+        // Log amenities for debugging
+        console.log('📋 Loaded amenities from backend:', d.amenities, 'Type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
+        
         setFormData(prev => ({
           ...prev,
           title: d.title || '',
@@ -315,7 +318,7 @@ const CreateListing: React.FC = () => {
           bedrooms: d.bedrooms?.toString() || '',
           bathrooms: d.bathrooms?.toString() || '',
           area: d.area?.toString() || '',
-          amenities: d.amenities || [],
+          amenities: Array.isArray(d.amenities) ? d.amenities : [],
           yearBuilt: d.year_built?.toString() || '',
           parkingSpaces: d.parking_spaces?.toString() || '',
           lotSize: d.lot_size?.toString() || '',
@@ -333,6 +336,25 @@ const CreateListing: React.FC = () => {
           // keep existing userType if returned, otherwise keep whatever we already have
           userType: d.user_type || prev.userType || 'owner_agent',
         }));
+
+        // Load existing documents
+        const existingDocs = d.documents || [];
+        console.log('📄 Loaded documents from backend:', existingDocs);
+        
+        // Transform backend documents to match DocumentFile interface
+        const transformedDocs = existingDocs.map((doc: any) => ({
+          id: `existing-${doc.id}`,
+          existingDocId: doc.id,
+          documentUrl: doc.document,
+          type: doc.document_type || 'other',
+          title: doc.title || doc.document.split('/').pop() || 'Document',
+          description: doc.description || '',
+          fileSize: doc.file_size,
+          fileName: doc.document.split('/').pop() || 'document',
+          uploadedAt: doc.uploaded_at,
+        }));
+        
+        setDocuments(transformedDocs);
 
         // Set available from date if it exists
         if (d.available_from) {
