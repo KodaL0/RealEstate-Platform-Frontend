@@ -291,6 +291,7 @@ const CreateListing: React.FC = () => {
   };
 
   const reorderImages = async (fromIndex: number, toIndex: number) => {
+    console.log(`🔄 reorderImages called: fromIndex=${fromIndex}, toIndex=${toIndex}`);
     if (fromIndex === toIndex) return;
     
     // For new images (not yet saved), handle locally
@@ -326,8 +327,16 @@ const CreateListing: React.FC = () => {
     } else {
       // For existing images, optimistic update then sync with API
       const imageId = existingImageIds[fromIndex];
+      console.log(`📋 Current state:`, {
+        fromIndex,
+        toIndex,
+        imageId,
+        existingImageIds: [...existingImageIds],
+        previewImagesCount: previewImages.length
+      });
+      
       if (!imageId || isNaN(Number(imageId))) {
-        console.error('Invalid image ID for reordering:', imageId);
+        console.error('❌ Invalid image ID for reordering:', imageId);
         return;
       }
       
@@ -343,6 +352,7 @@ const CreateListing: React.FC = () => {
         const newPreviews = [...p];
         const [removed] = newPreviews.splice(fromIndex, 1);
         newPreviews.splice(toIndex, 0, removed);
+        console.log(`📸 Updated preview order:`, newPreviews.length, 'images');
         return newPreviews;
       });
       
@@ -350,6 +360,7 @@ const CreateListing: React.FC = () => {
         const newIds = [...p];
         const [removed] = newIds.splice(fromIndex, 1);
         newIds.splice(toIndex, 0, removed);
+        console.log(`🆔 Updated ID order:`, newIds);
         return newIds;
       });
       
@@ -363,13 +374,14 @@ const CreateListing: React.FC = () => {
       
       try {
         // Sync with backend
+        console.log(`📤 Sending to API: imageId=${imageId}, display_order=${toIndex}`);
         await api.properties.updateImageOrder(username, Number(id), Number(imageId), {
           display_order: toIndex
         });
         
-        console.log(`✓ Image ${imageId} reordered: ${fromIndex} → ${toIndex}`);
+        console.log(`✅ Image ${imageId} reordered successfully: ${fromIndex} → ${toIndex}`);
       } catch (error) {
-        console.error('Failed to reorder image:', error);
+        console.error('❌ Failed to reorder image:', error);
         
         // Rollback on error
         setPreviewImages(rollbackState.previews);

@@ -170,9 +170,11 @@ const Step3_Images: React.FC<Props> = ({
     const { active, over } = event;
 
     if (over && active.id !== over.id) {
-      const oldIndex = previewImages.indexOf(active.id as string);
-      const newIndex = previewImages.indexOf(over.id as string);
+      // IDs are indices, so we can use them directly
+      const oldIndex = Number(active.id);
+      const newIndex = Number(over.id);
       
+      console.log(`Drag ended: ${oldIndex} → ${newIndex}`);
       reorderImages(oldIndex, newIndex);
     }
 
@@ -251,12 +253,12 @@ const Step3_Images: React.FC<Props> = ({
             onDragEnd={handleDragEnd}
             onDragCancel={handleDragCancel}
           >
-            <SortableContext items={previewImages} strategy={rectSortingStrategy}>
+            <SortableContext items={previewImages.map((_, idx) => String(idx))} strategy={rectSortingStrategy}>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
                 {previewImages.map((preview, index) => (
                   <SortableImage
-                    key={preview}
-                    id={preview}
+                    key={index}
+                    id={String(index)}
                     preview={preview}
                     index={index}
                     isPrimary={index === primaryIndex}
@@ -268,11 +270,11 @@ const Step3_Images: React.FC<Props> = ({
             </SortableContext>
 
             <DragOverlay dropAnimation={null}>
-              {activeId ? (
+              {activeId !== null ? (
                 <div className="relative opacity-95 scale-110 rotate-2 shadow-2xl transition-transform duration-150">
                   <div className="relative overflow-hidden rounded-xl ring-4 ring-blue-500 ring-offset-2">
                     <img
-                      src={activeId}
+                      src={previewImages[Number(activeId)]}
                       alt="Dragging"
                       className="h-32 w-full object-cover"
                     />
