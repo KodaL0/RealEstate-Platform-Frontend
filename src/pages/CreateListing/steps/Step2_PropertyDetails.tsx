@@ -142,9 +142,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         }
 
         console.log('📋 Step2: Loaded amenities from backend:', d.amenities, 'Type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
+        console.log('📋 Step2: Current formData.amenities before update:', formData.amenities);
         
         // Update form data with property details
-        setFormData(prev => ({
+        setFormData(prev => {
+          const amenitiesFromBackend = Array.isArray(d.amenities) ? d.amenities : [];
+          console.log('📋 Step2: Setting amenities in formData:', amenitiesFromBackend);
+          return {
           ...prev,
           title: d.title || '',
           description: d.description || '',
@@ -177,7 +181,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           videoUrl: d.video_url || '',
           images: [],
           userType: d.user_type || prev.userType || 'owner_agent',
-        }));
+        };
+        });
 
         // Call callback to let parent handle images and other data
         if (onPropertyDataLoaded) {
@@ -510,18 +515,30 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
           showField('amenities') && (
           <div className="lg:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
               Amenities
               {/* Debug: Show loaded amenities */}
               {formData.amenities && formData.amenities.length > 0 && (
-                <span className="ml-2 text-xs font-medium text-green-600">
-                  ({formData.amenities.length} selected)
+                <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                  {formData.amenities.length} selected
                 </span>
+              )}
+              {/* Show actual IDs for debugging */}
+              {formData.amenities && formData.amenities.length > 0 && (
+                <div className="text-xs text-gray-500 mt-1">
+                  Selected IDs: {formData.amenities.join(', ')}
+                </div>
               )}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {AMENITIES.map((a: { id: string; label: string; category: string }) => {
                 const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
+                
+                // Debug log for each amenity
+                if (selected) {
+                  console.log(`✅ Amenity "${a.label}" (${a.id}) is SELECTED`);
+                }
+                
                 return (
                   <label
                     key={a.id}
