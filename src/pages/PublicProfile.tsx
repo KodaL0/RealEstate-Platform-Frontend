@@ -13,7 +13,7 @@ import ReviewForm from '../components/ReviewForm';
 import { normalizePropertyData, Property, PublicProfileData, Review, ReviewStats, CanReviewResponse } from '../types';
 import api from '../config/api';
 import { useChat } from '../context/ChatContext';
-import LLMProfileData from '../components/llm-profile';
+import LLMProfileData from '../components/llms/llm-profile';
 
 const formatDateOnly = (dateString: string) => {
   const date = new Date(dateString);

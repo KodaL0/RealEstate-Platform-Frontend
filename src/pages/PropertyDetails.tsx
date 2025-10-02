@@ -18,7 +18,7 @@ import FavouriteButton from '../components/FavouriteButton';
 import ChatButton from "../components/ChatButton";
 import PropertyDocuments from '../components/PropertyDocuments';
 import { geocodeAddress } from '../components/geocode';
-import LLMPropertyData from '../components/llm-properties';
+import LLMPropertyData from '../components/llms/llm-properties';
 import SEO from '../components/SEO';
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>

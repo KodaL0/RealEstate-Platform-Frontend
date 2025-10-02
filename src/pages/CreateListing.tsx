@@ -403,9 +403,12 @@ const CreateListing: React.FC = () => {
         fd.append('primary_image_index', String(primaryIndex));
       }
       if (isEditing && previewImages.length) {
+        // Send image order for reordering
+        fd.append('reorder_images', 'true');
         previewImages.forEach((url, i) => {
           if (!formData.images.length || i >= formData.images.length) {
             fd.append('existing_images[]', existingImageIds[i] || url);
+            fd.append('image_order[]', existingImageIds[i] || url);
             if (i === primaryIndex) fd.append('primary_image_id', existingImageIds[i] || url);
           }
         });

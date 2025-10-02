@@ -6,7 +6,7 @@
  */
 
 import React from 'react';
-import { Property } from '../types';
+import { Property } from '../../types';
 
 interface LLMPropertyDataProps {
   property: Property;
@@ -120,5 +120,7 @@ export const LLMPropertyData: React.FC<LLMPropertyDataProps> = ({ property }) =>
 };
 
 export default LLMPropertyData;
+
+
 
 
