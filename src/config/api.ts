@@ -218,6 +218,8 @@ const api = {
     getUserProps:   (u: string) => apiGet(`properties/${u}/properties`),
     updateImageOrder: (u: string, pid: number, imageId: number, data: { display_order?: number, is_primary?: boolean }) => 
       apiPut(`properties/${u}/property/${pid}/image/${imageId}/update`, data),
+    deleteImage: (u: string, pid: number, imageId: number) =>
+      apiDelete(`properties/${u}/property/${pid}/image/${imageId}/delete`),
     myFavorites:    () => 
       apiGet('properties/my-favourites')
         .then(res => {
