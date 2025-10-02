@@ -466,6 +466,11 @@ export const AMENITIES = [
   
   // Policy & Lifestyle
   { id: 'pets', label: 'Pet Friendly', category: 'Policy & Lifestyle' },
+  
+  // Legacy amenities (keeping for backward compatibility)
+  { id: 'parking', label: 'Parking', category: 'Legacy' },
+  { id: 'ac', label: 'Air Conditioning', category: 'Legacy' },
+  { id: 'heating', label: 'Central Heating', category: 'Legacy' },
 ];
 
 export interface Developer {

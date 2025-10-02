@@ -141,27 +141,10 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           setCountryCode(cc);
         }
 
-        console.log('📋 Step2: RAW DATA from backend:', JSON.stringify(d.amenities, null, 2));
-        console.log('📋 Step2: Amenities type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
-        console.log('📋 Step2: Current formData.amenities:', formData.amenities);
+        console.log('📋 Step2: Loaded amenities:', d.amenities);
         
         // Update form data with property details
-        setFormData(prev => {
-          const amenitiesFromBackend = Array.isArray(d.amenities) ? d.amenities : [];
-          console.log('📋 Step2: Will set these amenities:', amenitiesFromBackend);
-          console.log('📋 Step2: AMENITIES constant has these IDs:', AMENITIES.map(a => a.id));
-          
-          // Check for mismatches
-          amenitiesFromBackend.forEach((amenityId: string) => {
-            const found = AMENITIES.find(a => a.id === amenityId);
-            if (!found) {
-              console.error(`❌ MISMATCH: Backend sent "${amenityId}" but it's not in AMENITIES array!`);
-            } else {
-              console.log(`✅ MATCH: "${amenityId}" found as "${found.label}"`);
-            }
-          });
-          
-          return {
+        setFormData(prev => ({
           ...prev,
           title: d.title || '',
           description: d.description || '',
@@ -194,13 +177,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           videoUrl: d.video_url || '',
           images: [],
           userType: d.user_type || prev.userType || 'owner_agent',
-        };
-        });
-        
-        // Log what was actually set
-        setTimeout(() => {
-          console.log('📋 Step2: After setState, formData.amenities is now:', formData.amenities);
-        }, 100);
+        }));
 
         // Call callback to let parent handle images and other data
         if (onPropertyDataLoaded) {
@@ -535,27 +512,15 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <div className="lg:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Amenities
-              {/* Debug: Show loaded amenities */}
               {formData.amenities && formData.amenities.length > 0 && (
                 <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
                   {formData.amenities.length} selected
                 </span>
               )}
-              {/* Show actual IDs for debugging */}
-              {formData.amenities && formData.amenities.length > 0 && (
-                <div className="text-xs text-gray-500 mt-1">
-                  Selected IDs: {formData.amenities.join(', ')}
-                </div>
-              )}
             </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
               {AMENITIES.map((a: { id: string; label: string; category: string }) => {
                 const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
-                
-                // Debug log for each amenity
-                if (selected) {
-                  console.log(`✅ Amenity "${a.label}" (${a.id}) is SELECTED`);
-                }
                 
                 return (
                   <label
@@ -574,8 +539,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                         const newAmenities = selected
                           ? formData.amenities.filter((x: string) => x !== a.id)
                           : [...(formData.amenities || []), a.id];
-                        
-                        console.log(`🔘 Amenity ${selected ? 'deselected' : 'selected'}: ${a.id}`, newAmenities);
                         
                         setFormData((f: ListingForm) => ({
                           ...f,
