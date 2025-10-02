@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect } from 'react';
 import {
   Home,
   Bed,
@@ -16,17 +16,25 @@ import {
 import { useListingWizard } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
 import LocationAutocomplete from '../../LocationAutocomplete';
+import api from '../../../config/api';
 
 type Props = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   onChange: (e: React.ChangeEvent<any>) => void;
-
   setLocationCoords?: (coords: { lat: number; lng: number } | null) => void;
   availableFromDate?: Date;
   setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
   showCalendar?: boolean;
   setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // For edit mode
+  isEditing?: boolean;
+  propertyId?: string;
+  onPropertyDataLoaded?: (data: any) => void;
+  countryCode?: string;
+  setCountryCode?: (code: string) => void;
+  username?: string;
 };
 
 type PT =
@@ -90,12 +98,92 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   setFormData,
   onChange,
   setLocationCoords,
+  isEditing = false,
+  propertyId,
+  onPropertyDataLoaded,
+  countryCode,
+  setCountryCode,
+  username,
 }) => {
   const { next, back } = useListingWizard();
   const ptype = (formData.propertyType || '') as PT;
 
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
+
+  // Load property details when editing
+  useEffect(() => {
+    if (!isEditing || !propertyId || !username) return;
+    
+    api.properties
+      .getUserProperty(username, Number(propertyId))
+      .then(res => {
+        const d = res.data;
+        
+        // Normalize property status
+        let propertyStatus = d.property_status || '';
+        if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+        if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+
+        // Parse contact phone to extract country code
+        let phone = d.contact_phone || '';
+        let cc = countryCode || '+357';
+        const m = phone.match(/^\+[\d]{1,4}/);
+        if (m) {
+          cc = m[0];
+          phone = phone.replace(cc, '').trim();
+        }
+        if (setCountryCode) {
+          setCountryCode(cc);
+        }
+
+        console.log('📋 Step2: Loaded amenities from backend:', d.amenities, 'Type:', typeof d.amenities, 'IsArray:', Array.isArray(d.amenities));
+        
+        // Update form data with property details
+        setFormData(prev => ({
+          ...prev,
+          title: d.title || '',
+          description: d.description || '',
+          price: d.price?.toString() || '',
+          location: d.location || '',
+          country: d.country || 'Cyprus',
+          region: d.region || '',
+          city: d.city || '',
+          postal_code: d.postal_code || '',
+          street: d.street || '',
+          latitude: d.latitude?.toString() || '',
+          longitude: d.longitude?.toString() || '',
+          propertyType: d.property_type || '',
+          bedrooms: d.bedrooms?.toString() || '',
+          bathrooms: d.bathrooms?.toString() || '',
+          area: d.area?.toString() || '',
+          amenities: Array.isArray(d.amenities) ? d.amenities : [],
+          yearBuilt: d.year_built?.toString() || '',
+          parkingSpaces: d.parking_spaces?.toString() || '',
+          lotSize: d.lot_size?.toString() || '',
+          propertyStatus,
+          energyRating: d.energy_rating || '',
+          constructionMaterial: d.construction_material || '',
+          floorLevel: d.floor_level?.toString() || '',
+          totalFloors: d.total_floors?.toString() || '',
+          availableFrom: d.available_from || '',
+          contactPhone: phone,
+          contactEmail: d.contact_email || '',
+          virtualTourUrl: d.virtual_tour_url || '',
+          videoUrl: d.video_url || '',
+          images: [],
+          userType: d.user_type || prev.userType || 'owner_agent',
+        }));
+
+        // Call callback to let parent handle images and other data
+        if (onPropertyDataLoaded) {
+          onPropertyDataLoaded(d);
+        }
+      })
+      .catch(err => {
+        console.error('❌ Error loading property details:', err);
+      });
+  }, [isEditing, propertyId, username, setFormData, setCountryCode, countryCode, onPropertyDataLoaded]);
 
   const validBasics =
     !!formData.title?.trim() &&
@@ -415,10 +503,18 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
           showField('amenities') && (
           <div className="lg:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Amenities</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Amenities
+              {/* Debug: Show loaded amenities */}
+              {formData.amenities.length > 0 && (
+                <span className="ml-2 text-xs text-blue-600">
+                  ({formData.amenities.length} selected)
+                </span>
+              )}
+            </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {AMENITIES.map((a: { id: string; label: string }) => {
-                const selected = formData.amenities.includes(a.id);
+              {AMENITIES.map((a: { id: string; label: string; category: string }) => {
+                const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
                 return (
                   <label
                     key={a.id}
@@ -435,7 +531,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           ...f,
                           amenities: selected
                             ? f.amenities.filter((x: string) => x !== a.id)
-                            : [...f.amenities, a.id],
+                            : [...(f.amenities || []), a.id],
                         }));
                       }}
                     />
