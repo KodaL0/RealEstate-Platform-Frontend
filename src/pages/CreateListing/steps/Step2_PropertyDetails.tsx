@@ -107,13 +107,17 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 }) => {
   const { next, back } = useListingWizard();
   const ptype = (formData.propertyType || '') as PT;
+  const [hasLoadedData, setHasLoadedData] = React.useState(false);
 
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
 
-  // Load property details when editing
+  // Load property details when editing (only once)
   useEffect(() => {
-    if (!isEditing || !propertyId || !username) return;
+    if (!isEditing || !propertyId || !username || hasLoadedData) return;
+    
+    console.log('🔄 Step2: Loading property data...');
+    setHasLoadedData(true);
     
     api.properties
       .getUserProperty(username, Number(propertyId))
@@ -179,11 +183,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         if (onPropertyDataLoaded) {
           onPropertyDataLoaded(d);
         }
+        
+        console.log('✅ Step2: Property data loaded successfully');
       })
       .catch(err => {
         console.error('❌ Error loading property details:', err);
+        setHasLoadedData(false); // Reset on error so user can retry
       });
-  }, [isEditing, propertyId, username, setFormData, setCountryCode, countryCode, onPropertyDataLoaded]);
+  }, [isEditing, propertyId, username, hasLoadedData]); // Removed changing dependencies
 
   const validBasics =
     !!formData.title?.trim() &&
@@ -506,8 +513,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             <label className="block text-sm font-semibold text-gray-700 mb-2">
               Amenities
               {/* Debug: Show loaded amenities */}
-              {formData.amenities.length > 0 && (
-                <span className="ml-2 text-xs text-blue-600">
+              {formData.amenities && formData.amenities.length > 0 && (
+                <span className="ml-2 text-xs font-medium text-green-600">
                   ({formData.amenities.length} selected)
                 </span>
               )}
@@ -518,8 +525,10 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 return (
                   <label
                     key={a.id}
-                    className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition ${
-                      selected ? 'bg-green-50 border-green-400' : 'bg-white border-gray-300 hover:border-blue-400'
+                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selected 
+                        ? 'bg-green-50 border-green-500 shadow-sm' 
+                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-sm'
                     }`}
                   >
                     <input
@@ -527,16 +536,24 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                       className="sr-only"
                       checked={selected}
                       onChange={() => {
+                        const newAmenities = selected
+                          ? formData.amenities.filter((x: string) => x !== a.id)
+                          : [...(formData.amenities || []), a.id];
+                        
+                        console.log(`🔘 Amenity ${selected ? 'deselected' : 'selected'}: ${a.id}`, newAmenities);
+                        
                         setFormData((f: ListingForm) => ({
                           ...f,
-                          amenities: selected
-                            ? f.amenities.filter((x: string) => x !== a.id)
-                            : [...(f.amenities || []), a.id],
+                          amenities: newAmenities,
                         }));
                       }}
                     />
-                    <span className="text-sm">{a.label}</span>
-                    {selected && <span className="text-xs px-2 py-0.5 bg-green-500 text-white rounded">✓</span>}
+                    <span className={`text-sm font-medium ${selected ? 'text-green-700' : 'text-gray-700'}`}>
+                      {a.label}
+                    </span>
+                    {selected && (
+                      <span className="text-xs px-2 py-1 bg-green-600 text-white rounded font-bold">✓</span>
+                    )}
                   </label>
                 );
               })}
