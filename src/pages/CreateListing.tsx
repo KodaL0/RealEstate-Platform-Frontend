@@ -141,10 +141,11 @@ const CreateListing: React.FC = () => {
   const { user } = useUser();
   const username = user?.username || '';
   
-  // Get initial step from URL query parameter
+  // Get initial step from URL query parameter (safely clamped 0..4)
   const searchParams = new URLSearchParams(window.location.search);
   const stepParam = searchParams.get('step');
-  const initialStep = stepParam ? parseInt(stepParam, 10) : 0;
+  const parsed = Number.isInteger(Number(stepParam)) ? parseInt(String(stepParam), 10) : 0;
+  const initialStep = Math.max(0, Math.min(4, parsed));
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -152,8 +153,6 @@ const CreateListing: React.FC = () => {
   const [isModalOpen, setModalOpen] = useState(false);
   const [propertyPrefetched, setPropertyPrefetched] = useState(false);
   const [propertyLoaded, setPropertyLoaded] = useState(!isEditing);
-  
-  
   
   // Initialize form data from localStorage or default
   const [formData, setFormData] = useState<ListingForm>(() => {
@@ -257,27 +256,69 @@ const CreateListing: React.FC = () => {
     }
   }, [isEditing]);
 
-  // 🔧 prefetch property data once when editing so Steps 3/5 have data immediately
+  // 🔑 helper: merge server payload into formData so ANY step has values right away
+  function mergePropertyIntoForm(d: any) {
+    setFormData(prev => ({
+      ...prev,
+
+      // core
+      title: d.title ?? d.name ?? prev.title ?? '',
+      description: d.description ?? prev.description ?? '',
+      propertyType: d.property_type ?? d.propertyType ?? prev.propertyType ?? '',
+
+      // location
+      address: d.address ?? prev.address ?? '',
+      city: d.city ?? prev.city ?? '',
+      region: d.region ?? d.state ?? prev.region ?? '',
+      postalCode: d.postal_code ?? d.postalCode ?? prev.postalCode ?? '',
+      latitude: (d.latitude ?? d.lat ?? prev.latitude ?? '') as any,
+      longitude: (d.longitude ?? d.lng ?? prev.longitude ?? '') as any,
+
+      // specs
+      bedrooms: d.bedrooms ?? prev.bedrooms ?? '',
+      bathrooms: d.bathrooms ?? prev.bathrooms ?? '',
+      floorLevel: d.floor_level ?? d.floorLevel ?? prev.floorLevel ?? '',
+      totalFloors: d.total_floors ?? d.totalFloors ?? prev.totalFloors ?? '',
+      parkingSpaces: d.parking_spaces ?? d.parkingSpaces ?? prev.parkingSpaces ?? '',
+      energyRating: d.energy_rating ?? d.energyRating ?? prev.energyRating ?? '',
+      lotSize: d.lot_size ?? d.lotSize ?? prev.lotSize ?? '',
+      area: d.area ?? d.square_meters ?? prev.area ?? '',
+      yearBuilt: d.year_built ?? d.yearBuilt ?? prev.yearBuilt ?? '',
+      constructionMaterial:
+        d.construction_material ?? d.constructionMaterial ?? prev.constructionMaterial ?? '',
+
+      // arrays
+      amenities: d.amenities ?? prev.amenities ?? [],
+
+      // dates
+      availableFrom: d.available_from ?? d.availableFrom ?? prev.availableFrom ?? '',
+
+      // contact
+      contactName: d.contact_name ?? d.contactName ?? prev.contactName ?? '',
+      contactEmail: d.contact_email ?? d.contactEmail ?? prev.contactEmail ?? '',
+      contactPhone: (d.contact_phone ?? d.contactPhone ?? prev.contactPhone ?? '').toString(),
+    }));
+  }
+
+  // 🔧 prefetch property data once when editing so Steps 3/5/Contact/Details have data immediately
   useEffect(() => {
     if (!isEditing || !id || !user?.username || propertyPrefetched) return;
 
     (async () => {
       try {
         setLoading(true);
-        // Adjust this endpoint if your GET differs
         const res = await api.get(`properties/${username}/property/${id}`);
-        const data = res.data || res; // depending on your api wrapper
+        const data = res.data || res;
 
-        // Use your existing handler to populate images/documents & date
+        // images/documents/date
         handlePropertyDataLoaded(data);
 
-        // Optionally merge form fields if you want them early too:
-        // setFormData(prev => ({ ...prev, ...data }));
+        // 🔑 merge all other fields into form right away
+        mergePropertyIntoForm(data);
 
         setPropertyPrefetched(true);
       } catch (e) {
         console.error('Prefetch failed', e);
-        // optional: toast.error('Failed to load property');
       } finally {
         setLoading(false);
       }
@@ -304,8 +345,6 @@ const CreateListing: React.FC = () => {
           constructionMaterial: '',
           availableFrom: '',
         };
-        
-        // For land properties, we don't need bedrooms/bathrooms
         if (value === 'land') {
           updated = { ...updated, ...reset };
         } else {
@@ -317,14 +356,10 @@ const CreateListing: React.FC = () => {
   };
 
   // ========== HELPER FUNCTIONS FOR FORM SUBMISSION ==========
-  
-  // Append images to FormData with proper ordering and primary index
   function appendImagesToFormData(fd: FormData) {
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
     const hasNewImages = formData.images.length > 0;
-    
     if (hasDeletedAllExisting && hasNewImages) {
-      console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
       fd.append('replace_images', 'true');
       formData.images.forEach(f => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
@@ -334,7 +369,6 @@ const CreateListing: React.FC = () => {
     }
   }
 
-  // Append documents to FormData with metadata
   function appendDocumentsToFormData(fd: FormData) {
     if (documents.length > 0) {
       documents.forEach((doc) => {
@@ -346,7 +380,6 @@ const CreateListing: React.FC = () => {
     }
   }
 
-  // Append form fields to FormData with special handling for arrays and objects
   function appendFormFieldsToFormData(fd: FormData) {
     Object.entries(formData).forEach(([k, v]) => {
       if (k === 'images') return; // Handled separately
@@ -364,12 +397,8 @@ const CreateListing: React.FC = () => {
     });
   }
 
-  // Normalize and set special fields (phone, coordinates, floor levels)
   function normalizeSpecialFields(fd: FormData) {
-    // Normalize phone with country code
     fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
-    
-    // Set coordinates (prefer form data over map picker)
     if (formData.latitude && formData.longitude) {
       fd.set('latitude', formData.latitude);
       fd.set('longitude', formData.longitude);
@@ -377,39 +406,33 @@ const CreateListing: React.FC = () => {
       fd.append('latitude', String(locationCoords.lat));
       fd.append('longitude', String(locationCoords.lng));
     }
-
-    // Normalize floor fields to snake_case for backend
     if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
       fd.set('floor_level', String(formData.floorLevel));
     }
     if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
       fd.set('total_floors', String(formData.totalFloors));
     }
-    // Remove camelCase duplicates
     fd.delete('floorLevel');
     fd.delete('totalFloors');
   }
-
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
-  // This callback receives the data from Step2 and processes images/documents
   const handlePropertyDataLoaded = (d: any) => {
-    // Handle images
     const imgs = d.images || [];
     setPreviewImages(imgs.map((i: any) => i.image));
-    setExistingImageIds(imgs.map((i: any) => {
-      if (i.id && typeof i.id === 'number') {
-        return String(i.id);
-      }
-      console.warn('Image missing valid ID:', i);
-      return null;
-    }).filter((id: string | null) => id !== null));
-    
+    setExistingImageIds(
+      imgs
+        .map((i: any) => {
+          if (i.id && typeof i.id === 'number') return String(i.id);
+          console.warn('Image missing valid ID:', i);
+          return null;
+        })
+        .filter((id: string | null) => id !== null) as string[]
+    );
     const primary = imgs.find((i: any) => i.is_primary);
     setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
-    // Load existing documents
     const existingDocs = d.documents || [];
     const transformedDocs = existingDocs.map((doc: any) => ({
       id: `existing-${doc.id}`,
@@ -422,19 +445,18 @@ const CreateListing: React.FC = () => {
       fileName: doc.document.split('/').pop() || 'document',
       uploadedAt: doc.uploaded_at,
     }));
-    
     setDocuments(transformedDocs);
     setExistingDocuments(existingDocs);
     setPropertyLoaded(true);
 
-    // Set available from date if it exists
     if (d.available_from) {
       const date = new Date(d.available_from);
-      if (!isNaN(date.getTime())) {
-        setAvailableFromDate(date);
-      }
+      if (!isNaN(date.getTime())) setAvailableFromDate(date);
     }
-    
+
+    // 🔑 Ensure details/contact/etc. are also in formData
+    mergePropertyIntoForm(d);
+
     setLoading(false);
   };
 
@@ -442,11 +464,8 @@ const CreateListing: React.FC = () => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
-    
     try {
       const fd = new FormData();
-
-      // Build FormData using helper functions
       appendImagesToFormData(fd);
       appendDocumentsToFormData(fd);
       appendFormFieldsToFormData(fd);
@@ -457,7 +476,6 @@ const CreateListing: React.FC = () => {
         : await api.properties.create(fd);
 
       if (res.status >= 200 && res.status < 300) {
-        // Clear saved form data on successful submission
         if (!isEditing) {
           localStorage.removeItem('createListing_formData');
           localStorage.removeItem('createListing_locationCoords');
