@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 interface EditSectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectSection: (sectionId: number) => void; // clarified name
+  onSelectSection: (sectionId: number) => void;
   propertyTitle?: string;
 }
 
@@ -80,7 +80,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
           />
 
           {/* Modal */}
@@ -89,7 +89,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden z-50"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 relative overflow-hidden">
@@ -126,10 +126,10 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   return (
                     <motion.button
                       key={section.id}
-                      onClick={() => {
-                        // 🔑 FIX: ensure correct id is passed
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ prevents backdrop click issues in Firefox
                         onSelectSection(section.id);
-                        onClose(); // optional: close modal after selecting
+                        onClose();
                       }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -142,11 +142,13 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         text-left
                       `}
                     >
+                      {/* Background gradient on hover */}
                       <div className={`
                         absolute inset-0 bg-gradient-to-r ${section.color}
                         opacity-0 group-hover:opacity-5 transition-opacity duration-300
                       `} />
 
+                      {/* Icon */}
                       <div className={`
                         relative flex-shrink-0 p-3 rounded-xl ${section.bgColor}
                         group-hover:scale-110 transition-transform duration-300
@@ -156,6 +158,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         />
                       </div>
 
+                      {/* Content */}
                       <div className="ml-4 flex-1">
                         <h3 className="font-semibold text-gray-900 text-lg group-hover:text-gray-800 transition-colors">
                           {section.title}
@@ -165,6 +168,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         </p>
                       </div>
 
+                      {/* Arrow indicator */}
                       <div className="ml-2 self-center opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300">
                         <svg
                           className="w-5 h-5 text-gray-400"
@@ -185,6 +189,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                 })}
               </div>
 
+              {/* Footer note */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-xs text-gray-600 flex items-start">
                   <svg
