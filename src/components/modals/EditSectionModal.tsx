@@ -1,20 +1,20 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { X, Home, FileText, Image, Phone, File } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface EditSectionModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onSelectSection: (sectionId: number) => void; // clarified name
   propertyTitle?: string;
 }
 
 const EditSectionModal: React.FC<EditSectionModalProps> = ({
   isOpen,
   onClose,
+  onSelectSection,
   propertyTitle
 }) => {
-  const [activeSection, setActiveSection] = useState<number | null>(null);
-
   const sections = [
     {
       id: 0,
@@ -93,15 +93,16 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 relative overflow-hidden">
+              <div className="absolute inset-0 opacity-30"></div>
               <div className="relative flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">
-                    {activeSection === null
-                      ? 'Select Section to Edit'
-                      : sections.find(s => s.id === activeSection)?.title}
+                    Select Section to Edit
                   </h2>
                   {propertyTitle && (
-                    <p className="text-blue-100 text-sm mt-1">{propertyTitle}</p>
+                    <p className="text-blue-100 text-sm mt-1">
+                      {propertyTitle}
+                    </p>
                   )}
                 </div>
                 <button
@@ -115,70 +116,93 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
             {/* Content */}
             <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-              {activeSection === null ? (
-                <>
-                  <p className="text-gray-600 text-sm mb-6">
-                    Choose which section of your property listing you'd like to update:
-                  </p>
+              <p className="text-gray-600 text-sm mb-6">
+                Choose which section of your property listing you'd like to update:
+              </p>
 
-                  <div className="grid gap-4">
-                    {sections.map((section) => {
-                      const Icon = section.icon;
-                      return (
-                        <motion.button
-                          key={section.id}
-                          onClick={() => setActiveSection(section.id)}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={`
-                            group relative overflow-hidden
-                            flex items-start p-5 rounded-xl
-                            border-2 ${section.borderColor} ${section.hoverColor}
-                            transition-all duration-300
-                            hover:shadow-lg
-                            text-left
-                          `}
+              <div className="grid gap-4">
+                {sections.map((section) => {
+                  const Icon = section.icon;
+                  return (
+                    <motion.button
+                      key={section.id}
+                      onClick={() => {
+                        // 🔑 FIX: ensure correct id is passed
+                        onSelectSection(section.id);
+                        onClose(); // optional: close modal after selecting
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      className={`
+                        group relative overflow-hidden
+                        flex items-start p-5 rounded-xl
+                        border-2 ${section.borderColor} ${section.hoverColor}
+                        transition-all duration-300
+                        hover:shadow-lg
+                        text-left
+                      `}
+                    >
+                      <div className={`
+                        absolute inset-0 bg-gradient-to-r ${section.color}
+                        opacity-0 group-hover:opacity-5 transition-opacity duration-300
+                      `} />
+
+                      <div className={`
+                        relative flex-shrink-0 p-3 rounded-xl ${section.bgColor}
+                        group-hover:scale-110 transition-transform duration-300
+                      `}>
+                        <Icon
+                          className={`w-6 h-6 bg-gradient-to-r ${section.color} bg-clip-text text-transparent`}
+                        />
+                      </div>
+
+                      <div className="ml-4 flex-1">
+                        <h3 className="font-semibold text-gray-900 text-lg group-hover:text-gray-800 transition-colors">
+                          {section.title}
+                        </h3>
+                        <p className="text-sm text-gray-600 mt-1">
+                          {section.description}
+                        </p>
+                      </div>
+
+                      <div className="ml-2 self-center opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300">
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
                         >
-                          <div className={`
-                            absolute inset-0 bg-gradient-to-r ${section.color}
-                            opacity-0 group-hover:opacity-5 transition-opacity duration-300
-                          `} />
-                          <div className={`
-                            relative flex-shrink-0 p-3 rounded-xl ${section.bgColor}
-                            group-hover:scale-110 transition-transform duration-300
-                          `}>
-                            <Icon className={`w-6 h-6 bg-gradient-to-r ${section.color} bg-clip-text text-transparent`} />
-                          </div>
-                          <div className="ml-4 flex-1">
-                            <h3 className="font-semibold text-gray-900 text-lg group-hover:text-gray-800 transition-colors">
-                              {section.title}
-                            </h3>
-                            <p className="text-sm text-gray-600 mt-1">
-                              {section.description}
-                            </p>
-                          </div>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                </>
-              ) : (
-                <div>
-                  {/* Section-specific content */}
-                  {activeSection === 0 && <p>📌 Property Type form goes here...</p>}
-                  {activeSection === 1 && <p>📝 Property Details form goes here...</p>}
-                  {activeSection === 2 && <p>🖼️ Images upload form goes here...</p>}
-                  {activeSection === 3 && <p>📂 Documents upload form goes here...</p>}
-                  {activeSection === 4 && <p>☎️ Contact Information form goes here...</p>}
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
+                        </svg>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
 
-                  <button
-                    className="mt-6 px-4 py-2 bg-gray-200 rounded-lg hover:bg-gray-300"
-                    onClick={() => setActiveSection(null)}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <p className="text-xs text-gray-600 flex items-start">
+                  <svg
+                    className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
                   >
-                    ← Back to Sections
-                  </button>
-                </div>
-              )}
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <span>
+                    You can navigate between sections while editing using the progress bar at the top of the page.
+                  </span>
+                </p>
+              </div>
             </div>
           </motion.div>
         </div>
