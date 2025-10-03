@@ -246,6 +246,14 @@ const CreateListing: React.FC = () => {
     }
   }, [availableFromDate, isEditing]);
 
+  // 🔧 Reset any persisted step when editing so the modal choice/URL always wins
+  useEffect(() => {
+    if (isEditing) {
+      localStorage.removeItem('createListing_currentStep');
+    }
+  }, [isEditing]);
+
+
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
     setFormData((prev: ListingForm) => {
@@ -521,8 +529,13 @@ const ListingShell: React.FC<any> = (props) => {
           isOpen={props.isModalOpen}
           onClose={() => props.setModalOpen(false)}
           onSelectSection={(id: number) => {
-            // ✅ This is the key line: jump to the correct wizard step
-            goto(id);
+            goto(id); // ✅ jump to the exact step immediately
+
+            // ✅ sync the URL with the chosen step (prevents weirdness across reloads/browsers)
+            const sp = new URLSearchParams(window.location.search);
+            sp.set('step', String(id));
+            window.history.replaceState(null, '', `${window.location.pathname}?${sp.toString()}`);
+
             props.setModalOpen(false);
           }}
           propertyTitle={props.isEditing ? 'Edit Listing' : 'New Listing'}
