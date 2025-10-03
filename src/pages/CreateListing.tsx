@@ -150,6 +150,10 @@ const CreateListing: React.FC = () => {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isModalOpen, setModalOpen] = useState(false);
+  const [propertyPrefetched, setPropertyPrefetched] = useState(false);
+  const [propertyLoaded, setPropertyLoaded] = useState(!isEditing);
+  
+  
   
   // Initialize form data from localStorage or default
   const [formData, setFormData] = useState<ListingForm>(() => {
@@ -253,6 +257,32 @@ const CreateListing: React.FC = () => {
     }
   }, [isEditing]);
 
+  // 🔧 prefetch property data once when editing so Steps 3/5 have data immediately
+  useEffect(() => {
+    if (!isEditing || !id || !user?.username || propertyPrefetched) return;
+
+    (async () => {
+      try {
+        setLoading(true);
+        // Adjust this endpoint if your GET differs
+        const res = await api.get(`properties/${username}/property/${id}`);
+        const data = res.data || res; // depending on your api wrapper
+
+        // Use your existing handler to populate images/documents & date
+        handlePropertyDataLoaded(data);
+
+        // Optionally merge form fields if you want them early too:
+        // setFormData(prev => ({ ...prev, ...data }));
+
+        setPropertyPrefetched(true);
+      } catch (e) {
+        console.error('Prefetch failed', e);
+        // optional: toast.error('Failed to load property');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, [isEditing, id, user?.username, username, propertyPrefetched]);
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
@@ -395,6 +425,7 @@ const CreateListing: React.FC = () => {
     
     setDocuments(transformedDocs);
     setExistingDocuments(existingDocs);
+    setPropertyLoaded(true);
 
     // Set available from date if it exists
     if (d.available_from) {
