@@ -9,6 +9,8 @@ import { useUser } from '../context/UserContext';
 import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
 
+import EditSectionModal from '../components/modals/EditSectionModal';
+
 // ⬇️ New step order imports
 import Step1_PropertyType from './CreateListing/steps/Step1_PropertyType';
 import Step2_PropertyDetails from './CreateListing/steps/Step2_PropertyDetails';
@@ -147,6 +149,7 @@ const CreateListing: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isModalOpen, setModalOpen] = useState(false);
   
   // Initialize form data from localStorage or default
   const [formData, setFormData] = useState<ListingForm>(() => {
@@ -452,47 +455,111 @@ const CreateListing: React.FC = () => {
   // ⬇️ totalSteps is now 5 (Type, Details, Images, Documents, Contact); initialStep from URL or 0
   return (
     <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={5}>
-      <div className="fixed inset-0 bg-gray-50 pt-24">
-        <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
-          {error && (
-            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
-              <p className="text-sm text-red-700">{error}</p>
-            </div>
-          )}
+      <ListingShell
+        isEditing={isEditing}
+        error={error}
+        isModalOpen={isModalOpen}
+        setModalOpen={setModalOpen}
+        formData={formData}
+        setFormData={setFormData}
+        handleInputChange={handleInputChange}
+        handleSubmit={handleSubmit}
+        previewImages={previewImages}
+        setPreviewImages={setPreviewImages}
+        primaryIndex={primaryIndex}
+        setPrimaryIndex={setPrimaryIndex}
+        existingImageIds={existingImageIds}
+        setExistingImageIds={setExistingImageIds}
+        documents={documents}
+        setDocuments={setDocuments}
+        countryCode={countryCode}
+        setCountryCode={setCountryCode}
+        isSubmitting={isSubmitting}
+        propertyId={id}
+        username={username}
+        availableFromDate={availableFromDate}
+        setAvailableFromDate={setAvailableFromDate}
+        handlePropertyDataLoaded={handlePropertyDataLoaded}
+        showCalendar={showCalendar}
+        setShowCalendar={setShowCalendar}
+        setLocationCoords={setLocationCoords}
+        existingDocuments={existingDocuments}
+        setExistingDocuments={setExistingDocuments}
+      />
+    </ListingWizardProvider>
+  );
+};
 
-          <div className="flex-1 overflow-hidden">
-        <WizardContent
-          formData={formData}
-          setFormData={setFormData}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          previewImages={previewImages}
-          setPreviewImages={setPreviewImages}
-          primaryIndex={primaryIndex}
-          setPrimaryIndex={setPrimaryIndex}
-          existingImageIds={existingImageIds}
-          setExistingImageIds={setExistingImageIds}
-          documents={documents}
-          setDocuments={setDocuments}
-          countryCode={countryCode}
-          setCountryCode={setCountryCode}
-          isSubmitting={isSubmitting}
-          isEditing={isEditing}
-          propertyId={id}
-          username={username}
-          availableFromDate={availableFromDate}
-          setAvailableFromDate={setAvailableFromDate}
-          handlePropertyDataLoaded={handlePropertyDataLoaded}
-          showCalendar={showCalendar}
-          setShowCalendar={setShowCalendar}
-          setLocationCoords={setLocationCoords}
-          existingDocuments={existingDocuments}
-          setExistingDocuments={setExistingDocuments}
-        />
+/* ---------- Inner shell (has access to wizard context) ---------- */
+const ListingShell: React.FC<any> = (props) => {
+  const { goto } = useListingWizard();
+
+  return (
+    <div className="fixed inset-0 bg-gray-50 pt-24">
+      <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
+        {props.error && (
+          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
+            <p className="text-sm text-red-700">{props.error}</p>
           </div>
+        )}
+
+        {/* Optional trigger to open the modal when editing */}
+        {props.isEditing && (
+          <div className="mb-4">
+            <button
+              type="button"
+              onClick={() => props.setModalOpen(true)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
+            >
+              Edit Sections
+            </button>
+          </div>
+        )}
+
+        {/* Modal */}
+        <EditSectionModal
+          isOpen={props.isModalOpen}
+          onClose={() => props.setModalOpen(false)}
+          onSelectSection={(id: number) => {
+            // ✅ This is the key line: jump to the correct wizard step
+            goto(id);
+            props.setModalOpen(false);
+          }}
+          propertyTitle={props.isEditing ? 'Edit Listing' : 'New Listing'}
+        />
+
+        <div className="flex-1 overflow-hidden">
+          <WizardContent
+            formData={props.formData}
+            setFormData={props.setFormData}
+            handleInputChange={props.handleInputChange}
+            handleSubmit={props.handleSubmit}
+            previewImages={props.previewImages}
+            setPreviewImages={props.setPreviewImages}
+            primaryIndex={props.primaryIndex}
+            setPrimaryIndex={props.setPrimaryIndex}
+            existingImageIds={props.existingImageIds}
+            setExistingImageIds={props.setExistingImageIds}
+            documents={props.documents}
+            setDocuments={props.setDocuments}
+            countryCode={props.countryCode}
+            setCountryCode={props.setCountryCode}
+            isSubmitting={props.isSubmitting}
+            isEditing={props.isEditing}
+            propertyId={props.propertyId}
+            username={props.username}
+            availableFromDate={props.availableFromDate}
+            setAvailableFromDate={props.setAvailableFromDate}
+            handlePropertyDataLoaded={props.handlePropertyDataLoaded}
+            showCalendar={props.showCalendar}
+            setShowCalendar={props.setShowCalendar}
+            setLocationCoords={props.setLocationCoords}
+            existingDocuments={props.existingDocuments}
+            setExistingDocuments={props.setExistingDocuments}
+          />
         </div>
       </div>
-    </ListingWizardProvider>
+    </div>
   );
 };
 

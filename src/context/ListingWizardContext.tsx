@@ -6,6 +6,7 @@ interface WizardContext {
   next(): void;
   back(): void;
   goto(n: number): void;
+  setCurrentStep(n: number): void; // ✅ added this for direct access if needed
 }
 
 const Ctx = createContext<WizardContext | undefined>(undefined);
@@ -50,7 +51,7 @@ export const ListingWizardProvider: React.FC<{ children: ReactNode; initialStep?
   };
 
   return (
-    <Ctx.Provider value={{ currentStep, totalSteps, next, back, goto }}>
+    <Ctx.Provider value={{ currentStep, totalSteps, next, back, goto, setCurrentStep }}>
       {children}
     </Ctx.Provider>
   );
