@@ -178,6 +178,15 @@ const CreateListing: React.FC = () => {
     return DEFAULT_FORM_STATE;
   });
 
+  // 🧹 Ensure new listing always starts at step 0 (clear any stale persisted step)
+  useEffect(() => {
+    if (!isEditing) {
+      ['createListing_currentStep', 'listingWizard_currentStep'].forEach(k => {
+        try { localStorage.removeItem(k); } catch {}
+      });
+    }
+  }, [isEditing]);
+
   // ⚠️ Do NOT force Cyprus on edit; we’ll override from saved phone
   const [countryCode, setCountryCode] = useState(() => {
     const saved = localStorage.getItem('createListing_countryCode');
@@ -229,7 +238,7 @@ const CreateListing: React.FC = () => {
     if (!isEditing) localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
   }, [availableFromDate, isEditing]);
 
-  // Clear persisted step on edit
+  // Clear persisted step on edit as well (URL controls it)
   useEffect(() => {
     if (isEditing) localStorage.removeItem('createListing_currentStep');
   }, [isEditing]);
@@ -329,13 +338,12 @@ const CreateListing: React.FC = () => {
     });
   }
 
-// Normalize and set special fields (phone, email, status, coordinates, floors)
+  // Normalize and set special fields (phone, email, status, coordinates, floors)
   function normalizeSpecialFields(fd: FormData) {
     // ---- EMAIL ----
     if (formData.contactEmail && String(formData.contactEmail).trim()) {
       fd.set('contact_email', String(formData.contactEmail).trim());
     }
-    // remove camelCase duplicate if present
     fd.delete('contactEmail');
 
     // ---- PHONE (prefix with selected country code) ----
@@ -440,14 +448,14 @@ const CreateListing: React.FC = () => {
       region: d.region ?? (prev as any).region,
     }));
 
-    // 5) contact (✅ seed email; ✅ derive proper country code and local number)
+    // 5) contact (seed email; derive proper country code and local number)
     if (d.contact_email) {
-      setFormData(prev => ({ ...prev, contact_email: String(d.contact_email) } as any));
+      setFormData(prev => ({ ...prev, contactEmail: String(d.contact_email) }));
     }
     if (d.contact_phone) {
       const { cc, local } = splitPhoneWithCC(String(d.contact_phone));
       if (cc) setCountryCode(cc); // +30 or +357 etc.
-      setFormData(prev => ({ ...prev, contact_phone: local || (prev as any).contact_phone || '' } as any));
+      setFormData(prev => ({ ...prev, contactPhone: local || prev.contactPhone || '' }));
     }
   };
 
@@ -501,8 +509,11 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
+  // 👇 key={...} forces a clean wizard remount when switching create/edit so step resets
+  const providerKey = isEditing ? `edit-${id}-${initialStep}` : 'create';
+
   return (
-    <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={5}>
+    <ListingWizardProvider key={providerKey} initialStep={isEditing ? initialStep : 0} totalSteps={5}>
       <ListingShell
         isEditing={isEditing}
         error={error}
