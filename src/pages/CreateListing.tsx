@@ -412,7 +412,32 @@ const CreateListing: React.FC = () => {
   }
 
   function normalizeSpecialFields(fd: FormData) {
-    fd.set('contactPhone', `${countryCode} ${ (formData as any).contactPhone }`.trim());
+    // --- phone: format + map to snake_case ---
+    const cc = (countryCode || '').trim();          // e.g. "+357"
+    let local = String((formData as any).contactPhone || '').trim();
+
+    // If user already typed a full international number, keep it
+    // Normalize "00xxx" -> "+xxx"
+    if (local.startsWith('00')) {
+      local = `+${local.slice(2)}`;
+    }
+
+    let formatted: string;
+    if (local.startsWith('+')) {
+      // Already in international format: don't prepend country code again
+      formatted = local.replace(/\s+/g, ' ').trim();
+    } else {
+      // Remove leading spaces/dashes/zeros
+      local = local.replace(/^[\s\-]+/, '').replace(/\s+/g, ' ').trim();
+      // Join with cc (cc is already like "+357")
+      formatted = `${cc} ${local}`.replace(/\s+/g, ' ').trim();
+    }
+
+    fd.set('contact_phone', formatted);
+    // Remove any camelCase duplicate just in case it got appended elsewhere
+    fd.delete('contactPhone');
+
+    // --- coordinates (prefer formData over map picker) ---
     if ((formData as any).latitude && (formData as any).longitude) {
       fd.set('latitude', (formData as any).latitude);
       fd.set('longitude', (formData as any).longitude);
@@ -420,17 +445,19 @@ const CreateListing: React.FC = () => {
       fd.append('latitude', String(locationCoords.lat));
       fd.append('longitude', String(locationCoords.lng));
     }
+
+    // --- floors: map camel -> snake and delete duplicates ---
     if ((formData as any).floorLevel !== undefined && (formData as any).floorLevel !== null && (formData as any).floorLevel !== '') {
       fd.set('floor_level', String((formData as any).floorLevel));
     }
     if ((formData as any).totalFloors !== undefined && (formData as any).totalFloors !== null && (formData as any).totalFloors !== '') {
       fd.set('total_floors', String((formData as any).totalFloors));
     }
-    // Remove camelCase duplicates if any got appended by mistake
     fd.delete('floorLevel');
     fd.delete('totalFloors');
-    fd.delete('propertyStatus');
+    fd.delete('propertyStatus'); // ensure only snake_case goes through
   }
+
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
