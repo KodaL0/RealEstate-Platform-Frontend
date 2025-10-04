@@ -266,11 +266,10 @@ const CreateListing: React.FC = () => {
       description: d.description ?? prev.description ?? '',
       propertyType: d.property_type ?? d.propertyType ?? prev.propertyType ?? '',
 
-      // location
-      address: d.address ?? prev.address ?? '',
+      // location (only keys that exist on ListingForm)
       city: d.city ?? prev.city ?? '',
       region: d.region ?? d.state ?? prev.region ?? '',
-      postalCode: d.postal_code ?? d.postalCode ?? prev.postalCode ?? '',
+      postal_code: d.postal_code ?? (prev as any).postal_code ?? '',
       latitude: (d.latitude ?? d.lat ?? prev.latitude ?? '') as any,
       longitude: (d.longitude ?? d.lng ?? prev.longitude ?? '') as any,
 
@@ -293,10 +292,10 @@ const CreateListing: React.FC = () => {
       // dates
       availableFrom: d.available_from ?? d.availableFrom ?? prev.availableFrom ?? '',
 
-      // contact
-      contactName: d.contact_name ?? d.contactName ?? prev.contactName ?? '',
-      contactEmail: d.contact_email ?? d.contactEmail ?? prev.contactEmail ?? '',
-      contactPhone: (d.contact_phone ?? d.contactPhone ?? prev.contactPhone ?? '').toString(),
+      // contact (snake_case to match your type)
+      contact_name: d.contact_name ?? (prev as any).contact_name ?? '',
+      contact_email: d.contact_email ?? (prev as any).contact_email ?? '',
+      contactPhone: (d.contact_phone ?? (prev as any).contactPhone ?? '').toString(),
     }));
   }
 
@@ -381,12 +380,11 @@ const CreateListing: React.FC = () => {
   }
 
   function appendFormFieldsToFormData(fd: FormData) {
+    // Skip fields we will map explicitly after the loop
+    const skipKeys = new Set(['images', 'amenities', 'devUnits', 'propertyStatus', 'country', 'price']);
+
     Object.entries(formData).forEach(([k, v]) => {
-      if (k === 'images') return; // Handled separately
-      if (k === 'amenities') {
-        (v as string[]).forEach(a => fd.append('amenities[]', a));
-        return;
-      }
+      if (skipKeys.has(k)) return;
       if (k === 'devUnits') {
         fd.append('devUnits', JSON.stringify(v));
         return;
@@ -395,44 +393,60 @@ const CreateListing: React.FC = () => {
         fd.append(k, String(v));
       }
     });
+
+    // arrays
+    if (Array.isArray(formData.amenities)) {
+      formData.amenities.forEach(a => fd.append('amenities[]', a));
+    }
+
+    // 🔁 map to backend field names explicitly
+    if ((formData as any).propertyStatus) {
+      fd.set('property_status', String((formData as any).propertyStatus));
+    }
+    if ((formData as any).country) {
+      fd.set('country', String((formData as any).country));
+    }
+    if ((formData as any).price !== undefined && (formData as any).price !== null && (formData as any).price !== '') {
+      fd.set('price', String((formData as any).price));
+    }
   }
 
   function normalizeSpecialFields(fd: FormData) {
-    fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
-    if (formData.latitude && formData.longitude) {
-      fd.set('latitude', formData.latitude);
-      fd.set('longitude', formData.longitude);
+    fd.set('contactPhone', `${countryCode} ${ (formData as any).contactPhone }`.trim());
+    if ((formData as any).latitude && (formData as any).longitude) {
+      fd.set('latitude', (formData as any).latitude);
+      fd.set('longitude', (formData as any).longitude);
     } else if (locationCoords) {
       fd.append('latitude', String(locationCoords.lat));
       fd.append('longitude', String(locationCoords.lng));
     }
-    if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
-      fd.set('floor_level', String(formData.floorLevel));
+    if ((formData as any).floorLevel !== undefined && (formData as any).floorLevel !== null && (formData as any).floorLevel !== '') {
+      fd.set('floor_level', String((formData as any).floorLevel));
     }
-    if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
-      fd.set('total_floors', String(formData.totalFloors));
+    if ((formData as any).totalFloors !== undefined && (formData as any).totalFloors !== null && (formData as any).totalFloors !== '') {
+      fd.set('total_floors', String((formData as any).totalFloors));
     }
+    // Remove camelCase duplicates if any got appended by mistake
     fd.delete('floorLevel');
     fd.delete('totalFloors');
+    fd.delete('propertyStatus');
   }
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
   const handlePropertyDataLoaded = (d: any) => {
+    // 1) images
     const imgs = d.images || [];
     setPreviewImages(imgs.map((i: any) => i.image));
     setExistingImageIds(
       imgs
-        .map((i: any) => {
-          if (i.id && typeof i.id === 'number') return String(i.id);
-          console.warn('Image missing valid ID:', i);
-          return null;
-        })
+        .map((i: any) => (i.id && typeof i.id === 'number' ? String(i.id) : null))
         .filter((id: string | null) => id !== null) as string[]
     );
     const primary = imgs.find((i: any) => i.is_primary);
     setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
+    // 2) documents
     const existingDocs = d.documents || [];
     const transformedDocs = existingDocs.map((doc: any) => ({
       id: `existing-${doc.id}`,
@@ -447,18 +461,50 @@ const CreateListing: React.FC = () => {
     }));
     setDocuments(transformedDocs);
     setExistingDocuments(existingDocs);
-    setPropertyLoaded(true);
 
+    // 3) date
     if (d.available_from) {
       const date = new Date(d.available_from);
       if (!isNaN(date.getTime())) setAvailableFromDate(date);
     }
 
-    // 🔑 Ensure details/contact/etc. are also in formData
-    mergePropertyIntoForm(d);
+    // 4) 🔥 MERGE CORE FIELDS INTO formData (so submit works without visiting Step 2)
+    setFormData(prev => ({
+      ...prev,
+      // required ones you’re failing on:
+      price: d.price ?? (prev as any).price,
+      country: d.country ?? (prev as any).country,
+      propertyStatus: d.property_status ?? (prev as any).propertyStatus,
 
+      // common details/specs (only keys that exist on ListingForm)
+      title: d.title ?? (prev as any).title,
+      description: d.description ?? (prev as any).description,
+      propertyType: d.property_type ?? (prev as any).propertyType,
+      bedrooms: d.bedrooms ?? (prev as any).bedrooms,
+      bathrooms: d.bathrooms ?? (prev as any).bathrooms,
+      floorLevel: d.floor_level ?? (prev as any).floorLevel,
+      totalFloors: d.total_floors ?? (prev as any).totalFloors,
+      area: d.area ?? (prev as any).area,
+      lotSize: d.lot_size ?? (prev as any).lotSize,
+      parkingSpaces: d.parking_spaces ?? (prev as any).parkingSpaces,
+      yearBuilt: d.year_built ?? (prev as any).yearBuilt,
+      constructionMaterial: d.construction_material ?? (prev as any).constructionMaterial,
+      amenities: Array.isArray(d.amenities) ? d.amenities : ((prev as any).amenities || []),
+      latitude: d.latitude ?? (prev as any).latitude,
+      longitude: d.longitude ?? (prev as any).longitude,
+      city: d.city ?? (prev as any).city,
+      postal_code: d.postal_code ?? (prev as any).postal_code,
+
+      // contact (snake_case)
+      contact_name: d.contact_name ?? (prev as any).contact_name,
+      contact_email: d.contact_email ?? (prev as any).contact_email,
+      contactPhone: d.contact_phone ?? (prev as any).contactPhone,
+    }));
+
+    setPropertyLoaded(true);
     setLoading(false);
   };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
