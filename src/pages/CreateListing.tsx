@@ -329,31 +329,52 @@ const CreateListing: React.FC = () => {
     });
   }
 
+// Normalize and set special fields (phone, email, status, coordinates, floors)
   function normalizeSpecialFields(fd: FormData) {
-    // ✅ Compose phone only once (strip any user-typed cc from the local field)
-    const rawLocal = String((formData as any).contact_phone || '').trim();
-    const localNoCC = rawLocal.replace(/^\+?\d{1,3}\s*/, '');
-    fd.set('contact_phone', `${countryCode} ${localNoCC}`.trim());
+    // ---- EMAIL ----
+    if (formData.contactEmail && String(formData.contactEmail).trim()) {
+      fd.set('contact_email', String(formData.contactEmail).trim());
+    }
+    // remove camelCase duplicate if present
+    fd.delete('contactEmail');
 
-    // Coordinates
-    if ((formData as any).latitude && (formData as any).longitude) {
-      fd.set('latitude', (formData as any).latitude as any);
-      fd.set('longitude', (formData as any).longitude as any);
+    // ---- PHONE (prefix with selected country code) ----
+    const fullPhone = `${countryCode} ${formData.contactPhone || ''}`.trim();
+    if (formData.contactPhone && String(formData.contactPhone).trim()) {
+      fd.set('contact_phone', fullPhone);
+    }
+    fd.delete('contactPhone');
+
+    // ---- PROPERTY STATUS mapping ----
+    if (formData.propertyStatus) {
+      const status =
+        formData.propertyStatus === 'forSale' ? 'for_sale' :
+        formData.propertyStatus === 'forRent' ? 'for_rent' :
+        formData.propertyStatus;
+      fd.set('property_status', status);
+    }
+    fd.delete('propertyStatus');
+
+    // ---- Coordinates (prefer form fields over picked coords) ----
+    if (formData.latitude && formData.longitude) {
+      fd.set('latitude', String(formData.latitude));
+      fd.set('longitude', String(formData.longitude));
     } else if (locationCoords) {
-      fd.append('latitude', String(locationCoords.lat));
-      fd.append('longitude', String(locationCoords.lng));
+      fd.set('latitude', String(locationCoords.lat));
+      fd.set('longitude', String(locationCoords.lng));
     }
 
-    // Snake_case for floors
-    if ((formData as any).floorLevel !== undefined && (formData as any).floorLevel !== null && (formData as any).floorLevel !== '') {
-      fd.set('floor_level', String((formData as any).floorLevel));
+    // ---- Floors to snake_case expected by backend ----
+    if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
+      fd.set('floor_level', String(formData.floorLevel));
     }
-    if ((formData as any).totalFloors !== undefined && (formData as any).totalFloors !== null && (formData as any).totalFloors !== '') {
-      fd.set('total_floors', String((formData as any).totalFloors));
+    if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
+      fd.set('total_floors', String(formData.totalFloors));
     }
     fd.delete('floorLevel');
     fd.delete('totalFloors');
   }
+
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
