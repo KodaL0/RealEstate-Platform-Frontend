@@ -256,46 +256,59 @@ const CreateListing: React.FC = () => {
     }
   }, [isEditing]);
 
+  /* ==================== HELPERS TO KEEP CONTACT FIELDS IN SYNC ==================== */
+  // Keep snake_case and camelCase variants mirrored so autofill works everywhere
+  function syncContactFields<T extends Record<string, any>>(obj: T): T {
+    const email = obj.contact_email ?? obj.contactEmail ?? '';
+    const phone = obj.contact_phone ?? obj.contactPhone ?? '';
+    const name  = obj.contact_name  ?? obj.contactName  ?? '';
+
+    return {
+      ...obj,
+      contact_email: email,
+      contactEmail:  email,
+      contact_phone: phone,
+      contactPhone:  phone,
+      contact_name:  name,
+      contactName:   name,
+    };
+  }
+
   // 🔑 helper: merge server payload into formData so ANY step has values right away
   function mergePropertyIntoForm(d: any) {
-    setFormData(prev => ({
-      ...prev,
+    setFormData(prev => syncContactFields({
+      ...(prev as any),
 
-      // core
-      title: d.title ?? d.name ?? prev.title ?? '',
-      description: d.description ?? prev.description ?? '',
-      propertyType: d.property_type ?? d.propertyType ?? prev.propertyType ?? '',
+      // required fields your API complains about
+      price: d.price ?? (prev as any).price ?? '',
+      country: d.country ?? (prev as any).country ?? '',
+      property_status: d.property_status ?? (prev as any).property_status ?? (prev as any).propertyStatus ?? '',
 
-      // location (only keys that exist on ListingForm)
-      city: d.city ?? prev.city ?? '',
-      region: d.region ?? d.state ?? prev.region ?? '',
-      postal_code: d.postal_code ?? (prev as any).postal_code ?? '',
-      latitude: (d.latitude ?? d.lat ?? prev.latitude ?? '') as any,
-      longitude: (d.longitude ?? d.lng ?? prev.longitude ?? '') as any,
+      // common details/specs (only set if present to avoid type errors)
+      title: d.title ?? (prev as any).title ?? '',
+      description: d.description ?? (prev as any).description ?? '',
+      property_type: d.property_type ?? (prev as any).property_type ?? (prev as any).propertyType ?? '',
+      bedrooms: d.bedrooms ?? (prev as any).bedrooms ?? '',
+      bathrooms: d.bathrooms ?? (prev as any).bathrooms ?? '',
+      floor_level: d.floor_level ?? (prev as any).floor_level ?? (prev as any).floorLevel ?? '',
+      total_floors: d.total_floors ?? (prev as any).total_floors ?? (prev as any).totalFloors ?? '',
+      area: d.area ?? (prev as any).area ?? '',
+      lot_size: d.lot_size ?? (prev as any).lot_size ?? (prev as any).lotSize ?? '',
+      parking_spaces: d.parking_spaces ?? (prev as any).parking_spaces ?? (prev as any).parkingSpaces ?? '',
+      year_built: d.year_built ?? (prev as any).year_built ?? (prev as any).yearBuilt ?? '',
+      construction_material: d.construction_material ?? (prev as any).construction_material ?? (prev as any).constructionMaterial ?? '',
+      amenities: Array.isArray(d.amenities) ? d.amenities : ((prev as any).amenities || []),
 
-      // specs
-      bedrooms: d.bedrooms ?? prev.bedrooms ?? '',
-      bathrooms: d.bathrooms ?? prev.bathrooms ?? '',
-      floorLevel: d.floor_level ?? d.floorLevel ?? prev.floorLevel ?? '',
-      totalFloors: d.total_floors ?? d.totalFloors ?? prev.totalFloors ?? '',
-      parkingSpaces: d.parking_spaces ?? d.parkingSpaces ?? prev.parkingSpaces ?? '',
-      energyRating: d.energy_rating ?? d.energyRating ?? prev.energyRating ?? '',
-      lotSize: d.lot_size ?? d.lotSize ?? prev.lotSize ?? '',
-      area: d.area ?? d.square_meters ?? prev.area ?? '',
-      yearBuilt: d.year_built ?? d.yearBuilt ?? prev.yearBuilt ?? '',
-      constructionMaterial:
-        d.construction_material ?? d.constructionMaterial ?? prev.constructionMaterial ?? '',
-
-      // arrays
-      amenities: d.amenities ?? prev.amenities ?? [],
+      latitude: d.latitude ?? (prev as any).latitude ?? '',
+      longitude: d.longitude ?? (prev as any).longitude ?? '',
 
       // dates
-      availableFrom: d.available_from ?? d.availableFrom ?? prev.availableFrom ?? '',
+      availableFrom: d.available_from ?? d.availableFrom ?? (prev as any).availableFrom ?? '',
 
-      // contact (snake_case to match your type)
-      contact_name: d.contact_name ?? (prev as any).contact_name ?? '',
-      contact_email: d.contact_email ?? (prev as any).contact_email ?? '',
-      contactPhone: (d.contact_phone ?? (prev as any).contactPhone ?? '').toString(),
+      // contact (snake & camel in sync via helper)
+      contact_name:  d.contact_name  ?? (prev as any).contact_name  ?? (prev as any).contactName ?? '',
+      contact_email: d.contact_email ?? (prev as any).contact_email ?? (prev as any).contactEmail ?? '',
+      contact_phone: (d.contact_phone ?? (prev as any).contact_phone ?? (prev as any).contactPhone ?? '').toString(),
     }));
   }
 
@@ -309,10 +322,8 @@ const CreateListing: React.FC = () => {
         const res = await api.get(`properties/${username}/property/${id}`);
         const data = res.data || res;
 
-        // images/documents/date
+        // images/documents/date + merge of the rest
         handlePropertyDataLoaded(data);
-
-        // 🔑 merge all other fields into form right away
         mergePropertyIntoForm(data);
 
         setPropertyPrefetched(true);
@@ -326,10 +337,21 @@ const CreateListing: React.FC = () => {
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
+
     setFormData((prev: ListingForm) => {
-      let updated: ListingForm = { ...prev, [name]: value } as ListingForm;
+      let updated: any = { ...(prev as any), [name]: value };
+
+      // mirror contact fields so both variants stay filled
+      if (name === 'contactEmail')  updated.contact_email = value;
+      if (name === 'contact_email') updated.contactEmail  = value;
+
+      if (name === 'contactPhone')  updated.contact_phone = value;
+      if (name === 'contact_phone') updated.contactPhone  = value;
+
+      if (name === 'contactName')   updated.contact_name  = value;
+      if (name === 'contact_name')  updated.contactName   = value;
+
       if (name === 'propertyType') {
-        // Reset fields based on property type
         const reset = {
           bedrooms: '',
           bathrooms: '',
@@ -344,26 +366,22 @@ const CreateListing: React.FC = () => {
           constructionMaterial: '',
           availableFrom: '',
         };
-        if (value === 'land') {
-          updated = { ...updated, ...reset };
-        } else {
-          updated = { ...updated, ...reset };
-        }
+        updated = { ...updated, ...reset };
       }
-      return updated;
+      return updated as ListingForm;
     });
   };
 
   // ========== HELPER FUNCTIONS FOR FORM SUBMISSION ==========
   function appendImagesToFormData(fd: FormData) {
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
-    const hasNewImages = formData.images.length > 0;
+    const hasNewImages = (formData as any).images?.length > 0;
     if (hasDeletedAllExisting && hasNewImages) {
       fd.append('replace_images', 'true');
-      formData.images.forEach(f => fd.append('images[]', f));
+      (formData as any).images.forEach((f: File) => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
-    } else if (formData.images.length) {
-      formData.images.forEach(f => fd.append('images[]', f));
+    } else if (hasNewImages) {
+      (formData as any).images.forEach((f: File) => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
     }
   }
@@ -380,11 +398,12 @@ const CreateListing: React.FC = () => {
   }
 
   function appendFormFieldsToFormData(fd: FormData) {
-    // Skip fields we will map explicitly after the loop
-    const skipKeys = new Set(['images', 'amenities', 'devUnits', 'propertyStatus', 'country', 'price']);
-
-    Object.entries(formData).forEach(([k, v]) => {
-      if (skipKeys.has(k)) return;
+    Object.entries(formData as any).forEach(([k, v]) => {
+      if (k === 'images') return; // handled separately
+      if (k === 'amenities') {
+        (v as string[]).forEach(a => fd.append('amenities[]', a));
+        return;
+      }
       if (k === 'devUnits') {
         fd.append('devUnits', JSON.stringify(v));
         return;
@@ -393,51 +412,12 @@ const CreateListing: React.FC = () => {
         fd.append(k, String(v));
       }
     });
-
-    // arrays
-    if (Array.isArray(formData.amenities)) {
-      formData.amenities.forEach(a => fd.append('amenities[]', a));
-    }
-
-    // 🔁 map to backend field names explicitly
-    if ((formData as any).propertyStatus) {
-      fd.set('property_status', String((formData as any).propertyStatus));
-    }
-    if ((formData as any).country) {
-      fd.set('country', String((formData as any).country));
-    }
-    if ((formData as any).price !== undefined && (formData as any).price !== null && (formData as any).price !== '') {
-      fd.set('price', String((formData as any).price));
-    }
   }
 
   function normalizeSpecialFields(fd: FormData) {
-    // --- phone: format + map to snake_case ---
-    const cc = (countryCode || '').trim();          // e.g. "+357"
-    let local = String((formData as any).contactPhone || '').trim();
-
-    // If user already typed a full international number, keep it
-    // Normalize "00xxx" -> "+xxx"
-    if (local.startsWith('00')) {
-      local = `+${local.slice(2)}`;
-    }
-
-    let formatted: string;
-    if (local.startsWith('+')) {
-      // Already in international format: don't prepend country code again
-      formatted = local.replace(/\s+/g, ' ').trim();
-    } else {
-      // Remove leading spaces/dashes/zeros
-      local = local.replace(/^[\s\-]+/, '').replace(/\s+/g, ' ').trim();
-      // Join with cc (cc is already like "+357")
-      formatted = `${cc} ${local}`.replace(/\s+/g, ' ').trim();
-    }
-
-    fd.set('contact_phone', formatted);
-    // Remove any camelCase duplicate just in case it got appended elsewhere
+    fd.set('contact_phone', `${countryCode} ${(formData as any).contact_phone ?? (formData as any).contactPhone ?? ''}`.trim());
     fd.delete('contactPhone');
 
-    // --- coordinates (prefer formData over map picker) ---
     if ((formData as any).latitude && (formData as any).longitude) {
       fd.set('latitude', (formData as any).latitude);
       fd.set('longitude', (formData as any).longitude);
@@ -446,18 +426,15 @@ const CreateListing: React.FC = () => {
       fd.append('longitude', String(locationCoords.lng));
     }
 
-    // --- floors: map camel -> snake and delete duplicates ---
-    if ((formData as any).floorLevel !== undefined && (formData as any).floorLevel !== null && (formData as any).floorLevel !== '') {
+    if ((formData as any).floorLevel !== undefined && (formData as any).floorLevel !== '') {
       fd.set('floor_level', String((formData as any).floorLevel));
     }
-    if ((formData as any).totalFloors !== undefined && (formData as any).totalFloors !== null && (formData as any).totalFloors !== '') {
+    if ((formData as any).totalFloors !== undefined && (formData as any).totalFloors !== '') {
       fd.set('total_floors', String((formData as any).totalFloors));
     }
     fd.delete('floorLevel');
     fd.delete('totalFloors');
-    fd.delete('propertyStatus'); // ensure only snake_case goes through
   }
-
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
@@ -495,37 +472,39 @@ const CreateListing: React.FC = () => {
       if (!isNaN(date.getTime())) setAvailableFromDate(date);
     }
 
-    // 4) 🔥 MERGE CORE FIELDS INTO formData (so submit works without visiting Step 2)
-    setFormData(prev => ({
-      ...prev,
-      // required ones you’re failing on:
+    // 4) 🔥 MERGE CORE FIELDS (so submit works without visiting Step 2)
+    setFormData(prev => syncContactFields({
+      ...(prev as any),
+
+      // required ones the backend validated
       price: d.price ?? (prev as any).price,
       country: d.country ?? (prev as any).country,
-      propertyStatus: d.property_status ?? (prev as any).propertyStatus,
+      property_status: d.property_status ?? (prev as any).property_status ?? (prev as any).propertyStatus,
 
-      // common details/specs (only keys that exist on ListingForm)
+      // details/specs if present
       title: d.title ?? (prev as any).title,
       description: d.description ?? (prev as any).description,
-      propertyType: d.property_type ?? (prev as any).propertyType,
+      property_type: d.property_type ?? (prev as any).property_type ?? (prev as any).propertyType,
       bedrooms: d.bedrooms ?? (prev as any).bedrooms,
       bathrooms: d.bathrooms ?? (prev as any).bathrooms,
-      floorLevel: d.floor_level ?? (prev as any).floorLevel,
-      totalFloors: d.total_floors ?? (prev as any).totalFloors,
+      floor_level: d.floor_level ?? (prev as any).floor_level ?? (prev as any).floorLevel,
+      total_floors: d.total_floors ?? (prev as any).total_floors ?? (prev as any).totalFloors,
       area: d.area ?? (prev as any).area,
-      lotSize: d.lot_size ?? (prev as any).lotSize,
-      parkingSpaces: d.parking_spaces ?? (prev as any).parkingSpaces,
-      yearBuilt: d.year_built ?? (prev as any).yearBuilt,
-      constructionMaterial: d.construction_material ?? (prev as any).constructionMaterial,
+      lot_size: d.lot_size ?? (prev as any).lot_size ?? (prev as any).lotSize,
+      parking_spaces: d.parking_spaces ?? (prev as any).parking_spaces ?? (prev as any).parkingSpaces,
+      year_built: d.year_built ?? (prev as any).year_built ?? (prev as any).yearBuilt,
+      construction_material: d.construction_material ?? (prev as any).construction_material ?? (prev as any).constructionMaterial,
       amenities: Array.isArray(d.amenities) ? d.amenities : ((prev as any).amenities || []),
       latitude: d.latitude ?? (prev as any).latitude,
       longitude: d.longitude ?? (prev as any).longitude,
-      city: d.city ?? (prev as any).city,
-      postal_code: d.postal_code ?? (prev as any).postal_code,
 
-      // contact (snake_case)
-      contact_name: d.contact_name ?? (prev as any).contact_name,
-      contact_email: d.contact_email ?? (prev as any).contact_email,
-      contactPhone: d.contact_phone ?? (prev as any).contactPhone,
+      // dates
+      availableFrom: d.available_from ?? (prev as any).availableFrom,
+
+      // contact (kept in sync)
+      contact_name:  d.contact_name  ?? (prev as any).contact_name  ?? (prev as any).contactName,
+      contact_email: d.contact_email ?? (prev as any).contact_email ?? (prev as any).contactEmail,
+      contact_phone: (d.contact_phone ?? (prev as any).contact_phone ?? (prev as any).contactPhone ?? '').toString(),
     }));
 
     setPropertyLoaded(true);
