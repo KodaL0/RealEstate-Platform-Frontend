@@ -58,6 +58,7 @@ type WizardProps = {
   handlePropertyDataLoaded: (data: any) => void;
   existingDocuments: any[];
   setExistingDocuments: React.Dispatch<React.SetStateAction<any[]>>;
+  hasLoadedPropertyData: boolean;
 };
 
 const WizardContent: React.FC<WizardProps> = (props) => {
@@ -83,6 +84,9 @@ const WizardContent: React.FC<WizardProps> = (props) => {
     <Step1_PropertyType
       formData={props.formData}
       setFormData={props.setFormData}
+      isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
     <Step2_PropertyDetails
       formData={props.formData}
@@ -99,6 +103,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       countryCode={props.countryCode}
       setCountryCode={props.setCountryCode}
       username={props.username}
+      hasLoadedPropertyData={props.hasLoadedPropertyData}
     />,
     <Step3_Images
       formData={props.formData}
@@ -128,6 +133,8 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setCountryCode={props.setCountryCode}
       isSubmitting={props.isSubmitting}
       isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
   ];
 
@@ -151,7 +158,11 @@ const CreateListing: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
   const { user } = useUser();
-  const username = user?.username || '';
+  const currentUsername = user?.username || '';
+  const [propertyOwnerUsername, setPropertyOwnerUsername] = useState<string>('');
+  
+  // Use property owner's username for API calls, fallback to current user's username
+  const username = isEditing && propertyOwnerUsername ? propertyOwnerUsername : currentUsername;
   
   // Get initial step from URL query parameter (SSR-safe)
   const getInitialStep = () => {
@@ -211,6 +222,9 @@ const CreateListing: React.FC = () => {
     }
     return null;
   });
+  
+  // Data loading state
+  const [hasLoadedPropertyData, setHasLoadedPropertyData] = useState(false);
   
   const [countryCode, setCountryCode] = useState(() => {
     if (isEditing) return COUNTRY_CODES[0].code;
@@ -374,6 +388,139 @@ const CreateListing: React.FC = () => {
 
   // ========== END HELPER FUNCTIONS ==========
 
+  // Centralized data loading function for edit mode
+  const loadPropertyData = async () => {
+    if (!isEditing || !id || !currentUsername || hasLoadedPropertyData) return;
+    
+    console.log('🔄 Loading property data for edit mode...');
+    setLoading(true);
+    setHasLoadedPropertyData(true);
+    
+    try {
+      // First, get the property to find the owner's username
+      // Use current user's username initially to fetch the property
+      const res = await api.properties.getUserProperty(currentUsername, Number(id));
+      const d = res.data;
+      
+      // Extract and store the property owner's username for future API calls
+      if (d.owner && d.owner.username) {
+        setPropertyOwnerUsername(d.owner.username);
+        console.log(`✅ Property owner username: ${d.owner.username}`);
+      } else {
+        // Fallback to current username if owner info not available
+        setPropertyOwnerUsername(currentUsername);
+      }
+      
+      // Normalize property status
+      let propertyStatus = d.property_status || '';
+      if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+      if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+
+      // Parse contact phone to extract country code
+      let phone = d.contact_phone || '';
+      let cc = countryCode || '+357';
+      const m = phone.match(/^\+[\d]{1,4}/);
+      if (m) {
+        cc = m[0];
+        phone = phone.replace(cc, '').trim();
+      }
+      setCountryCode(cc);
+      
+      // Update form data with property details
+      setFormData(prev => ({
+        ...prev,
+        title: d.title || '',
+        description: d.description || '',
+        price: d.price?.toString() || '',
+        location: d.location || '',
+        country: d.country || 'Cyprus',
+        region: d.region || '',
+        city: d.city || '',
+        postal_code: d.postal_code || '',
+        street: d.street || '',
+        latitude: d.latitude?.toString() || '',
+        longitude: d.longitude?.toString() || '',
+        propertyType: d.property_type || '',
+        bedrooms: d.bedrooms?.toString() || '',
+        bathrooms: d.bathrooms?.toString() || '',
+        area: d.area?.toString() || '',
+        amenities: Array.isArray(d.amenities) ? d.amenities : [],
+        yearBuilt: d.year_built?.toString() || '',
+        parkingSpaces: d.parking_spaces?.toString() || '',
+        lotSize: d.lot_size?.toString() || '',
+        propertyStatus,
+        energyRating: d.energy_rating || '',
+        constructionMaterial: d.construction_material || '',
+        floorLevel: d.floor_level?.toString() || '',
+        totalFloors: d.total_floors?.toString() || '',
+        availableFrom: d.available_from || '',
+        contactPhone: phone,
+        contactEmail: d.contact_email || '',
+        virtualTourUrl: d.virtual_tour_url || '',
+        videoUrl: d.video_url || '',
+        images: [],
+        userType: d.user_type || prev.userType || 'owner_agent',
+      }));
+
+      // Handle images
+      const imgs = d.images || [];
+      setPreviewImages(imgs.map((i: any) => i.image));
+      setExistingImageIds(imgs.map((i: any) => {
+        if (i.id && typeof i.id === 'number') {
+          return String(i.id);
+        }
+        console.warn('Image missing valid ID:', i);
+        return null;
+      }).filter((id: string | null) => id !== null));
+      
+      const primary = imgs.find((i: any) => i.is_primary);
+      setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+
+      // Load existing documents
+      const existingDocs = d.documents || [];
+      const transformedDocs = existingDocs.map((doc: any) => ({
+        id: `existing-${doc.id}`,
+        existingDocId: doc.id,
+        documentUrl: doc.document,
+        type: doc.document_type || 'other',
+        title: doc.title || doc.document.split('/').pop() || 'Document',
+        description: doc.description || '',
+        fileSize: doc.file_size,
+        fileName: doc.document.split('/').pop() || 'document',
+        uploadedAt: doc.uploaded_at,
+      }));
+      
+      setDocuments(transformedDocs);
+      setExistingDocuments(existingDocs);
+
+      // Set available from date if it exists
+      if (d.available_from) {
+        const date = new Date(d.available_from);
+        if (!isNaN(date.getTime())) {
+          setAvailableFromDate(date);
+        }
+      }
+
+      // Set location coordinates if available
+      if (d.latitude && d.longitude) {
+        setLocationCoords({ lat: parseFloat(d.latitude), lng: parseFloat(d.longitude) });
+      }
+      
+      console.log('✅ Property data loaded successfully');
+    } catch (err) {
+      console.error('❌ Error loading property data:', err);
+      setError('Failed to load property data. Please try again.');
+      setHasLoadedPropertyData(false); // Reset so user can retry
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load property data when component mounts in edit mode
+  useEffect(() => {
+    loadPropertyData();
+  }, [isEditing, id, currentUsername]);
+
   // Property data loading is now handled by Step2_PropertyDetails component
   // This callback receives the data from Step2 and processes images/documents
   const handlePropertyDataLoaded = (d: any) => {
@@ -512,6 +659,7 @@ const CreateListing: React.FC = () => {
           setLocationCoords={setLocationCoords}
           existingDocuments={existingDocuments}
           setExistingDocuments={setExistingDocuments}
+          hasLoadedPropertyData={hasLoadedPropertyData}
         />
           </div>
         </div>

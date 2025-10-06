@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect, memo } from 'react';
+import React, { useMemo, useEffect, memo, useCallback } from 'react';
 import {
   Home,
   Bed,
@@ -17,6 +17,19 @@ import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
 import LocationAutocomplete from '../../LocationAutocomplete';
 import api from '../../../config/api';
+import toast from 'react-hot-toast';
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: number;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
 type Props = {
   formData: ListingForm;
@@ -35,6 +48,7 @@ type Props = {
   countryCode?: string;
   setCountryCode?: (code: string) => void;
   username?: string;
+  hasLoadedPropertyData?: boolean;
 };
 
 type PT =
@@ -104,17 +118,30 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   countryCode,
   setCountryCode,
   username,
+  hasLoadedPropertyData = false,
 }) => {
   const { next, back } = useWizardNavigation();
   const ptype = (formData.propertyType || '') as PT;
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
 
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
 
-  // Load property details when editing (only once)
+  // Disable initial load flag after a short delay to allow data to populate
   useEffect(() => {
-    if (!isEditing || !propertyId || !username || hasLoadedData) return;
+    if (isEditing && hasLoadedPropertyData && isInitialLoad) {
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+        console.log('✅ Step2: Initial load complete, PATCH updates enabled');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing, hasLoadedPropertyData, isInitialLoad]);
+
+  // Load property details when editing (only if not already loaded by parent)
+  useEffect(() => {
+    if (!isEditing || !propertyId || !username || hasLoadedData || hasLoadedPropertyData) return;
     
     console.log('🔄 Step2: Loading property data...');
     setHasLoadedData(true);
@@ -215,6 +242,36 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
 
+  // Debounced PATCH update for property details
+  const debouncedUpdate = useCallback(
+    debounce(async (fieldName: string, value: any) => {
+      if (isEditing && propertyId && username && !isInitialLoad) {
+        try {
+          const details: Record<string, any> = { [fieldName]: value };
+          await api.properties.updatePropertyDetails(username, Number(propertyId), details);
+          console.log(`✅ ${fieldName} updated via PATCH`);
+        } catch (error: any) {
+          console.error(`❌ Failed to update ${fieldName}:`, error);
+          toast.error(error?.response?.data?.detail || `Failed to update ${fieldName}`);
+        }
+      }
+    }, 1500), // 1.5 second debounce
+    [isEditing, propertyId, username, isInitialLoad]
+  );
+
+  // Enhanced onChange handler that includes PATCH updates
+  const handleChangeWithPatch = (e: React.ChangeEvent<any>) => {
+    const { name, value } = e.target;
+    
+    // Update local state immediately
+    onChange(e);
+    
+    // If editing and not initial load, also update via PATCH (debounced)
+    if (isEditing && propertyId && username && !isInitialLoad) {
+      debouncedUpdate(name, value);
+    }
+  };
+
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
       {/* Header */}
@@ -240,7 +297,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <input
             name="title"
             value={formData.title}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             placeholder="e.g. Modern 2BR Apartment in City Center"
             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -257,7 +314,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               type="number"
               name="price"
               value={formData.price}
-              onChange={onChange}
+              onChange={handleChangeWithPatch}
               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
               min={0}
               step="0.01"
@@ -274,7 +331,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <select
             name="country"
             value={formData.country}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
@@ -328,7 +385,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <select
             name="propertyStatus"
             value={formData.propertyStatus}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
@@ -567,7 +624,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <textarea
             name="description"
             value={formData.description}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             rows={4}
             placeholder="Describe the property..."
             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"

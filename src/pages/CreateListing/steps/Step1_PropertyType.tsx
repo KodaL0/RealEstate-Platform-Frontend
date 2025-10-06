@@ -2,10 +2,15 @@ import React, { memo } from 'react';
 import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
 import { Home, Trees, Store, Hotel, Building, ChevronRight } from 'lucide-react';
+import api from '../../../config/api';
+import toast from 'react-hot-toast';
 
 type Props = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
+  isEditing?: boolean;
+  propertyId?: string;
+  username?: string;
 };
 
 type PT = 'house' | 'apartment' | 'condo' | 'townhouse' | 'land' | 'hotel' | 'shop' | 'office' | 'residential_building';
@@ -20,11 +25,20 @@ const OPTIONS: { value: PT; label: string; desc: string; icon: React.ReactNode }
   { value: 'residential_building', label: 'Residential Building', desc: 'Multi-unit residential building', icon: <Building className="w-5 h-5" /> },
 ];
 
-const Step1_PropertyType: React.FC<Props> = ({ formData, setFormData }) => {
+const Step1_PropertyType: React.FC<Props> = ({ 
+  formData, 
+  setFormData, 
+  isEditing = false, 
+  propertyId, 
+  username 
+}) => {
   const { next } = useWizardNavigation();
   const canContinue = !!formData.propertyType;
 
-  const selectType = (value: PT) => {
+  const selectType = async (value: PT) => {
+    const previousType = formData.propertyType;
+    
+    // Update local state immediately (optimistic update)
     setFormData((f: ListingForm) => ({
       ...f,
       propertyType: value,
@@ -43,6 +57,23 @@ const Step1_PropertyType: React.FC<Props> = ({ formData, setFormData }) => {
       availableFrom: '',
       // keep contact fields/images as-is
     }));
+
+    // If editing, save the property type change via PATCH (only if actually changed)
+    if (isEditing && propertyId && username && previousType && previousType !== value) {
+      try {
+        await api.properties.updatePropertyType(username, Number(propertyId), value);
+        console.log(`✅ Property type updated: ${previousType} → ${value}`);
+        toast.success('Property type updated');
+      } catch (error: any) {
+        // Rollback on error
+        setFormData((f: ListingForm) => ({
+          ...f,
+          propertyType: previousType,
+        }));
+        console.error('❌ Failed to update property type:', error);
+        toast.error(error?.response?.data?.detail || 'Failed to update property type');
+      }
+    }
   };
 
   return (
