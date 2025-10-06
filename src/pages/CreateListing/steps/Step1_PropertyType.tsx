@@ -1,5 +1,5 @@
-import React from 'react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import React, { memo } from 'react';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
 import { Home, Trees, Store, Hotel, Building, ChevronRight } from 'lucide-react';
 
@@ -21,7 +21,7 @@ const OPTIONS: { value: PT; label: string; desc: string; icon: React.ReactNode }
 ];
 
 const Step1_PropertyType: React.FC<Props> = ({ formData, setFormData }) => {
-  const { next } = useListingWizard();
+  const { next } = useWizardNavigation();
   const canContinue = !!formData.propertyType;
 
   const selectType = (value: PT) => {
@@ -105,4 +105,4 @@ const Step1_PropertyType: React.FC<Props> = ({ formData, setFormData }) => {
   );
 };
 
-export default Step1_PropertyType;
+export default memo(Step1_PropertyType);

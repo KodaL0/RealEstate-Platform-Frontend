@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Upload, FileText, X, ChevronLeft, File, AlertCircle, ArrowRight } from 'lucide-react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import toast from 'react-hot-toast';
 import api from '../../../config/api';
 
@@ -53,7 +53,7 @@ const Step5_Documents: React.FC<Props> = ({
   propertyId,
   username,
 }) => {
-  const { back, next } = useListingWizard();
+  const { back, next } = useWizardNavigation();
   const [uploadError, setUploadError] = useState<string>('');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -355,4 +355,4 @@ const Step5_Documents: React.FC<Props> = ({
   );
 };
 
-export default Step5_Documents;
+export default memo(Step5_Documents);

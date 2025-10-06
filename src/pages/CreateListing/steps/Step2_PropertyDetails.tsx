@@ -1,4 +1,4 @@
-import React, { useMemo, useEffect } from 'react';
+import React, { useMemo, useEffect, memo } from 'react';
 import {
   Home,
   Bed,
@@ -13,7 +13,7 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
 import LocationAutocomplete from '../../LocationAutocomplete';
 import api from '../../../config/api';
@@ -27,7 +27,7 @@ type Props = {
   setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
   showCalendar?: boolean;
   setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
-
+  
   // For edit mode
   isEditing?: boolean;
   propertyId?: string;
@@ -50,130 +50,48 @@ type PT =
 
 // Only use keys that exist on your ListingForm
 const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
-  land: ['title', 'price', 'country', 'location', 'propertyStatus', 'lotSize', 'description'],
+  land: [
+    'title','price','country','location','propertyStatus',
+    'lotSize','description'
+  ],
   house: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'lotSize',
-    'bedrooms',
-    'bathrooms',
-    'floorLevel',
-    'totalFloors',
-    'parkingSpaces',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   apartment: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'bedrooms',
-    'bathrooms',
-    'floorLevel',
-    'totalFloors',
-    'parkingSpaces',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   condo: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'bedrooms',
-    'bathrooms',
-    'floorLevel',
-    'totalFloors',
-    'parkingSpaces',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   townhouse: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'lotSize',
-    'bedrooms',
-    'bathrooms',
-    'floorLevel',
-    'totalFloors',
-    'parkingSpaces',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','lotSize','bedrooms','bathrooms','floorLevel','totalFloors',
+    'parkingSpaces','energyRating','yearBuilt','amenities','description'
   ],
   hotel: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'totalFloors',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
   ],
   shop: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'floorLevel',
-    'totalFloors',
-    'energyRating',
-    'yearBuilt',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   office: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'floorLevel',
-    'totalFloors',
-    'energyRating',
-    'yearBuilt',
-    'description'
+    'title','price','country','location','propertyStatus',
+    'area','floorLevel','totalFloors','energyRating','yearBuilt','description'
   ],
   residential_building: [
-    'title',
-    'price',
-    'country',
-    'location',
-    'propertyStatus',
-    'area',
-    'totalFloors',
-    'energyRating',
-    'yearBuilt',
-    'amenities',
-    'description'
-  ]
+    'title','price','country','location','propertyStatus',
+    'area','totalFloors','energyRating','yearBuilt','amenities','description'
+  ],
 };
+
 
 const Step2_PropertyDetails: React.FC<Props> = ({
   formData,
@@ -185,104 +103,94 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   onPropertyDataLoaded,
   countryCode,
   setCountryCode,
-  username
+  username,
 }) => {
-  const { next, back } = useListingWizard();
+  const { next, back } = useWizardNavigation();
   const ptype = (formData.propertyType || '') as PT;
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
 
-  const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
+  const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
 
   // Load property details when editing (only once)
   useEffect(() => {
     if (!isEditing || !propertyId || !username || hasLoadedData) return;
-
+    
     console.log('🔄 Step2: Loading property data...');
     setHasLoadedData(true);
-
+    
     api.properties
       .getUserProperty(username, Number(propertyId))
-      .then((res) => {
-        const d = res.data ?? res;
-
-        // Normalize property status to FE values
-        let propertyStatus = d.property_status ?? '';
+      .then(res => {
+        const d = res.data;
+        
+        // Normalize property status
+        let propertyStatus = d.property_status || '';
         if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
         if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
 
-        // Parse contact phone → separate dial code + local number
-        let rawPhone: string = (d.contact_phone ?? '').toString().trim();
-        let cc = countryCode ?? '+357';
-        if (rawPhone) {
-          const m = rawPhone.match(/^\+\d{1,4}/);
-          if (m && m[0]) {
-            cc = m[0];
-            rawPhone = rawPhone.replace(m[0], '').trim();
-          }
+        // Parse contact phone to extract country code
+        let phone = d.contact_phone || '';
+        let cc = countryCode || '+357';
+        const m = phone.match(/^\+[\d]{1,4}/);
+        if (m) {
+          cc = m[0];
+          phone = phone.replace(cc, '').trim();
         }
-        if (setCountryCode) setCountryCode(cc);
+        if (setCountryCode) {
+          setCountryCode(cc);
+        }
 
         console.log('📋 Step2: Loaded amenities:', d.amenities);
-
-        // Merge into formData (use ?? so undefined/null do not overwrite)
-        setFormData((prev) => ({
+        
+        // Update form data with property details
+        setFormData(prev => ({
           ...prev,
-
-          // core
-          title: d.title ?? prev.title ?? '',
-          description: d.description ?? prev.description ?? '',
-          price: (d.price ?? prev.price ?? '').toString(),
-          location: d.location ?? prev.location ?? '',
-          country: d.country ?? prev.country ?? 'Cyprus',
-          region: d.region ?? prev.region ?? '',
-          city: d.city ?? prev.city ?? '',
-          postal_code: d.postal_code ?? prev.postal_code ?? '',
-          street: d.street ?? prev.street ?? '',
-          latitude: (d.latitude ?? prev.latitude ?? '').toString(),
-          longitude: (d.longitude ?? prev.longitude ?? '').toString(),
-          propertyType: d.property_type ?? prev.propertyType ?? '',
-
-          // specs
-          bedrooms: (d.bedrooms ?? prev.bedrooms ?? '').toString(),
-          bathrooms: (d.bathrooms ?? prev.bathrooms ?? '').toString(),
-          area: (d.area ?? prev.area ?? '').toString(),
-          lotSize: (d.lot_size ?? prev.lotSize ?? '').toString(),
-          parkingSpaces: (d.parking_spaces ?? prev.parkingSpaces ?? '').toString(),
-          energyRating: d.energy_rating ?? prev.energyRating ?? '',
-          yearBuilt: (d.year_built ?? prev.yearBuilt ?? '').toString(),
-          constructionMaterial: d.construction_material ?? prev.constructionMaterial ?? '',
-          floorLevel: (d.floor_level ?? prev.floorLevel ?? '').toString(),
-          totalFloors: (d.total_floors ?? prev.totalFloors ?? '').toString(),
-          amenities: Array.isArray(d.amenities) ? d.amenities : prev.amenities ?? [],
-
-          // status & dates
-          propertyStatus: (propertyStatus as any) ?? prev.propertyStatus ?? '',
-          availableFrom: d.available_from ?? prev.availableFrom ?? '',
-
-          // contact
-          contactPhone: rawPhone ?? prev.contactPhone ?? '',
-          contactEmail: d.contact_email ?? prev.contactEmail ?? '',
-
-          // media
-          virtualTourUrl: d.virtual_tour_url ?? prev.virtualTourUrl ?? '',
-          videoUrl: d.video_url ?? prev.videoUrl ?? '',
-
-          // misc
+          title: d.title || '',
+          description: d.description || '',
+          price: d.price?.toString() || '',
+          location: d.location || '',
+          country: d.country || 'Cyprus',
+          region: d.region || '',
+          city: d.city || '',
+          postal_code: d.postal_code || '',
+          street: d.street || '',
+          latitude: d.latitude?.toString() || '',
+          longitude: d.longitude?.toString() || '',
+          propertyType: d.property_type || '',
+          bedrooms: d.bedrooms?.toString() || '',
+          bathrooms: d.bathrooms?.toString() || '',
+          area: d.area?.toString() || '',
+          amenities: Array.isArray(d.amenities) ? d.amenities : [],
+          yearBuilt: d.year_built?.toString() || '',
+          parkingSpaces: d.parking_spaces?.toString() || '',
+          lotSize: d.lot_size?.toString() || '',
+          propertyStatus,
+          energyRating: d.energy_rating || '',
+          constructionMaterial: d.construction_material || '',
+          floorLevel: d.floor_level?.toString() || '',
+          totalFloors: d.total_floors?.toString() || '',
+          availableFrom: d.available_from || '',
+          contactPhone: phone,
+          contactEmail: d.contact_email || '',
+          virtualTourUrl: d.virtual_tour_url || '',
+          videoUrl: d.video_url || '',
           images: [],
-          userType: d.user_type ?? prev.userType ?? 'owner_agent'
+          userType: d.user_type || prev.userType || 'owner_agent',
         }));
 
-        // Let parent populate images/documents, etc.
-        onPropertyDataLoaded?.(d);
-
+        // Call callback to let parent handle images and other data
+        if (onPropertyDataLoaded) {
+          onPropertyDataLoaded(d);
+        }
+        
         console.log('✅ Step2: Property data loaded successfully');
       })
-      .catch((err) => {
+      .catch(err => {
         console.error('❌ Error loading property details:', err);
-        setHasLoadedData(false); // allow retry
+        setHasLoadedData(false); // Reset on error so user can retry
       });
-  }, [isEditing, propertyId, username, hasLoadedData]); // keep deps stable
+  }, [isEditing, propertyId, username, hasLoadedData]); // Removed changing dependencies
 
   const validBasics =
     !!formData.title?.trim() &&
@@ -295,14 +203,17 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const validSpecs = (() => {
     if (['house', 'apartment', 'condo', 'townhouse'].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
-    if (ptype === 'land') return !!formData.lotSize; // Land requires lot_size, not area
-    if (['hotel', 'shop', 'office', 'residential_building'].includes(ptype)) return !!formData.area;
+    if (ptype === 'land')
+      return !!formData.lotSize; // Land requires lot_size, not area
+    if (['hotel', 'shop', 'office', 'residential_building'].includes(ptype))
+      return !!formData.area;
     return false;
   })();
 
   const valid = validBasics && validSpecs;
 
-  const update = (patch: Partial<ListingForm>) => setFormData((f) => ({ ...f, ...patch }));
+  const update = (patch: Partial<ListingForm>) =>
+    setFormData((f: ListingForm) => ({ ...f, ...patch }));
 
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
@@ -314,7 +225,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         <h2 className="text-xl font-bold text-gray-800">Property Details</h2>
         <p className="text-gray-600 text-sm">
           Only the relevant fields are shown for{' '}
-          <span className="font-semibold">{formData.propertyType?.replace('_', ' / ')}</span>.
+          <span className="font-semibold">
+            {formData.propertyType?.replace('_', ' / ')}
+          </span>.
         </p>
       </div>
 
@@ -391,12 +304,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   latitude: lat.toString(),
                   longitude: lng.toString(),
                   ...(structured && {
-                    country: structured.country ?? formData.country,
-                    region: structured.region ?? '',
-                    city: structured.city ?? '',
-                    postal_code: structured.postal_code ?? '',
-                    street: structured.street ?? ''
-                  })
+                    country: structured.country || formData.country,
+                    region: structured.region || '',
+                    city: structured.city || '',
+                    postal_code: structured.postal_code || '',
+                    street: structured.street || ''
+                  }),
                 });
                 setLocationCoords?.({ lat, lng });
               }}
@@ -567,10 +480,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="">Select</option>
-              {['A', 'B', 'C', 'D', 'E', 'F', 'G'].map((r: string) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
+              {['A','B','C','D','E','F','G'].map((r: string) => (
+                <option key={r} value={r}>{r}</option>
               ))}
             </select>
           </div>
@@ -598,55 +509,55 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Amenities */}
         {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
           showField('amenities') && (
-            <div className="lg:col-span-2">
-              <label className="block text-sm font-semibold text-gray-700 mb-3">
-                Amenities
-                {formData.amenities && formData.amenities.length > 0 && (
-                  <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
-                    {formData.amenities.length} selected
-                  </span>
-                )}
-              </label>
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-                {AMENITIES.map((a: { id: string; label: string; category: string }) => {
-                  const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
-
-                  return (
-                    <label
-                      key={a.id}
-                      className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                        selected
-                          ? 'bg-green-50 border-green-500 shadow-sm'
-                          : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-sm'
-                      }`}
-                    >
-                      <input
-                        type="checkbox"
-                        className="sr-only"
-                        checked={selected}
-                        onChange={() => {
-                          const newAmenities = selected
-                            ? formData.amenities.filter((x: string) => x !== a.id)
-                            : [...(formData.amenities || []), a.id];
-
-                          setFormData((f: ListingForm) => ({
-                            ...f,
-                            amenities: newAmenities
-                          }));
-                        }}
-                      />
-                      <span className={`text-sm font-medium ${selected ? 'text-green-700' : 'text-gray-700'}`}>
-                        {a.label}
-                      </span>
-                      {selected && (
-                        <span className="text-xs px-2 py-1 bg-green-600 text-white rounded font-bold">✓</span>
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
+          <div className="lg:col-span-2">
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Amenities
+              {formData.amenities && formData.amenities.length > 0 && (
+                <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                  {formData.amenities.length} selected
+                </span>
+              )}
+            </label>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+              {AMENITIES.map((a: { id: string; label: string; category: string }) => {
+                const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
+                
+                return (
+                  <label
+                    key={a.id}
+                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selected 
+                        ? 'bg-green-50 border-green-500 shadow-sm' 
+                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-sm'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={selected}
+                      onChange={() => {
+                        const newAmenities = selected
+                          ? formData.amenities.filter((x: string) => x !== a.id)
+                          : [...(formData.amenities || []), a.id];
+                        
+                        setFormData((f: ListingForm) => ({
+                          ...f,
+                          amenities: newAmenities,
+                        }));
+                      }}
+                    />
+                    <span className={`text-sm font-medium ${selected ? 'text-green-700' : 'text-gray-700'}`}>
+                      {a.label}
+                    </span>
+                    {selected && (
+                      <span className="text-xs px-2 py-1 bg-green-600 text-white rounded font-bold">✓</span>
+                    )}
+                  </label>
+                );
+              })}
             </div>
-          )}
+          </div>
+        )}
 
         {/* Description */}
         <div className="lg:col-span-2">
@@ -690,4 +601,4 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   );
 };
 
-export default Step2_PropertyDetails;
+export default memo(Step2_PropertyDetails);

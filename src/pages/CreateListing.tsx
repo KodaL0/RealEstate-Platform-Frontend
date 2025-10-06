@@ -6,10 +6,8 @@ import toast from 'react-hot-toast';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
 
-import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
+import { ListingWizardProvider, useListingWizard, useWizardState, WizardMode } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
-
-import EditSectionModal from '../components/modals/EditSectionModal';
 
 // ⬇️ New step order imports
 import Step1_PropertyType from './CreateListing/steps/Step1_PropertyType';
@@ -23,16 +21,6 @@ import {
   ListingForm,
   COUNTRY_CODES,
 } from '../types';
-
-/* ----------------- helpers (NEW) ----------------- */
-// Extract +CC and local part from a stored phone like "+357 9677..." / "+30-69..." / "3579677..."
-function splitPhoneWithCC(raw: string) {
-  const cleaned = (raw || '').trim();
-  const m = cleaned.match(/^\+?(\d{1,3})\s*[-\s]?(.+)?$/);
-  if (!m) return { cc: '', local: cleaned };
-  const [, digits, rest] = m;
-  return { cc: `+${digits}`, local: (rest || '').trim() };
-}
 
 /* ---------- WizardContent ---------- */
 type WizardProps = {
@@ -73,8 +61,22 @@ type WizardProps = {
 };
 
 const WizardContent: React.FC<WizardProps> = (props) => {
-  const { currentStep } = useListingWizard();
+  const { reset } = useListingWizard();
+  const { currentStep } = useWizardState();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Create a wrapper for handleSubmit that includes reset
+  const handleSubmitWithReset = async (e: React.FormEvent) => {
+    try {
+      await props.handleSubmit(e);
+      // If we reach here, submission was successful
+      // Reset wizard state for create mode
+      reset();
+    } catch (error) {
+      // Error handling is done in the parent handleSubmit
+      console.error('Submit error:', error);
+    }
+  };
 
   // ⬇️ Steps: 1=Type, 2=Details, 3=Images, 4=Documents, 5=Contact
   const steps = [
@@ -130,7 +132,7 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   ];
 
   return (
-    <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
+    <form onSubmit={handleSubmitWithReset} noValidate className="h-full flex flex-col">
       <div className="flex-shrink-0">
         <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
       </div>
@@ -151,17 +153,23 @@ const CreateListing: React.FC = () => {
   const { user } = useUser();
   const username = user?.username || '';
   
-  // Get initial step from URL query parameter (safely clamped 0..4)
-  const searchParams = new URLSearchParams(window.location.search);
-  const stepParam = searchParams.get('step');
-  const parsed = Number.isInteger(Number(stepParam)) ? parseInt(String(stepParam), 10) : 0;
-  const initialStep = Math.max(0, Math.min(4, parsed));
+  // Get initial step from URL query parameter (SSR-safe)
+  const getInitialStep = () => {
+    if (typeof window === 'undefined') return 0;
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const stepParam = searchParams.get('step');
+      return stepParam ? parseInt(stepParam, 10) : 0;
+    } catch (e) {
+      console.warn('Failed to parse URL step parameter:', e);
+      return 0;
+    }
+  };
+  const initialStep = getInitialStep();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isModalOpen, setModalOpen] = useState(false);
-  const [propertyPrefetched, setPropertyPrefetched] = useState(false);
   
   // Initialize form data from localStorage or default
   const [formData, setFormData] = useState<ListingForm>(() => {
@@ -171,27 +179,21 @@ const CreateListing: React.FC = () => {
       try {
         const parsed = JSON.parse(saved);
         return { ...DEFAULT_FORM_STATE, ...parsed };
-      } catch {
+      } catch (e) {
+        console.warn('Failed to parse saved form data:', e);
         return DEFAULT_FORM_STATE;
       }
     }
     return DEFAULT_FORM_STATE;
   });
 
-  // 🧹 Ensure new listing always starts at step 0 (clear any stale persisted step)
+  // Ensure userType has a safe default for the 5-step wizard
   useEffect(() => {
-    if (!isEditing) {
-      ['createListing_currentStep', 'listingWizard_currentStep'].forEach(k => {
-        try { localStorage.removeItem(k); } catch {}
-      });
+    if (!formData.userType) {
+      setFormData(prev => ({ ...prev, userType: 'owner_Agent' as typeof prev.userType }));
     }
-  }, [isEditing]);
-
-  // ⚠️ Do NOT force Cyprus on edit; we’ll override from saved phone
-  const [countryCode, setCountryCode] = useState(() => {
-    const saved = localStorage.getItem('createListing_countryCode');
-    return saved || COUNTRY_CODES[0].code;
-  });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Document state
   const [documents, setDocuments] = useState<any[]>([]);
@@ -202,11 +204,18 @@ const CreateListing: React.FC = () => {
     if (saved) {
       try {
         return JSON.parse(saved);
-      } catch {
+      } catch (e) {
+        console.warn('Failed to parse saved location coords:', e);
         return null;
       }
     }
     return null;
+  });
+  
+  const [countryCode, setCountryCode] = useState(() => {
+    if (isEditing) return COUNTRY_CODES[0].code;
+    const saved = localStorage.getItem('createListing_countryCode');
+    return saved || COUNTRY_CODES[0].code;
   });
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
@@ -218,64 +227,51 @@ const CreateListing: React.FC = () => {
     if (isEditing) return undefined;
     const saved = localStorage.getItem('createListing_availableFromDate');
     if (saved) {
-      try { return new Date(saved); } catch { return undefined; }
+      try {
+        return new Date(saved);
+      } catch (e) {
+        console.warn('Failed to parse saved date:', e);
+        return undefined;
+      }
     }
     return undefined;
   });
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Save bits to localStorage when creating (not editing)
+  // Save form data to localStorage whenever it changes
   useEffect(() => {
-    if (!isEditing) localStorage.setItem('createListing_formData', JSON.stringify(formData));
-  }, [formData, isEditing]);
-  useEffect(() => {
-    if (!isEditing) localStorage.setItem('createListing_locationCoords', JSON.stringify(locationCoords));
-  }, [locationCoords, isEditing]);
-  useEffect(() => {
-    if (!isEditing) localStorage.setItem('createListing_countryCode', countryCode);
-  }, [countryCode, isEditing]);
-  useEffect(() => {
-    if (!isEditing) localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
-  }, [availableFromDate, isEditing]);
-
-  // Clear persisted step on edit as well (URL controls it)
-  useEffect(() => {
-    if (isEditing) localStorage.removeItem('createListing_currentStep');
-  }, [isEditing]);
-
-  // Ensure userType default
-  useEffect(() => {
-    if (!formData.userType) {
-      setFormData(prev => ({ ...prev, userType: 'owner_Agent' as typeof prev.userType }));
+    if (!isEditing) {
+      localStorage.setItem('createListing_formData', JSON.stringify(formData));
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [formData, isEditing]);
 
-  // 🔧 prefetch property data once when editing so all steps have data immediately
+  // Save location coords to localStorage whenever it changes
   useEffect(() => {
-    if (!isEditing || !id || !user?.username || propertyPrefetched) return;
+    if (!isEditing) {
+      localStorage.setItem('createListing_locationCoords', JSON.stringify(locationCoords));
+    }
+  }, [locationCoords, isEditing]);
 
-    (async () => {
-      try {
-        setLoading(true);
-        const res = await api.get(`properties/${username}/property/${id}`);
-        const data = res.data || res;
+  // Save country code to localStorage whenever it changes
+  useEffect(() => {
+    if (!isEditing) {
+      localStorage.setItem('createListing_countryCode', countryCode);
+    }
+  }, [countryCode, isEditing]);
 
-        handlePropertyDataLoaded(data); // images/docs/date + core merge
-        setPropertyPrefetched(true);
-      } catch (e) {
-        console.error('Prefetch failed', e);
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, [isEditing, id, user?.username, username, propertyPrefetched]);
+  // Save available from date to localStorage whenever it changes
+  useEffect(() => {
+    if (!isEditing) {
+      localStorage.setItem('createListing_availableFromDate', availableFromDate?.toISOString() || '');
+    }
+  }, [availableFromDate, isEditing]);
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;
     setFormData((prev: ListingForm) => {
       let updated: ListingForm = { ...prev, [name]: value } as ListingForm;
       if (name === 'propertyType') {
+        // Reset fields based on property type
         const reset = {
           bedrooms: '',
           bathrooms: '',
@@ -290,17 +286,27 @@ const CreateListing: React.FC = () => {
           constructionMaterial: '',
           availableFrom: '',
         };
-        updated = { ...updated, ...reset };
+        
+        // For land properties, we don't need bedrooms/bathrooms
+        if (value === 'land') {
+          updated = { ...updated, ...reset };
+        } else {
+          updated = { ...updated, ...reset };
+        }
       }
       return updated;
     });
   };
 
   // ========== HELPER FUNCTIONS FOR FORM SUBMISSION ==========
+  
+  // Append images to FormData with proper ordering and primary index
   function appendImagesToFormData(fd: FormData) {
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
     const hasNewImages = formData.images.length > 0;
+    
     if (hasDeletedAllExisting && hasNewImages) {
+      console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
       fd.append('replace_images', 'true');
       formData.images.forEach(f => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
@@ -310,6 +316,7 @@ const CreateListing: React.FC = () => {
     }
   }
 
+  // Append documents to FormData with metadata
   function appendDocumentsToFormData(fd: FormData) {
     if (documents.length > 0) {
       documents.forEach((doc) => {
@@ -321,6 +328,7 @@ const CreateListing: React.FC = () => {
     }
   }
 
+  // Append form fields to FormData with special handling for arrays and objects
   function appendFormFieldsToFormData(fd: FormData) {
     Object.entries(formData).forEach(([k, v]) => {
       if (k === 'images') return; // Handled separately
@@ -338,47 +346,28 @@ const CreateListing: React.FC = () => {
     });
   }
 
-  // Normalize and set special fields (phone, email, status, coordinates, floors)
+  // Normalize and set special fields (phone, coordinates, floor levels)
   function normalizeSpecialFields(fd: FormData) {
-    // ---- EMAIL ----
-    if (formData.contactEmail && String(formData.contactEmail).trim()) {
-      fd.set('contact_email', String(formData.contactEmail).trim());
-    }
-    fd.delete('contactEmail');
-
-    // ---- PHONE (prefix with selected country code) ----
-    const fullPhone = `${countryCode} ${formData.contactPhone || ''}`.trim();
-    if (formData.contactPhone && String(formData.contactPhone).trim()) {
-      fd.set('contact_phone', fullPhone);
-    }
-    fd.delete('contactPhone');
-
-    // ---- PROPERTY STATUS mapping ----
-    if (formData.propertyStatus) {
-      const status =
-        formData.propertyStatus === 'forSale' ? 'for_sale' :
-        formData.propertyStatus === 'forRent' ? 'for_rent' :
-        formData.propertyStatus;
-      fd.set('property_status', status);
-    }
-    fd.delete('propertyStatus');
-
-    // ---- Coordinates (prefer form fields over picked coords) ----
+    // Normalize phone with country code
+    fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
+    
+    // Set coordinates (prefer form data over map picker)
     if (formData.latitude && formData.longitude) {
-      fd.set('latitude', String(formData.latitude));
-      fd.set('longitude', String(formData.longitude));
+      fd.set('latitude', formData.latitude);
+      fd.set('longitude', formData.longitude);
     } else if (locationCoords) {
-      fd.set('latitude', String(locationCoords.lat));
-      fd.set('longitude', String(locationCoords.lng));
+      fd.append('latitude', String(locationCoords.lat));
+      fd.append('longitude', String(locationCoords.lng));
     }
 
-    // ---- Floors to snake_case expected by backend ----
+    // Normalize floor fields to snake_case for backend
     if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
       fd.set('floor_level', String(formData.floorLevel));
     }
     if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
       fd.set('total_floors', String(formData.totalFloors));
     }
+    // Remove camelCase duplicates
     fd.delete('floorLevel');
     fd.delete('totalFloors');
   }
@@ -386,20 +375,23 @@ const CreateListing: React.FC = () => {
   // ========== END HELPER FUNCTIONS ==========
 
   // Property data loading is now handled by Step2_PropertyDetails component
-  // This callback receives the data and processes images/documents + seeds core fields
+  // This callback receives the data from Step2 and processes images/documents
   const handlePropertyDataLoaded = (d: any) => {
-    // 1) images
+    // Handle images
     const imgs = d.images || [];
     setPreviewImages(imgs.map((i: any) => i.image));
-    setExistingImageIds(
-      imgs
-        .map((i: any) => (i.id && typeof i.id === 'number' ? String(i.id) : null))
-        .filter((id: string | null) => id !== null) as string[]
-    );
+    setExistingImageIds(imgs.map((i: any) => {
+      if (i.id && typeof i.id === 'number') {
+        return String(i.id);
+      }
+      console.warn('Image missing valid ID:', i);
+      return null;
+    }).filter((id: string | null) => id !== null));
+    
     const primary = imgs.find((i: any) => i.is_primary);
     setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
 
-    // 2) documents
+    // Load existing documents
     const existingDocs = d.documents || [];
     const transformedDocs = existingDocs.map((doc: any) => ({
       id: `existing-${doc.id}`,
@@ -412,60 +404,30 @@ const CreateListing: React.FC = () => {
       fileName: doc.document.split('/').pop() || 'document',
       uploadedAt: doc.uploaded_at,
     }));
+    
     setDocuments(transformedDocs);
     setExistingDocuments(existingDocs);
 
-    // 3) date
+    // Set available from date if it exists
     if (d.available_from) {
       const date = new Date(d.available_from);
-      if (!isNaN(date.getTime())) setAvailableFromDate(date);
+      if (!isNaN(date.getTime())) {
+        setAvailableFromDate(date);
+      }
     }
-
-    // 4) core & required fields so submit works even if Step 2 isn't visited
-    setFormData(prev => ({
-      ...prev,
-      price: d.price ?? prev.price,
-      country: d.country ?? prev.country,
-      propertyStatus: d.property_status ?? prev.propertyStatus,
-      title: d.title ?? prev.title,
-      description: d.description ?? prev.description,
-      propertyType: d.property_type ?? prev.propertyType,
-      bedrooms: d.bedrooms ?? prev.bedrooms,
-      bathrooms: d.bathrooms ?? prev.bathrooms,
-      floorLevel: d.floor_level ?? prev.floorLevel,
-      totalFloors: d.total_floors ?? prev.totalFloors,
-      area: d.area ?? prev.area,
-      lotSize: d.lot_size ?? prev.lotSize,
-      parkingSpaces: d.parking_spaces ?? prev.parkingSpaces,
-      yearBuilt: d.year_built ?? prev.yearBuilt,
-      constructionMaterial: d.construction_material ?? prev.constructionMaterial,
-      amenities: Array.isArray(d.amenities) ? d.amenities : (prev.amenities || []),
-      latitude: d.latitude ?? prev.latitude,
-      longitude: d.longitude ?? prev.longitude,
-      // keep your own naming elsewhere; only set those keys that exist in ListingForm
-      postal_code: d.postal_code ?? (prev as any).postal_code,
-      city: d.city ?? (prev as any).city,
-      region: d.region ?? (prev as any).region,
-    }));
-
-    // 5) contact (seed email; derive proper country code and local number)
-    if (d.contact_email) {
-      setFormData(prev => ({ ...prev, contactEmail: String(d.contact_email) }));
-    }
-    if (d.contact_phone) {
-      const { cc, local } = splitPhoneWithCC(String(d.contact_phone));
-      if (cc) setCountryCode(cc); // +30 or +357 etc.
-      setFormData(prev => ({ ...prev, contactPhone: local || prev.contactPhone || '' }));
-    }
+    
+    setLoading(false);
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    
     try {
       const fd = new FormData();
+
+      // Build FormData using helper functions
       appendImagesToFormData(fd);
       appendDocumentsToFormData(fd);
       appendFormFieldsToFormData(fd);
@@ -476,13 +438,8 @@ const CreateListing: React.FC = () => {
         : await api.properties.create(fd);
 
       if (res.status >= 200 && res.status < 300) {
-        if (!isEditing) {
-          localStorage.removeItem('createListing_formData');
-          localStorage.removeItem('createListing_locationCoords');
-          localStorage.removeItem('createListing_countryCode');
-          localStorage.removeItem('createListing_availableFromDate');
-          localStorage.removeItem('createListing_currentStep');
-        }
+        // Clear saved form data on successful submission
+        // The wizard context will handle mode-specific cleanup
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
         navigate('/my-listings');
       } else {
@@ -509,116 +466,57 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // 👇 key={...} forces a clean wizard remount when switching create/edit so step resets
-  const providerKey = isEditing ? `edit-${id}-${initialStep}` : 'create';
-
+  // Determine wizard mode and configuration
+  const wizardMode: WizardMode = isEditing ? 'edit' : 'create';
+  
   return (
-    <ListingWizardProvider key={providerKey} initialStep={isEditing ? initialStep : 0} totalSteps={5}>
-      <ListingShell
-        isEditing={isEditing}
-        error={error}
-        isModalOpen={isModalOpen}
-        setModalOpen={setModalOpen}
-        formData={formData}
-        setFormData={setFormData}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        previewImages={previewImages}
-        setPreviewImages={setPreviewImages}
-        primaryIndex={primaryIndex}
-        setPrimaryIndex={setPrimaryIndex}
-        existingImageIds={existingImageIds}
-        setExistingImageIds={setExistingImageIds}
-        documents={documents}
-        setDocuments={setDocuments}
-        countryCode={countryCode}
-        setCountryCode={setCountryCode}
-        isSubmitting={isSubmitting}
-        propertyId={id}
-        username={username}
-        availableFromDate={availableFromDate}
-        setAvailableFromDate={setAvailableFromDate}
-        handlePropertyDataLoaded={handlePropertyDataLoaded}
-        showCalendar={showCalendar}
-        setShowCalendar={setShowCalendar}
-        setLocationCoords={setLocationCoords}
-        existingDocuments={existingDocuments}
-        setExistingDocuments={setExistingDocuments}
-      />
-    </ListingWizardProvider>
-  );
-};
+    <ListingWizardProvider 
+      mode={wizardMode}
+      initialStep={initialStep} 
+      totalSteps={5}
+      propertyId={id}
+    >
+      <div className="fixed inset-0 bg-gray-50 pt-24">
+        <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
+          {error && (
+            <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
 
-/* ---------- Inner shell (has access to wizard context) ---------- */
-const ListingShell: React.FC<any> = (props) => {
-  const { goto } = useListingWizard();
-
-  return (
-    <div className="fixed inset-0 bg-gray-50 pt-24">
-      <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
-        {props.error && (
-          <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
-            <p className="text-sm text-red-700">{props.error}</p>
-          </div>
-        )}
-
-        {props.isEditing && (
-          <div className="mb-4">
-            <button
-              type="button"
-              onClick={() => props.setModalOpen(true)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
-            >
-              Edit Sections
-            </button>
-          </div>
-        )}
-
-        <EditSectionModal
-          isOpen={props.isModalOpen}
-          onClose={() => props.setModalOpen(false)}
-          onSelectSection={(id: number) => {
-            goto(id);
-            const sp = new URLSearchParams(window.location.search);
-            sp.set('step', String(id));
-            window.history.replaceState(null, '', `${window.location.pathname}?${sp.toString()}`);
-            props.setModalOpen(false);
-          }}
-          propertyTitle={props.isEditing ? 'Edit Listing' : 'New Listing'}
+          <div className="flex-1 overflow-hidden">
+        <WizardContent
+          formData={formData}
+          setFormData={setFormData}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          previewImages={previewImages}
+          setPreviewImages={setPreviewImages}
+          primaryIndex={primaryIndex}
+          setPrimaryIndex={setPrimaryIndex}
+          existingImageIds={existingImageIds}
+          setExistingImageIds={setExistingImageIds}
+          documents={documents}
+          setDocuments={setDocuments}
+          countryCode={countryCode}
+          setCountryCode={setCountryCode}
+          isSubmitting={isSubmitting}
+          isEditing={isEditing}
+          propertyId={id}
+          username={username}
+          availableFromDate={availableFromDate}
+          setAvailableFromDate={setAvailableFromDate}
+          handlePropertyDataLoaded={handlePropertyDataLoaded}
+          showCalendar={showCalendar}
+          setShowCalendar={setShowCalendar}
+          setLocationCoords={setLocationCoords}
+          existingDocuments={existingDocuments}
+          setExistingDocuments={setExistingDocuments}
         />
-
-        <div className="flex-1 overflow-hidden">
-          <WizardContent
-            formData={props.formData}
-            setFormData={props.setFormData}
-            handleInputChange={props.handleInputChange}
-            handleSubmit={props.handleSubmit}
-            previewImages={props.previewImages}
-            setPreviewImages={props.setPreviewImages}
-            primaryIndex={props.primaryIndex}
-            setPrimaryIndex={props.setPrimaryIndex}
-            existingImageIds={props.existingImageIds}
-            setExistingImageIds={props.setExistingImageIds}
-            documents={props.documents}
-            setDocuments={props.setDocuments}
-            countryCode={props.countryCode}
-            setCountryCode={props.setCountryCode}
-            isSubmitting={props.isSubmitting}
-            isEditing={props.isEditing}
-            propertyId={props.propertyId}
-            username={props.username}
-            availableFromDate={props.availableFromDate}
-            setAvailableFromDate={props.setAvailableFromDate}
-            handlePropertyDataLoaded={props.handlePropertyDataLoaded}
-            showCalendar={props.showCalendar}
-            setShowCalendar={props.setShowCalendar}
-            setLocationCoords={props.setLocationCoords}
-            existingDocuments={props.existingDocuments}
-            setExistingDocuments={props.setExistingDocuments}
-          />
+          </div>
         </div>
       </div>
-    </div>
+    </ListingWizardProvider>
   );
 };
 
