@@ -372,19 +372,19 @@ const api = {
   instagram: {
     // Post a property to Instagram
     postProperty: (propertyId: number, configId?: number) =>
-      apiPost(`social_int/post/${propertyId}/`, configId ? { config_id: configId } : {}),
+      apiPost(`instagram/post/${propertyId}/`, configId ? { config_id: configId } : {}),
     
     // Get Instagram posts for a specific property
     getPropertyPosts: (propertyId: number) =>
-      apiGet(`social_int/property/${propertyId}/posts/`),
+      apiGet(`instagram/property/${propertyId}/posts/`),
     
     // Get Instagram posting queue status (admin only)
     getQueueStatus: () =>
-      apiGet('social_int/queue/status/'),
+      apiGet('instagram/queue/status/'),
     
     // Retry a failed Instagram post (admin only)
     retryPost: (postId: number) =>
-      apiPost(`social_int/posts/${postId}/retry/`),
+      apiPost(`instagram/posts/${postId}/retry/`),
   },
 };
 
