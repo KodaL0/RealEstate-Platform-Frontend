@@ -1,6 +1,7 @@
 import React from 'react';
 import { Edit, Trash2, Eye, EyeOff, Calendar, Clock } from 'lucide-react';
 import PropertyCard from './PropertyCard';
+import InstagramPostButton from '../InstagramPostButton';
 
 interface MyPropertyCardProps {
   property: any; // Flexible type to handle different property interfaces
@@ -9,6 +10,7 @@ interface MyPropertyCardProps {
   onPublish: (id: string | number) => void;
   onUnpublish: (id: string | number) => void;
   onNavigate: (id: string | number) => void;
+  onInstagramPostSuccess?: () => void;
 }
 
 const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
@@ -17,13 +19,17 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onRemove,
   onPublish,
   onUnpublish,
-  onNavigate
+  onNavigate,
+  onInstagramPostSuccess
 }) => {
   const {
     id,
     property_status,
     is_published,
-    created_at
+    created_at,
+    instagram_posted,
+    instagram_post_count,
+    last_instagram_post
   } = property;
 
   // Normalize fields so PropertyCard's dynamic stats work for all types.
@@ -151,6 +157,30 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             </span>
           </div>
         </div>
+        
+        {/* Instagram Post Button - Only show if published */}
+        {is_published && (
+          <div className="mb-4">
+            <InstagramPostButton
+              propertyId={id}
+              isPosted={instagram_posted}
+              postCount={instagram_post_count}
+              onPostSuccess={onInstagramPostSuccess}
+              className="w-full"
+            />
+            {last_instagram_post && (
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Last posted: {new Date(last_instagram_post).toLocaleDateString('en-US', { 
+                  month: 'short', 
+                  day: 'numeric',
+                  year: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit'
+                })}
+              </p>
+            )}
+          </div>
+        )}
         
         {/* Danger Action - Enhanced Design */}
         <button

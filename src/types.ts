@@ -88,6 +88,10 @@ export interface Property {
   is_favourite?: boolean;
   city?: string;
   region?: string;
+  // Instagram integration
+  instagram_posted?: boolean;
+  instagram_post_count?: number;
+  last_instagram_post?: string;
 }
 
 /* Normalize helper */
