@@ -30,7 +30,7 @@ const isSet = (v: unknown) =>
 const asInt = (v: unknown) => {
   if (v === null || v === undefined || v === '') return undefined;
   const num = Number(v);
-  return Number.isFinite(num) && num > 0 ? num : undefined;
+  return Number.isFinite(num) ? num : undefined;
 };
 
 type Stat = {
@@ -278,15 +278,25 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           : null,
     };
 
-    // LAND: show lot size if available, otherwise area
+    // LAND: show lot size if available, otherwise area, otherwise show placeholder
     if (t === 'land') {
       const lot = S.lot();
-      if (lot && lot.value !== '0') {
+      if (lot) {
         return [{ ...lot, extraClasses: 'col-start-2' }]; // center in grid-cols-3
       }
       const a = S.area();
-      if (!a) return []; // if no area or lot, show nothing
-      return [{ ...a, extraClasses: 'col-start-2' }]; // center in grid-cols-3
+      if (a) {
+        return [{ ...a, extraClasses: 'col-start-2' }]; // center in grid-cols-3
+      }
+      // If no lot size or area, show a placeholder for land properties
+      return [{
+        key: 'lot',
+        label: 'Lot Size',
+        value: 'N/A',
+        icon: <MapPin className="h-5 w-5 text-fuchsia-600" />,
+        iconWrapClass: 'p-2 rounded-lg bg-fuchsia-100',
+        extraClasses: 'col-start-2'
+      }];
     }
 
     // HOTEL
