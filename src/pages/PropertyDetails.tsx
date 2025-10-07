@@ -20,6 +20,7 @@ import PropertyDocuments from '../components/PropertyDocuments';
 import { geocodeAddress } from '../components/geocode';
 import LLMPropertyData from '../components/llms/llm-properties';
 import SEO from '../components/SEO';
+import analytics from '../utils/analytics';
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map(i => (typeof i === 'string' ? { image: i } : i));
@@ -210,13 +211,26 @@ const PropertyDetails: React.FC = () => {
     if (!numericId || userLoading) return;
     let isMounted = true;
   
-    const fetchProperty = async () => {
+      const fetchProperty = async () => {
       setLoading(true);
       try {
         const response = await api.properties.getById(numericId);
         const mapped = mapPropertyData(response.data);
         if (!isMounted) return;
         setProperty(mapped);
+  
+        // Track property view
+        analytics.trackPropertyView({
+          property_id: String(mapped.id),
+          property_type: mapped.property_type,
+          price: mapped.price,
+          location: mapped.city || mapped.location,
+          bedrooms: mapped.bedrooms,
+          bathrooms: mapped.bathrooms,
+          area: mapped.area,
+          property_status: mapped.property_status,
+          owner_username: mapped.owner?.username,
+        });
   
         // ── COORDINATE LOGIC ───────────────────────────────────────
         if (mapped.latitude != null && mapped.longitude != null) {
@@ -238,6 +252,7 @@ const PropertyDetails: React.FC = () => {
   
       } catch (err) {
         console.error('Failed to fetch property details:', err);
+        analytics.trackError('property_fetch', String(err), 'PropertyDetails');
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -259,11 +274,23 @@ const PropertyDetails: React.FC = () => {
   };
   const closeLightbox = () => setLightboxOpen(false);
   const prevImg = useCallback(() => {
-    setLightboxIdx(i => (i === 0 ? totalImages - 1 : i - 1));
-  }, [totalImages]);
+    setLightboxIdx(i => {
+      const newIdx = i === 0 ? totalImages - 1 : i - 1;
+      if (property) {
+        analytics.trackPropertyImageView(String(property.id), newIdx, totalImages);
+      }
+      return newIdx;
+    });
+  }, [totalImages, property]);
   const nextImg = useCallback(() => {
-    setLightboxIdx(i => (i === totalImages - 1 ? 0 : i + 1));
-  }, [totalImages]);
+    setLightboxIdx(i => {
+      const newIdx = i === totalImages - 1 ? 0 : i + 1;
+      if (property) {
+        analytics.trackPropertyImageView(String(property.id), newIdx, totalImages);
+      }
+      return newIdx;
+    });
+  }, [totalImages, property]);
 
   useEffect(() => {
     if (!lightboxOpen) return;
@@ -929,6 +956,7 @@ const PropertyDetails: React.FC = () => {
                           className="text-blue-600 font-semibold hover:text-blue-700"
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => analytics.trackPropertyContact(String(property.id), 'phone')}
                         >
                           {property.contact_phone}
                         </a>
@@ -950,6 +978,7 @@ const PropertyDetails: React.FC = () => {
                           className="text-blue-600 font-semibold hover:text-blue-700"
                           target="_blank"
                           rel="noopener noreferrer"
+                          onClick={() => analytics.trackPropertyContact(String(property.id), 'email')}
                         >
                           {property.contact_email}
                         </a>

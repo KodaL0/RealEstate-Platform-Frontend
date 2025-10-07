@@ -3,6 +3,7 @@ import React, { useState, MouseEvent, useCallback } from 'react';
 import { Heart } from 'lucide-react';
 import api from '../config/api'; // Use the main API client
 import { useUser } from '../context/UserContext'; // Import useUser
+import analytics from '../utils/analytics';
 
 interface FavouriteButtonProps {
   propertyId: string | number; // Accept both string and number
@@ -66,9 +67,11 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
       // Call appropriate callback based on the action
       if (previousLikedState === false && actualLikedState === true) {
         // Property was liked
+        analytics.trackPropertyFavorite(String(numericPropertyId), 'add');
         onLikeSuccess?.(numericPropertyId);
       } else if (previousLikedState === true && actualLikedState === false) {
         // Property was unliked
+        analytics.trackPropertyFavorite(String(numericPropertyId), 'remove');
         onUnlikeSuccess?.(numericPropertyId);
       }
 
