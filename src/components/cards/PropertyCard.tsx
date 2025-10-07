@@ -27,8 +27,11 @@ interface PropertyCardProps {
 const isSet = (v: unknown) =>
   v !== null && v !== undefined && (typeof v !== 'string' || v.trim() !== '');
 
-const asInt = (v: unknown) =>
-  Number.isFinite(Number(v)) ? Number(v) : undefined;
+const asInt = (v: unknown) => {
+  if (v === null || v === undefined || v === '') return undefined;
+  const num = Number(v);
+  return Number.isFinite(num) && num > 0 ? num : undefined;
+};
 
 type Stat = {
   key: string;
@@ -278,7 +281,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     // LAND: show lot size if available, otherwise area
     if (t === 'land') {
       const lot = S.lot();
-      if (lot) {
+      if (lot && lot.value !== '0') {
         return [{ ...lot, extraClasses: 'col-start-2' }]; // center in grid-cols-3
       }
       const a = S.area();
