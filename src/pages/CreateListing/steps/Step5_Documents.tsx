@@ -126,6 +126,30 @@ const Step5_Documents: React.FC<Props> = ({
     ));
   };
 
+  // Check for duplicate document titles (case-insensitive)
+  const getDuplicateTitles = () => {
+    const titleCounts = new Map<string, number>();
+    const duplicates = new Set<string>();
+    
+    documents.forEach(doc => {
+      const lowerTitle = doc.title.trim().toLowerCase();
+      if (lowerTitle) {
+        const count = (titleCounts.get(lowerTitle) || 0) + 1;
+        titleCounts.set(lowerTitle, count);
+        if (count > 1) {
+          duplicates.add(lowerTitle);
+        }
+      }
+    });
+    
+    return duplicates;
+  };
+
+  const hasDuplicateTitle = (title: string) => {
+    const duplicates = getDuplicateTitles();
+    return duplicates.has(title.trim().toLowerCase());
+  };
+
   const getFileIcon = (fileName: string) => {
     const ext = fileName.split('.').pop()?.toLowerCase();
     switch (ext) {
@@ -218,6 +242,16 @@ const Step5_Documents: React.FC<Props> = ({
             Uploaded Documents ({documents.length})
           </h3>
 
+          {/* Duplicate Title Warning */}
+          {getDuplicateTitles().size > 0 && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-700 flex items-center font-medium">
+                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                Duplicate document titles detected! Each document must have a unique title.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
             {documents.map((doc) => {
               const isExisting = !!doc.existingDocId;
@@ -284,15 +318,24 @@ const Step5_Documents: React.FC<Props> = ({
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title
+                      Title {hasDuplicateTitle(doc.title) && <span className="text-red-600 text-xs">(Duplicate title!)</span>}
                     </label>
                     <input
                       type="text"
                       value={doc.title}
                       onChange={(e) => updateDocument(doc.id, 'title', e.target.value)}
                       placeholder="e.g., First Floor Plan"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        hasDuplicateTitle(doc.title) 
+                          ? 'border-red-500 bg-red-50' 
+                          : 'border-gray-300'
+                      }`}
                     />
+                    {hasDuplicateTitle(doc.title) && (
+                      <p className="text-xs text-red-600 mt-1">
+                        This title is already used. Please use a unique title.
+                      </p>
+                    )}
                   </div>
 
                   {/* Description */}
