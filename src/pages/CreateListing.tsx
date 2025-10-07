@@ -332,9 +332,13 @@ const CreateListing: React.FC = () => {
 
   // Append documents to FormData with metadata
   function appendDocumentsToFormData(fd: FormData) {
-    if (documents.length > 0) {
-      documents.forEach((doc) => {
-        fd.append('documents[]', doc.file);
+    // Only append NEW documents (those with a file property)
+    // Existing documents are already saved on the backend
+    const newDocuments = documents.filter(doc => doc.file);
+    
+    if (newDocuments.length > 0) {
+      newDocuments.forEach((doc) => {
+        fd.append('documents[]', doc.file!);
         fd.append('document_types[]', doc.type);
         fd.append('document_titles[]', doc.title);
         fd.append('document_descriptions[]', doc.description || '');

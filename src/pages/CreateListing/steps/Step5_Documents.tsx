@@ -131,6 +131,7 @@ const Step5_Documents: React.FC<Props> = ({
     const titleCounts = new Map<string, number>();
     const duplicates = new Set<string>();
     
+    // Count all document titles (both new and existing)
     documents.forEach(doc => {
       const lowerTitle = doc.title.trim().toLowerCase();
       if (lowerTitle) {
@@ -145,9 +146,15 @@ const Step5_Documents: React.FC<Props> = ({
     return duplicates;
   };
 
-  const hasDuplicateTitle = (title: string) => {
-    const duplicates = getDuplicateTitles();
-    return duplicates.has(title.trim().toLowerCase());
+  const hasDuplicateTitle = (title: string, docId: string) => {
+    if (!title.trim()) return false;
+    
+    const lowerTitle = title.trim().toLowerCase();
+    const matchingDocs = documents.filter(
+      doc => doc.title.trim().toLowerCase() === lowerTitle && doc.id !== docId
+    );
+    
+    return matchingDocs.length > 0;
   };
 
   const getFileIcon = (fileName: string) => {
@@ -242,7 +249,7 @@ const Step5_Documents: React.FC<Props> = ({
             Uploaded Documents ({documents.length})
           </h3>
 
-          {/* Duplicate Title Warning */}
+          {/* Duplicate Title Warning - only for new documents */}
           {getDuplicateTitles().size > 0 && (
             <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
               <p className="text-sm text-red-700 flex items-center font-medium">
@@ -300,12 +307,15 @@ const Step5_Documents: React.FC<Props> = ({
                   {/* Document Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Type
+                      Document Type {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <select
                       value={doc.type}
                       onChange={(e) => updateDocument(doc.id, 'type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={isExisting}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isExisting ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     >
                       {DOCUMENT_TYPES.map((type) => (
                         <option key={type.value} value={type.value}>
@@ -313,25 +323,34 @@ const Step5_Documents: React.FC<Props> = ({
                         </option>
                       ))}
                     </select>
+                    {isExisting && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        To change document details, delete and re-upload.
+                      </p>
+                    )}
                   </div>
 
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title {hasDuplicateTitle(doc.title) && <span className="text-red-600 text-xs">(Duplicate title!)</span>}
+                      Title {!isExisting && hasDuplicateTitle(doc.title, doc.id) && <span className="text-red-600 text-xs">(Duplicate title!)</span>}
+                      {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <input
                       type="text"
                       value={doc.title}
                       onChange={(e) => updateDocument(doc.id, 'title', e.target.value)}
                       placeholder="e.g., First Floor Plan"
+                      disabled={isExisting}
                       className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
-                        hasDuplicateTitle(doc.title) 
-                          ? 'border-red-500 bg-red-50' 
-                          : 'border-gray-300'
+                        isExisting 
+                          ? 'bg-gray-100 cursor-not-allowed' 
+                          : hasDuplicateTitle(doc.title, doc.id) 
+                            ? 'border-red-500 bg-red-50' 
+                            : 'border-gray-300'
                       }`}
                     />
-                    {hasDuplicateTitle(doc.title) && (
+                    {!isExisting && hasDuplicateTitle(doc.title, doc.id) && (
                       <p className="text-xs text-red-600 mt-1">
                         This title is already used. Please use a unique title.
                       </p>
@@ -341,14 +360,17 @@ const Step5_Documents: React.FC<Props> = ({
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description (optional)
+                      Description (optional) {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <textarea
                       value={doc.description}
                       onChange={(e) => updateDocument(doc.id, 'description', e.target.value)}
                       placeholder="Brief description of the document"
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={isExisting}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isExisting ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     />
                   </div>
                 </div>
