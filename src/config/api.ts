@@ -160,6 +160,9 @@ const api = {
     searchUsers:     (q: string) => apiGet(`users/search`, { params: { q } }),
     verifyEmail:     (d: any) => apiPost('users/verify-email', d),
     resendVerification: ()     => apiPost('users/resend-verification'),
+    requestPasswordReset: (email: string) => apiPost('users/password-reset/request', { email }),
+    confirmPasswordReset: (token: string, newPassword: string) => apiPost('users/password-reset/confirm', { token, new_password: newPassword }),
+    validateResetToken: (token: string) => apiGet('users/password-reset/validate', { params: { token } }),
   },
 
   properties: {
