@@ -402,8 +402,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /* ------------------------------ Lifecycle ------------------------------- */
   useEffect(() => {
-    apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
-    openSocket();
+    // Only connect WebSocket and fetch threads if user is logged in
+    if (user?.id) {
+      apiClient.get<Thread[]>("chat/").then((res) => setThreads(res.data));
+      openSocket();
+    }
 
     // Cleanup on unmount
     return () => {
@@ -414,7 +417,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ws.current.close();
       }
     };
-  }, []); // Remove openSocket dependency to prevent infinite re-renders
+  }, [user?.id, openSocket]); // Connect when user logs in, disconnect when user logs out
 
   /* --------------------------- Helper functions --------------------------- */
   const getOrCreateThread = useCallback(
