@@ -1,5 +1,5 @@
 import React from 'react';
-import { Edit, Trash2, Eye, EyeOff, Calendar, Clock } from 'lucide-react';
+import { Edit, Trash2, Eye, EyeOff, Calendar, Clock, BarChart3 } from 'lucide-react';
 import PropertyCard from './PropertyCard';
 import InstagramPostButton from '../InstagramPostButton';
 
@@ -10,6 +10,7 @@ interface MyPropertyCardProps {
   onPublish: (id: string | number) => void;
   onUnpublish: (id: string | number) => void;
   onNavigate: (id: string | number) => void;
+  onViewAnalytics?: (id: string | number) => void;
   onInstagramPostSuccess?: () => void;
 }
 
@@ -20,6 +21,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onPublish,
   onUnpublish,
   onNavigate,
+  onViewAnalytics,
   onInstagramPostSuccess
 }) => {
   const {
@@ -141,6 +143,20 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             </button>
           )}
         </div>
+        
+        {/* Analytics Button - Show if published and handler provided */}
+        {is_published && onViewAnalytics && (
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onViewAnalytics(id);
+            }}
+            className="group w-full flex items-center justify-center px-5 py-3.5 mb-4 bg-gradient-to-r from-slate-600 to-slate-700 hover:from-slate-700 hover:to-slate-800 text-white rounded-xl font-semibold text-sm transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-slate-500/20"
+          >
+            <BarChart3 className="h-4 w-4 mr-2.5 group-hover:scale-110 transition-transform duration-200" />
+            <span>Analytics</span>
+          </button>
+        )}
         
         {/* Status Indicator */}
         <div className="flex items-center justify-center mb-4">

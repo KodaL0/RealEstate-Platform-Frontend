@@ -6,6 +6,7 @@ import api from '../config/api';
 import { useUser } from '../context/UserContext';
 import MyPropertyCard from '../components/cards/MyPropertyCard';
 import EditSectionModal from '../components/modals/EditSectionModal';
+import PropertyAnalytics from '../components/analytics/PropertyAnalytics';
 
 /* ───────────── type ───────────── */
 interface MyListingsProperty {
@@ -42,6 +43,9 @@ function MyListings() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [selectedPropertyId, setSelectedPropertyId] = useState<string | number | null>(null);
   const [selectedPropertyTitle, setSelectedPropertyTitle] = useState<string>('');
+  
+  /* analytics modal */
+  const [analyticsPropertyId, setAnalyticsPropertyId] = useState<number | null>(null);
 
   const navigate = useNavigate();
   const username = user?.username ?? '';
@@ -148,6 +152,10 @@ function MyListings() {
     setSelectedPropertyId(null);
   };
 
+  const handleViewAnalytics = (id: string | number) => {
+    setAnalyticsPropertyId(Number(id));
+  };
+
   /* early states */
   if (userLoading || loading)
     return (
@@ -237,6 +245,7 @@ function MyListings() {
                     onPublish={handlePublish}
                     onUnpublish={handleUnpublish}
                     onNavigate={id => navigate(`/property/${id}`)}
+                    onViewAnalytics={handleViewAnalytics}
                   />
                 ))}
               </motion.div>
@@ -283,6 +292,24 @@ function MyListings() {
           </>
         )}
       </div>
+
+      {/* Analytics Modal */}
+      {analyticsPropertyId && (
+        <div 
+          className="fixed top-20 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setAnalyticsPropertyId(null)}
+        >
+          <div 
+            className="w-full max-w-4xl max-h-[calc(100vh-6rem)] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PropertyAnalytics
+              propertyId={analyticsPropertyId}
+              onClose={() => setAnalyticsPropertyId(null)}
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }
