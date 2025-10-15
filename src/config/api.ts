@@ -244,6 +244,12 @@ const api = {
     
     deleteDocument: (u: string, pid: number, documentId: number) =>
       apiDelete(`properties/${u}/property/${pid}/document/${documentId}/delete`),
+    
+    updateDocument: (u: string, pid: number, docId: number, data: {
+      document_type?: string;
+      title?: string;
+      description?: string;
+    }) => apiClient.patch(formatEndpoint(`properties/${u}/property/${pid}/document/${docId}/update`), data),
 
     // Step-specific PATCH updates
     updatePropertyType: (u: string, pid: number, propertyType: string) => {

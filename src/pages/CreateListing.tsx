@@ -320,31 +320,18 @@ const CreateListing: React.FC = () => {
   // 1. Upload new images (they'll be appended to end)
   // 2. Call reorder API to arrange all images in the correct order (see handleSubmit)
   function appendImagesToFormData(fd: FormData) {
-    console.log('📤 appendImagesToFormData called:', {
-      isEditing,
-      existingImageIds: existingImageIds.length,
-      previewImages: previewImages.length,
-      formDataImages: formData.images.length,
-      primaryIndex,
-      existingImageIdsArray: existingImageIds
-    });
-    
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
     
     if (hasDeletedAllExisting && formData.images.length > 0) {
       // User deleted all existing images and uploaded new ones - use replace mode
-      console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
       fd.append('replace_images', 'true');
       formData.images.forEach(f => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
     } else if (formData.images.length > 0) {
       // Just upload new images - they'll be appended to end
       // We'll reorder all images after upload using the reorder API
-      console.log('📎 Adding new images to FormData (will reorder after upload)');
       formData.images.forEach(f => fd.append('images[]', f));
       // Don't send primary_image_index - we'll set it via reorder API after upload
-    } else {
-      console.log('ℹ️ No new images to upload');
     }
   }
 
@@ -609,7 +596,6 @@ const CreateListing: React.FC = () => {
       if (res.status >= 200 && res.status < 300) {
         // Phase 2: If we uploaded new images in edit mode, reorder all images to match UI order
         if (isEditing && formData.images.length > 0) {
-          console.log('🔄 Phase 2: Reordering images after upload');
           try {
             // Fetch updated property to get new image IDs
             const updatedProperty = await api.properties.getUserProperty(username, Number(id));
@@ -642,12 +628,6 @@ const CreateListing: React.FC = () => {
               }
             }
             
-            console.log('📋 Reordering images:', {
-              correctOrder,
-              primaryIndex,
-              totalImages: correctOrder.length
-            });
-            
             // Reorder all images to match the user's intended order
             await api.properties.reorderImages(
               username,
@@ -655,10 +635,8 @@ const CreateListing: React.FC = () => {
               correctOrder,
               primaryIndex
             );
-            
-            console.log('✅ Images reordered successfully');
           } catch (reorderError: any) {
-            console.error('❌ Failed to reorder images after upload:', reorderError);
+            console.error('Failed to reorder images after upload:', reorderError);
             // Don't fail the whole submission - images are uploaded, just in wrong order
             toast.error('Images uploaded but order may be incorrect. Please reorder manually.');
           }
