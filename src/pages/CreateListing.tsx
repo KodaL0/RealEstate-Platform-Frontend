@@ -341,8 +341,22 @@ const CreateListing: React.FC = () => {
           }
         }
         
-        fd.append('primary_image_index', String(newImageCountBeforePrimary));
-        console.log(`🖼️ Setting primary to new image at relative index ${newImageCountBeforePrimary} (absolute: ${primaryIndex})`);
+        // Backend only sets primary if index is 0 (first new image)
+        // So we need to reorder the images array to put the primary first
+        if (newImageCountBeforePrimary > 0) {
+          // Reorder formData.images to put primary image first
+          const reorderedImages = [...formData.images];
+          const primaryImage = reorderedImages[newImageCountBeforePrimary];
+          reorderedImages.splice(newImageCountBeforePrimary, 1);
+          reorderedImages.unshift(primaryImage);
+          
+          // Clear and re-append in correct order
+          fd.delete('images[]');
+          reorderedImages.forEach(f => fd.append('images[]', f));
+        }
+        
+        fd.append('primary_image_index', '0'); // Always 0 since we reordered
+        console.log(`🖼️ Reordered images to put primary first, sending index 0`);
       }
       // If primary is an existing image, don't send primary_image_index
       // The backend will keep the existing primary or it was already updated via the reorder API
