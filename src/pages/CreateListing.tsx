@@ -362,21 +362,19 @@ const CreateListing: React.FC = () => {
       const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
       const hasNewImages = formData.images.length > 0;
       
+      // 🧩 FIX: Always send the current primary image index to the backend,
+      // so new images can also become primary during edit mode.
       if (hasDeletedAllExisting && hasNewImages) {
         console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
         fd.append('replace_images', 'true');
         formData.images.forEach(f => fd.append('images[]', f));
-        fd.append('primary_image_index', String(primaryIndex));
-      }
-      // images - maintain order and set primary index
-      else if (formData.images.length) {
-        // Append images in their current order
+      } else if (formData.images.length) {
         formData.images.forEach(f => fd.append('images[]', f));
-        // Set which index is primary (backend will use display_order)
-        fd.append('primary_image_index', String(primaryIndex));
       }
-      // For editing: primary image is already set via reorderImages API calls
-      // No need to send image order here as reordering happens in real-time
+
+      // ✅ Always send which image is primary — even when editing
+      fd.append('primary_image_index', String(primaryIndex));
+
 
       // documents - append to FormData
       if (documents.length > 0) {
