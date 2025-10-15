@@ -578,78 +578,11 @@ const CreateListing: React.FC = () => {
     try {
       const fd = new FormData();
 
-<<<<<<< HEAD
-      // BATCH REPLACE: If editing and all existing images were deleted + new ones added
-      const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
-      const hasNewImages = formData.images.length > 0;
-      
-      // 🧩 FIX: Always send the current primary image index to the backend,
-      // so new images can also become primary during edit mode.
-      if (hasDeletedAllExisting && hasNewImages) {
-        console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
-        fd.append('replace_images', 'true');
-        formData.images.forEach(f => fd.append('images[]', f));
-      } else if (formData.images.length) {
-        formData.images.forEach(f => fd.append('images[]', f));
-      }
-
-      // ✅ Always send which image is primary — even when editing
-      fd.append('primary_image_index', String(primaryIndex));
-
-
-      // documents - append to FormData
-      if (documents.length > 0) {
-        documents.forEach((doc) => {
-          fd.append('documents[]', doc.file);
-          fd.append('document_types[]', doc.type);
-          fd.append('document_titles[]', doc.title);
-          fd.append('document_descriptions[]', doc.description || '');
-        });
-      }
-
-      // other fields (generic loop)
-      Object.entries(formData).forEach(([k, v]) => {
-        if (k === 'images') return;
-        if (k === 'amenities') {
-          (v as string[]).forEach(a => fd.append('amenities[]', a));
-          return;
-        }
-        if (k === 'devUnits') {
-          fd.append('devUnits', JSON.stringify(v));
-          return;
-        }
-        if (v !== undefined && v !== null && v !== '') fd.append(k, String(v));
-      });
-
-      // normalize phone
-      fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
-      
-      // coords: prefer explicit lat/lng from form; else from map picker
-      if (formData.latitude && formData.longitude) {
-        fd.set('latitude', formData.latitude);
-        fd.set('longitude', formData.longitude);
-      } else if (locationCoords) {
-        fd.append('latitude', String(locationCoords.lat));
-        fd.append('longitude', String(locationCoords.lng));
-      }
-
-      // 🔁 Normalize floor fields to snake_case for backend
-      if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
-        fd.set('floor_level', String(formData.floorLevel));
-      }
-      if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
-        fd.set('total_floors', String(formData.totalFloors));
-      }
-      // avoid duplicate camelCase keys if appended by generic loop
-      fd.delete('floorLevel');
-      fd.delete('totalFloors');
-=======
       // Build FormData using helper functions
       appendImagesToFormData(fd);
       appendDocumentsToFormData(fd);
       appendFormFieldsToFormData(fd);
       normalizeSpecialFields(fd);
->>>>>>> 89aebafd5556aecf3e327c67cb623fb774cde068
 
       const res = isEditing
         ? await api.formPut(`properties/${username}/property/${id}/edit`, fd)
