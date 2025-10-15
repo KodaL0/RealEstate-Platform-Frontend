@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, memo, useCallback } from 'react';
 import {
   Home,
   Bed,
@@ -13,20 +13,42 @@ import {
   ChevronLeft,
   ChevronRight
 } from 'lucide-react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
 import LocationAutocomplete from '../../LocationAutocomplete';
+import api from '../../../config/api';
+import toast from 'react-hot-toast';
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: number;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
 type Props = {
   formData: ListingForm;
   setFormData: React.Dispatch<React.SetStateAction<ListingForm>>;
   onChange: (e: React.ChangeEvent<any>) => void;
-
   setLocationCoords?: (coords: { lat: number; lng: number } | null) => void;
   availableFromDate?: Date;
   setAvailableFromDate?: React.Dispatch<React.SetStateAction<Date | undefined>>;
   showCalendar?: boolean;
   setShowCalendar?: React.Dispatch<React.SetStateAction<boolean>>;
+  
+  // For edit mode
+  isEditing?: boolean;
+  propertyId?: string;
+  onPropertyDataLoaded?: (data: any) => void;
+  countryCode?: string;
+  setCountryCode?: (code: string) => void;
+  username?: string;
+  hasLoadedPropertyData?: boolean;
 };
 
 type PT =
@@ -90,12 +112,112 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   setFormData,
   onChange,
   setLocationCoords,
+  isEditing = false,
+  propertyId,
+  onPropertyDataLoaded,
+  countryCode,
+  setCountryCode,
+  username,
+  hasLoadedPropertyData = false,
 }) => {
-  const { next, back } = useListingWizard();
+  const { next, back } = useWizardNavigation();
   const ptype = (formData.propertyType || '') as PT;
+  const [hasLoadedData, setHasLoadedData] = React.useState(false);
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
 
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
+
+  // Disable initial load flag after a short delay to allow data to populate
+  useEffect(() => {
+    if (isEditing && hasLoadedPropertyData && isInitialLoad) {
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+        console.log('✅ Step2: Initial load complete, PATCH updates enabled');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing, hasLoadedPropertyData, isInitialLoad]);
+
+  // Load property details when editing (only if not already loaded by parent)
+  useEffect(() => {
+    if (!isEditing || !propertyId || !username || hasLoadedData || hasLoadedPropertyData) return;
+    
+    console.log('🔄 Step2: Loading property data...');
+    setHasLoadedData(true);
+    
+    api.properties
+      .getUserProperty(username, Number(propertyId))
+      .then(res => {
+        const d = res.data;
+        
+        // Normalize property status
+        let propertyStatus = d.property_status || '';
+        if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+        if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+
+        // Parse contact phone to extract country code
+        let phone = d.contact_phone || '';
+        let cc = countryCode || '+357';
+        const m = phone.match(/^\+[\d]{1,4}/);
+        if (m) {
+          cc = m[0];
+          phone = phone.replace(cc, '').trim();
+        }
+        if (setCountryCode) {
+          setCountryCode(cc);
+        }
+
+        console.log('📋 Step2: Loaded amenities:', d.amenities);
+        
+        // Update form data with property details
+        setFormData(prev => ({
+          ...prev,
+          title: d.title || '',
+          description: d.description || '',
+          price: d.price?.toString() || '',
+          location: d.location || '',
+          country: d.country || 'Cyprus',
+          region: d.region || '',
+          city: d.city || '',
+          postal_code: d.postal_code || '',
+          street: d.street || '',
+          latitude: d.latitude?.toString() || '',
+          longitude: d.longitude?.toString() || '',
+          propertyType: d.property_type || '',
+          bedrooms: d.bedrooms?.toString() || '',
+          bathrooms: d.bathrooms?.toString() || '',
+          area: d.area?.toString() || '',
+          amenities: Array.isArray(d.amenities) ? d.amenities : [],
+          yearBuilt: d.year_built?.toString() || '',
+          parkingSpaces: d.parking_spaces?.toString() || '',
+          lotSize: d.lot_size?.toString() || '',
+          propertyStatus,
+          energyRating: d.energy_rating || '',
+          constructionMaterial: d.construction_material || '',
+          floorLevel: d.floor_level?.toString() || '',
+          totalFloors: d.total_floors?.toString() || '',
+          availableFrom: d.available_from || '',
+          contactPhone: phone,
+          contactEmail: d.contact_email || '',
+          virtualTourUrl: d.virtual_tour_url || '',
+          videoUrl: d.video_url || '',
+          images: [],
+          userType: d.user_type || prev.userType || 'owner_agent',
+        }));
+
+        // Call callback to let parent handle images and other data
+        if (onPropertyDataLoaded) {
+          onPropertyDataLoaded(d);
+        }
+        
+        console.log('✅ Step2: Property data loaded successfully');
+      })
+      .catch(err => {
+        console.error('❌ Error loading property details:', err);
+        setHasLoadedData(false); // Reset on error so user can retry
+      });
+  }, [isEditing, propertyId, username, hasLoadedData]); // Removed changing dependencies
 
   const validBasics =
     !!formData.title?.trim() &&
@@ -119,6 +241,36 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
+
+  // Debounced PATCH update for property details
+  const debouncedUpdate = useCallback(
+    debounce(async (fieldName: string, value: any) => {
+      if (isEditing && propertyId && username && !isInitialLoad) {
+        try {
+          const details: Record<string, any> = { [fieldName]: value };
+          await api.properties.updatePropertyDetails(username, Number(propertyId), details);
+          console.log(`✅ ${fieldName} updated via PATCH`);
+        } catch (error: any) {
+          console.error(`❌ Failed to update ${fieldName}:`, error);
+          toast.error(error?.response?.data?.detail || `Failed to update ${fieldName}`);
+        }
+      }
+    }, 1500), // 1.5 second debounce
+    [isEditing, propertyId, username, isInitialLoad]
+  );
+
+  // Enhanced onChange handler that includes PATCH updates
+  const handleChangeWithPatch = (e: React.ChangeEvent<any>) => {
+    const { name, value } = e.target;
+    
+    // Update local state immediately
+    onChange(e);
+    
+    // If editing and not initial load, also update via PATCH (debounced)
+    if (isEditing && propertyId && username && !isInitialLoad) {
+      debouncedUpdate(name, value);
+    }
+  };
 
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
@@ -145,7 +297,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <input
             name="title"
             value={formData.title}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             placeholder="e.g. Modern 2BR Apartment in City Center"
             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
@@ -162,7 +314,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               type="number"
               name="price"
               value={formData.price}
-              onChange={onChange}
+              onChange={handleChangeWithPatch}
               className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
               min={0}
               step="0.01"
@@ -179,7 +331,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <select
             name="country"
             value={formData.country}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
@@ -233,7 +385,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <select
             name="propertyStatus"
             value={formData.propertyStatus}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
@@ -415,15 +567,25 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
           showField('amenities') && (
           <div className="lg:col-span-2">
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Amenities</label>
+            <label className="block text-sm font-semibold text-gray-700 mb-3">
+              Amenities
+              {formData.amenities && formData.amenities.length > 0 && (
+                <span className="ml-2 text-xs font-medium text-green-600 bg-green-50 px-2 py-1 rounded">
+                  {formData.amenities.length} selected
+                </span>
+              )}
+            </label>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {AMENITIES.map((a: { id: string; label: string }) => {
-                const selected = formData.amenities.includes(a.id);
+              {AMENITIES.map((a: { id: string; label: string; category: string }) => {
+                const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
+                
                 return (
                   <label
                     key={a.id}
-                    className={`flex items-center justify-between p-2 rounded-lg border cursor-pointer transition ${
-                      selected ? 'bg-green-50 border-green-400' : 'bg-white border-gray-300 hover:border-blue-400'
+                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
+                      selected 
+                        ? 'bg-green-50 border-green-500 shadow-sm' 
+                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-sm'
                     }`}
                   >
                     <input
@@ -431,16 +593,22 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                       className="sr-only"
                       checked={selected}
                       onChange={() => {
+                        const newAmenities = selected
+                          ? formData.amenities.filter((x: string) => x !== a.id)
+                          : [...(formData.amenities || []), a.id];
+                        
                         setFormData((f: ListingForm) => ({
                           ...f,
-                          amenities: selected
-                            ? f.amenities.filter((x: string) => x !== a.id)
-                            : [...f.amenities, a.id],
+                          amenities: newAmenities,
                         }));
                       }}
                     />
-                    <span className="text-sm">{a.label}</span>
-                    {selected && <span className="text-xs px-2 py-0.5 bg-green-500 text-white rounded">✓</span>}
+                    <span className={`text-sm font-medium ${selected ? 'text-green-700' : 'text-gray-700'}`}>
+                      {a.label}
+                    </span>
+                    {selected && (
+                      <span className="text-xs px-2 py-1 bg-green-600 text-white rounded font-bold">✓</span>
+                    )}
                   </label>
                 );
               })}
@@ -456,7 +624,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           <textarea
             name="description"
             value={formData.description}
-            onChange={onChange}
+            onChange={handleChangeWithPatch}
             rows={4}
             placeholder="Describe the property..."
             className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
@@ -490,4 +658,4 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   );
 };
 
-export default Step2_PropertyDetails;
+export default memo(Step2_PropertyDetails);

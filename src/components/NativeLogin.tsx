@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { login, register } from '../middleware/auth';
 import { useUser } from '../context/UserContext';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 interface NativeLoginProps {
@@ -235,9 +235,19 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         </div>
 
         <div>
-          <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-            Password
-          </label>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700">
+              Password
+            </label>
+            {isLogin && (
+              <Link 
+                to="/forgot-password" 
+                className="text-xs text-blue-600 hover:text-blue-500 font-medium"
+              >
+                Forgot password?
+              </Link>
+            )}
+          </div>
           <input
             type="password"
             id="password"

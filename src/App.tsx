@@ -26,6 +26,8 @@ import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
 
 import { EmailVerification } from "./components/EmailVerification";
+import { ForgotPassword } from "./pages/ForgotPassword";
+import { ResetPassword } from "./pages/ResetPassword";
 import Developers from "./pages/Developers";
 import DeveloperProjects from "./pages/DeveloperProjects";
 import DeveloperDetail from "./pages/DeveloperDetail";
@@ -62,8 +64,11 @@ function AppContent() {
           <Route path="/rent" element={<Rent />} />
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/login" element={<AuthPage />} />
+          <Route path="/auth" element={<AuthPage />} />
           {/* OAuth callback route no longer needed; handled entirely server-side */}
           <Route path="/verify-email" element={<EmailVerification />} />
+          <Route path="/forgot-password" element={<ForgotPassword />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/about" element={<AboutUs />} />
           <Route path="/terms" element={<TermsandConditions />} />
           <Route path="/cookies" element={<CookiePolicy />} />

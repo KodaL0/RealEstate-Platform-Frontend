@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import api from '../config/api';
 import { useUser } from '../context/UserContext';
 
-import { ListingWizardProvider, useListingWizard } from '../context/ListingWizardContext';
+import { ListingWizardProvider, useListingWizard, useWizardState, WizardMode } from '../context/ListingWizardContext';
 import ProgressBar from '../components/ProgressBar';
 
 // ⬇️ New step order imports
@@ -55,17 +55,38 @@ type WizardProps = {
   showCalendar: boolean;
   setShowCalendar: React.Dispatch<React.SetStateAction<boolean>>;
   setLocationCoords: (v: { lat: number; lng: number } | null) => void;
+  handlePropertyDataLoaded: (data: any) => void;
+  existingDocuments: any[];
+  setExistingDocuments: React.Dispatch<React.SetStateAction<any[]>>;
+  hasLoadedPropertyData: boolean;
 };
 
 const WizardContent: React.FC<WizardProps> = (props) => {
-  const { currentStep } = useListingWizard();
+  const { reset } = useListingWizard();
+  const { currentStep } = useWizardState();
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
+
+  // Create a wrapper for handleSubmit that includes reset
+  const handleSubmitWithReset = async (e: React.FormEvent) => {
+    try {
+      await props.handleSubmit(e);
+      // If we reach here, submission was successful
+      // Reset wizard state for create mode
+      reset();
+    } catch (error) {
+      // Error handling is done in the parent handleSubmit
+      console.error('Submit error:', error);
+    }
+  };
 
   // ⬇️ Steps: 1=Type, 2=Details, 3=Images, 4=Documents, 5=Contact
   const steps = [
     <Step1_PropertyType
       formData={props.formData}
       setFormData={props.setFormData}
+      isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
     <Step2_PropertyDetails
       formData={props.formData}
@@ -76,6 +97,13 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       showCalendar={props.showCalendar}
       setShowCalendar={props.setShowCalendar}
       setLocationCoords={props.setLocationCoords}
+      isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      onPropertyDataLoaded={props.handlePropertyDataLoaded}
+      countryCode={props.countryCode}
+      setCountryCode={props.setCountryCode}
+      username={props.username}
+      hasLoadedPropertyData={props.hasLoadedPropertyData}
     />,
     <Step3_Images
       formData={props.formData}
@@ -95,6 +123,8 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setDocuments={props.setDocuments}
       isSubmitting={props.isSubmitting}
       isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
     <Step4_Contact
       formData={props.formData}
@@ -103,11 +133,13 @@ const WizardContent: React.FC<WizardProps> = (props) => {
       setCountryCode={props.setCountryCode}
       isSubmitting={props.isSubmitting}
       isEditing={props.isEditing}
+      propertyId={props.propertyId}
+      username={props.username}
     />,
   ];
 
   return (
-    <form onSubmit={props.handleSubmit} noValidate className="h-full flex flex-col">
+    <form onSubmit={handleSubmitWithReset} noValidate className="h-full flex flex-col">
       <div className="flex-shrink-0">
         <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
       </div>
@@ -126,12 +158,25 @@ const CreateListing: React.FC = () => {
   const { id } = useParams<{ id?: string }>();
   const isEditing = Boolean(id);
   const { user } = useUser();
-  const username = user?.username || '';
+  const currentUsername = user?.username || '';
+  const [propertyOwnerUsername, setPropertyOwnerUsername] = useState<string>('');
   
-  // Get initial step from URL query parameter
-  const searchParams = new URLSearchParams(window.location.search);
-  const stepParam = searchParams.get('step');
-  const initialStep = stepParam ? parseInt(stepParam, 10) : 0;
+  // Use property owner's username for API calls, fallback to current user's username
+  const username = isEditing && propertyOwnerUsername ? propertyOwnerUsername : currentUsername;
+  
+  // Get initial step from URL query parameter (SSR-safe)
+  const getInitialStep = () => {
+    if (typeof window === 'undefined') return 0;
+    try {
+      const searchParams = new URLSearchParams(window.location.search);
+      const stepParam = searchParams.get('step');
+      return stepParam ? parseInt(stepParam, 10) : 0;
+    } catch (e) {
+      console.warn('Failed to parse URL step parameter:', e);
+      return 0;
+    }
+  };
+  const initialStep = getInitialStep();
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -163,6 +208,7 @@ const CreateListing: React.FC = () => {
 
   // Document state
   const [documents, setDocuments] = useState<any[]>([]);
+  const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
   const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
     if (isEditing) return null;
     const saved = localStorage.getItem('createListing_locationCoords');
@@ -176,6 +222,9 @@ const CreateListing: React.FC = () => {
     }
     return null;
   });
+  
+  // Data loading state
+  const [hasLoadedPropertyData, setHasLoadedPropertyData] = useState(false);
   
   const [countryCode, setCountryCode] = useState(() => {
     if (isEditing) return COUNTRY_CODES[0].code;
@@ -263,101 +312,273 @@ const CreateListing: React.FC = () => {
     });
   };
 
-  // load existing
-  useEffect(() => {
-    if (!isEditing || !id) return;
-    setLoading(true);
-    api.properties
-      .getUserProperty(username, Number(id))
-      .then(res => {
-        const d = res.data;
-        const imgs = d.images || [];
-        setPreviewImages(imgs.map((i: any) => i.image));
-        setExistingImageIds(imgs.map((i: any) => {
-          // Ensure we only store numeric IDs, not URLs
-          if (i.id && typeof i.id === 'number') {
-            return String(i.id);
-          }
-          // If no valid ID, we'll need to handle this case
-          console.warn('Image missing valid ID:', i);
-          return null;
-        }).filter((id: string | null) => id !== null));
-        const primary = imgs.find((i: any) => i.is_primary);
-        setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+  // ========== HELPER FUNCTIONS FOR FORM SUBMISSION ==========
+  
+  // Append images to FormData with proper ordering and primary index
+  function appendImagesToFormData(fd: FormData) {
+    const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
+    const hasNewImages = formData.images.length > 0;
+    
+    if (hasDeletedAllExisting && hasNewImages) {
+      console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
+      fd.append('replace_images', 'true');
+      formData.images.forEach(f => fd.append('images[]', f));
+      fd.append('primary_image_index', String(primaryIndex));
+    } else if (formData.images.length) {
+      formData.images.forEach(f => fd.append('images[]', f));
+      fd.append('primary_image_index', String(primaryIndex));
+    }
+  }
 
-        let propertyStatus = d.property_status || '';
-        if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
-        if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
-
-        let phone = d.contact_phone || '';
-        let cc = countryCode;
-        const m = phone.match(/^\+[\d]{1,4}/);
-        if (m) {
-          cc = m[0];
-          phone = phone.replace(cc, '').trim();
-        }
-        setCountryCode(cc);
-
-        setFormData(prev => ({
-          ...prev,
-          title: d.title || '',
-          description: d.description || '',
-          price: d.price?.toString() || '',
-          location: d.location || '',
-          country: d.country || 'Cyprus',
-          region: d.region || '',
-          city: d.city || '',
-          postal_code: d.postal_code || '',
-          street: d.street || '',
-          latitude: d.latitude?.toString() || '',
-          longitude: d.longitude?.toString() || '',
-          propertyType: d.property_type || '',
-          bedrooms: d.bedrooms?.toString() || '',
-          bathrooms: d.bathrooms?.toString() || '',
-          area: d.area?.toString() || '',
-          amenities: d.amenities || [],
-          yearBuilt: d.year_built?.toString() || '',
-          parkingSpaces: d.parking_spaces?.toString() || '',
-          lotSize: d.lot_size?.toString() || '',
-          propertyStatus,
-          energyRating: d.energy_rating || '',
-          constructionMaterial: d.construction_material || '',
-          floorLevel: d.floor_level?.toString() || '',
-          totalFloors: d.total_floors?.toString() || '',
-          availableFrom: d.available_from || '',
-          contactPhone: phone,
-          contactEmail: d.contact_email || '',
-          virtualTourUrl: d.virtual_tour_url || '',
-          videoUrl: d.video_url || '',
-          images: [],
-          // keep existing userType if returned, otherwise keep whatever we already have
-          userType: d.user_type || prev.userType || 'owner_agent',
-        }));
-
-        // Set available from date if it exists
-        if (d.available_from) {
-          const date = new Date(d.available_from);
-          if (!isNaN(date.getTime())) {
-            setAvailableFromDate(date);
-          }
-        }
-
-        setLoading(false);
-      })
-      .catch(err => {
-        console.error(err);
-        setError('Failed to load property data.');
-        setLoading(false);
+  // Append documents to FormData with metadata
+  function appendDocumentsToFormData(fd: FormData) {
+    // Only append NEW documents (those with a file property)
+    // Existing documents are already saved on the backend
+    const newDocuments = documents.filter(doc => doc.file);
+    
+    if (newDocuments.length > 0) {
+      newDocuments.forEach((doc) => {
+        fd.append('documents[]', doc.file!);
+        fd.append('document_types[]', doc.type);
+        fd.append('document_titles[]', doc.title);
+        fd.append('document_descriptions[]', doc.description || '');
       });
-  }, [isEditing, id, username, countryCode]);
+    }
+  }
+
+  // Append form fields to FormData with special handling for arrays and objects
+  function appendFormFieldsToFormData(fd: FormData) {
+    Object.entries(formData).forEach(([k, v]) => {
+      if (k === 'images') return; // Handled separately
+      if (k === 'amenities') {
+        (v as string[]).forEach(a => fd.append('amenities[]', a));
+        return;
+      }
+      if (k === 'devUnits') {
+        fd.append('devUnits', JSON.stringify(v));
+        return;
+      }
+      if (v !== undefined && v !== null && v !== '') {
+        fd.append(k, String(v));
+      }
+    });
+  }
+
+  // Normalize and set special fields (phone, coordinates, floor levels)
+  function normalizeSpecialFields(fd: FormData) {
+    // Normalize phone with country code
+    fd.set('contactPhone', `${countryCode} ${formData.contactPhone}`.trim());
+    
+    // Set coordinates (prefer form data over map picker)
+    if (formData.latitude && formData.longitude) {
+      fd.set('latitude', formData.latitude);
+      fd.set('longitude', formData.longitude);
+    } else if (locationCoords) {
+      fd.append('latitude', String(locationCoords.lat));
+      fd.append('longitude', String(locationCoords.lng));
+    }
+
+    // Normalize floor fields to snake_case for backend
+    if (formData.floorLevel !== undefined && formData.floorLevel !== null && formData.floorLevel !== '') {
+      fd.set('floor_level', String(formData.floorLevel));
+    }
+    if (formData.totalFloors !== undefined && formData.totalFloors !== null && formData.totalFloors !== '') {
+      fd.set('total_floors', String(formData.totalFloors));
+    }
+    // Remove camelCase duplicates
+    fd.delete('floorLevel');
+    fd.delete('totalFloors');
+  }
+
+  // ========== END HELPER FUNCTIONS ==========
+
+  // Centralized data loading function for edit mode
+  const loadPropertyData = async () => {
+    if (!isEditing || !id || !currentUsername || hasLoadedPropertyData) return;
+    
+    console.log('🔄 Loading property data for edit mode...');
+    setLoading(true);
+    setHasLoadedPropertyData(true);
+    
+    try {
+      // First, get the property to find the owner's username
+      // Use current user's username initially to fetch the property
+      const res = await api.properties.getUserProperty(currentUsername, Number(id));
+      const d = res.data;
+      
+      // Extract and store the property owner's username for future API calls
+      if (d.owner && d.owner.username) {
+        setPropertyOwnerUsername(d.owner.username);
+        console.log(`✅ Property owner username: ${d.owner.username}`);
+      } else {
+        // Fallback to current username if owner info not available
+        setPropertyOwnerUsername(currentUsername);
+      }
+      
+      // Normalize property status
+      let propertyStatus = d.property_status || '';
+      if (propertyStatus === 'for_sale') propertyStatus = 'forSale';
+      if (propertyStatus === 'for_rent') propertyStatus = 'forRent';
+
+      // Parse contact phone to extract country code
+      let phone = d.contact_phone || '';
+      let cc = countryCode || '+357';
+      const m = phone.match(/^\+[\d]{1,4}/);
+      if (m) {
+        cc = m[0];
+        phone = phone.replace(cc, '').trim();
+      }
+      setCountryCode(cc);
+      
+      // Update form data with property details
+      setFormData(prev => ({
+        ...prev,
+        title: d.title || '',
+        description: d.description || '',
+        price: d.price?.toString() || '',
+        location: d.location || '',
+        country: d.country || 'Cyprus',
+        region: d.region || '',
+        city: d.city || '',
+        postal_code: d.postal_code || '',
+        street: d.street || '',
+        latitude: d.latitude?.toString() || '',
+        longitude: d.longitude?.toString() || '',
+        propertyType: d.property_type || '',
+        bedrooms: d.bedrooms?.toString() || '',
+        bathrooms: d.bathrooms?.toString() || '',
+        area: d.area?.toString() || '',
+        amenities: Array.isArray(d.amenities) ? d.amenities : [],
+        yearBuilt: d.year_built?.toString() || '',
+        parkingSpaces: d.parking_spaces?.toString() || '',
+        lotSize: d.lot_size?.toString() || '',
+        propertyStatus,
+        energyRating: d.energy_rating || '',
+        constructionMaterial: d.construction_material || '',
+        floorLevel: d.floor_level?.toString() || '',
+        totalFloors: d.total_floors?.toString() || '',
+        availableFrom: d.available_from || '',
+        contactPhone: phone,
+        contactEmail: d.contact_email || '',
+        virtualTourUrl: d.virtual_tour_url || '',
+        videoUrl: d.video_url || '',
+        images: [],
+        userType: d.user_type || prev.userType || 'owner_agent',
+      }));
+
+      // Handle images
+      const imgs = d.images || [];
+      setPreviewImages(imgs.map((i: any) => i.image));
+      setExistingImageIds(imgs.map((i: any) => {
+        if (i.id && typeof i.id === 'number') {
+          return String(i.id);
+        }
+        console.warn('Image missing valid ID:', i);
+        return null;
+      }).filter((id: string | null) => id !== null));
+      
+      const primary = imgs.find((i: any) => i.is_primary);
+      setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+
+      // Load existing documents
+      const existingDocs = d.documents || [];
+      const transformedDocs = existingDocs.map((doc: any) => ({
+        id: `existing-${doc.id}`,
+        existingDocId: doc.id,
+        documentUrl: doc.document,
+        type: doc.document_type || 'other',
+        title: doc.title || doc.document.split('/').pop() || 'Document',
+        description: doc.description || '',
+        fileSize: doc.file_size,
+        fileName: doc.document.split('/').pop() || 'document',
+        uploadedAt: doc.uploaded_at,
+      }));
+      
+      setDocuments(transformedDocs);
+      setExistingDocuments(existingDocs);
+
+      // Set available from date if it exists
+      if (d.available_from) {
+        const date = new Date(d.available_from);
+        if (!isNaN(date.getTime())) {
+          setAvailableFromDate(date);
+        }
+      }
+
+      // Set location coordinates if available
+      if (d.latitude && d.longitude) {
+        setLocationCoords({ lat: parseFloat(d.latitude), lng: parseFloat(d.longitude) });
+      }
+      
+      console.log('✅ Property data loaded successfully');
+    } catch (err) {
+      console.error('❌ Error loading property data:', err);
+      setError('Failed to load property data. Please try again.');
+      setHasLoadedPropertyData(false); // Reset so user can retry
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Load property data when component mounts in edit mode
+  useEffect(() => {
+    loadPropertyData();
+  }, [isEditing, id, currentUsername]);
+
+  // Property data loading is now handled by Step2_PropertyDetails component
+  // This callback receives the data from Step2 and processes images/documents
+  const handlePropertyDataLoaded = (d: any) => {
+    // Handle images
+    const imgs = d.images || [];
+    setPreviewImages(imgs.map((i: any) => i.image));
+    setExistingImageIds(imgs.map((i: any) => {
+      if (i.id && typeof i.id === 'number') {
+        return String(i.id);
+      }
+      console.warn('Image missing valid ID:', i);
+      return null;
+    }).filter((id: string | null) => id !== null));
+    
+    const primary = imgs.find((i: any) => i.is_primary);
+    setPrimaryIndex(primary ? imgs.indexOf(primary) : 0);
+
+    // Load existing documents
+    const existingDocs = d.documents || [];
+    const transformedDocs = existingDocs.map((doc: any) => ({
+      id: `existing-${doc.id}`,
+      existingDocId: doc.id,
+      documentUrl: doc.document,
+      type: doc.document_type || 'other',
+      title: doc.title || doc.document.split('/').pop() || 'Document',
+      description: doc.description || '',
+      fileSize: doc.file_size,
+      fileName: doc.document.split('/').pop() || 'document',
+      uploadedAt: doc.uploaded_at,
+    }));
+    
+    setDocuments(transformedDocs);
+    setExistingDocuments(existingDocs);
+
+    // Set available from date if it exists
+    if (d.available_from) {
+      const date = new Date(d.available_from);
+      if (!isNaN(date.getTime())) {
+        setAvailableFromDate(date);
+      }
+    }
+    
+    setLoading(false);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError('');
+    
     try {
       const fd = new FormData();
 
+<<<<<<< HEAD
       // BATCH REPLACE: If editing and all existing images were deleted + new ones added
       const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
       const hasNewImages = formData.images.length > 0;
@@ -422,6 +643,13 @@ const CreateListing: React.FC = () => {
       // avoid duplicate camelCase keys if appended by generic loop
       fd.delete('floorLevel');
       fd.delete('totalFloors');
+=======
+      // Build FormData using helper functions
+      appendImagesToFormData(fd);
+      appendDocumentsToFormData(fd);
+      appendFormFieldsToFormData(fd);
+      normalizeSpecialFields(fd);
+>>>>>>> 89aebafd5556aecf3e327c67cb623fb774cde068
 
       const res = isEditing
         ? await api.formPut(`properties/${username}/property/${id}/edit`, fd)
@@ -429,13 +657,7 @@ const CreateListing: React.FC = () => {
 
       if (res.status >= 200 && res.status < 300) {
         // Clear saved form data on successful submission
-        if (!isEditing) {
-          localStorage.removeItem('createListing_formData');
-          localStorage.removeItem('createListing_locationCoords');
-          localStorage.removeItem('createListing_countryCode');
-          localStorage.removeItem('createListing_availableFromDate');
-          localStorage.removeItem('createListing_currentStep');
-        }
+        // The wizard context will handle mode-specific cleanup
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
         navigate('/my-listings');
       } else {
@@ -462,9 +684,16 @@ const CreateListing: React.FC = () => {
       </div>
     );
 
-  // ⬇️ totalSteps is now 5 (Type, Details, Images, Documents, Contact); initialStep from URL or 0
+  // Determine wizard mode and configuration
+  const wizardMode: WizardMode = isEditing ? 'edit' : 'create';
+  
   return (
-    <ListingWizardProvider initialStep={isEditing ? initialStep : 0} totalSteps={5}>
+    <ListingWizardProvider 
+      mode={wizardMode}
+      initialStep={initialStep} 
+      totalSteps={5}
+      propertyId={id}
+    >
       <div className="fixed inset-0 bg-gray-50 pt-24">
         <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
           {error && (
@@ -495,9 +724,13 @@ const CreateListing: React.FC = () => {
           username={username}
           availableFromDate={availableFromDate}
           setAvailableFromDate={setAvailableFromDate}
+          handlePropertyDataLoaded={handlePropertyDataLoaded}
           showCalendar={showCalendar}
           setShowCalendar={setShowCalendar}
           setLocationCoords={setLocationCoords}
+          existingDocuments={existingDocuments}
+          setExistingDocuments={setExistingDocuments}
+          hasLoadedPropertyData={hasLoadedPropertyData}
         />
           </div>
         </div>

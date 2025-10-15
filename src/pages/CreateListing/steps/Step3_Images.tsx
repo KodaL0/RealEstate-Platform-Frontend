@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, memo } from 'react';
 import { Upload, Image, Star, X, ChevronLeft, ChevronRight, Camera, GripVertical } from 'lucide-react';
 import { useDropzone } from 'react-dropzone';
 import toast from 'react-hot-toast';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm } from '../../../types';
 import api from '../../../config/api';
 import {
@@ -159,7 +159,7 @@ const Step3_Images: React.FC<Props> = ({
   propertyId,
   username,
 }) => {
-  const { next, back } = useListingWizard();
+  const { next, back } = useWizardNavigation();
   const [activeId, setActiveId] = useState<string | null>(null);
   
   // Single source of truth: unified image items with stable IDs
@@ -594,4 +594,4 @@ const Step3_Images: React.FC<Props> = ({
   );
 };
 
-export default Step3_Images;
+export default memo(Step3_Images);

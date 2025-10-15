@@ -1,7 +1,7 @@
 // src/components/ProgressBar.tsx
 import React from 'react';
 import { Check } from 'lucide-react';
-import { useListingWizard } from '../context/ListingWizardContext';
+import { useWizardNavigation, useWizardProgress } from '../context/ListingWizardContext';
 
 // Standard 5-step wizard for both create and edit modes
 const STEPS = [
@@ -18,7 +18,8 @@ interface ProgressBarProps {
 }
 
 const ProgressBar: React.FC<ProgressBarProps> = () => {
-  const { currentStep, goto } = useListingWizard();
+  const { goto } = useWizardNavigation();
+  const { currentStep } = useWizardProgress();
 
   return (
     <>

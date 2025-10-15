@@ -9,18 +9,19 @@ import { MapPin, Filter, Grid, List, ChevronLeft, ChevronRight } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/cards/PropertyCard";
-import { normalizePropertyData, Property, COUNTRY_OPTIONS } from "../types";
+import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
+import analytics from "../utils/analytics";
 
 const PAGE_SIZE = 10;
 
 interface SearchFiltersType {
   location?: string;
   search?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  bedrooms?: string;
-  bathrooms?: string;
+  minPrice?: string | number;
+  maxPrice?: string | number;
+  bedrooms?: string | number;
+  bathrooms?: string | number;
   propertyType?: string;
   order?: string;
   country?: string;
@@ -64,10 +65,10 @@ const Buy = () => {
       };
       if (searchFilters.search)        qp.search        = searchFilters.search;
       if (currentPage !== 1)           qp.page          = currentPage.toString();
-      if (searchFilters.minPrice)      qp.price_min     = searchFilters.minPrice;
-      if (searchFilters.maxPrice)      qp.price_max     = searchFilters.maxPrice;
-      if (searchFilters.bedrooms)      qp.bedrooms      = searchFilters.bedrooms;
-      if (searchFilters.bathrooms)     qp.bathrooms     = searchFilters.bathrooms;
+      if (searchFilters.minPrice)      qp.price_min     = String(searchFilters.minPrice);
+      if (searchFilters.maxPrice)      qp.price_max     = String(searchFilters.maxPrice);
+      if (searchFilters.bedrooms)      qp.bedrooms      = String(searchFilters.bedrooms);
+      if (searchFilters.bathrooms)     qp.bathrooms     = String(searchFilters.bathrooms);
       if (searchFilters.propertyType)  qp.property_type = searchFilters.propertyType;
       if (sortOption)                  qp.sort          = sortOption;
       if (searchFilters.location)      qp.location      = searchFilters.location;
@@ -83,6 +84,20 @@ const Buy = () => {
         setProperties(normalized);
         setTotalCount(paginatedData.count || 0);
         setTotalPages(Math.ceil((paginatedData.count || 0) / PAGE_SIZE));
+
+        // Track search with results
+        analytics.trackPropertySearch({
+          search_term: searchFilters.search,
+          property_type: searchFilters.propertyType,
+          min_price: searchFilters.minPrice ? Number(searchFilters.minPrice) : undefined,
+          max_price: searchFilters.maxPrice ? Number(searchFilters.maxPrice) : undefined,
+          bedrooms: searchFilters.bedrooms ? Number(searchFilters.bedrooms) : undefined,
+          bathrooms: searchFilters.bathrooms ? Number(searchFilters.bathrooms) : undefined,
+          location: searchFilters.location,
+          property_status: 'sale',
+          sort_by: sortOption,
+          results_count: paginatedData.count,
+        });
       } catch (err) {
         console.error("Error fetching BUY properties:", err);
         setError("Failed to fetch properties. Please try again.");
@@ -113,11 +128,14 @@ const Buy = () => {
   };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSortOption(e.target.value);
+    const newSort = e.target.value;
+    analytics.trackSortChange(newSort, totalCount);
+    setSortOption(newSort);
     setCurrentPage(1);
   };
 
   const handleCountryChange = (country: 'Cyprus' | 'Greece' | 'all') => {
+    analytics.trackFilterChange('country', country, totalCount);
     setSelectedCountry(country);
   };
 
@@ -370,7 +388,7 @@ const Buy = () => {
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
                 >
-                  <PropertyCard property={property} viewMode={viewMode} />
+                  <PropertyCard property={property} />
                 </motion.div>
               ))}
             </motion.div>

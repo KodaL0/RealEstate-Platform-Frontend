@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
 import { MessageSquare } from "lucide-react";
+import analytics from "../utils/analytics";
 
 interface Props {
   sellerId: number;
@@ -19,6 +20,10 @@ const ChatButton: React.FC<Props> = ({ sellerId, propertyId, title }) => {
       navigate("/login", { state: { from: location.pathname } });
       return;
     }
+
+    // Track chat initiation
+    analytics.trackPropertyContact(String(propertyId), 'chat');
+    analytics.trackChatAction('initiate');
 
     const threadId = await getOrCreateThread(sellerId, propertyId, title);
     navigate(`/chat/${threadId}`);

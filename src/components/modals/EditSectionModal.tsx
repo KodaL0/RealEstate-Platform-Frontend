@@ -80,7 +80,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm z-40"
           />
 
           {/* Modal */}
@@ -89,11 +89,11 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 20 }}
             transition={{ duration: 0.2 }}
-            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden"
+            className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden z-50"
           >
             {/* Header */}
             <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-5 relative overflow-hidden">
-              <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNDAiIGhlaWdodD0iNDAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGRlZnM+PHBhdHRlcm4gaWQ9ImdyaWQiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+PHBhdGggZD0iTSAwIDEwIEwgNDAgMTAgTSAxMCAwIEwgMTAgNDAgTSAwIDIwIEwgNDAgMjAgTSAyMCAwIEwgMjAgNDAgTSAwIDMwIEwgNDAgMzAgTSAzMCAwIEwgMzAgNDAiIGZpbGw9Im5vbmUiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS1vcGFjaXR5PSIwLjA1IiBzdHJva2Utd2lkdGg9IjEiLz48L3BhdHRlcm4+PC9kZWZzPjxyZWN0IHdpZHRoPSIxMDAlIiBoZWlnaHQ9IjEwMCUiIGZpbGw9InVybCgjZ3JpZCkiLz48L3N2Zz4=')] opacity-30"></div>
+              <div className="absolute inset-0 opacity-30"></div>
               <div className="relative flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold text-white">
@@ -126,7 +126,12 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                   return (
                     <motion.button
                       key={section.id}
-                      onClick={() => onSelectSection(section.id)}
+                      onClick={(e) => {
+                        e.stopPropagation(); // ✅ stop backdrop interference
+                        console.log("Selected section:", section.id); // ✅ debug check
+                        onSelectSection(section.id);
+                        onClose();
+                      }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
                       className={`
@@ -143,17 +148,15 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         absolute inset-0 bg-gradient-to-r ${section.color}
                         opacity-0 group-hover:opacity-5 transition-opacity duration-300
                       `} />
-                      
+
                       {/* Icon */}
                       <div className={`
                         relative flex-shrink-0 p-3 rounded-xl ${section.bgColor}
                         group-hover:scale-110 transition-transform duration-300
                       `}>
-                        <Icon className={`w-6 h-6 bg-gradient-to-r ${section.color} bg-clip-text text-transparent`} style={{
-                          WebkitTextFillColor: 'transparent',
-                          WebkitBackgroundClip: 'text',
-                          backgroundImage: `linear-gradient(to right, var(--tw-gradient-stops))`
-                        }} />
+                        <Icon
+                          className={`w-6 h-6 bg-gradient-to-r ${section.color} bg-clip-text text-transparent`}
+                        />
                       </div>
 
                       {/* Content */}
@@ -168,8 +171,18 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
 
                       {/* Arrow indicator */}
                       <div className="ml-2 self-center opacity-0 group-hover:opacity-100 transform translate-x-0 group-hover:translate-x-1 transition-all duration-300">
-                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        <svg
+                          className="w-5 h-5 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M9 5l7 7-7 7"
+                          />
                         </svg>
                       </div>
                     </motion.button>
@@ -180,8 +193,16 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
               {/* Footer note */}
               <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
                 <p className="text-xs text-gray-600 flex items-start">
-                  <svg className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
+                  <svg
+                    className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0"
+                    fill="currentColor"
+                    viewBox="0 0 20 20"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
                   </svg>
                   <span>
                     You can navigate between sections while editing using the progress bar at the top of the page.

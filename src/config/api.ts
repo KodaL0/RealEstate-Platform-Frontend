@@ -60,13 +60,16 @@ apiClient.interceptors.request.use(cfg => {
     console.log('🔐 No JWT token found - using Django session authentication');
   }
 
-  // Try to get CSRF token if available, but don't fail if missing
+  // Try to get CSRF token if available
   const csrfToken = getCookieValue('csrftoken');
   if (csrfToken) {
     cfg.headers = {
       ...cfg.headers,
       'X-CSRFToken': csrfToken,
     };
+    console.log('✅ CSRF token found and added to headers');
+  } else {
+    console.warn('⚠️ No CSRF token found in cookies');
   }
 
   // Add debug logging for authentication method
@@ -131,6 +134,12 @@ export const apiFormPut = <T = any>(endpoint: string, formData: FormData, config
     headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
   });
 
+export const apiFormPatch = <T = any>(endpoint: string, formData: FormData, config?: RequestConfig) =>
+  apiClient.patch<T>(formatEndpoint(endpoint), formData, {
+    ...config,
+    headers: { ...config?.headers, 'Content-Type': 'multipart/form-data' },
+  });
+
 const api = {
   get: apiGet,
   post: apiPost,
@@ -138,6 +147,7 @@ const api = {
   delete: apiDelete,
   formPost: apiFormPost,
   formPut: apiFormPut,
+  formPatch: apiFormPatch,
 
   auth: {
     login:           (d: any) => apiPost('users/login', d),
@@ -150,6 +160,9 @@ const api = {
     searchUsers:     (q: string) => apiGet(`users/search`, { params: { q } }),
     verifyEmail:     (d: any) => apiPost('users/verify-email', d),
     resendVerification: ()     => apiPost('users/resend-verification'),
+    requestPasswordReset: (email: string) => apiPost('users/password-reset/request', { email }),
+    confirmPasswordReset: (token: string, newPassword: string) => apiPost('users/password-reset/confirm', { token, new_password: newPassword }),
+    validateResetToken: (token: string) => apiGet('users/password-reset/validate', { params: { token } }),
   },
 
   properties: {
@@ -228,6 +241,34 @@ const api = {
     
     deleteImage: (u: string, pid: number, imageId: number) =>
       apiDelete(`properties/${u}/property/${pid}/image/${imageId}/delete`),
+    
+    deleteDocument: (u: string, pid: number, documentId: number) =>
+      apiDelete(`properties/${u}/property/${pid}/document/${documentId}/delete`),
+
+    // Step-specific PATCH updates
+    updatePropertyType: (u: string, pid: number, propertyType: string) => {
+      const formData = new FormData();
+      formData.append('propertyType', propertyType);
+      return apiFormPatch(`properties/${u}/property/${pid}/edit`, formData);
+    },
+
+    updatePropertyDetails: (u: string, pid: number, details: Record<string, any>) => {
+      const formData = new FormData();
+      Object.entries(details).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== '') {
+          formData.append(key, value.toString());
+        }
+      });
+      return apiFormPatch(`properties/${u}/property/${pid}/edit`, formData);
+    },
+
+    updateContactInfo: (u: string, pid: number, contactInfo: { contactEmail?: string; contactPhone?: string }) => {
+      const formData = new FormData();
+      if (contactInfo.contactEmail) formData.append('contactEmail', contactInfo.contactEmail);
+      if (contactInfo.contactPhone) formData.append('contactPhone', contactInfo.contactPhone);
+      return apiFormPatch(`properties/${u}/property/${pid}/edit`, formData);
+    },
+
     myFavorites:    () => 
       apiGet('properties/my-favourites')
         .then(res => {
@@ -329,6 +370,24 @@ const api = {
       apiGet('reviews/dashboard'),
 
     getUserOverallRating: (userId: number) => apiGet(`reviews/users/${userId}/overall_rating`),
+  },
+
+  instagram: {
+    // Post a property to Instagram
+    postProperty: (propertyId: number, configId?: number) =>
+      apiPost(`instagram/post/${propertyId}/`, configId ? { config_id: configId } : {}),
+    
+    // Get Instagram posts for a specific property
+    getPropertyPosts: (propertyId: number) =>
+      apiGet(`instagram/property/${propertyId}/posts/`),
+    
+    // Get Instagram posting queue status (admin only)
+    getQueueStatus: () =>
+      apiGet('instagram/queue/status/'),
+    
+    // Retry a failed Instagram post (admin only)
+    retryPost: (postId: number) =>
+      apiPost(`instagram/posts/${postId}/retry/`),
   },
 };
 

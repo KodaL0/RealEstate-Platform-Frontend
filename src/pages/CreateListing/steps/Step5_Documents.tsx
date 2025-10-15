@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
+import React, { useState, memo } from 'react';
 import { Upload, FileText, X, ChevronLeft, File, AlertCircle, ArrowRight } from 'lucide-react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
+import toast from 'react-hot-toast';
+import api from '../../../config/api';
 
 interface DocumentFile {
   id: string;
-  file: File;
+  file?: File; // Optional for existing documents
+  existingDocId?: number; // For existing documents from backend
+  documentUrl?: string; // URL for existing documents
+  fileName?: string; // Name for existing documents
+  fileSize?: number; // Size for existing documents
   type: string;
   title: string;
   description: string;
+  uploadedAt?: string; // When document was uploaded
 }
 
 interface Props {
@@ -15,6 +22,8 @@ interface Props {
   setDocuments: React.Dispatch<React.SetStateAction<DocumentFile[]>>;
   isSubmitting: boolean;
   isEditing: boolean;
+  propertyId?: string;
+  username: string;
 }
 
 const DOCUMENT_TYPES = [
@@ -40,8 +49,11 @@ const ALLOWED_TYPES = [
 const Step5_Documents: React.FC<Props> = ({
   documents,
   setDocuments,
+  isEditing,
+  propertyId,
+  username,
 }) => {
-  const { back, next } = useListingWizard();
+  const { back, next } = useWizardNavigation();
   const [uploadError, setUploadError] = useState<string>('');
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,14 +101,60 @@ const Step5_Documents: React.FC<Props> = ({
     e.target.value = '';
   };
 
-  const removeDocument = (id: string) => {
-    setDocuments(documents.filter(doc => doc.id !== id));
+  const removeDocument = async (id: string) => {
+    const doc = documents.find(d => d.id === id);
+    if (!doc) return;
+
+    // If editing and this is an existing document, delete via API
+    if (isEditing && doc.existingDocId && propertyId) {
+      try {
+        await api.properties.deleteDocument(username, Number(propertyId), doc.existingDocId);
+        toast.success('Document deleted');
+      } catch (error: any) {
+        toast.error(error?.response?.data?.detail || 'Failed to delete document');
+        return; // Don't remove from local state if API call failed
+      }
+    }
+
+    // Remove from local state
+    setDocuments(documents.filter(d => d.id !== id));
   };
 
   const updateDocument = (id: string, field: keyof DocumentFile, value: string) => {
     setDocuments(documents.map(doc =>
       doc.id === id ? { ...doc, [field]: value } : doc
     ));
+  };
+
+  // Check for duplicate document titles (case-insensitive)
+  const getDuplicateTitles = () => {
+    const titleCounts = new Map<string, number>();
+    const duplicates = new Set<string>();
+    
+    // Count all document titles (both new and existing)
+    documents.forEach(doc => {
+      const lowerTitle = doc.title.trim().toLowerCase();
+      if (lowerTitle) {
+        const count = (titleCounts.get(lowerTitle) || 0) + 1;
+        titleCounts.set(lowerTitle, count);
+        if (count > 1) {
+          duplicates.add(lowerTitle);
+        }
+      }
+    });
+    
+    return duplicates;
+  };
+
+  const hasDuplicateTitle = (title: string, docId: string) => {
+    if (!title.trim()) return false;
+    
+    const lowerTitle = title.trim().toLowerCase();
+    const matchingDocs = documents.filter(
+      doc => doc.title.trim().toLowerCase() === lowerTitle && doc.id !== docId
+    );
+    
+    return matchingDocs.length > 0;
   };
 
   const getFileIcon = (fileName: string) => {
@@ -191,24 +249,55 @@ const Step5_Documents: React.FC<Props> = ({
             Uploaded Documents ({documents.length})
           </h3>
 
+          {/* Duplicate Title Warning - only for new documents */}
+          {getDuplicateTitles().size > 0 && (
+            <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-sm text-red-700 flex items-center font-medium">
+                <AlertCircle className="w-5 h-5 mr-2 flex-shrink-0" />
+                Duplicate document titles detected! Each document must have a unique title.
+              </p>
+            </div>
+          )}
+
           <div className="space-y-4">
-            {documents.map((doc) => (
+            {documents.map((doc) => {
+              const isExisting = !!doc.existingDocId;
+              const fileName = doc.file?.name || doc.fileName || 'Document';
+              const fileSize = doc.file?.size || doc.fileSize || 0;
+              
+              return (
               <div
                 key={doc.id}
-                className="border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors duration-200"
+                className={`border border-gray-200 rounded-lg p-4 hover:border-indigo-300 transition-colors duration-200 ${isExisting ? 'bg-blue-50' : ''}`}
               >
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex items-center flex-1">
-                    <span className="text-2xl mr-3">{getFileIcon(doc.file.name)}</span>
+                    <span className="text-2xl mr-3">{getFileIcon(fileName)}</span>
                     <div className="flex-1">
-                      <p className="font-medium text-gray-800">{doc.file.name}</p>
-                      <p className="text-sm text-gray-500">{formatFileSize(doc.file.size)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium text-gray-800">{fileName}</p>
+                        {isExisting && (
+                          <span className="text-xs px-2 py-0.5 bg-blue-500 text-white rounded">Existing</span>
+                        )}
+                      </div>
+                      <p className="text-sm text-gray-500">{formatFileSize(fileSize)}</p>
+                      {isExisting && doc.documentUrl && (
+                        <a 
+                          href={doc.documentUrl} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="text-xs text-indigo-600 hover:text-indigo-800 underline"
+                        >
+                          View document
+                        </a>
+                      )}
                     </div>
                   </div>
                   <button
                     type="button"
                     onClick={() => removeDocument(doc.id)}
                     className="p-2 hover:bg-red-50 rounded-full transition-colors duration-200"
+                    title={isExisting ? "Remove from listing (will be deleted)" : "Remove from upload"}
                   >
                     <X className="w-5 h-5 text-red-500" />
                   </button>
@@ -218,12 +307,15 @@ const Step5_Documents: React.FC<Props> = ({
                   {/* Document Type */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Document Type
+                      Document Type {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <select
                       value={doc.type}
                       onChange={(e) => updateDocument(doc.id, 'type', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={isExisting}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isExisting ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     >
                       {DOCUMENT_TYPES.map((type) => (
                         <option key={type.value} value={type.value}>
@@ -231,38 +323,60 @@ const Step5_Documents: React.FC<Props> = ({
                         </option>
                       ))}
                     </select>
+                    {isExisting && (
+                      <p className="text-xs text-gray-500 mt-1">
+                        To change document details, delete and re-upload.
+                      </p>
+                    )}
                   </div>
 
                   {/* Title */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Title
+                      Title {!isExisting && hasDuplicateTitle(doc.title, doc.id) && <span className="text-red-600 text-xs">(Duplicate title!)</span>}
+                      {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <input
                       type="text"
                       value={doc.title}
                       onChange={(e) => updateDocument(doc.id, 'title', e.target.value)}
                       placeholder="e.g., First Floor Plan"
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={isExisting}
+                      className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isExisting 
+                          ? 'bg-gray-100 cursor-not-allowed' 
+                          : hasDuplicateTitle(doc.title, doc.id) 
+                            ? 'border-red-500 bg-red-50' 
+                            : 'border-gray-300'
+                      }`}
                     />
+                    {!isExisting && hasDuplicateTitle(doc.title, doc.id) && (
+                      <p className="text-xs text-red-600 mt-1">
+                        This title is already used. Please use a unique title.
+                      </p>
+                    )}
                   </div>
 
                   {/* Description */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Description (optional)
+                      Description (optional) {isExisting && <span className="text-xs text-gray-500">(Read-only)</span>}
                     </label>
                     <textarea
                       value={doc.description}
                       onChange={(e) => updateDocument(doc.id, 'description', e.target.value)}
                       placeholder="Brief description of the document"
                       rows={2}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                      disabled={isExisting}
+                      className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                        isExisting ? 'bg-gray-100 cursor-not-allowed' : ''
+                      }`}
                     />
                   </div>
                 </div>
               </div>
-            ))}
+            );
+            })}
           </div>
         </div>
       )}
@@ -306,4 +420,4 @@ const Step5_Documents: React.FC<Props> = ({
   );
 };
 
-export default Step5_Documents;
+export default memo(Step5_Documents);

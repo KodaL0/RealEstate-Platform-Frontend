@@ -1,5 +1,6 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import api from "../config/api";
+import analytics from "../utils/analytics";
 
 // Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
@@ -52,6 +53,17 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       if (userData) {
         console.log("Setting user from API response:", userData);
         setUser(userData);
+
+        // Set Google Analytics user properties
+        const accountAgeDays = userData.date_joined 
+          ? Math.floor((new Date().getTime() - new Date(userData.date_joined).getTime()) / (1000 * 60 * 60 * 24))
+          : undefined;
+
+        analytics.setUserProperties(userData.id, {
+          is_developer: userData.is_developer || false,
+          is_verified: userData.email_verified || false,
+          account_age_days: accountAgeDays,
+        });
       } else {
         console.log("No valid user data found in response");
         setUser(null);

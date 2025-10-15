@@ -1,7 +1,21 @@
-import React from 'react';
+import React, { memo, useCallback } from 'react';
 import { Mail, Phone, Send, ChevronLeft, Loader } from 'lucide-react';
-import { useListingWizard } from '../../../context/ListingWizardContext';
+import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, COUNTRY_CODES } from '../../../types';
+import api from '../../../config/api';
+import toast from 'react-hot-toast';
+
+// Debounce utility function
+function debounce<T extends (...args: any[]) => any>(
+  func: T,
+  delay: number
+): (...args: Parameters<T>) => void {
+  let timeoutId: number;
+  return (...args: Parameters<T>) => {
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => func(...args), delay);
+  };
+}
 
 interface Props {
   formData: ListingForm;
@@ -10,6 +24,8 @@ interface Props {
   setCountryCode: (v: string) => void;
   isSubmitting: boolean;
   isEditing: boolean;
+  propertyId?: string;
+  username?: string;
 }
 
 const Step4_Contact: React.FC<Props> = ({ 
@@ -18,10 +34,54 @@ const Step4_Contact: React.FC<Props> = ({
   countryCode, 
   setCountryCode, 
   isSubmitting, 
-  isEditing 
+  isEditing,
+  propertyId,
+  username
 }) => {
-  const { back } = useListingWizard();
+  const { back } = useWizardNavigation();
   const valid = formData.contactEmail.trim() && formData.contactPhone.trim();
+  const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+
+  // Disable initial load flag after component mounts
+  React.useEffect(() => {
+    if (isEditing) {
+      const timer = setTimeout(() => {
+        setIsInitialLoad(false);
+        console.log('✅ Step4: Initial load complete, PATCH updates enabled');
+      }, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [isEditing]);
+
+  // Debounced PATCH update for contact info
+  const debouncedUpdate = useCallback(
+    debounce(async (fieldName: string, value: any) => {
+      if (isEditing && propertyId && username && !isInitialLoad) {
+        try {
+          const contactInfo: Record<string, any> = { [fieldName]: value };
+          await api.properties.updateContactInfo(username, Number(propertyId), contactInfo);
+          console.log(`✅ ${fieldName} updated via PATCH`);
+        } catch (error: any) {
+          console.error(`❌ Failed to update ${fieldName}:`, error);
+          toast.error(error?.response?.data?.detail || `Failed to update ${fieldName}`);
+        }
+      }
+    }, 1500), // 1.5 second debounce
+    [isEditing, propertyId, username, isInitialLoad]
+  );
+
+  // Enhanced onChange handler that includes PATCH updates
+  const handleChangeWithPatch = (e: React.ChangeEvent<any>) => {
+    const { name, value } = e.target;
+    
+    // Update local state immediately
+    onChange(e);
+    
+    // If editing and not initial load, also update via PATCH (debounced)
+    if (isEditing && propertyId && username && !isInitialLoad) {
+      debouncedUpdate(name, value);
+    }
+  };
 
   return (
     <section className="bg-gradient-to-br from-white to-gray-50 p-4 sm:p-6 lg:p-8 rounded-2xl shadow-xl border border-gray-100 max-w-4xl mx-auto pb-8">
@@ -53,7 +113,7 @@ const Step4_Contact: React.FC<Props> = ({
                 type="email"
                 name="contactEmail"
                 value={formData.contactEmail}
-                onChange={onChange}
+                onChange={handleChangeWithPatch}
                 placeholder="your.email@example.com"
                 className="w-full pl-10 pr-4 py-3 sm:py-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-base"
               />
@@ -92,7 +152,7 @@ const Step4_Contact: React.FC<Props> = ({
                   type="tel"
                   name="contactPhone"
                   value={formData.contactPhone}
-                  onChange={onChange}
+                  onChange={handleChangeWithPatch}
                   placeholder="123 456 7890"
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white text-base"
                 />
@@ -125,7 +185,7 @@ const Step4_Contact: React.FC<Props> = ({
                   type="tel"
                   name="contactPhone"
                   value={formData.contactPhone}
-                  onChange={onChange}
+                  onChange={handleChangeWithPatch}
                   placeholder="123 456 7890"
                   className="w-full pl-10 pr-4 py-3 border-t border-b border-r border-gray-300 rounded-r-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
                 />
@@ -180,4 +240,4 @@ const Step4_Contact: React.FC<Props> = ({
   );
 };
 
-export default Step4_Contact;
+export default memo(Step4_Contact);
