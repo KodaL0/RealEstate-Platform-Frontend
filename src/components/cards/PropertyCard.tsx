@@ -15,6 +15,9 @@ import {
 } from 'lucide-react';
 import { Property } from '../../types';
 import FavouriteButton from '../FavouriteButton';
+import { useImageLazyLoad } from '../../hooks/useImageLazyLoad';
+import { useImagePreload } from '../../hooks/useImagePreload';
+import { useImageCache } from '../../context/ImageCacheContext';
 
 interface PropertyCardProps {
   property: Property;
@@ -59,80 +62,52 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     is_favourite,
   } = property;
 
-  // slideshow state
+  // Slideshow state
   const [currentImage, setCurrentImage] = useState(0);
-  const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
-  const [imageLoadingStates, setImageLoadingStates] = useState<Record<string, boolean>>({});
+  const [hasInteracted, setHasInteracted] = useState(false);
   const imgCount = images.length;
-  const imageCacheRef = useRef<Map<string, HTMLImageElement>>(new Map());
-
-  // Preload images for faster navigation
+  
+  // Lazy loading setup
+  const cardRef = useRef<HTMLDivElement>(null);
+  const { hasBeenVisible } = useImageLazyLoad(cardRef, { rootMargin: '200px' });
+  
+  // Get image cache utilities
+  const { getLoadingState } = useImageCache();
+  
+  // Prepare image URLs
+  const imageUrls = images.map(img => img.image);
+  const primaryImageUrl = imgCount > 0 ? imageUrls[0] : '';
+  
+  // Preload strategy:
+  // 1. Load primary image when card becomes visible
+  // 2. Load all images after user interaction or after 500ms of being visible
+  const shouldPreloadAll = hasInteracted || hasBeenVisible;
+  const urlsToPreload = shouldPreloadAll ? imageUrls : (primaryImageUrl ? [primaryImageUrl] : []);
+  
+  // Use the preload hook (we only care about the side effect, not the loading states)
+  useImagePreload(urlsToPreload, {
+    enabled: hasBeenVisible,
+    priority: hasInteracted ? 'high' : 'normal'
+  });
+  
+  // Auto-preload all images after being visible for 500ms
   useEffect(() => {
-    if (images.length === 0) return;
-
-    const preloadImage = (src: string): Promise<void> => {
-      return new Promise((resolve, reject) => {
-        // Check if already cached
-        if (imageCacheRef.current.has(src)) {
-          resolve();
-          return;
-        }
-
-        // Check if already loaded
-        if (loadedImages.has(src)) {
-          resolve();
-          return;
-        }
-
-        // Set loading state
-        setImageLoadingStates(prev => ({ ...prev, [src]: true }));
-
-        const img = new Image();
-        img.onload = () => {
-          // Cache the image
-          imageCacheRef.current.set(src, img);
-          setLoadedImages(prev => new Set(prev).add(src));
-          setImageLoadingStates(prev => ({ ...prev, [src]: false }));
-          resolve();
-        };
-        img.onerror = () => {
-          setImageLoadingStates(prev => ({ ...prev, [src]: false }));
-          reject(new Error(`Failed to load image: ${src}`));
-        };
-        img.src = src;
-      });
-    };
-
-    // Preload all images
-    const preloadPromises = images.map(img => preloadImage(img.image));
+    if (!hasBeenVisible || hasInteracted) return;
     
-    Promise.allSettled(preloadPromises).then(() => {
-      console.log(`Preloaded ${images.length} images for property ${id}`);
-    });
-
-    // Cleanup function
-    return () => {
-      // Don't clear cache on unmount to keep images cached for other instances
-    };
-  }, [images, id, loadedImages]);
+    const timer = setTimeout(() => {
+      setHasInteracted(true);
+    }, 500);
+    
+    return () => clearTimeout(timer);
+  }, [hasBeenVisible, hasInteracted]);
 
   const prevImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
     if (imgCount > 0) {
+      setHasInteracted(true);
       const newIndex = (currentImage - 1 + imgCount) % imgCount;
       setCurrentImage(newIndex);
-      
-      // Preload adjacent images for smoother navigation
-      const prevIndex = (newIndex - 1 + imgCount) % imgCount;
-      if (images[prevIndex] && !loadedImages.has(images[prevIndex].image)) {
-        const img = new Image();
-        img.src = images[prevIndex].image;
-        img.onload = () => {
-          imageCacheRef.current.set(images[prevIndex].image, img);
-          setLoadedImages(prev => new Set(prev).add(images[prevIndex].image));
-        };
-      }
     }
   };
   
@@ -140,26 +115,17 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     e.stopPropagation();
     e.preventDefault();
     if (imgCount > 0) {
+      setHasInteracted(true);
       const newIndex = (currentImage + 1) % imgCount;
       setCurrentImage(newIndex);
-      
-      // Preload adjacent images for smoother navigation
-      const nextIndex = (newIndex + 1) % imgCount;
-      if (images[nextIndex] && !loadedImages.has(images[nextIndex].image)) {
-        const img = new Image();
-        img.src = images[nextIndex].image;
-        img.onload = () => {
-          imageCacheRef.current.set(images[nextIndex].image, img);
-          setLoadedImages(prev => new Set(prev).add(images[nextIndex].image));
-        };
-      }
     }
   };
 
   const currentImageData = imgCount > 0 ? images[currentImage] : null;
   const imageUrl = currentImageData?.image || '/placeholder-property.jpg';
-  const isCurrentImageLoaded = loadedImages.has(imageUrl);
-  const isCurrentImageLoading = imageLoadingStates[imageUrl] || false;
+  const currentImageState = getLoadingState(imageUrl);
+  const isCurrentImageLoading = currentImageState.loading;
+  const isCurrentImageLoaded = currentImageState.loaded;
 
   const isForSale = property_status === 'for_sale';
 
@@ -336,6 +302,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
   return (
     <div
+      ref={cardRef}
       className={`
         group bg-white rounded-2xl overflow-hidden
         shadow-md hover:shadow-2xl transition-all duration-500 ease-out
