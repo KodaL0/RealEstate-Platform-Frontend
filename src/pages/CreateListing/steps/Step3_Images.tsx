@@ -347,6 +347,7 @@ const Step3_Images: React.FC<Props> = ({
     // Set first item as primary if we removed the primary
     if (item.isPrimary && updatedItems.length > 0) {
       updatedItems[0].isPrimary = true;
+      console.log(`🔄 Primary image removed, setting image at position 0 as new primary`);
     }
     
     setImageItems(updatedItems);
@@ -393,6 +394,14 @@ const Step3_Images: React.FC<Props> = ({
     const snapshot = [...imageItems];
     const reordered = reorder(imageItems, fromIndex, toIndex);
     
+    // If an image is moved to position 0, make it primary
+    if (toIndex === 0) {
+      console.log(`🎯 Image moved to position 0, setting as primary`);
+      reordered.forEach((item, idx) => {
+        item.isPrimary = idx === 0;
+      });
+    }
+    
     // Update local state optimistically
     setImageItems(reordered);
     syncToParent(reordered);
@@ -436,10 +445,14 @@ const Step3_Images: React.FC<Props> = ({
     }));
     
     const targetIndex = updatedItems.findIndex(i => i.id === itemId);
-    if (targetIndex > 0) {
+    
+    // Always move the primary image to position 0, regardless of current position
+    if (targetIndex !== 0) {
       const [removed] = updatedItems.splice(targetIndex, 1);
       updatedItems.unshift(removed);
-      console.log(`🔄 Moved item from position ${targetIndex} to 0`);
+      console.log(`🔄 Moved primary image from position ${targetIndex} to 0`);
+    } else {
+      console.log(`ℹ️ Primary image is already at position 0`);
     }
     
     console.log('📝 Updated items order:', updatedItems.map((item, idx) => ({
