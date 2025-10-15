@@ -326,7 +326,20 @@ const CreateListing: React.FC = () => {
       fd.append('primary_image_index', String(primaryIndex));
     } else if (formData.images.length) {
       formData.images.forEach(f => fd.append('images[]', f));
-      fd.append('primary_image_index', String(primaryIndex));
+      
+      // Calculate primary index relative to NEW images only
+      // Count how many existing images we have (non-empty existingImageIds)
+      const numExistingImages = existingImageIds.filter(id => id).length;
+      
+      // If primary image is one of the new images (index >= numExistingImages)
+      // then send its position within the new images array
+      if (primaryIndex >= numExistingImages) {
+        const relativeIndex = primaryIndex - numExistingImages;
+        fd.append('primary_image_index', String(relativeIndex));
+        console.log(`🖼️ Setting primary to new image at relative index ${relativeIndex} (absolute: ${primaryIndex})`);
+      }
+      // If primary is an existing image, don't send primary_image_index
+      // The backend will keep the existing primary
     }
   }
 
