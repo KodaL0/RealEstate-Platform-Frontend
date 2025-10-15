@@ -169,27 +169,44 @@ const Step3_Images: React.FC<Props> = ({
   useEffect(() => {
     const items: ImageItem[] = [];
     
-    // Add existing server images
-    for (let i = 0; i < previewImages.length && i < existingImageIds.length; i++) {
-      if (existingImageIds[i]) {
-        items.push({
-          id: `existing-${existingImageIds[i]}`,
-          preview: previewImages[i],
-          existingImageId: existingImageIds[i],
-          isPrimary: i === primaryIndex,
-        });
+    // Build a map of previews to files for new images
+    // formData.images contains all new image files
+    const previewToFileMap = new Map<string, File>();
+    let fileIndex = 0;
+    
+    // Map each new image preview to its file
+    for (let i = 0; i < previewImages.length; i++) {
+      if (!existingImageIds[i] && fileIndex < formData.images.length) {
+        previewToFileMap.set(previewImages[i], formData.images[fileIndex]);
+        fileIndex++;
       }
     }
     
-    // Add new local images
-    const newStartIndex = existingImageIds.filter(id => id).length;
-    for (let i = newStartIndex; i < previewImages.length; i++) {
-      items.push({
-        id: `new-${Date.now()}-${i}`,
-        preview: previewImages[i],
-        file: formData.images[i - newStartIndex],
-        isPrimary: i === primaryIndex,
-      });
+    // Build imageItems in the order they appear in previewImages
+    for (let i = 0; i < previewImages.length; i++) {
+      const preview = previewImages[i];
+      const existingId = existingImageIds[i];
+      
+      if (existingId) {
+        // This is an existing server image
+        items.push({
+          id: `existing-${existingId}`,
+          preview: preview,
+          existingImageId: existingId,
+          isPrimary: i === primaryIndex,
+        });
+      } else {
+        // This is a new local image - get its file from the map
+        const file = previewToFileMap.get(preview);
+        if (file) {
+          items.push({
+            id: `new-${preview}`, // Use preview URL as stable ID
+            preview: preview,
+            file: file,
+            isPrimary: i === primaryIndex,
+          });
+        }
+      }
     }
     
     setImageItems(items);
@@ -241,12 +258,15 @@ const Step3_Images: React.FC<Props> = ({
 
   // Image upload handler
   const onDrop = useCallback((files: File[]) => {
-    const newItems: ImageItem[] = files.map((file, idx) => ({
-      id: `new-${Date.now()}-${idx}`,
-      preview: URL.createObjectURL(file),
-      file,
-      isPrimary: false,
-    }));
+    const newItems: ImageItem[] = files.map((file) => {
+      const preview = URL.createObjectURL(file);
+      return {
+        id: `new-${preview}`, // Use preview URL as stable ID
+        preview: preview,
+        file,
+        isPrimary: false,
+      };
+    });
     
     const updatedItems = [...imageItems, ...newItems];
     setImageItems(updatedItems);
