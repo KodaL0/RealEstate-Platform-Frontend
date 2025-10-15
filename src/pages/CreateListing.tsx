@@ -339,36 +339,43 @@ const CreateListing: React.FC = () => {
       
       // Check if the primary image is a new image or existing image
       // existingImageIds[i] is empty ('') for new images, has an ID for existing images
-      const primaryIsNewImage = !existingImageIds[primaryIndex];
+      const primaryExistingId = existingImageIds[primaryIndex];
+      const primaryIsNewImage = !primaryExistingId || primaryExistingId === '';
       console.log('🔍 Primary analysis:', {
         primaryIndex,
         primaryIsNewImage,
-        primaryExistingId: existingImageIds[primaryIndex]
+        primaryExistingId,
+        existingImageIdsArray: existingImageIds
       });
       
       if (primaryIsNewImage) {
-        // Count how many new images appear BEFORE the primary index
-        // to calculate its position within the new images array
-        let newImageCountBeforePrimary = 0;
-        for (let i = 0; i < primaryIndex; i++) {
-          if (!existingImageIds[i]) {
-            newImageCountBeforePrimary++;
+        // Find which new image is the primary by counting new images up to the primary index
+        let newImageIndex = 0;
+        for (let i = 0; i <= primaryIndex; i++) {
+          if (!existingImageIds[i] || existingImageIds[i] === '') {
+            if (i === primaryIndex) {
+              // This is the primary new image
+              break;
+            }
+            newImageIndex++;
           }
         }
         
         console.log('📊 New image analysis:', {
-          newImageCountBeforePrimary,
-          totalNewImages: formData.images.length
+          primaryIndex,
+          newImageIndex,
+          totalNewImages: formData.images.length,
+          existingImageIdsArray: existingImageIds
         });
         
         // Backend only sets primary if index is 0 (first new image)
         // So we need to reorder the images array to put the primary first
-        if (newImageCountBeforePrimary > 0) {
+        if (newImageIndex > 0) {
           console.log('🔄 Reordering images to put primary first');
           // Reorder formData.images to put primary image first
           const reorderedImages = [...formData.images];
-          const primaryImage = reorderedImages[newImageCountBeforePrimary];
-          reorderedImages.splice(newImageCountBeforePrimary, 1);
+          const primaryImage = reorderedImages[newImageIndex];
+          reorderedImages.splice(newImageIndex, 1);
           reorderedImages.unshift(primaryImage);
           
           // Clear and re-append in correct order

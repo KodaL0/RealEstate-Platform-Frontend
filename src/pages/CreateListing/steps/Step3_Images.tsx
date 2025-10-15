@@ -275,7 +275,8 @@ const Step3_Images: React.FC<Props> = ({
       previews: newPreviews.length,
       existingIds: newExistingIds.length,
       files: newFiles.length,
-      primaryIndex: newPrimaryIndex
+      primaryIndex: newPrimaryIndex,
+      existingIdsArray: newExistingIds
     });
 
     setPreviewImages(newPreviews);
