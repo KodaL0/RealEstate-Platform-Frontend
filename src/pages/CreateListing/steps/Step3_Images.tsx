@@ -374,8 +374,11 @@ const Step3_Images: React.FC<Props> = ({
     setImageItems(updatedItems);
     syncToParent(updatedItems);
     
-    // Persist to backend if editing
-    if (isEditing && updatedItems.some(item => item.existingImageId)) {
+    // Only persist to backend if:
+    // 1. We're in edit mode
+    // 2. The target image being set as primary is an EXISTING image (not a new upload)
+    // New images will be set as primary on final form submission
+    if (isEditing && targetItem.existingImageId) {
       try {
         await persistImageOrder(updatedItems);
         toast.success('Primary image updated');
@@ -385,6 +388,9 @@ const Step3_Images: React.FC<Props> = ({
         syncToParent(snapshot);
         toast.error('Failed to set primary image');
       }
+    } else if (isEditing && !targetItem.existingImageId) {
+      // New image set as primary - will be saved on form submission
+      toast.success('Primary image will be updated when you save');
     }
   };
 

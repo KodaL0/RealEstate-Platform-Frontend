@@ -327,19 +327,25 @@ const CreateListing: React.FC = () => {
     } else if (formData.images.length) {
       formData.images.forEach(f => fd.append('images[]', f));
       
-      // Calculate primary index relative to NEW images only
-      // Count how many existing images we have (non-empty existingImageIds)
-      const numExistingImages = existingImageIds.filter(id => id).length;
+      // Check if the primary image is a new image or existing image
+      // existingImageIds[i] is empty ('') for new images, has an ID for existing images
+      const primaryIsNewImage = !existingImageIds[primaryIndex];
       
-      // If primary image is one of the new images (index >= numExistingImages)
-      // then send its position within the new images array
-      if (primaryIndex >= numExistingImages) {
-        const relativeIndex = primaryIndex - numExistingImages;
-        fd.append('primary_image_index', String(relativeIndex));
-        console.log(`🖼️ Setting primary to new image at relative index ${relativeIndex} (absolute: ${primaryIndex})`);
+      if (primaryIsNewImage) {
+        // Count how many new images appear BEFORE the primary index
+        // to calculate its position within the new images array
+        let newImageCountBeforePrimary = 0;
+        for (let i = 0; i < primaryIndex; i++) {
+          if (!existingImageIds[i]) {
+            newImageCountBeforePrimary++;
+          }
+        }
+        
+        fd.append('primary_image_index', String(newImageCountBeforePrimary));
+        console.log(`🖼️ Setting primary to new image at relative index ${newImageCountBeforePrimary} (absolute: ${primaryIndex})`);
       }
       // If primary is an existing image, don't send primary_image_index
-      // The backend will keep the existing primary
+      // The backend will keep the existing primary or it was already updated via the reorder API
     }
   }
 
