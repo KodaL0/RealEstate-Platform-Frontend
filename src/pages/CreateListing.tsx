@@ -316,6 +316,15 @@ const CreateListing: React.FC = () => {
   
   // Append images to FormData with proper ordering and primary index
   function appendImagesToFormData(fd: FormData) {
+    console.log('📤 appendImagesToFormData called:', {
+      isEditing,
+      existingImageIds: existingImageIds.length,
+      previewImages: previewImages.length,
+      formDataImages: formData.images.length,
+      primaryIndex,
+      existingImageIdsArray: existingImageIds
+    });
+    
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
     const hasNewImages = formData.images.length > 0;
     
@@ -325,11 +334,17 @@ const CreateListing: React.FC = () => {
       formData.images.forEach(f => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
     } else if (formData.images.length) {
+      console.log('📎 Adding new images to FormData');
       formData.images.forEach(f => fd.append('images[]', f));
       
       // Check if the primary image is a new image or existing image
       // existingImageIds[i] is empty ('') for new images, has an ID for existing images
       const primaryIsNewImage = !existingImageIds[primaryIndex];
+      console.log('🔍 Primary analysis:', {
+        primaryIndex,
+        primaryIsNewImage,
+        primaryExistingId: existingImageIds[primaryIndex]
+      });
       
       if (primaryIsNewImage) {
         // Count how many new images appear BEFORE the primary index
@@ -341,9 +356,15 @@ const CreateListing: React.FC = () => {
           }
         }
         
+        console.log('📊 New image analysis:', {
+          newImageCountBeforePrimary,
+          totalNewImages: formData.images.length
+        });
+        
         // Backend only sets primary if index is 0 (first new image)
         // So we need to reorder the images array to put the primary first
         if (newImageCountBeforePrimary > 0) {
+          console.log('🔄 Reordering images to put primary first');
           // Reorder formData.images to put primary image first
           const reorderedImages = [...formData.images];
           const primaryImage = reorderedImages[newImageCountBeforePrimary];
@@ -353,13 +374,18 @@ const CreateListing: React.FC = () => {
           // Clear and re-append in correct order
           fd.delete('images[]');
           reorderedImages.forEach(f => fd.append('images[]', f));
+          console.log('✅ Reordered images:', reorderedImages.map(f => f.name));
         }
         
         fd.append('primary_image_index', '0'); // Always 0 since we reordered
         console.log(`🖼️ Reordered images to put primary first, sending index 0`);
+      } else {
+        console.log('ℹ️ Primary is existing image, not sending primary_image_index');
       }
       // If primary is an existing image, don't send primary_image_index
       // The backend will keep the existing primary or it was already updated via the reorder API
+    } else {
+      console.log('ℹ️ No new images to upload');
     }
   }
 

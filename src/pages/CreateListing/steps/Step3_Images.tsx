@@ -167,6 +167,13 @@ const Step3_Images: React.FC<Props> = ({
 
   // Initialize imageItems from parent state (on mount and when parent changes)
   useEffect(() => {
+    console.log('🔄 Rebuilding imageItems from parent state:', {
+      previewImages: previewImages.length,
+      existingImageIds: existingImageIds.length,
+      formDataImages: formData.images.length,
+      primaryIndex
+    });
+    
     const items: ImageItem[] = [];
     
     // Build a map of previews to files for new images
@@ -178,6 +185,7 @@ const Step3_Images: React.FC<Props> = ({
     for (let i = 0; i < previewImages.length; i++) {
       if (!existingImageIds[i] && fileIndex < formData.images.length) {
         previewToFileMap.set(previewImages[i], formData.images[fileIndex]);
+        console.log(`📎 Mapped preview ${i} to file ${fileIndex}:`, previewImages[i].substring(0, 50) + '...');
         fileIndex++;
       }
     }
@@ -189,6 +197,7 @@ const Step3_Images: React.FC<Props> = ({
       
       if (existingId) {
         // This is an existing server image
+        console.log(`🖼️ Adding existing image ${i}:`, existingId);
         items.push({
           id: `existing-${existingId}`,
           preview: preview,
@@ -199,16 +208,20 @@ const Step3_Images: React.FC<Props> = ({
         // This is a new local image - get its file from the map
         const file = previewToFileMap.get(preview);
         if (file) {
+          console.log(`📸 Adding new image ${i}:`, preview.substring(0, 50) + '...', 'file:', file.name);
           items.push({
             id: `new-${preview}`, // Use preview URL as stable ID
             preview: preview,
             file: file,
             isPrimary: i === primaryIndex,
           });
+        } else {
+          console.warn(`⚠️ Could not find file for new image at index ${i}:`, preview.substring(0, 50) + '...');
         }
       }
     }
     
+    console.log('✅ Built imageItems:', items.length, 'items');
     setImageItems(items);
   }, [previewImages, existingImageIds, primaryIndex, formData.images]);
 
@@ -225,12 +238,22 @@ const Step3_Images: React.FC<Props> = ({
 
   // Sync imageItems back to parent state
   const syncToParent = useCallback((items: ImageItem[]) => {
+    console.log('🔄 Syncing imageItems to parent state:', items.length, 'items');
+    
     const newPreviews: string[] = [];
     const newExistingIds: string[] = [];
     const newFiles: File[] = [];
     let newPrimaryIndex = 0;
 
     items.forEach((item, idx) => {
+      console.log(`📋 Processing item ${idx}:`, {
+        id: item.id,
+        isPrimary: item.isPrimary,
+        hasFile: !!item.file,
+        hasExistingId: !!item.existingImageId,
+        previewType: item.preview.startsWith('blob:') ? 'blob' : 'url'
+      });
+      
       newPreviews.push(item.preview);
       
       if (item.existingImageId) {
@@ -246,6 +269,13 @@ const Step3_Images: React.FC<Props> = ({
       if (item.isPrimary) {
         newPrimaryIndex = idx;
       }
+    });
+
+    console.log('📤 Updating parent state:', {
+      previews: newPreviews.length,
+      existingIds: newExistingIds.length,
+      files: newFiles.length,
+      primaryIndex: newPrimaryIndex
     });
 
     setPreviewImages(newPreviews);
@@ -373,8 +403,20 @@ const Step3_Images: React.FC<Props> = ({
 
   // Set primary image handler
   const handleSetPrimary = async (itemId: string) => {
+    console.log('⭐ Setting primary image:', itemId);
+    
     const targetItem = imageItems.find(i => i.id === itemId);
-    if (!targetItem || targetItem.isPrimary) return;
+    if (!targetItem || targetItem.isPrimary) {
+      console.log('❌ Target item not found or already primary');
+      return;
+    }
+    
+    console.log('🎯 Target item:', {
+      id: targetItem.id,
+      hasFile: !!targetItem.file,
+      hasExistingId: !!targetItem.existingImageId,
+      previewType: targetItem.preview.startsWith('blob:') ? 'blob' : 'url'
+    });
     
     const snapshot = [...imageItems];
     
@@ -388,7 +430,15 @@ const Step3_Images: React.FC<Props> = ({
     if (targetIndex > 0) {
       const [removed] = updatedItems.splice(targetIndex, 1);
       updatedItems.unshift(removed);
+      console.log(`🔄 Moved item from position ${targetIndex} to 0`);
     }
+    
+    console.log('📝 Updated items order:', updatedItems.map((item, idx) => ({
+      index: idx,
+      id: item.id,
+      isPrimary: item.isPrimary,
+      hasFile: !!item.file
+    })));
     
     // Update local state optimistically
     setImageItems(updatedItems);
@@ -399,16 +449,19 @@ const Step3_Images: React.FC<Props> = ({
     // 2. The target image being set as primary is an EXISTING image (not a new upload)
     // New images will be set as primary on final form submission
     if (isEditing && targetItem.existingImageId) {
+      console.log('💾 Persisting existing image as primary to backend');
       try {
         await persistImageOrder(updatedItems);
         toast.success('Primary image updated');
       } catch (error) {
+        console.error('❌ Failed to persist primary image:', error);
         // Rollback on error
         setImageItems(snapshot);
         syncToParent(snapshot);
         toast.error('Failed to set primary image');
       }
     } else if (isEditing && !targetItem.existingImageId) {
+      console.log('⏳ New image set as primary - will be saved on form submission');
       // New image set as primary - will be saved on form submission
       toast.success('Primary image will be updated when you save');
     }
