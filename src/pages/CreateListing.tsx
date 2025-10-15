@@ -349,7 +349,8 @@ const CreateListing: React.FC = () => {
       });
       
       if (primaryIsNewImage) {
-        // Find which new image is the primary by counting new images up to the primary index
+        // Since we now maintain the correct order in formData.images,
+        // we just need to find which position the primary image is at
         let newImageIndex = 0;
         for (let i = 0; i <= primaryIndex; i++) {
           if (!existingImageIds[i] || existingImageIds[i] === '') {
@@ -365,14 +366,14 @@ const CreateListing: React.FC = () => {
           primaryIndex,
           newImageIndex,
           totalNewImages: formData.images.length,
-          existingImageIdsArray: existingImageIds
+          existingImageIdsArray: existingImageIds,
+          formDataImages: formData.images.map(f => f.name)
         });
         
-        // Backend only sets primary if index is 0 (first new image)
-        // So we need to reorder the images array to put the primary first
+        // The formData.images array should already be in the correct order
+        // If the primary image is not at position 0, we need to reorder
         if (newImageIndex > 0) {
           console.log('🔄 Reordering images to put primary first');
-          // Reorder formData.images to put primary image first
           const reorderedImages = [...formData.images];
           const primaryImage = reorderedImages[newImageIndex];
           reorderedImages.splice(newImageIndex, 1);
@@ -382,10 +383,12 @@ const CreateListing: React.FC = () => {
           fd.delete('images[]');
           reorderedImages.forEach(f => fd.append('images[]', f));
           console.log('✅ Reordered images:', reorderedImages.map(f => f.name));
+        } else {
+          console.log('ℹ️ Primary image is already first, no reordering needed');
         }
         
         fd.append('primary_image_index', '0'); // Always 0 since we reordered
-        console.log(`🖼️ Reordered images to put primary first, sending index 0`);
+        console.log(`🖼️ Sending primary_image_index = 0`);
       } else {
         console.log('ℹ️ Primary is existing image, not sending primary_image_index');
       }

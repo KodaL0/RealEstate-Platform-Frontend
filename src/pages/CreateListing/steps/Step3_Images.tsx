@@ -245,6 +245,9 @@ const Step3_Images: React.FC<Props> = ({
     const newFiles: File[] = [];
     let newPrimaryIndex = 0;
 
+    // First pass: collect all new images in the order they appear
+    const orderedNewFiles: File[] = [];
+    
     items.forEach((item, idx) => {
       console.log(`📋 Processing item ${idx}:`, {
         id: item.id,
@@ -262,21 +265,26 @@ const Step3_Images: React.FC<Props> = ({
         newExistingIds.push('');
       }
       
+      // Collect new files in the order they appear in the UI
       if (item.file) {
-        newFiles.push(item.file);
+        orderedNewFiles.push(item.file);
       }
       
       if (item.isPrimary) {
         newPrimaryIndex = idx;
       }
     });
+    
+    // Use the ordered files instead of the original formData.images
+    newFiles.push(...orderedNewFiles);
 
     console.log('📤 Updating parent state:', {
       previews: newPreviews.length,
       existingIds: newExistingIds.length,
       files: newFiles.length,
       primaryIndex: newPrimaryIndex,
-      existingIdsArray: newExistingIds
+      existingIdsArray: newExistingIds,
+      orderedFiles: orderedNewFiles.map(f => f.name)
     });
 
     setPreviewImages(newPreviews);
