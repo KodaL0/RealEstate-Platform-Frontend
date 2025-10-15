@@ -367,7 +367,8 @@ const CreateListing: React.FC = () => {
           newImageIndex,
           totalNewImages: formData.images.length,
           existingImageIdsArray: existingImageIds,
-          formDataImages: formData.images.map(f => f.name)
+          formDataImages: formData.images.map(f => f.name),
+          willReorder: newImageIndex > 0
         });
         
         // The formData.images array should already be in the correct order
@@ -389,6 +390,13 @@ const CreateListing: React.FC = () => {
         
         fd.append('primary_image_index', '0'); // Always 0 since we reordered
         console.log(`🖼️ Sending primary_image_index = 0`);
+        
+        // Log what's actually being sent
+        const formDataEntries = Array.from(fd.entries()).filter(([key]) => key.startsWith('images'));
+        console.log('📤 FormData images being sent:', formDataEntries.map(([key, value]) => ({
+          key,
+          fileName: value instanceof File ? value.name : 'not a file'
+        })));
       } else {
         console.log('ℹ️ Primary is existing image, not sending primary_image_index');
       }
