@@ -100,6 +100,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     
     return () => clearTimeout(timer);
   }, [hasBeenVisible, hasInteracted]);
+  
+  // Reset image error state when current image changes
+  useEffect(() => {
+    setImageError(false);
+  }, [currentImage]);
 
   const prevImage = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -126,6 +131,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const currentImageState = getLoadingState(imageUrl);
   const isCurrentImageLoading = currentImageState.loading;
   const isCurrentImageLoaded = currentImageState.loaded;
+  const hasImageError = currentImageState.error;
+  
+  // Handle image load errors by falling back to placeholder
+  const [imageError, setImageError] = useState(false);
+  const effectiveImageUrl = (hasImageError || imageError) ? '/placeholder-property.jpg' : imageUrl;
 
   const isForSale = property_status === 'for_sale';
 
@@ -399,17 +409,21 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             )}
             
             <img
-              src={imageUrl}
+              src={effectiveImageUrl}
               alt={title}
+              onError={() => {
+                // Fallback to placeholder on error
+                setImageError(true);
+              }}
               className={`
                 w-full object-cover transition-all duration-300 ease-out
                 group-hover:scale-105
                 ${featured ? 'h-80' : 'h-64'}
-                ${isCurrentImageLoaded ? 'opacity-100' : 'opacity-0'}
+                ${isCurrentImageLoaded || imageError || hasImageError ? 'opacity-100' : 'opacity-0'}
                 ${isCurrentImageLoading ? 'opacity-50' : ''}
               `}
               style={{
-                transition: isCurrentImageLoaded ? 'opacity 0.3s ease-in-out' : 'none'
+                transition: isCurrentImageLoaded || imageError || hasImageError ? 'opacity 0.3s ease-in-out' : 'none'
               }}
             />
             <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />

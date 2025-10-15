@@ -88,11 +88,16 @@ export const ImageCacheProvider: React.FC<{ children: React.ReactNode }> = ({ ch
       };
       
       img.onerror = () => {
-        // Update state
+        // Update state - mark as error
         setLoadingStates(prev => ({
           ...prev,
           [url]: { loading: false, loaded: false, error: true }
         }));
+        
+        // Log only in development to avoid console spam in production
+        if (process.env.NODE_ENV === 'development') {
+          console.warn(`Image failed to load: ${url}`);
+        }
         
         reject(new Error(`Failed to load image: ${url}`));
       };

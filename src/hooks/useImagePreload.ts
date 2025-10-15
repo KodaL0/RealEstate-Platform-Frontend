@@ -47,7 +47,11 @@ export const useImagePreload = (
           await preloadImage(url);
           setLoadingStates(prev => ({ ...prev, [url]: false }));
         } catch (error) {
-          console.error(`Failed to preload image: ${url}`, error);
+          // Silently handle image load failures - they may be missing or have network issues
+          // The UI will show a placeholder for failed images
+          if (process.env.NODE_ENV === 'development') {
+            console.warn(`Failed to preload image: ${url}`);
+          }
           setLoadingStates(prev => ({ ...prev, [url]: false }));
         }
       });
