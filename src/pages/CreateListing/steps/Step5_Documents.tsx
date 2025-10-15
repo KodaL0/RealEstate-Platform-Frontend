@@ -221,6 +221,10 @@ const Step5_Documents: React.FC<Props> = ({
         clearTimeout(existingTimer);
       }
 
+      // For document_type changes, save immediately (no debounce)
+      // For title/description, use 1 second debounce
+      const debounceDelay = field === 'type' ? 0 : 1000;
+
       // Set new timer for debounced save
       const timer = setTimeout(() => {
         const updatedDoc = documents.find(d => d.id === id);
@@ -229,7 +233,7 @@ const Step5_Documents: React.FC<Props> = ({
           const docToSave = { ...updatedDoc, [field]: value };
           autoSaveDocument(docToSave);
         }
-      }, 1000); // 1 second debounce
+      }, debounceDelay);
 
       saveTimers.current.set(id, timer);
     }
@@ -241,6 +245,25 @@ const Step5_Documents: React.FC<Props> = ({
     if (suggestion) {
       updateDocument(id, 'title', suggestion);
     }
+  };
+
+  // Flush all pending saves immediately
+  const flushPendingSaves = () => {
+    // Trigger all pending timers immediately
+    saveTimers.current.forEach((timer, docId) => {
+      clearTimeout(timer);
+      const doc = documents.find(d => d.id === docId);
+      if (doc && doc.existingDocId) {
+        autoSaveDocument(doc);
+      }
+    });
+    saveTimers.current.clear();
+  };
+
+  // Enhanced next function that flushes saves
+  const handleNext = () => {
+    flushPendingSaves();
+    next();
   };
 
   // Check for duplicate document titles (case-insensitive)
@@ -626,7 +649,7 @@ const Step5_Documents: React.FC<Props> = ({
 
         <button
           type="button"
-          onClick={next}
+          onClick={handleNext}
           className="group relative px-6 sm:px-8 py-4 rounded-xl font-semibold text-white transition-all duration-300 transform bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0"
         >
           <span className="flex items-center">
