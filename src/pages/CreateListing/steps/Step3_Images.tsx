@@ -237,6 +237,14 @@ const Step3_Images: React.FC<Props> = ({
   }, [imageItems]);
 
   // Sync imageItems back to parent state
+  // IMPORTANT: This maintains UI state only for display and interaction.
+  // The actual backend image order is set via a two-phase approach:
+  // 1. Upload Phase: New images are uploaded (backend appends them to the end)
+  // 2. Reorder Phase: After upload, the reorder API is called to arrange ALL images
+  //    (both existing and newly uploaded) in the correct order from this UI state.
+  // 
+  // The formData.images array order matters for tracking which files to upload,
+  // but does NOT affect the final backend order (backend always appends).
   const syncToParent = useCallback((items: ImageItem[]) => {
     console.log('🔄 Syncing imageItems to parent state:', items.length, 'items');
     

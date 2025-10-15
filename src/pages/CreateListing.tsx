@@ -314,7 +314,11 @@ const CreateListing: React.FC = () => {
 
   // ========== HELPER FUNCTIONS FOR FORM SUBMISSION ==========
   
-  // Append images to FormData with proper ordering and primary index
+  // Append images to FormData
+  // Note: Backend always appends new images to the end of existing images.
+  // For edit mode, we use a two-phase approach:
+  // 1. Upload new images (they'll be appended to end)
+  // 2. Call reorder API to arrange all images in the correct order (see handleSubmit)
   function appendImagesToFormData(fd: FormData) {
     console.log('📤 appendImagesToFormData called:', {
       isEditing,
@@ -326,82 +330,19 @@ const CreateListing: React.FC = () => {
     });
     
     const hasDeletedAllExisting = isEditing && existingImageIds.length === 0 && previewImages.length > 0;
-    const hasNewImages = formData.images.length > 0;
     
-    if (hasDeletedAllExisting && hasNewImages) {
+    if (hasDeletedAllExisting && formData.images.length > 0) {
+      // User deleted all existing images and uploaded new ones - use replace mode
       console.log('🔄 Batch replace: deleting all existing images and uploading new ones');
       fd.append('replace_images', 'true');
       formData.images.forEach(f => fd.append('images[]', f));
       fd.append('primary_image_index', String(primaryIndex));
-    } else if (formData.images.length) {
-      console.log('📎 Adding new images to FormData');
+    } else if (formData.images.length > 0) {
+      // Just upload new images - they'll be appended to end
+      // We'll reorder all images after upload using the reorder API
+      console.log('📎 Adding new images to FormData (will reorder after upload)');
       formData.images.forEach(f => fd.append('images[]', f));
-      
-      // Check if the primary image is a new image or existing image
-      // existingImageIds[i] is empty ('') for new images, has an ID for existing images
-      const primaryExistingId = existingImageIds[primaryIndex];
-      const primaryIsNewImage = !primaryExistingId || primaryExistingId === '';
-      console.log('🔍 Primary analysis:', {
-        primaryIndex,
-        primaryIsNewImage,
-        primaryExistingId,
-        existingImageIdsArray: existingImageIds
-      });
-      
-      if (primaryIsNewImage) {
-        // Since we now maintain the correct order in formData.images,
-        // we just need to find which position the primary image is at
-        let newImageIndex = 0;
-        for (let i = 0; i <= primaryIndex; i++) {
-          if (!existingImageIds[i] || existingImageIds[i] === '') {
-            if (i === primaryIndex) {
-              // This is the primary new image
-              break;
-            }
-            newImageIndex++;
-          }
-        }
-        
-        console.log('📊 New image analysis:', {
-          primaryIndex,
-          newImageIndex,
-          totalNewImages: formData.images.length,
-          existingImageIdsArray: existingImageIds,
-          formDataImages: formData.images.map(f => f.name),
-          willReorder: newImageIndex > 0
-        });
-        
-        // The formData.images array should already be in the correct order
-        // If the primary image is not at position 0, we need to reorder
-        if (newImageIndex > 0) {
-          console.log('🔄 Reordering images to put primary first');
-          const reorderedImages = [...formData.images];
-          const primaryImage = reorderedImages[newImageIndex];
-          reorderedImages.splice(newImageIndex, 1);
-          reorderedImages.unshift(primaryImage);
-          
-          // Clear and re-append in correct order
-          fd.delete('images[]');
-          reorderedImages.forEach(f => fd.append('images[]', f));
-          console.log('✅ Reordered images:', reorderedImages.map(f => f.name));
-        } else {
-          console.log('ℹ️ Primary image is already first, no reordering needed');
-        }
-        
-        fd.append('primary_image_index', '0'); // Always 0 since we reordered
-        console.log(`🖼️ Sending primary_image_index = 0`);
-        
-        // Log what's actually being sent
-        const formDataEntries = Array.from(fd.entries()).filter(([key]) => key.startsWith('images'));
-        console.log('📤 FormData images being sent:', formDataEntries.map(([key, value]) => ({
-          key,
-          fileName: value instanceof File ? value.name : 'not a file'
-        })));
-      } else {
-        console.log('ℹ️ Primary is existing image, not sending primary_image_index');
-      }
-      // If primary is an existing image, don't send primary_image_index
-      // The backend will keep the existing primary or it was already updated via the reorder API
+      // Don't send primary_image_index - we'll set it via reorder API after upload
     } else {
       console.log('ℹ️ No new images to upload');
     }
@@ -666,6 +607,63 @@ const CreateListing: React.FC = () => {
         : await api.properties.create(fd);
 
       if (res.status >= 200 && res.status < 300) {
+        // Phase 2: If we uploaded new images in edit mode, reorder all images to match UI order
+        if (isEditing && formData.images.length > 0) {
+          console.log('🔄 Phase 2: Reordering images after upload');
+          try {
+            // Fetch updated property to get new image IDs
+            const updatedProperty = await api.properties.getUserProperty(username, Number(id));
+            const uploadedImages = updatedProperty.data.images || [];
+            
+            // Build the correct order based on our UI state
+            // We need to map our imageItems order to the actual backend image IDs
+            const correctOrder: number[] = [];
+            
+            // Process each item in our UI order
+            for (let i = 0; i < previewImages.length; i++) {
+              const existingId = existingImageIds[i];
+              
+              if (existingId) {
+                // This is an existing image - use its ID
+                correctOrder.push(Number(existingId));
+              } else {
+                // This is a new image - find it by matching position
+                // New images were appended to the end, so we can identify them
+                // as images that aren't in our existingImageIds list
+                const existingIdsSet = new Set(existingImageIds.filter(id => id));
+                const newImages = uploadedImages.filter((img: any) => !existingIdsSet.has(String(img.id)));
+                
+                // Match by position in the new images array
+                const newImageIndex = previewImages.slice(0, i + 1).filter((_, idx) => !existingImageIds[idx]).length - 1;
+                
+                if (newImages[newImageIndex]) {
+                  correctOrder.push(newImages[newImageIndex].id);
+                }
+              }
+            }
+            
+            console.log('📋 Reordering images:', {
+              correctOrder,
+              primaryIndex,
+              totalImages: correctOrder.length
+            });
+            
+            // Reorder all images to match the user's intended order
+            await api.properties.reorderImages(
+              username,
+              Number(id),
+              correctOrder,
+              primaryIndex
+            );
+            
+            console.log('✅ Images reordered successfully');
+          } catch (reorderError: any) {
+            console.error('❌ Failed to reorder images after upload:', reorderError);
+            // Don't fail the whole submission - images are uploaded, just in wrong order
+            toast.error('Images uploaded but order may be incorrect. Please reorder manually.');
+          }
+        }
+        
         // Clear saved form data on successful submission
         // The wizard context will handle mode-specific cleanup
         toast.success(isEditing ? 'Listing updated!' : 'Listing created!');
