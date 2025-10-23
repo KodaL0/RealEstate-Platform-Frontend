@@ -15,7 +15,7 @@ interface ProcessingRestrictionData {
 }
 
 const PrivacySettings: React.FC = () => {
-  const { refreshGDPRStatus, updateGDPRConsent, getGDPRStatus } = useUser();
+  const { user, refreshGDPRStatus, updateGDPRConsent, getGDPRStatus } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
   const [activeTab, setActiveTab] = useState<'consents' | 'rights' | 'account'>('consents');
@@ -30,10 +30,12 @@ const PrivacySettings: React.FC = () => {
   // Get current GDPR status
   const gdprStatus = getGDPRStatus();
 
-  // Load GDPR status on component mount (ONCE)
+  // Load GDPR status when user becomes available
   useEffect(() => {
-    loadGDPRStatus();
-  }, []); // Empty dependency array - only run once on mount
+    if (user) {
+      loadGDPRStatus();
+    }
+  }, [user?.id]); // Re-run when user ID changes (user logs in/out)
 
   // REMOVED: Auto-showing consent modal on PrivacySettings page
   // Users come to this page TO set preferences, they shouldn't be forced with a modal
@@ -129,7 +131,8 @@ const PrivacySettings: React.FC = () => {
     }
   };
 
-  if (isLoading) {
+  // Show loading if user isn't loaded yet or if explicitly loading
+  if (!user || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
