@@ -72,9 +72,9 @@ const Footer = () => {
 
           <div className="border-t border-gray-800 mt-12 pt-8 flex flex-col md:flex-row justify-between items-center">
             <p className="text-gray-500 text-sm mb-4 md:mb-0">© {new Date().getFullYear()} PROPERTPRO. All rights reserved.</p>
-            <div className="flex space-x-6">
-              <Link to="/terms" className="text-gray-500 hover:text-gray-400 text-sm">Terms And Conditions</Link>
-              <Link to="/cookies" className="text-gray-500 hover:text-gray-400 text-sm">Cookie Policy</Link>
+            <div className="flex flex-wrap justify-center space-x-6">
+              <Link to="/legal/terms-conditions/" className="text-gray-500 hover:text-gray-400 text-sm">Terms & Conditions</Link>
+              <Link to="/legal/privacy-policy/" className="text-gray-500 hover:text-gray-400 text-sm">Privacy Policy</Link>
             </div>
           </div>
         </div>

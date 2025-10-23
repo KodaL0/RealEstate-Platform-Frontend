@@ -3,7 +3,12 @@
  * 
  * This module provides comprehensive event tracking for the PropertPro platform.
  * It wraps the Google Analytics gtag function with type-safe, business-specific events.
+ * 
+ * GDPR Compliance:
+ * All tracking functions check for analytics consent before sending data.
  */
+
+import consentManager from '../services/ConsentManager';
 
 // Type-safe gtag declaration
 declare global {
@@ -16,6 +21,24 @@ declare global {
     dataLayer?: any[];
   }
 }
+
+/**
+ * Helper function to check if tracking is allowed
+ * Returns true only if:
+ * 1. User has given analytics consent
+ * 2. Google Analytics is loaded
+ */
+const canTrack = (): boolean => {
+  if (!consentManager.isAnalyticsEnabled()) {
+    return false;
+  }
+  
+  if (typeof window.gtag !== 'function') {
+    return false;
+  }
+  
+  return true;
+};
 
 // ============================================================================
 // PROPERTY EVENTS
@@ -35,10 +58,10 @@ export interface PropertyViewParams {
 }
 
 export const trackPropertyView = (params: PropertyViewParams) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
 
   // GA4 ecommerce view_item event
-  window.gtag('event', 'view_item', {
+  window.gtag!('event', 'view_item', {
     currency: 'EUR',
     value: params.price,
     items: [{
@@ -54,7 +77,7 @@ export const trackPropertyView = (params: PropertyViewParams) => {
   });
 
   // Custom property view event with additional details
-  window.gtag('event', 'property_view', {
+  window.gtag!('event', 'property_view', {
     property_id: params.property_id,
     property_type: params.property_type,
     property_status: params.property_status,
@@ -68,9 +91,9 @@ export const trackPropertyView = (params: PropertyViewParams) => {
 };
 
 export const trackPropertyImageView = (propertyId: string, imageIndex: number, totalImages: number) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'property_image_navigation', {
+  window.gtag!('event', 'property_image_navigation', {
     property_id: propertyId,
     image_index: imageIndex,
     total_images: totalImages,
@@ -79,9 +102,9 @@ export const trackPropertyImageView = (propertyId: string, imageIndex: number, t
 };
 
 export const trackPropertyContact = (propertyId: string, contactMethod: 'phone' | 'email' | 'chat' | 'whatsapp') => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'contact_property_owner', {
+  window.gtag!('event', 'contact_property_owner', {
     property_id: propertyId,
     contact_method: contactMethod,
     event_category: 'engagement',
@@ -89,18 +112,18 @@ export const trackPropertyContact = (propertyId: string, contactMethod: 'phone' 
   });
 
   // This is a conversion event
-  window.gtag('event', 'generate_lead', {
+  window.gtag!('event', 'generate_lead', {
     currency: 'EUR',
     value: 1,
   });
 };
 
 export const trackPropertyFavorite = (propertyId: string, action: 'add' | 'remove', propertyType?: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
   const eventName = action === 'add' ? 'add_to_wishlist' : 'remove_from_wishlist';
   
-  window.gtag('event', eventName, {
+  window.gtag!('event', eventName, {
     property_id: propertyId,
     property_type: propertyType,
     event_category: 'engagement',
@@ -108,9 +131,9 @@ export const trackPropertyFavorite = (propertyId: string, action: 'add' | 'remov
 };
 
 export const trackDocumentView = (propertyId: string, documentType: string, documentName: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'view_document', {
+  window.gtag!('event', 'view_document', {
     property_id: propertyId,
     document_type: documentType,
     document_name: documentName,
@@ -119,9 +142,9 @@ export const trackDocumentView = (propertyId: string, documentType: string, docu
 };
 
 export const trackMapInteraction = (propertyId: string, action: 'open' | 'zoom' | 'drag') => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'map_interaction', {
+  window.gtag!('event', 'map_interaction', {
     property_id: propertyId,
     interaction_type: action,
     event_category: 'engagement',
@@ -146,9 +169,9 @@ export interface SearchParams {
 }
 
 export const trackPropertySearch = (params: SearchParams) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'search', {
+  window.gtag!('event', 'search', {
     search_term: params.search_term || 'browse',
     property_type: params.property_type,
     min_price: params.min_price,
@@ -163,9 +186,9 @@ export const trackPropertySearch = (params: SearchParams) => {
 };
 
 export const trackFilterChange = (filterName: string, filterValue: any, resultsCount?: number) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'filter_applied', {
+  window.gtag!('event', 'filter_applied', {
     filter_name: filterName,
     filter_value: String(filterValue),
     results_count: resultsCount,
@@ -174,9 +197,9 @@ export const trackFilterChange = (filterName: string, filterValue: any, resultsC
 };
 
 export const trackSortChange = (sortBy: string, resultsCount?: number) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'sort_changed', {
+  window.gtag!('event', 'sort_changed', {
     sort_by: sortBy,
     results_count: resultsCount,
     event_category: 'search',
@@ -188,26 +211,26 @@ export const trackSortChange = (sortBy: string, resultsCount?: number) => {
 // ============================================================================
 
 export const trackUserRegistration = (method: 'email' | 'google' | 'facebook', isDeveloper: boolean) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'sign_up', {
+  window.gtag!('event', 'sign_up', {
     method: method,
     user_type: isDeveloper ? 'developer' : 'regular',
   });
 };
 
 export const trackUserLogin = (method: 'email' | 'google' | 'facebook') => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'login', {
+  window.gtag!('event', 'login', {
     method: method,
   });
 };
 
 export const trackProfileView = (username: string, viewerIsOwner: boolean, tab?: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'profile_view', {
+  window.gtag!('event', 'profile_view', {
     profile_username: username,
     is_own_profile: viewerIsOwner,
     tab_viewed: tab,
@@ -216,9 +239,9 @@ export const trackProfileView = (username: string, viewerIsOwner: boolean, tab?:
 };
 
 export const trackConnectionAction = (action: 'send' | 'accept' | 'reject' | 'remove', targetUsername: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'connection_action', {
+  window.gtag!('event', 'connection_action', {
     action: action,
     target_username: targetUsername,
     event_category: 'social',
@@ -226,9 +249,9 @@ export const trackConnectionAction = (action: 'send' | 'accept' | 'reject' | 're
 };
 
 export const trackChatAction = (action: 'initiate' | 'send_message' | 'view_thread', recipientUsername?: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'chat_action', {
+  window.gtag!('event', 'chat_action', {
     action: action,
     recipient_username: recipientUsername,
     event_category: 'engagement',
@@ -236,9 +259,9 @@ export const trackChatAction = (action: 'initiate' | 'send_message' | 'view_thre
 };
 
 export const trackReviewAction = (action: 'create' | 'update' | 'delete', rating: number, targetUsername: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'review_action', {
+  window.gtag!('event', 'review_action', {
     action: action,
     rating: rating,
     target_username: targetUsername,
@@ -251,9 +274,9 @@ export const trackReviewAction = (action: 'create' | 'update' | 'delete', rating
 // ============================================================================
 
 export const trackListingStepView = (step: number, stepName: string, isEdit: boolean) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'listing_step_view', {
+  window.gtag!('event', 'listing_step_view', {
     step_number: step,
     step_name: stepName,
     is_edit: isEdit,
@@ -262,9 +285,9 @@ export const trackListingStepView = (step: number, stepName: string, isEdit: boo
 };
 
 export const trackListingStepComplete = (step: number, stepName: string, isEdit: boolean) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'listing_step_complete', {
+  window.gtag!('event', 'listing_step_complete', {
     step_number: step,
     step_name: stepName,
     is_edit: isEdit,
@@ -273,9 +296,9 @@ export const trackListingStepComplete = (step: number, stepName: string, isEdit:
 };
 
 export const trackListingPublish = (propertyId: string, propertyType: string, price: number, isEdit: boolean) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', isEdit ? 'listing_updated' : 'listing_created', {
+  window.gtag!('event', isEdit ? 'listing_updated' : 'listing_created', {
     property_id: propertyId,
     property_type: propertyType,
     price: price,
@@ -285,7 +308,7 @@ export const trackListingPublish = (propertyId: string, propertyType: string, pr
 
   // Conversion event
   if (!isEdit) {
-    window.gtag('event', 'conversion', {
+    window.gtag!('event', 'conversion', {
       send_to: 'ads',
       value: 1,
       currency: 'EUR',
@@ -295,9 +318,9 @@ export const trackListingPublish = (propertyId: string, propertyType: string, pr
 };
 
 export const trackListingDelete = (propertyId: string, propertyType: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'listing_deleted', {
+  window.gtag!('event', 'listing_deleted', {
     property_id: propertyId,
     property_type: propertyType,
     event_category: 'listing_management',
@@ -312,9 +335,9 @@ export const trackDeveloperAction = (
   action: 'create_project' | 'update_project' | 'add_unit' | 'publish_unit' | 'upload_asset',
   details?: Record<string, any>
 ) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'developer_action', {
+  window.gtag!('event', 'developer_action', {
     action: action,
     ...details,
     event_category: 'developer_portal',
@@ -326,9 +349,9 @@ export const trackDeveloperAction = (
 // ============================================================================
 
 export const trackCalculatorUse = (calculatorType: 'mortgage' | 'rent_vs_buy', inputs: Record<string, any>) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'calculator_use', {
+  window.gtag!('event', 'calculator_use', {
     calculator_type: calculatorType,
     ...inputs,
     event_category: 'tools',
@@ -340,9 +363,9 @@ export const trackCalculatorUse = (calculatorType: 'mortgage' | 'rent_vs_buy', i
 // ============================================================================
 
 export const trackError = (errorType: string, errorMessage: string, componentName?: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'exception', {
+  window.gtag!('event', 'exception', {
     description: `${errorType}: ${errorMessage}`,
     fatal: false,
     component: componentName,
@@ -350,9 +373,9 @@ export const trackError = (errorType: string, errorMessage: string, componentNam
 };
 
 export const trackPerformance = (metricName: string, value: number, unit: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'timing_complete', {
+  window.gtag!('event', 'timing_complete', {
     name: metricName,
     value: Math.round(value),
     event_category: 'performance',
@@ -365,9 +388,9 @@ export const trackPerformance = (metricName: string, value: number, unit: string
 // ============================================================================
 
 export const trackShare = (contentType: 'property' | 'profile' | 'project', contentId: string, method: string) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'share', {
+  window.gtag!('event', 'share', {
     content_type: contentType,
     item_id: contentId,
     method: method,
@@ -375,9 +398,9 @@ export const trackShare = (contentType: 'property' | 'profile' | 'project', cont
 };
 
 export const trackInstagramPost = (propertyId: string, success: boolean) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('event', 'instagram_post', {
+  window.gtag!('event', 'instagram_post', {
     property_id: propertyId,
     success: success,
     event_category: 'social_media',
@@ -396,9 +419,9 @@ export const setUserProperties = (userId: string | number, properties: {
   account_age_days?: number;
   country?: string;
 }) => {
-  if (typeof window.gtag !== 'function') return;
+  if (!canTrack()) return;
   
-  window.gtag('set', 'user_properties', {
+  window.gtag!('set', 'user_properties', {
     user_id: String(userId),
     ...properties,
   });

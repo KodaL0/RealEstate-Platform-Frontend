@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileText, Download, Loader2, AlertCircle } from 'lucide-react';
+import { Shield, Download, Loader2, AlertCircle } from 'lucide-react';
 
 interface LegalDocument {
   title: string;
@@ -9,7 +9,7 @@ interface LegalDocument {
   summary?: string;
 }
 
-const TermsandConditions: React.FC = () => {
+const PrivacyPolicy: React.FC = () => {
   const [document, setDocument] = useState<LegalDocument | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -21,9 +21,9 @@ const TermsandConditions: React.FC = () => {
   const fetchDocument = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/users/legal/terms_conditions/');
+      const response = await fetch('/api/users/legal/privacy_policy/');
       if (!response.ok) {
-        throw new Error('Failed to fetch terms and conditions');
+        throw new Error('Failed to fetch privacy policy');
       }
       const data = await response.json();
       setDocument(data);
@@ -54,7 +54,7 @@ const TermsandConditions: React.FC = () => {
       <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading Terms & Conditions...</p>
+          <p className="text-gray-600">Loading Privacy Policy...</p>
         </div>
       </div>
     );
@@ -65,7 +65,7 @@ const TermsandConditions: React.FC = () => {
       <div className="min-h-screen bg-gray-50 py-8 flex items-center justify-center">
         <div className="text-center">
           <AlertCircle className="h-8 w-8 mx-auto mb-4 text-red-600" />
-          <p className="text-red-600">Failed to load Terms & Conditions</p>
+          <p className="text-red-600">Failed to load Privacy Policy</p>
           <p className="text-gray-600 mt-2">{error}</p>
         </div>
       </div>
@@ -78,11 +78,11 @@ const TermsandConditions: React.FC = () => {
         {/* Header */}
         <div className="text-center mb-8">
           <div className="flex justify-center items-center space-x-2 mb-4">
-            <FileText className="h-8 w-8 text-blue-600" />
+            <Shield className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
           </div>
           <p className="text-lg text-gray-600 mb-2">
-            Rules and guidelines for using our platform
+            How we collect, use, and protect your personal information
           </p>
           <p className="text-sm text-gray-500">
             Version {document.version} • Effective: {new Date(document.effective_date).toLocaleDateString()}
@@ -91,8 +91,8 @@ const TermsandConditions: React.FC = () => {
           {/* Download Button */}
           <div className="mt-6">
             <a 
-              href="/api/users/legal/terms_conditions/pdf/" 
-              download="PropertPro-Terms-Conditions.pdf"
+              href="/api/users/legal/privacy_policy/pdf/" 
+              download="PropertPro-Privacy-Policy.pdf"
               className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
               <Download className="h-4 w-4" />
@@ -111,11 +111,11 @@ const TermsandConditions: React.FC = () => {
 
         {/* Footer */}
         <div className="text-center mt-8 text-sm text-gray-500">
-          <p>By using our platform, you agree to these terms and conditions.</p>
+          <p>This privacy policy complies with GDPR and EU data protection regulations.</p>
         </div>
       </div>
     </div>
   );
 };
 
-export default TermsandConditions;
+export default PrivacyPolicy;

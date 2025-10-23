@@ -1,8 +1,4 @@
-import axios from 'axios';
-import api from '../config/api';
-
-// Get the axios instance for interceptors - use the same configuration as the main API client
-const apiClient = api.apiClient;
+import api, { apiClient } from '../config/api';
 
 // Functions to manage auth tokens and cookies
 
@@ -62,7 +58,14 @@ export async function login(email: string, password: string) {
 /**
  * Register a new user.
  */
-export async function register(username: string, email: string, password: string) {
+export async function register(
+  username: string, 
+  email: string, 
+  password: string,
+  acceptedTerms: boolean = false,
+  acceptedPrivacy: boolean = false,
+  marketingConsent: boolean = false
+) {
   try {
     // Convert username to lowercase before sending to backend
     const lowercaseUsername = username.toLowerCase();
@@ -70,14 +73,19 @@ export async function register(username: string, email: string, password: string
     const response = await api.auth.register({ 
       username: lowercaseUsername, 
       email, 
-      password  // Note: single password field, not password1/password2
+      password,  // Note: single password field, not password1/password2
+      accepted_terms: acceptedTerms,
+      accepted_privacy_policy: acceptedPrivacy,
+      marketing_consent: marketingConsent,
+      terms_accepted_at: new Date().toISOString()
     });
     
     return { 
       status: response.status, 
       message: response.data.message || 'Registration successful',
       email: response.data.email,
-      email_sent: response.data.email_sent
+      email_sent: response.data.email_sent,
+      consents_recorded: response.data.consents_recorded
     };
   } catch (error: any) {
     console.error("Registration Error:", error);

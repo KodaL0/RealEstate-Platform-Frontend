@@ -2,7 +2,7 @@ import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { useUser } from '../context/UserContext';
 import { useNavigate, Link } from 'react-router-dom';
-import { User as UserIcon, Save, MapPin, Phone, Building, Globe, Camera, FileText, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Save, MapPin, Phone, Building, FileText, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
 import api from '../config/api';
 
 interface ProfileData {
@@ -32,7 +32,7 @@ interface UserResponse {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, setUser, refreshUser, updateUserData } = useUser();
+  const { user, updateUserData } = useUser();
   const navigate = useNavigate();
   
   // Username state
@@ -333,8 +333,132 @@ const ProfilePage: React.FC = () => {
           </div>
         )}
 
-        {/* Main Content Grid */}
-        <div className="grid lg:grid-cols-2 gap-8">
+        {/* Main Content - stacked vertically for mobile friendliness */}
+        <div className="grid grid-cols-1 gap-8">
+          {/* Profile Information Section */}
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+            <div className="flex items-center mb-6">
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl mr-4">
+                <FileText className="h-5 w-5 text-white" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+            </div>
+            
+            {/* Success/Error Messages */}
+            {profileMessage && (
+              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
+                <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
+                <p className="text-emerald-800 font-medium">{profileMessage}</p>
+              </div>
+            )}
+            {profileError && (
+              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                <p className="text-red-800 font-medium">{profileError}</p>
+              </div>
+            )}
+            
+            {isLoadingProfile ? (
+              <div className="flex flex-col items-center justify-center py-16 space-y-4">
+                <div className="relative">
+                  <div className="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
+                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
+                </div>
+                <p className="text-gray-600 font-medium">Loading your profile...</p>
+              </div>
+            ) : (
+              <form onSubmit={handleUpdateProfile} className="space-y-6">
+                {/* Single column layout for all fields */}
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
+                  <input 
+                    type="text" 
+                    value={profileData.name}
+                    onChange={(e) => handleProfileChange('name', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    placeholder="Enter your full name"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                    <MapPin className="h-4 w-4 mr-1 text-gray-500" />
+                    Location
+                  </label>
+                  <input 
+                    type="text" 
+                    value={profileData.location}
+                    onChange={(e) => handleProfileChange('location', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    placeholder="City, Country"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                    <Phone className="h-4 w-4 mr-1 text-gray-500" />
+                    Phone Number
+                  </label>
+                  <input 
+                    type="tel" 
+                    value={profileData.phone}
+                    onChange={(e) => handleProfileChange('phone', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    placeholder="+1234567890"
+                  />
+                </div>
+
+                <div>
+                  <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
+                    <Building className="h-4 w-4 mr-1 text-gray-500" />
+                    Office/Workplace
+                  </label>
+                  <input 
+                    type="text" 
+                    value={profileData.office}
+                    onChange={(e) => handleProfileChange('office', e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    placeholder="Company or office name"
+                  />
+                </div>
+
+                <div>
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">Bio</label>
+                  <div className="relative">
+                    <textarea 
+                      value={profileData.bio}
+                      onChange={(e) => handleProfileChange('bio', e.target.value)}
+                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
+                      placeholder="Tell us about yourself..."
+                      maxLength={500}
+                      rows={4}
+                    />
+                    <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white px-2 py-1 rounded-lg shadow-sm">
+                      {profileData.bio.length}/500
+                    </div>
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  disabled={isSavingProfile}
+                  className="w-full py-4 px-6 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      <span>Saving Profile...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-5 w-5" />
+                      <span>Save Profile</span>
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
           {/* Username Section */}
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center mb-6">
@@ -409,132 +533,23 @@ const ProfilePage: React.FC = () => {
             </form>
           </div>
 
-          {/* Profile Information Section */}
+          {/* Privacy Settings Link */}
           <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center mb-6">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl mr-4">
-                <FileText className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl mr-4">
+                <Shield className="h-5 w-5 text-white" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
+              <h2 className="text-2xl font-bold text-gray-900">Privacy & GDPR</h2>
             </div>
-            
-            {/* Success/Error Messages */}
-            {profileMessage && (
-              <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
-                <CheckCircle2 className="h-5 w-5 text-emerald-600 flex-shrink-0" />
-                <p className="text-emerald-800 font-medium">{profileMessage}</p>
-              </div>
-            )}
-            {profileError && (
-              <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-center space-x-2">
-                <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0" />
-                <p className="text-red-800 font-medium">{profileError}</p>
-              </div>
-            )}
-            
-            {isLoadingProfile ? (
-              <div className="flex flex-col items-center justify-center py-16 space-y-4">
-                <div className="relative">
-                  <div className="w-16 h-16 border-4 border-blue-200 rounded-full"></div>
-                  <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin absolute top-0 left-0"></div>
-                </div>
-                <p className="text-gray-600 font-medium">Loading your profile...</p>
-              </div>
-            ) : (
-              <form onSubmit={handleUpdateProfile} className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
-                    <input 
-                      type="text" 
-                      value={profileData.name}
-                      onChange={(e) => handleProfileChange('name', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
-                      placeholder="Enter your full name"
-                    />
-                  </div>
 
-                  <div>
-                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                      <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                      Location
-                    </label>
-                    <input 
-                      type="text" 
-                      value={profileData.location}
-                      onChange={(e) => handleProfileChange('location', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
-                      placeholder="City, Country"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div>
-                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                      <Phone className="h-4 w-4 mr-1 text-gray-500" />
-                      Phone Number
-                    </label>
-                    <input 
-                      type="tel" 
-                      value={profileData.phone}
-                      onChange={(e) => handleProfileChange('phone', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
-                      placeholder="+1234567890"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                      <Building className="h-4 w-4 mr-1 text-gray-500" />
-                      Office/Workplace
-                    </label>
-                    <input 
-                      type="text" 
-                      value={profileData.office}
-                      onChange={(e) => handleProfileChange('office', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
-                      placeholder="Company or office name"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-2 text-sm font-semibold text-gray-700">Bio</label>
-                  <div className="relative">
-                    <textarea 
-                      value={profileData.bio}
-                      onChange={(e) => handleProfileChange('bio', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
-                      placeholder="Tell us about yourself..."
-                      maxLength={500}
-                      rows={4}
-                    />
-                    <div className="absolute bottom-3 right-3 text-xs text-gray-500 bg-white px-2 py-1 rounded-lg shadow-sm">
-                      {profileData.bio.length}/500
-                    </div>
-                  </div>
-                </div>
-
-                <button 
-                  type="submit" 
-                  disabled={isSavingProfile}
-                  className="w-full py-4 px-6 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                      <span>Saving Profile...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-5 w-5" />
-                      <span>Save Profile</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+            <p className="text-gray-600 mb-4">Manage consent preferences and privacy controls.</p>
+            <Link
+              to="/privacy-settings"
+              className="inline-flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 transition-colors"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Open Privacy Settings</span>
+            </Link>
           </div>
         </div>
       </div>

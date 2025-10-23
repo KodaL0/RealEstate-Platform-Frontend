@@ -21,7 +21,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     email: '',
     password: '',
     username: '',
-    password2: ''
+    password2: '',
+    acceptedTerms: false,
+    acceptedPrivacy: false,
+    marketingConsent: false
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
   
@@ -30,10 +33,28 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
   const location = useLocation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
+    const { name, value, type, checked } = e.target;
+    const newValue = type === 'checkbox' ? checked : value;
+    
+    // Special case: When accepting Terms, also accept Privacy Policy (single checkbox for both)
+    if (name === 'acceptedTerms' && type === 'checkbox') {
+      setFormData(prev => ({ 
+        ...prev, 
+        acceptedTerms: checked,
+        acceptedPrivacy: checked  // Link both fields to the same checkbox
+      }));
+      if (errors.acceptedTerms || errors.acceptedPrivacy) {
+        setErrors(prev => ({ 
+          ...prev, 
+          acceptedTerms: '', 
+          acceptedPrivacy: '' 
+        }));
+      }
+    } else {
+      setFormData(prev => ({ ...prev, [name]: newValue }));
+      if (errors[name]) {
+        setErrors(prev => ({ ...prev, [name]: '' }));
+      }
     }
   };
 
@@ -63,6 +84,15 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         newErrors.password2 = 'Confirm password';
       } else if (formData.password !== formData.password2) {
         newErrors.password2 = 'Passwords don\'t match';
+      }
+
+      // Legal documents acceptance (REQUIRED)
+      if (!formData.acceptedTerms) {
+        newErrors.acceptedTerms = 'You must accept the Terms & Conditions';
+      }
+
+      if (!formData.acceptedPrivacy) {
+        newErrors.acceptedPrivacy = 'You must accept the Privacy Policy';
       }
     }
 
@@ -107,7 +137,15 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
           setErrors({ general: response.error || 'Login failed' });
         }
       } else {
-        response = await register(formData.username, formData.email, formData.password);
+        // Pass legal document acceptances to backend
+        response = await register(
+          formData.username, 
+          formData.email, 
+          formData.password,
+          formData.acceptedTerms,
+          formData.acceptedPrivacy,
+          formData.marketingConsent
+        );
         
         if (response.status === 201) {
           toast.success('Account created! Check your email');
@@ -118,7 +156,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             email: '',
             password: '',
             username: '',
-            password2: ''
+            password2: '',
+            acceptedTerms: false,
+            acceptedPrivacy: false,
+            marketingConsent: false
           });
         } else {
           if (response.details) {
@@ -165,7 +206,15 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
 
   const handleToggleMode = () => {
     setIsLogin(!isLogin);
-    setFormData({ email: '', password: '', username: '', password2: '' });
+    setFormData({ 
+      email: '', 
+      password: '', 
+      username: '', 
+      password2: '',
+      acceptedTerms: false,
+      acceptedPrivacy: false,
+      marketingConsent: false
+    });
     setErrors({});
   };
 
@@ -266,26 +315,87 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         </div>
 
         {!isLogin && (
-          <div>
-            <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-1">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="password2"
-              name="password2"
-              value={formData.password2}
-              onChange={handleInputChange}
-              className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                errors.password2 ? 'border-red-500' : 'border-gray-300'
-              }`}
-              placeholder="Confirm password"
-              disabled={isLoading}
-            />
-            {errors.password2 && (
-              <p className="text-red-500 text-xs mt-1">{errors.password2}</p>
-            )}
-          </div>
+          <>
+            <div>
+              <label htmlFor="password2" className="block text-sm font-medium text-gray-700 mb-1">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="password2"
+                name="password2"
+                value={formData.password2}
+                onChange={handleInputChange}
+                className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
+                  errors.password2 ? 'border-red-500' : 'border-gray-300'
+                }`}
+                placeholder="Confirm password"
+                disabled={isLoading}
+              />
+              {errors.password2 && (
+                <p className="text-red-500 text-xs mt-1">{errors.password2}</p>
+              )}
+            </div>
+
+            {/* Legal Documents Acceptance - REQUIRED */}
+            <div className="space-y-3 pt-2 border-t border-gray-200">
+              {/* Combined Terms & Privacy Policy - REQUIRED */}
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="acceptedTerms"
+                  name="acceptedTerms"
+                  checked={formData.acceptedTerms}
+                  onChange={handleInputChange}
+                  className={`mt-1 h-4 w-4 text-blue-600 rounded ${
+                    errors.acceptedTerms ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  disabled={isLoading}
+                />
+                <label htmlFor="acceptedTerms" className="text-xs text-gray-700">
+                  I accept the{' '}
+                  <Link 
+                    to="/legal/terms-conditions/" 
+                    target="_blank" 
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    Terms & Conditions
+                  </Link>
+                  {' '}and{' '}
+                  <Link 
+                    to="/legal/privacy-policy/" 
+                    target="_blank" 
+                    className="text-blue-600 hover:underline font-medium"
+                  >
+                    Privacy Policy
+                  </Link>
+                  {' '}<span className="text-red-500 font-bold">*</span>
+                </label>
+              </div>
+              {(errors.acceptedTerms || errors.acceptedPrivacy) && (
+                <p className="text-red-500 text-xs -mt-2 ml-6">
+                  {errors.acceptedTerms || errors.acceptedPrivacy}
+                </p>
+              )}
+
+              {/* Marketing Consent - OPTIONAL */}
+              <div className="flex items-start space-x-2">
+                <input
+                  type="checkbox"
+                  id="marketingConsent"
+                  name="marketingConsent"
+                  checked={formData.marketingConsent}
+                  onChange={handleInputChange}
+                  className="mt-1 h-4 w-4 text-blue-600 rounded border-gray-300"
+                  disabled={isLoading}
+                />
+                <label htmlFor="marketingConsent" className="text-xs text-gray-700">
+                  Send me property recommendations and marketing updates{' '}
+                  <span className="text-gray-500">(optional)</span>
+                </label>
+              </div>
+            </div>
+          </>
         )}
 
         {errors.general && (

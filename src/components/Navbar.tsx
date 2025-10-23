@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  Menu, X, User, Building2, MessageCircle, Users, Search, 
+import {
+  Menu, X, User, Building2, MessageCircle, Users, Search,
   Home, ShoppingCart, Calendar, Calculator, TrendingUp, Star, List,
-  LogOut, UserPlus
+  LogOut, UserPlus, Shield
 } from "lucide-react";
 import { useUser } from "../context/UserContext";
 import { logout } from "../middleware/auth";
@@ -74,6 +74,7 @@ const Navbar: React.FC = () => {
 
   const userMenuItems = user ? [
     { path: "/profile", label: "Profile", icon: User },
+    // Privacy Settings entry removed; access now only via Profile page
     { path: "/my-listings", label: "My Listings", icon: List },
     { path: "/favourites", label: "Favourites", icon: Star },
     { path: "/connections", label: "Connections", icon: Users, badge: totalConnectionsCount },
@@ -119,10 +120,11 @@ const Navbar: React.FC = () => {
                 <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
                   <User className="h-6 w-6 text-white" />
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="font-semibold text-gray-900" title={user.username || user.email}>
                     {user.username || user.email || 'User'}
                   </h3>
+                  {/* Privacy indicator removed per request: show only username */}
                 </div>
               </div>
               
@@ -327,17 +329,22 @@ const Navbar: React.FC = () => {
 
             {/* User Button (no dropdown) */}
             {user ? (
-              <Link 
-                to="/profile" 
-                className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
-              >
-                <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4" />
-                </div>
-                <span className="hidden sm:block font-medium truncate max-w-[120px]" title={user.username || user.email}>
-                  {user.username || user.email || 'User'}
-                </span>
-              </Link>
+              <div className="relative">
+                <Link
+                  to="/profile"
+                  className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
+                >
+                  <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <div className="font-medium truncate max-w-[120px]" title={user.username || user.email}>
+                      {user.username || user.email || 'User'}
+                    </div>
+                    {/* Privacy indicator removed per request: show only username */}
+                  </div>
+                </Link>
+              </div>
             ) : (
               <Link to="/login" className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg">
                 <UserPlus className="h-5 w-5" />

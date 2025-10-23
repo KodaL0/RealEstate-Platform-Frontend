@@ -33,13 +33,62 @@
 
     <title>PropertPro — The Real Estate Marketplace for Cyprus & Greece</title>
 
-    <!-- Google Analytics -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-7S7FKWE6F7"></script>
+    <!-- Google Analytics - Consent-Gated (GDPR Compliant) -->
     <script>
+      // Initialize dataLayer and gtag placeholder
       window.dataLayer = window.dataLayer || [];
       function gtag() { dataLayer.push(arguments); }
-      gtag('js', new Date());
-      gtag('config', 'G-7S7FKWE6F7');
+      
+      // Flag to track if GA has been initialized
+      window.gaInitialized = false;
+      
+      /**
+       * Initialize Google Analytics (only called after user consent)
+       * This function is called by the React app after consent is obtained
+       */
+      window.initializeGoogleAnalytics = function() {
+        // Prevent double initialization
+        if (window.gaInitialized) {
+          console.log('Google Analytics already initialized');
+          return;
+        }
+        
+        console.log('Initializing Google Analytics with consent...');
+        
+        // Load GA script dynamically
+        const script = document.createElement('script');
+        script.async = true;
+        script.src = 'https://www.googletagmanager.com/gtag/js?id=G-7S7FKWE6F7';
+        document.head.appendChild(script);
+        
+        script.onload = function() {
+          // Configure GA with privacy-friendly defaults
+          gtag('js', new Date());
+          gtag('config', 'G-7S7FKWE6F7', {
+            'anonymize_ip': true,  // GDPR best practice
+            'allow_google_signals': false,  // Disable cross-device tracking by default
+            'allow_ad_personalization_signals': false  // Disable ad personalization
+          });
+          
+          window.gaInitialized = true;
+          console.log('Google Analytics initialized successfully');
+        };
+        
+        script.onerror = function() {
+          console.error('Failed to load Google Analytics');
+        };
+      };
+      
+      /**
+       * Disable Google Analytics (called when consent is withdrawn)
+       */
+      window.disableGoogleAnalytics = function() {
+        if (window.gaInitialized) {
+          // Set opt-out property
+          window['ga-disable-G-7S7FKWE6F7'] = true;
+          console.log('Google Analytics disabled');
+        }
+      };
     </script>
   </head>
 
