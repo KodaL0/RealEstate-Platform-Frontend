@@ -41,7 +41,7 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
   const documentLinks: Record<string, string> = {
     privacy_policy: '/legal/privacy-policy/',
     terms_conditions: '/legal/terms-conditions/',
-    cookie_policy: '/legal/terms-conditions/',
+    cookie_policy: '/legal/cookie-policy/',
     acceptable_use: '/acceptable-use',
     data_processing: '/data-processing',
   };

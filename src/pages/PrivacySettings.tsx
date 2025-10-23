@@ -57,6 +57,8 @@ const PrivacySettings: React.FC = () => {
       const success = await updateGDPRConsent(consentType, value);
 
       if (success) {
+        // Refresh GDPR status from backend to confirm save
+        await refreshGDPRStatus();
         showToast('Consent preferences updated successfully', 'success');
       } else {
         showToast('Failed to update consent preferences', 'error');
@@ -193,7 +195,7 @@ const PrivacySettings: React.FC = () => {
           <div className="bg-white rounded-lg shadow-md">
             {activeTab === 'consents' && (
               <ConsentManagementTab
-                consents={gdprStatus?.consents || { analytics: false, marketing: false, social: false }}
+                consents={gdprStatus?.consents || { analytics: false, marketing: false }}
                 onUpdate={updateConsent}
                 isUpdating={isUpdating}
                 consentGivenAt={gdprStatus?.consentGivenAt || null}

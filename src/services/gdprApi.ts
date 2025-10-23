@@ -4,7 +4,6 @@ import api from '../config/api';
 export interface ConsentPreferences {
   analytics: boolean;
   marketing: boolean;
-  social?: boolean; // Optional - not used for anonymous users
 }
 
 export interface GDPRConsentResponse {

@@ -22,7 +22,6 @@ type User = {
   // GDPR fields
   gdpr_consent_analytics?: boolean;
   gdpr_consent_marketing?: boolean;
-  gdpr_consent_social?: boolean;
   gdpr_consent_given_at?: string;
   gdpr_consents_updated_at?: string;
   processing_restricted?: boolean;
@@ -41,7 +40,7 @@ interface UserContextType {
   refreshGDPRStatus: () => Promise<void>;
   updateGDPRConsent: (consentType: string, value: boolean) => Promise<boolean>;
   getGDPRStatus: () => {
-    consents: { analytics: boolean; marketing: boolean; social: boolean };
+    consents: { analytics: boolean; marketing: boolean };
     processingRestricted: boolean;
     consentGivenAt: string | null;
   } | null;
@@ -168,7 +167,6 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         const consentResponse = consentResult.value;
         gdprData.gdpr_consent_analytics = consentResponse.data.consents?.analytics;
         gdprData.gdpr_consent_marketing = consentResponse.data.consents?.marketing;
-        gdprData.gdpr_consent_social = consentResponse.data.consents?.social;
         gdprData.gdpr_consent_given_at = consentResponse.data.consent_given_at;
         gdprData.gdpr_consents_updated_at = consentResponse.data.last_updated;
       } else {
@@ -206,12 +204,15 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       const consents = {
         analytics: consentType === 'analytics' ? value : user.gdpr_consent_analytics,
         marketing: consentType === 'marketing' ? value : user.gdpr_consent_marketing,
-        social: consentType === 'social' ? value : user.gdpr_consent_social,
       };
 
       // Update backend first
       await api.post('users/gdpr/consent', consents);
       console.log('[UserContext] Backend consent updated successfully');
+
+      // Invalidate GDPR cache to force fresh fetch
+      apiCache.invalidatePattern(/gdpr/);
+      console.log('[UserContext] GDPR cache invalidated');
 
       // Update local state
       setUser(prev => prev ? {
@@ -234,8 +235,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     return {
       consents: {
         analytics: user.gdpr_consent_analytics || false,
-        marketing: user.gdpr_consent_marketing || false,
-        social: user.gdpr_consent_social || false
+        marketing: user.gdpr_consent_marketing || false
       },
       processingRestricted: user.processing_restricted || false,
       consentGivenAt: user.gdpr_consent_given_at || null

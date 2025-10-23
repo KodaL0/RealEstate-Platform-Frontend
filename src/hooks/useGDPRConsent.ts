@@ -14,7 +14,7 @@ export const useGDPRConsent = () => {
   const { user, updateGDPRConsent, getGDPRStatus } = useUser();
   const [consentState, setConsentState] = useState<GDPRConsentState>({
     hasConsented: false,
-    consents: { analytics: false, marketing: false, social: false },
+    consents: { analytics: false, marketing: false },
     consentGivenAt: null,
     needsConsentCollection: false,
     isLoading: true
@@ -40,8 +40,7 @@ export const useGDPRConsent = () => {
 
       // Determine if consent collection is needed
       const hasAnyConsent = consentResponse.consents.analytics ||
-                           consentResponse.consents.marketing ||
-                           consentResponse.consents.social;
+                           consentResponse.consents.marketing;
 
       const needsCollection = !consentResponse.consent_given_at ||
                              consentResponse.consent_given_at === null;
@@ -67,7 +66,7 @@ export const useGDPRConsent = () => {
       // Update local state
       setConsentState(prev => ({
         ...prev,
-        hasConsented: consents.analytics || consents.marketing || consents.social,
+        hasConsented: consents.analytics || consents.marketing,
         consents,
         consentGivenAt: new Date().toISOString(),
         needsConsentCollection: false
@@ -109,12 +108,10 @@ export const useGDPRConsent = () => {
       // Simple prompt for demo - in production, use a proper modal
       const analytics = confirm('Allow analytics and performance tracking? (Optional)');
       const marketing = confirm('Allow marketing and recommendations? (Optional)');
-      const social = confirm('Allow social features? (Optional)');
 
       resolve({
         analytics,
-        marketing,
-        social
+        marketing
       });
     });
   };

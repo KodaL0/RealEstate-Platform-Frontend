@@ -27,7 +27,7 @@ const GDPRStatusIndicator: React.FC<GDPRStatusIndicatorProps> = ({
   const { consents, processingRestricted } = gdprStatus;
 
   // Determine overall status
-  const hasAnyConsent = consents.analytics || consents.marketing || consents.social;
+  const hasAnyConsent = consents.analytics || consents.marketing;
   const status = processingRestricted ? 'restricted' : hasAnyConsent ? 'compliant' : 'incomplete';
 
   // Status configurations

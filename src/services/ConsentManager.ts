@@ -15,7 +15,6 @@ import api from '../config/api';
 export interface ConsentPreferences {
   analytics: boolean;
   marketing: boolean;
-  social?: boolean; // Optional - not used for anonymous users
 }
 
 export interface ConsentState {
@@ -64,8 +63,7 @@ class ConsentManager {
         const parsed = JSON.parse(stored);
         return {
           analytics: parsed.analytics || false,
-          marketing: parsed.marketing || false,
-          social: parsed.social || false
+          marketing: parsed.marketing || false
         };
       }
     } catch (error) {
@@ -73,7 +71,7 @@ class ConsentManager {
     }
     
     // Default: no consent
-    return { analytics: false, marketing: false, social: false };
+    return { analytics: false, marketing: false };
   }
 
   /**
@@ -146,7 +144,7 @@ class ConsentManager {
    */
   async acceptAll(userId?: number | string): Promise<boolean> {
     return this.saveConsents(
-      { analytics: true, marketing: true, social: true },
+      { analytics: true, marketing: true },
       userId
     );
   }
@@ -156,7 +154,7 @@ class ConsentManager {
    */
   async acceptMinimum(userId?: number | string): Promise<boolean> {
     return this.saveConsents(
-      { analytics: false, marketing: false, social: false },
+      { analytics: false, marketing: false },
       userId
     );
   }
@@ -226,10 +224,12 @@ class ConsentManager {
 
   /**
    * Check if social features are currently enabled
+   * Note: Social features are now covered by Terms & Conditions acceptance,
+   * not requiring separate consent. This method is kept for compatibility.
    */
   isSocialEnabled(): boolean {
-    const consents = this.getConsents();
-    return (consents.social ?? false) && this.hasConsent();
+    // Social features are always enabled for authenticated users (via T&C)
+    return true;
   }
 
   /**
@@ -249,8 +249,7 @@ class ConsentManager {
     
     const payload = {
       analytics_consent: consents.analytics,
-      marketing_consent: consents.marketing,
-      social_consent: consents.social
+      marketing_consent: consents.marketing
     };
     console.log('🔄 [ConsentManager] Sending to backend:', JSON.stringify(payload));
     

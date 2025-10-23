@@ -26,6 +26,7 @@ import RentVsBuyPage from "./pages/RentvsBuypage";
 import AboutUs from "./pages/AboutUs";
 import TermsandConditions from "./pages/TermsandConditions";
 import PrivacyPolicy from "./pages/PrivacyPolicy";
+import CookiePolicy from "./pages/CookiePolicy";
 import PrivacySettings from "./pages/PrivacySettings";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
@@ -185,10 +186,12 @@ function AppContent() {
           <Route path="/legal/terms-conditions/" element={<TermsandConditions />} />
           <Route path="/legal/terms-conditions" element={<Navigate to="/legal/terms-conditions/" replace />} />
           <Route path="/terms" element={<Navigate to="/legal/terms-conditions/" replace />} />
-          <Route path="/cookies" element={<Navigate to="/legal/terms-conditions/" replace />} />
           <Route path="/legal/privacy-policy/" element={<PrivacyPolicy />} />
           <Route path="/legal/privacy-policy" element={<Navigate to="/legal/privacy-policy/" replace />} />
           <Route path="/privacy" element={<Navigate to="/legal/privacy-policy/" replace />} />
+          <Route path="/legal/cookie-policy/" element={<CookiePolicy />} />
+          <Route path="/legal/cookie-policy" element={<Navigate to="/legal/cookie-policy/" replace />} />
+          <Route path="/cookies" element={<Navigate to="/legal/cookie-policy/" replace />} />
           <Route path="/privacy-settings" element={<PrivacySettings />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />

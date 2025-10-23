@@ -15,7 +15,6 @@ interface ConsentModalProps {
 interface ConsentPreferences {
   analytics: boolean;
   marketing: boolean;
-  social?: boolean; // Optional - not used for anonymous users
 }
 
 const GDPRConsentModal: React.FC<ConsentModalProps> = ({
@@ -23,17 +22,16 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
   onClose,
   onAccept,
   onDecline,
-  initialConsents = { analytics: false, marketing: false, social: false },
+  initialConsents = { analytics: false, marketing: false },
   mode = 'initial',
-  showSocialConsent = true // Default to true for backward compatibility
+  showSocialConsent = false // Deprecated parameter, kept for compatibility
 }) => {
   const [consents, setConsents] = useState<ConsentPreferences>(initialConsents);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allSelectedOnce, setAllSelectedOnce] = useState(false);
   const [showDetails, setShowDetails] = useState<{ [key: string]: boolean }>({
     analytics: false,
-    marketing: false,
-    social: false
+    marketing: false
   });
 
   console.log('🟣 [GDPRConsentModal] Rendering - isOpen:', isOpen, 'mode:', mode, 'initialConsents:', JSON.stringify(initialConsents));
@@ -50,8 +48,8 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
       key: 'analytics' as keyof ConsentPreferences,
       title: 'Analytics & Performance',
       description: 'Help us improve the platform by understanding usage patterns and performance metrics.',
-      legalBasis: 'Consent (Article 6.1.a GDPR)',
-      details: 'We use analytics to understand how users interact with our platform, identify areas for improvement, and ensure optimal performance. This data is aggregated and anonymized.',
+      legalBasis: 'Legitimate Interest (Article 6.1.f GDPR) - Can opt-out (Article 21)',
+      details: 'We use analytics to understand how users interact with our platform, identify areas for improvement, and ensure optimal performance. This data is aggregated and anonymized. For registered users, analytics is enabled by default under legitimate interest, but you can opt-out at any time.',
       required: false
     },
     {
@@ -61,21 +59,8 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
       legalBasis: 'Consent (Article 6.1.a GDPR)',
       details: 'We may send you personalized property recommendations, platform updates, and occasional promotional content. You can unsubscribe at any time.',
       required: false
-    },
-    {
-      key: 'social' as keyof ConsentPreferences,
-      title: 'Social Features',
-      description: 'Enhanced social features including connections, reviews, and community interactions.',
-      legalBasis: 'Consent (Article 6.1.a GDPR)',
-      details: 'Enable social features like connecting with other users, leaving reviews, and participating in community discussions.',
-      required: false
     }
   ];
-
-  // Filter consent options based on showSocialConsent prop
-  const filteredConsentOptions = showSocialConsent 
-    ? consentOptions 
-    : consentOptions.filter(option => option.key !== 'social');
 
   const handleConsentChange = (key: keyof ConsentPreferences, value: boolean) => {
     console.log('🟣 [GDPRConsentModal] Consent toggled:', key, '=', value);
@@ -97,12 +82,12 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
   };
 
   const handleSelectAllAndSave = async () => {
-    const allSelected = consents.analytics && consents.marketing && consents.social;
+    const allSelected = consents.analytics && consents.marketing;
     
     if (!allSelected || !allSelectedOnce) {
       // First click or not all selected - select all
       console.log('🟣 [GDPRConsentModal] Select All & Save - First click: Selecting all consents');
-      setConsents({ analytics: true, marketing: true, social: true });
+      setConsents({ analytics: true, marketing: true });
       setAllSelectedOnce(true);
     } else {
       // Second click - save
@@ -157,7 +142,7 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
     >
       {/* Content */}
       <div className="space-y-4 sm:space-y-6">
-        {filteredConsentOptions.map((option) => (
+        {consentOptions.map((option) => (
           <div key={option.key} className="border border-gray-200 rounded-lg p-3 sm:p-4">
             <div className="flex items-start space-x-2 sm:space-x-3">
               <div className="flex-shrink-0 pt-0.5">
@@ -247,7 +232,7 @@ const GDPRConsentModal: React.FC<ConsentModalProps> = ({
             className="flex-1 px-2 py-2 sm:px-6 sm:py-3 text-xs sm:text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-blue-600/30 hover:shadow-xl hover:shadow-blue-600/40 transform hover:scale-[1.02] active:scale-[0.98]"
           >
             {isSubmitting ? 'Saving...' : 
-             (consents.analytics && consents.marketing && consents.social && allSelectedOnce) ? 
+             (consents.analytics && consents.marketing && allSelectedOnce) ? 
              'Save All' : 'Select All & Save'}
           </button>
         </div>

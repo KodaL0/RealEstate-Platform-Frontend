@@ -30,8 +30,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent, isAuthenticate
     try {
       await onConsent({
         analytics: true,
-        marketing: true,
-        social: true
+        marketing: true
       });
     } finally {
       setIsProcessing(false);
@@ -43,8 +42,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent, isAuthenticate
     try {
       await onConsent({
         analytics: false,
-        marketing: false,
-        social: false
+        marketing: false
       });
     } finally {
       setIsProcessing(false);
@@ -112,10 +110,6 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent, isAuthenticate
                   <li className="flex items-start gap-2">
                     <span className="text-blue-600 mt-0.5">•</span>
                     <span><strong>Marketing:</strong> Receive personalized property recommendations and updates</span>
-                  </li>
-                  <li className="flex items-start gap-2">
-                    <span className="text-blue-600 mt-0.5">•</span>
-                    <span><strong>Social Features:</strong> Connect with others, leave reviews, and join discussions</span>
                   </li>
                 </ul>
               </div>
@@ -212,7 +206,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent, isAuthenticate
           onClose={() => setShowCustomizeModal(false)}
           onAccept={handleCustomizeAccept}
           onDecline={handleAcceptMinimum}
-          initialConsents={{ analytics: false, marketing: false, social: false }}
+          initialConsents={{ analytics: false, marketing: false }}
           mode="initial"
         />
       )}
