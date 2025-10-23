@@ -140,8 +140,8 @@ function AppContent() {
     // Small delay to ensure backend has processed
     await new Promise(resolve => setTimeout(resolve, 500));
     
-    // Refresh acceptance status (this will clear cache and re-fetch)
-    await checkAcceptanceStatus();
+    // Refresh acceptance status - FORCE skip cache to get fresh data
+    await checkAcceptanceStatus(true);
     
     console.log('[App] Acceptance status refreshed');
   };

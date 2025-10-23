@@ -31,7 +31,7 @@ export const useLegalDocuments = () => {
     }
   }, [user?.id]); // Only re-run when user ID changes
 
-  const checkAcceptanceStatus = async () => {
+  const checkAcceptanceStatus = async (skipCache = false) => {
     if (!user) return;
     
     // Prevent concurrent calls
@@ -42,7 +42,7 @@ export const useLegalDocuments = () => {
 
     try {
       setIsLoading(true);
-      const status = await LegalDocumentsAPI.getAcceptanceStatus(user.id);
+      const status = await LegalDocumentsAPI.getAcceptanceStatus(user.id, skipCache);
       setAcceptanceStatus(status);
       
       // Check both required and optional
