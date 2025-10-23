@@ -19,9 +19,10 @@ import ModalContainer from './ui/ModalContainer';
 
 interface ConsentBannerProps {
   onConsent: (consents: ConsentPreferences) => void;
+  isAuthenticated?: boolean;
 }
 
-const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
+const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent, isAuthenticated }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAccept = async () => {

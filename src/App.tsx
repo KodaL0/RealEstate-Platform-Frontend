@@ -59,48 +59,85 @@ function AppContent() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith('/chat');
   const isDeveloperRoute = location.pathname.startsWith('/developer-api');
-  const { user } = useUser();
+  const { user, isLoading } = useUser();
   
   const [showConsentBanner, setShowConsentBanner] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   
   // Legal documents hook
   const { acceptanceStatus, needsAcceptance, checkAcceptanceStatus } = useLegalDocuments();
 
-  // Check if consent banner should be shown
+  // Unified initialization effect - waits for user loading before deciding which modal to show
   useEffect(() => {
-    const needsConsent = !consentManager.hasConsent();
-    setShowConsentBanner(needsConsent);
-    
-    // If consent already given, initialize analytics on load
-    if (!needsConsent) {
-      consentManager.initializeOnLoad();
-    }
-  }, []);
+    initializeApp();
+  }, [user, isLoading, needsAcceptance, acceptanceStatus]);
 
-  // Check if legal documents need acceptance when user logs in
+  // Handle login state change - when user logs in while consent banner is showing
   useEffect(() => {
-    if (user && needsAcceptance && acceptanceStatus) {
-      // Only show modal if there are actually documents to accept
-      const hasRequiredDocs = (acceptanceStatus.needs_acceptance_required?.length || 0) > 0;
-      const hasOptionalDocs = (acceptanceStatus.needs_acceptance_optional?.length || 0) > 0;
+    if (user && showConsentBanner) {
+      // User just logged in while consent banner was showing
+      console.log('[App] User logged in, hiding consent banner and re-initializing');
+      setShowConsentBanner(false);
+      // Re-initialize to check legal docs
+      initializeApp();
+    }
+  }, [user?.id]);
+
+  const initializeApp = async () => {
+    // Wait for UserContext to finish loading
+    if (isLoading) {
+      setIsInitializing(true);
+      return;
+    }
+    
+    // User has loaded (or confirmed no user)
+    setIsInitializing(false);
+    
+    // Decision tree: which modal to show?
+    if (user) {
+      // LOGGED IN USER
+      // - Don't show consent banner (legitimate interest applies)
+      // - Check if legal docs need acceptance
+      console.log('[App] User is logged in, checking legal document acceptance status');
       
-      if (hasRequiredDocs || hasOptionalDocs) {
-        console.log('Legal documents need acceptance:', {
-          required: acceptanceStatus.needs_acceptance_required,
-          optional: acceptanceStatus.needs_acceptance_optional
-        });
+      if (needsAcceptance && acceptanceStatus) {
+        const hasRequiredDocs = (acceptanceStatus.needs_acceptance_required?.length || 0) > 0;
+        const hasOptionalDocs = (acceptanceStatus.needs_acceptance_optional?.length || 0) > 0;
         
-        // Show modal after a short delay to ensure user sees it
-        const timer = setTimeout(() => {
+        if (hasRequiredDocs || hasOptionalDocs) {
+          console.log('[App] Legal documents need acceptance:', {
+            required: acceptanceStatus.needs_acceptance_required,
+            optional: acceptanceStatus.needs_acceptance_optional
+          });
+          setShowConsentBanner(false);
           setShowDocumentsModal(true);
-        }, 1000);
-        return () => clearTimeout(timer);
+          return;
+        }
+      }
+      
+      // User is logged in and has accepted all docs
+      console.log('[App] User is logged in and has accepted all documents');
+      setShowConsentBanner(false);
+      setShowDocumentsModal(false);
+      consentManager.initializeOnLoad();
+    } else {
+      // ANONYMOUS USER
+      // - Show consent banner if needed
+      // - Never show legal docs modal
+      console.log('[App] Anonymous user, checking consent status');
+      const needsConsent = !consentManager.hasConsent();
+      setShowConsentBanner(needsConsent);
+      setShowDocumentsModal(false);
+      
+      if (!needsConsent) {
+        console.log('[App] Anonymous user has already given consent');
+        consentManager.initializeOnLoad();
       } else {
-        console.log('No documents need acceptance');
+        console.log('[App] Anonymous user needs to give consent');
       }
     }
-  }, [user?.id, needsAcceptance, acceptanceStatus?.needs_acceptance_required?.length]);
+  };
 
   // Handle consent choice
   const handleConsent = async (consents: ConsentPreferences) => {
@@ -146,12 +183,22 @@ function AppContent() {
     console.log('[App] Acceptance status refreshed');
   };
 
+  // Show loading state during initialization
+  if (isInitializing) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gray-50">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
   return (
    <div className="h-full flex flex-col">
       {/* Show consent banner if needed - appears above everything */}
       {showConsentBanner && (
         <ConsentBanner 
           onConsent={handleConsent}
+          isAuthenticated={!!user}
         />
       )}
 
