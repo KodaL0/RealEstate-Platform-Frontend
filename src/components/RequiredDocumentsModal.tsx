@@ -87,14 +87,15 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
 
   return (
     <div
-      className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-slate-900/95 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 lg:p-8"
+      className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-slate-900/95 backdrop-blur-sm z-50 overflow-y-auto"
       onClick={(e) => {
         if (e.target === e.currentTarget && documentsToAccept.length === 0) {
           onClose();
         }
       }}
     >
-      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+      <div className="min-h-screen flex items-center justify-center p-4 sm:p-6 lg:p-8 py-16">
+        <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[80vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300 my-auto">
         <div className="p-8 border-b border-gray-100 bg-gradient-to-br from-white to-gray-50">
           <div className="flex justify-between items-start">
             <div className="flex-1">
@@ -350,6 +351,7 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
               </button>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
