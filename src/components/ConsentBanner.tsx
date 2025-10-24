@@ -63,12 +63,13 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
       isOpen={true}
       onClose={() => {}}
       title=""
-      showCloseButton={false}
+      showCloseButton={false} // keep this false to prevent rendering the white square
       contentClassName="flex flex-col"
     >
       {/* Header with Logo */}
       <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
         <div className="flex items-center justify-center mb-6">
+          {/* Logo */}
           <img
             src="/favicon.svg"
             alt="PropertPro"
