@@ -43,15 +43,22 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 sm:px-8 sm:py-6">
             <div className="flex items-center gap-2 sm:gap-3">
-              <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur">
-                <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white rounded" />
-              </div>
+              {/* 🧼 Remove white placeholder when no title */}
+              {title && (
+                <div className="bg-white/20 p-2 sm:p-3 rounded-lg sm:rounded-xl backdrop-blur">
+                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-white rounded" />
+                </div>
+              )}
+
               <div className="flex-1">
-                <h2 className="text-lg sm:text-2xl font-bold text-white">{title}</h2>
+                {title && (
+                  <h2 className="text-lg sm:text-2xl font-bold text-white">{title}</h2>
+                )}
                 {description && (
                   <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1">{description}</p>
                 )}
               </div>
+
               {showCloseButton && (
                 <button
                   onClick={onClose}
