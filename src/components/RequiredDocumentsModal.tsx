@@ -32,6 +32,17 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
       total: documentsToAccept.length + optionalDocuments.length
     });
   }, []);
+  
+  useEffect(() => {
+  // Lock background scroll when modal is open
+  document.body.style.overflow = 'hidden';
+
+  // Unlock scroll when modal closes
+  return () => {
+    document.body.style.overflow = 'auto';
+  };
+}, []);
+
 
   const documentLinks: Record<string, string> = {
     privacy_policy: '/legal/privacy-policy/',
