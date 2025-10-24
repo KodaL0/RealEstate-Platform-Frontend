@@ -64,29 +64,30 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
       onClose={() => {}}
       title=""
       showCloseButton={false}
-      contentClassName="flex flex-col p-0"
+      contentClassName="flex flex-col"
     >
-      {/* Blue Header with Logo */}
-      <div className="bg-gradient-to-br from-blue-600 to-blue-700 px-6 sm:px-8 py-6 sm:py-8">
-        <div className="flex items-center justify-center mb-4">
+      {/* Header with Logo */}
+      <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
+        <div className="flex items-center justify-center mb-6">
           <img
             src="/favicon.svg"
             alt="PropertPro"
             className="w-16 h-16 sm:w-20 sm:h-20"
           />
         </div>
-        <div className="text-center">
-          <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
+
+        <div className="text-center mb-6">
+          <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             We value your privacy
           </h2>
-          <p className="text-sm sm:text-base text-blue-50">
+          <p className="text-sm sm:text-base text-gray-600">
             We use cookies to enhance your browsing experience and analyze our traffic
           </p>
         </div>
       </div>
 
       {/* Content */}
-      <div className="px-6 sm:px-8 py-6 space-y-4">
+      <div className="px-6 sm:px-8 pb-6 space-y-4">
         {/* Cookie Information */}
         <div className="space-y-3">
           {/* Essential Cookies */}
