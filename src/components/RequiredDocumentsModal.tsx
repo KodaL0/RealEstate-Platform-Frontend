@@ -1,9 +1,5 @@
-/**
- * Modal that prompts users to accept required and optional legal documents
- * Shows when user logs in and hasn't accepted current versions
- */
 import React, { useState, useEffect } from 'react';
-import { X, FileText, CheckCircle, Info } from 'lucide-react';
+import { X, FileText, CheckCircle, Info, AlertCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LegalDocumentsAPI from '../services/legalApi';
 
@@ -28,8 +24,7 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
 }) => {
   const [acceptedDocs, setAcceptedDocs] = useState<Set<string>>(new Set());
   const [isAccepting, setIsAccepting] = useState(false);
-  
-  // Debug: Log what documents are being shown
+
   useEffect(() => {
     console.log('[RequiredDocumentsModal] Rendered with:', {
       required: documentsToAccept,
@@ -59,9 +54,8 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
   };
 
   const handleAcceptAll = async () => {
-    // Check if all required documents are checked
     const allRequiredChecked = documentsToAccept.every(doc => acceptedDocs.has(doc.document_type));
-    
+
     if (!allRequiredChecked && documentsToAccept.length > 0) {
       alert('Please check all required documents before continuing.');
       return;
@@ -69,19 +63,17 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
 
     try {
       setIsAccepting(true);
-      
-      // Accept all checked documents (required + any optional ones selected)
+
       const docsToAccept = allDocuments.filter(doc => acceptedDocs.has(doc.document_type));
-      
+
       console.log('[Modal] Accepting documents:', docsToAccept.map(d => d.document_type));
-      
+
       for (const doc of docsToAccept) {
         await LegalDocumentsAPI.acceptDocument(doc.document_type, doc.version);
       }
-      
+
       console.log('[Modal] All documents accepted successfully');
-      
-      // Notify parent
+
       onAcceptAll();
     } catch (error) {
       console.error('Failed to accept documents:', error);
@@ -94,35 +86,46 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
   const allRequiredChecked = documentsToAccept.every(doc => acceptedDocs.has(doc.document_type));
 
   return (
-    <div 
-      className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+    <div
+      className="fixed inset-0 bg-gradient-to-br from-gray-900/95 via-gray-900/90 to-slate-900/95 backdrop-blur-sm flex items-center justify-center z-50 p-4 sm:p-6 lg:p-8"
       onClick={(e) => {
-        // Prevent closing by clicking outside if required documents exist
         if (e.target === e.currentTarget && documentsToAccept.length === 0) {
           onClose();
         }
       }}
     >
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="p-6 border-b border-gray-200">
+      <div className="bg-white rounded-2xl shadow-2xl max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col animate-in fade-in zoom-in duration-300">
+        <div className="p-8 border-b border-gray-100 bg-gradient-to-br from-white to-gray-50">
           <div className="flex justify-between items-start">
-            <div>
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                {documentsToAccept.length > 0 ? 'Action Required: Updated Legal Documents' : 'Legal Documents'}
-              </h2>
-              <p className="text-gray-600">
-                {documentsToAccept.length > 0 
-                  ? 'We\'ve updated our legal documents. You must review and accept to continue using PropertPro.'
-                  : 'We\'ve updated our legal documents. Please review and accept to continue.'
+            <div className="flex-1">
+              <div className="flex items-center gap-3 mb-3">
+                {documentsToAccept.length > 0 && (
+                  <div className="flex items-center justify-center w-12 h-12 rounded-xl bg-amber-100 text-amber-600">
+                    <AlertCircle className="h-6 w-6" />
+                  </div>
+                )}
+                <div>
+                  <h2 className="text-3xl font-bold text-gray-900">
+                    {documentsToAccept.length > 0 ? 'Action Required' : 'Legal Documents'}
+                  </h2>
+                  {documentsToAccept.length > 0 && (
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 mt-1">
+                      Updated Terms
+                    </span>
+                  )}
+                </div>
+              </div>
+              <p className="text-base text-gray-600 leading-relaxed">
+                {documentsToAccept.length > 0
+                  ? 'We\'ve updated our legal documents. Please review and accept to continue using PropertPro.'
+                  : 'Please review the following legal documents and accept to continue.'
                 }
               </p>
             </div>
-            {/* Only show X button if NO required documents */}
             {documentsToAccept.length === 0 && (
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors"
+                className="ml-4 text-gray-400 hover:text-gray-600 transition-colors rounded-lg hover:bg-gray-100 p-2"
               >
                 <X className="h-6 w-6" />
               </button>
@@ -130,52 +133,64 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
           </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          {/* Required Documents */}
+        <div className="p-8 overflow-y-auto flex-1 bg-gray-50">
           {documentsToAccept.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <span className="bg-red-100 text-red-800 px-2 py-1 rounded text-xs mr-2">REQUIRED</span>
-                You must accept these to continue
-              </h3>
-              <div className="space-y-3">
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-red-100 text-red-800 rounded-lg font-semibold text-sm">
+                  <AlertCircle className="h-4 w-4" />
+                  Required Documents
+                </div>
+                <span className="text-sm text-gray-600">You must accept these to continue</span>
+              </div>
+              <div className="space-y-4">
                 {documentsToAccept.map((doc) => (
                   <div
                     key={doc.document_type}
-                    className="border-2 border-red-200 rounded-lg p-4 hover:border-red-300 transition-colors bg-red-50"
+                    className="border-2 border-red-200 rounded-xl p-6 bg-white hover:border-red-300 hover:shadow-md transition-all duration-200"
                   >
-                    <div className="flex items-start space-x-3">
+                    <div className="flex items-start space-x-4">
                       <input
                         type="checkbox"
                         id={`accept-${doc.document_type}`}
                         checked={acceptedDocs.has(doc.document_type)}
                         onChange={() => toggleDocument(doc.document_type)}
-                        className="mt-1 h-5 w-5 text-blue-600 rounded"
+                        className="mt-1.5 h-5 w-5 text-blue-600 rounded border-gray-300 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 cursor-pointer"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <label
                           htmlFor={`accept-${doc.document_type}`}
                           className="block cursor-pointer"
                         >
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FileText className="h-5 w-5 text-red-600" />
-                            <span className="font-semibold text-gray-900">
-                              {doc.display_name}
-                            </span>
-                            <span className="text-xs text-gray-500">v{doc.version}</span>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-red-50 text-red-600">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-gray-900 text-lg">
+                                  {doc.display_name}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium">
+                                  Version {doc.version}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-700 mb-2">
+                          <p className="text-sm text-gray-700 mb-3 leading-relaxed">
                             I have read and agree to the {doc.display_name}
                           </p>
                           {documentLinks[doc.document_type] && (
                             <Link
                               to={documentLinks[doc.document_type]}
                               target="_blank"
-                              className="text-sm text-blue-600 hover:text-blue-800 underline"
+                              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              Read full document →
+                              Read full document
+                              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
                             </Link>
                           )}
                         </label>
@@ -187,53 +202,66 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
             </div>
           )}
 
-          {/* Optional Documents */}
           {optionalDocuments.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                <span className="bg-green-100 text-green-800 px-2 py-1 rounded text-xs mr-2">OPTIONAL</span>
-                You can accept these now or later
-              </h3>
-              <div className="space-y-3">
+            <div className="mb-8">
+              <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-100 text-emerald-800 rounded-lg font-semibold text-sm">
+                  <CheckCircle className="h-4 w-4" />
+                  Optional Documents
+                </div>
+                <span className="text-sm text-gray-600">Accept now or later</span>
+              </div>
+              <div className="space-y-4">
                 {optionalDocuments.map((doc) => (
                   <div
                     key={doc.document_type}
-                    className="border border-gray-200 rounded-lg p-4 hover:border-green-300 transition-colors"
+                    className="border-2 border-gray-200 rounded-xl p-6 bg-white hover:border-emerald-300 hover:shadow-md transition-all duration-200"
                   >
-                    <div className="flex items-start space-x-3">
+                    <div className="flex items-start space-x-4">
                       <input
                         type="checkbox"
                         id={`accept-${doc.document_type}`}
                         checked={acceptedDocs.has(doc.document_type)}
                         onChange={() => toggleDocument(doc.document_type)}
-                        className="mt-1 h-5 w-5 text-green-600 rounded"
+                        className="mt-1.5 h-5 w-5 text-emerald-600 rounded border-gray-300 focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 cursor-pointer"
                       />
-                      <div className="flex-1">
+                      <div className="flex-1 min-w-0">
                         <label
                           htmlFor={`accept-${doc.document_type}`}
                           className="block cursor-pointer"
                         >
-                          <div className="flex items-center space-x-2 mb-2">
-                            <FileText className="h-5 w-5 text-green-600" />
-                            <span className="font-semibold text-gray-900">
-                              {doc.display_name}
-                            </span>
-                            <span className="text-xs text-gray-500">v{doc.version}</span>
-                            <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded-full font-medium">
-                              Optional
-                            </span>
+                          <div className="flex items-center gap-3 mb-3">
+                            <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600">
+                              <FileText className="h-5 w-5" />
+                            </div>
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-semibold text-gray-900 text-lg">
+                                  {doc.display_name}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-md font-medium">
+                                  Version {doc.version}
+                                </span>
+                                <span className="text-xs px-2 py-1 bg-emerald-100 text-emerald-700 rounded-md font-medium">
+                                  Optional
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-sm text-gray-600 mb-2">
+                          <p className="text-sm text-gray-700 mb-3 leading-relaxed">
                             I have read and agree to the {doc.display_name}
                           </p>
                           {documentLinks[doc.document_type] && (
                             <Link
                               to={documentLinks[doc.document_type]}
                               target="_blank"
-                              className="text-sm text-blue-600 hover:text-blue-800 underline"
+                              className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-700 hover:underline transition-colors"
                               onClick={(e) => e.stopPropagation()}
                             >
-                              Read full document →
+                              Read full document
+                              <svg className="ml-1 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                              </svg>
                             </Link>
                           )}
                         </label>
@@ -245,14 +273,15 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
             </div>
           )}
 
-          {/* Info Boxes */}
           {documentsToAccept.length > 0 && (
-            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg mb-4">
+            <div className="p-5 bg-blue-50 border border-blue-200 rounded-xl mb-4">
               <div className="flex items-start space-x-3">
-                <Info className="h-5 w-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-blue-800">
-                  <p className="font-medium mb-1">Why are required documents mandatory?</p>
-                  <p>
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-blue-100 text-blue-600 flex-shrink-0">
+                  <Info className="h-5 w-5" />
+                </div>
+                <div className="text-sm text-blue-900 flex-1">
+                  <p className="font-semibold mb-2">Why are required documents mandatory?</p>
+                  <p className="leading-relaxed">
                     These documents outline your rights and our legal obligations under GDPR and EU law.
                     Your acceptance is required to continue using PropertPro.
                   </p>
@@ -260,14 +289,16 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
               </div>
             </div>
           )}
-          
+
           {optionalDocuments.length > 0 && (
-            <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+            <div className="p-5 bg-emerald-50 border border-emerald-200 rounded-xl">
               <div className="flex items-start space-x-3">
-                <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <div className="text-sm text-green-800">
-                  <p className="font-medium mb-1">Optional documents</p>
-                  <p>
+                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-emerald-100 text-emerald-600 flex-shrink-0">
+                  <CheckCircle className="h-5 w-5" />
+                </div>
+                <div className="text-sm text-emerald-900 flex-1">
+                  <p className="font-semibold mb-2">Optional documents</p>
+                  <p className="leading-relaxed">
                     These documents are informational. You can review and accept them now,
                     or access them later from the footer or privacy settings.
                   </p>
@@ -277,29 +308,26 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
           )}
         </div>
 
-        {/* Footer */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50">
-          <div className="flex justify-between items-center">
-            <div className="text-sm text-gray-600">
-              <p className="font-medium">
+        <div className="p-6 border-t border-gray-200 bg-white">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="text-sm">
+              <p className="font-semibold text-gray-900">
                 {acceptedDocs.size} of {allDocuments.length} documents selected
               </p>
               <p className="text-xs text-gray-500 mt-1">
                 {documentsToAccept.length} required • {optionalDocuments.length} optional
               </p>
             </div>
-            <div className="flex space-x-3">
-              {/* Only show "Close" button if NO required documents */}
+            <div className="flex flex-col-reverse sm:flex-row gap-3">
               {documentsToAccept.length === 0 && (
                 <button
                   onClick={onClose}
-                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-100"
+                  className="px-5 py-2.5 border-2 border-gray-300 rounded-lg text-gray-700 font-medium hover:bg-gray-50 hover:border-gray-400 transition-all"
                 >
                   Close
                 </button>
               )}
-              
-              {/* Show logout option if required documents exist */}
+
               {documentsToAccept.length > 0 && (
                 <button
                   onClick={() => {
@@ -307,16 +335,16 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
                       window.location.href = '/logout';
                     }
                   }}
-                  className="px-4 py-2 border border-red-300 rounded-md text-red-700 hover:bg-red-50"
+                  className="px-5 py-2.5 border-2 border-red-200 rounded-lg text-red-700 font-medium hover:bg-red-50 hover:border-red-300 transition-all"
                 >
                   Decline & Logout
                 </button>
               )}
-              
+
               <button
                 onClick={handleAcceptAll}
                 disabled={!allRequiredChecked || isAccepting}
-                className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="px-6 py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-blue-600/20 hover:shadow-xl hover:shadow-blue-600/30 transition-all disabled:shadow-none"
               >
                 {isAccepting ? 'Accepting...' : acceptedDocs.size > 0 ? 'Accept & Continue' : 'Accept Required'}
               </button>
@@ -329,4 +357,3 @@ const RequiredDocumentsModal: React.FC<RequiredDocumentsModalProps> = ({
 };
 
 export default RequiredDocumentsModal;
-
