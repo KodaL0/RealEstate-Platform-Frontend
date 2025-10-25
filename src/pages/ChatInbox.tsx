@@ -145,14 +145,6 @@ export default function ChatInbox() {
               )}
             </p>
           </div>
-          <button 
-            className="bg-blue-500 text-white px-2 sm:px-3 py-2 rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 flex items-center gap-1 sm:gap-2 transition-all duration-200 shadow-sm hover:shadow-md"
-            aria-label="Start new chat"
-          >
-            <Plus size={14} className="sm:w-4 sm:h-4" />
-            <span className="hidden xs:inline">New</span>
-            <span className="xs:hidden">+</span>
-          </button>
         </div>
 
         {/* Improved Tab Navigation with better mobile design */}
