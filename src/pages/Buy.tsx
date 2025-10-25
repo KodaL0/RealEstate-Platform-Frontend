@@ -158,12 +158,12 @@ const Buy = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 pt-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="bg-white border-b border-gray-200 pt-20 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
           <div className="py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full">
               <div className="mb-6 lg:mb-0">
                 <h1 className="text-3xl font-bold text-gray-900">Properties for Sale</h1>
                 <div className="flex items-center mt-2 text-gray-600">
@@ -172,7 +172,7 @@ const Buy = () => {
                 </div>
               </div>
               
-              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
+              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
                 {/* Country Filter */}
                 <div className="flex items-center">
                   <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">Country:</span>
@@ -258,7 +258,7 @@ const Buy = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 w-full overflow-x-hidden">
         {/* Results Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="mb-4 sm:mb-0">
