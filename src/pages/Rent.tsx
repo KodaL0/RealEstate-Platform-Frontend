@@ -259,7 +259,7 @@ const Rent = () => {
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8">
         {/* Results Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
           <div className="mb-4 sm:mb-0">
@@ -292,7 +292,7 @@ const Rent = () => {
                 value={sortOption}
                 onChange={handleSortChange}
                 disabled={isLoading}
-                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-sm"
+                className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 bg-white text-base"
               >
                 {sortOptions.map(option => (
                   <option key={option.value} value={option.value}>
@@ -378,8 +378,8 @@ const Rent = () => {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className={
                 viewMode === 'grid'
-                  ? "grid grid-cols-1 lg:grid-cols-2 gap-8"
-                  : "space-y-6"
+                  ? "grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8"
+                  : "space-y-4 sm:space-y-6"
               }
             >
               {displayed.map((property, index) => (

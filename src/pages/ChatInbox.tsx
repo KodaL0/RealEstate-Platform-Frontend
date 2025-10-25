@@ -79,19 +79,6 @@ export default function ChatInbox() {
     return thread?.unread_count || 0;
   };
 
-  // Alternative method using local messages state (for debugging)
-  const getLocalUnreadCount = (threadId: string) => {
-    const threadMessages = messages[threadId] || [];
-    return threadMessages.filter(
-      msg => msg.sender !== user?.id && !msg.read_at
-    ).length;
-  };
-
-  // Get total unread threads count (for notification consistency)
-  const getTotalUnreadThreads = () => {
-    return threads.filter(t => t.unread_count > 0).length;
-  };
-
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
     const now = new Date();

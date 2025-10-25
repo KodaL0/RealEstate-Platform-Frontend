@@ -308,7 +308,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+      <div className="max-w-7xl mx-auto p-3 sm:p-6 lg:p-8">
         {/* Header Section */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl mb-4 shadow-lg">
@@ -334,9 +334,9 @@ const ProfilePage: React.FC = () => {
         )}
 
         {/* Main Content - stacked vertically for mobile friendliness */}
-        <div className="grid grid-cols-1 gap-8">
+        <div className="grid grid-cols-1 gap-4 sm:gap-6 lg:gap-8">
           {/* Profile Information Section */}
-          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-4 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center mb-6">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl mr-4">
                 <FileText className="h-5 w-5 text-white" />
@@ -375,7 +375,7 @@ const ProfilePage: React.FC = () => {
                     type="text" 
                     value={profileData.name}
                     onChange={(e) => handleProfileChange('name', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="Enter your full name"
                   />
                 </div>
@@ -389,7 +389,7 @@ const ProfilePage: React.FC = () => {
                     type="text" 
                     value={profileData.location}
                     onChange={(e) => handleProfileChange('location', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="City, Country"
                   />
                 </div>
@@ -403,7 +403,7 @@ const ProfilePage: React.FC = () => {
                     type="tel" 
                     value={profileData.phone}
                     onChange={(e) => handleProfileChange('phone', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="+1234567890"
                   />
                 </div>
@@ -417,7 +417,7 @@ const ProfilePage: React.FC = () => {
                     type="text" 
                     value={profileData.office}
                     onChange={(e) => handleProfileChange('office', e.target.value)}
-                    className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
+                    className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="Company or office name"
                   />
                 </div>
@@ -428,7 +428,7 @@ const ProfilePage: React.FC = () => {
                     <textarea 
                       value={profileData.bio}
                       onChange={(e) => handleProfileChange('bio', e.target.value)}
-                      className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
+                      className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
                       placeholder="Tell us about yourself..."
                       maxLength={500}
                       rows={4}
@@ -460,7 +460,7 @@ const ProfilePage: React.FC = () => {
             )}
           </div>
           {/* Username Section */}
-          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-4 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center mb-6">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl mr-4">
                 <UserIcon className="h-5 w-5 text-white" />
@@ -501,7 +501,7 @@ const ProfilePage: React.FC = () => {
                     type="text" 
                     value={newUsername} 
                     onChange={handleUsernameChange}
-                    className={`w-full px-4 py-4 text-lg border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-4 ${
+                    className={`w-full px-4 py-4 text-base sm:text-lg border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-4 ${
                       validationError 
                         ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
                         : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300'
@@ -534,7 +534,7 @@ const ProfilePage: React.FC = () => {
           </div>
 
           {/* Privacy Settings Link */}
-          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-8 hover:shadow-2xl transition-all duration-300">
+          <div className="bg-white/80 backdrop-blur-sm border border-white/20 shadow-xl rounded-2xl p-4 sm:p-6 lg:p-8 hover:shadow-2xl transition-all duration-300">
             <div className="flex items-center mb-6">
               <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl mr-4">
                 <Shield className="h-5 w-5 text-white" />
