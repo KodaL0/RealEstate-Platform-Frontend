@@ -7,7 +7,6 @@ import {
   Square,
   ArrowLeft,
   ArrowRight,
-  Eye,
   Calendar,
   Car,
   ArrowUpCircle,
@@ -67,6 +66,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const [hasInteracted, setHasInteracted] = useState(false);
   const imgCount = images.length;
   
+  // Touch/swipe state for mobile
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [touchEnd, setTouchEnd] = useState<number | null>(null);
+  
+  // Minimum swipe distance (in px) to trigger a swipe
+  const minSwipeDistance = 50;
+  
   // Lazy loading setup
   const cardRef = useRef<HTMLDivElement>(null);
   const { hasBeenVisible } = useImageLazyLoad(cardRef, { rootMargin: '200px' });
@@ -122,6 +128,38 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     if (imgCount > 0) {
       setHasInteracted(true);
       const newIndex = (currentImage + 1) % imgCount;
+      setCurrentImage(newIndex);
+    }
+  };
+  
+  // Touch handlers for swipe functionality
+  const onTouchStart = (e: React.TouchEvent) => {
+    setTouchEnd(null);
+    setTouchStart(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchMove = (e: React.TouchEvent) => {
+    setTouchEnd(e.targetTouches[0].clientX);
+  };
+  
+  const onTouchEnd = () => {
+    if (!touchStart || !touchEnd) return;
+    
+    const distance = touchStart - touchEnd;
+    const isLeftSwipe = distance > minSwipeDistance;
+    const isRightSwipe = distance < -minSwipeDistance;
+    
+    if (isLeftSwipe && imgCount > 0) {
+      // Swipe left = next image
+      setHasInteracted(true);
+      const newIndex = (currentImage + 1) % imgCount;
+      setCurrentImage(newIndex);
+    }
+    
+    if (isRightSwipe && imgCount > 0) {
+      // Swipe right = previous image
+      setHasInteracted(true);
+      const newIndex = (currentImage - 1 + imgCount) % imgCount;
       setCurrentImage(newIndex);
     }
   };
@@ -400,7 +438,12 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         )}
 
         <Link to={`/property/${id}`} className="block">
-          <div className="relative overflow-hidden">
+          <div 
+            className="relative overflow-hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
             {/* Loading overlay */}
             {isCurrentImageLoading && (
               <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center z-10">
@@ -426,13 +469,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
                 transition: isCurrentImageLoaded || imageError || hasImageError ? 'opacity 0.3s ease-in-out' : 'none'
               }}
             />
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-all duration-300" />
-            <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
-              <div className="bg-white/95 backdrop-blur-sm px-4 py-2 rounded-full shadow-lg flex items-center space-x-2">
-                <Eye className="h-4 w-4 text-gray-700" />
-                <span className="text-sm font-medium text-gray-700">View Property</span>
-              </div>
-            </div>
+            {/* Subtle hover overlay without "View Property" button */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
           </div>
         </Link>
 
