@@ -4,7 +4,6 @@ import { ChevronDown, X } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
 import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
-// Define a more specific type for the filters passed to onSearch
 interface ParsedFilters {
   location?: string;
   minPrice?: number;
@@ -23,21 +22,16 @@ interface SearchFiltersProps {
   initialLocation?: string;
 }
 
-// Helper function to parse min number string (e.g., "3+", "Any")
 const parseMinNumber = (numberString: string): number | undefined => {
-  if (numberString === 'Any') {
-    return undefined;
-  }
+  if (numberString === 'Any') return undefined;
   return parseInt(numberString.replace('+', ''), 10);
 };
 
-// Helper to get property type label from value
 const getPropertyTypeLabel = (value: string): string => {
   const type = PROPERTY_TYPES.find(t => t.value === value);
   return type?.label || value;
 };
 
-// Reusable FilterBadge component
 interface FilterBadgeProps {
   label: string;
   emoji: string;
@@ -49,24 +43,22 @@ interface FilterBadgeProps {
 const FilterBadge: React.FC<FilterBadgeProps> = ({ label, emoji, onRemove, colorClass, maxWidth = 'max-w-[120px] sm:max-w-none' }) => (
   <button
     onClick={onRemove}
-    className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 ${colorClass} rounded-full text-xs sm:text-sm hover:brightness-95 transition-all active:scale-95`}
+    className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colorClass} rounded-full text-sm font-medium hover:brightness-95 transition-all active:scale-95 shadow-sm border`}
   >
     <span className={`truncate ${maxWidth}`}>{emoji} {label}</span>
-    <X className="h-3 w-3 flex-shrink-0" />
+    <X className="h-3.5 w-3.5 flex-shrink-0" />
   </button>
 );
 
-const SearchFilters: React.FC<SearchFiltersProps> = ({ 
-  forSale = true, 
-  onSearch, 
+const SearchFilters: React.FC<SearchFiltersProps> = ({
+  forSale = true,
+  onSearch,
   initialLocation = '',
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-  
-  // Use ref to store latest onSearch to avoid infinite loops
+
   const onSearchRef = useRef(onSearch);
-  
-  // Initialize state from URL params
+
   const [location, setLocation] = useState(searchParams.get('location') || initialLocation);
   const [country, setCountry] = useState(searchParams.get('country') || 'All');
   const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
@@ -79,7 +71,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   );
   const [advancedOpen, setAdvancedOpen] = useState(false);
 
-  // Keep ref updated with latest onSearch function
   useEffect(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
@@ -88,10 +79,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     setLocation(initialLocation);
   }, [initialLocation]);
 
-  // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams();
-    
+
     if (location) params.set('location', location);
     if (country !== 'All') params.set('country', country);
     if (minPrice) params.set('minPrice', minPrice);
@@ -100,11 +90,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     if (bedrooms !== 'Any') params.set('beds', bedrooms);
     if (bathrooms !== 'Any') params.set('baths', bathrooms);
     if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
-    
+
     setSearchParams(params, { replace: true });
   }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, setSearchParams]);
 
-  // Trigger search when filters change (for URL sync, badges, and initial load)
   useEffect(() => {
     const parsedBedrooms = parseMinNumber(bedrooms);
     const parsedBathrooms = parseMinNumber(bathrooms);
@@ -124,8 +113,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    // Search is now handled by the useEffect above
-    // This just prevents form submission
   };
 
   const clearFilters = () => {
@@ -137,55 +124,52 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     setBedrooms('Any');
     setBathrooms('Any');
     setSelectedAmenities([]);
-    // Search will be triggered automatically by the useEffect
   };
 
   return (
-    <div>
+    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
       <form onSubmit={handleSearch}>
-        {/* Compact 2-row layout */}
-        <div className="space-y-2">
-          {/* Row 1: Location + Country */}
-          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3">
+        <div className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
             <div className="md:col-span-7">
-              <label htmlFor="location" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="location" className="block text-sm font-semibold text-gray-700 mb-2">
                 📍 Location
               </label>
               <input
                 type="text"
                 id="location"
                 placeholder="City, neighborhood..."
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                className="w-full px-4 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={location}
                 onChange={(e) => setLocation(e.target.value)}
               />
             </div>
 
             <div className="md:col-span-5">
-              <label className="block text-xs font-medium text-gray-700 mb-1">
+              <label className="block text-sm font-semibold text-gray-700 mb-2">
                 🌍 Country
               </label>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setCountry('All')}
-                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                  className={`flex-1 px-3 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm ${
                     country === 'All'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
-                  🌍
+                  All
                 </button>
                 {COUNTRY_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setCountry(opt.value)}
-                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-xl font-medium transition-all shadow-sm ${
                       country === opt.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
+                        : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                     }`}
                     title={opt.label}
                   >
@@ -196,17 +180,16 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
           </div>
 
-          {/* Row 2: Price + Type + Beds + Baths */}
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 sm:gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-3">
             <div>
-              <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="minPrice" className="block text-sm font-semibold text-gray-700 mb-2">
                 💰 Min
               </label>
               <input
                 type="number"
                 id="minPrice"
                 placeholder={forSale ? "100k" : "500"}
-                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
                 min="0"
@@ -214,14 +197,14 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="maxPrice" className="block text-sm font-semibold text-gray-700 mb-2">
                 💰 Max
               </label>
               <input
                 type="number"
                 id="maxPrice"
                 placeholder={forSale ? "500k" : "2000"}
-                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
                 min="0"
@@ -229,12 +212,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div className="md:col-span-2">
-              <label htmlFor="type" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="type" className="block text-sm font-semibold text-gray-700 mb-2">
                 🏠 Type
               </label>
               <select
                 id="type"
-                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white transition-all"
                 value={propertyType}
                 onChange={(e) => setPropertyType(e.target.value)}
               >
@@ -248,12 +231,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <label htmlFor="bedrooms" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="bedrooms" className="block text-sm font-semibold text-gray-700 mb-2">
                 🛏️ Beds
               </label>
               <select
                 id="bedrooms"
-                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white transition-all"
                 value={bedrooms}
                 onChange={(e) => setBedrooms(e.target.value)}
               >
@@ -267,12 +250,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <label htmlFor="bathrooms" className="block text-xs font-medium text-gray-700 mb-1">
+              <label htmlFor="bathrooms" className="block text-sm font-semibold text-gray-700 mb-2">
                 🚿 Baths
               </label>
               <select
                 id="bathrooms"
-                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none bg-white transition-all"
                 value={bathrooms}
                 onChange={(e) => setBathrooms(e.target.value)}
               >
@@ -286,36 +269,34 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
           </div>
         </div>
 
-        {/* Action Buttons - Compact */}
-        <div className="flex items-center justify-between mt-3">
+        <div className="flex items-center justify-between mt-4 pt-4 border-t border-gray-100">
           <button
             type="button"
-            className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center"
+            className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 text-sm font-semibold transition-colors"
             onClick={() => setAdvancedOpen(!advancedOpen)}
           >
             ✨ Amenities
             {selectedAmenities.length > 0 && (
-              <span className="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">
+              <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-bold">
                 {selectedAmenities.length}
               </span>
             )}
-            <ChevronDown className={`ml-1 h-3 w-3 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
+            <ChevronDown className={`h-4 w-4 transition-transform duration-200 ${advancedOpen ? 'rotate-180' : ''}`} />
           </button>
 
           <button
             type="button"
-            className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center"
+            className="inline-flex items-center gap-1.5 text-gray-600 hover:text-gray-900 text-sm font-semibold transition-colors"
             onClick={clearFilters}
           >
-            <X className="h-3 w-3 mr-1" />
+            <X className="h-4 w-4" />
             Clear
           </button>
         </div>
 
-        {/* Advanced Filters - Amenities */}
         {advancedOpen && (
-          <div className="mt-3 pt-3 border-t border-gray-200">
-            <AmenityFilter 
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <AmenityFilter
               selectedAmenities={selectedAmenities}
               onChange={setSelectedAmenities}
             />
@@ -323,92 +304,91 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         )}
       </form>
 
-      {/* Active Filters Display - Compact */}
       {(location || country !== 'All' || minPrice || maxPrice || propertyType !== 'Any' || bedrooms !== 'Any' || bathrooms !== 'Any' || selectedAmenities.length > 0) && (
-        <div className="mt-3 pt-3 border-t border-gray-200">
+        <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2 flex-wrap">
               {location && (
-                <FilterBadge 
-                  label={location} 
-                  emoji="📍" 
-                  onRemove={() => setLocation('')} 
-                  colorClass="bg-emerald-50 text-emerald-700"
+                <FilterBadge
+                  label={location}
+                  emoji="📍"
+                  onRemove={() => setLocation('')}
+                  colorClass="bg-emerald-50 text-emerald-700 border-emerald-200"
                 />
               )}
 
               {country !== 'All' && (
-                <FilterBadge 
-                  label={country} 
-                  emoji="🌍" 
-                  onRemove={() => setCountry('All')} 
-                  colorClass="bg-indigo-50 text-indigo-700"
+                <FilterBadge
+                  label={country}
+                  emoji="🌍"
+                  onRemove={() => setCountry('All')}
+                  colorClass="bg-blue-50 text-blue-700 border-blue-200"
                   maxWidth=""
                 />
               )}
 
               {(minPrice || maxPrice) && (
-                <FilterBadge 
+                <FilterBadge
                   label={
-                    minPrice && maxPrice 
+                    minPrice && maxPrice
                       ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
-                      : minPrice 
+                      : minPrice
                         ? `€${parseInt(minPrice).toLocaleString()}+`
                         : `Up to €${parseInt(maxPrice).toLocaleString()}`
-                  } 
-                  emoji="💰" 
+                  }
+                  emoji="💰"
                   onRemove={() => {
                     setMinPrice('');
                     setMaxPrice('');
-                  }} 
-                  colorClass="bg-blue-50 text-blue-700"
+                  }}
+                  colorClass="bg-green-50 text-green-700 border-green-200"
                   maxWidth="max-w-[140px] sm:max-w-none"
                 />
               )}
 
               {propertyType !== 'Any' && (
-                <FilterBadge 
-                  label={getPropertyTypeLabel(propertyType)} 
-                  emoji="🏠" 
-                  onRemove={() => setPropertyType('Any')} 
-                  colorClass="bg-purple-50 text-purple-700"
+                <FilterBadge
+                  label={getPropertyTypeLabel(propertyType)}
+                  emoji="🏠"
+                  onRemove={() => setPropertyType('Any')}
+                  colorClass="bg-orange-50 text-orange-700 border-orange-200"
                   maxWidth="max-w-[100px] sm:max-w-none"
                 />
               )}
 
               {bedrooms !== 'Any' && (
-                <FilterBadge 
-                  label={bedrooms} 
-                  emoji="🛏️" 
-                  onRemove={() => setBedrooms('Any')} 
-                  colorClass="bg-pink-50 text-pink-700"
+                <FilterBadge
+                  label={bedrooms}
+                  emoji="🛏️"
+                  onRemove={() => setBedrooms('Any')}
+                  colorClass="bg-pink-50 text-pink-700 border-pink-200"
                   maxWidth=""
                 />
               )}
 
               {bathrooms !== 'Any' && (
-                <FilterBadge 
-                  label={bathrooms} 
-                  emoji="🚿" 
-                  onRemove={() => setBathrooms('Any')} 
-                  colorClass="bg-cyan-50 text-cyan-700"
+                <FilterBadge
+                  label={bathrooms}
+                  emoji="🚿"
+                  onRemove={() => setBathrooms('Any')}
+                  colorClass="bg-cyan-50 text-cyan-700 border-cyan-200"
                   maxWidth=""
                 />
               )}
 
               {selectedAmenities.slice(0, 3).map(amenityId => (
-                <FilterBadge 
+                <FilterBadge
                   key={amenityId}
-                  label={getAmenityLabel(amenityId)} 
-                  emoji="✨" 
-                  onRemove={() => setSelectedAmenities(prev => prev.filter(id => id !== amenityId))} 
-                  colorClass="bg-amber-50 text-amber-700"
+                  label={getAmenityLabel(amenityId)}
+                  emoji="✨"
+                  onRemove={() => setSelectedAmenities(prev => prev.filter(id => id !== amenityId))}
+                  colorClass="bg-amber-50 text-amber-700 border-amber-200"
                 />
               ))}
 
               {selectedAmenities.length > 3 && (
                 <button
                   onClick={() => setAdvancedOpen(true)}
-                  className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs sm:text-sm hover:bg-amber-200 transition-all font-medium"
+                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold hover:bg-amber-200 transition-all shadow-sm border border-amber-200"
                 >
                   +{selectedAmenities.length - 3} more
                 </button>
