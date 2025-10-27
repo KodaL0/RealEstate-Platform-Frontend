@@ -121,6 +121,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+  const scrollAccumulator = useRef(0);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -142,11 +143,12 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Optimized scroll handling - hide on scroll down, show on scroll up
+  // Scroll handling with accumulator - prevents flickering on scroll up
   useEffect(() => {
     const TOP_ZONE = 100;               // Always show filters near top
     const MIN_SCROLL_FOR_HIDE = 150;    // Minimum scroll position before hiding
-    const SCROLL_THRESHOLD = 5;         // Minimum scroll distance to trigger change
+    const HIDE_THRESHOLD = 10;          // Small threshold to hide (responsive)
+    const SHOW_THRESHOLD = 100;         // Large threshold to show (prevents flickering)
 
     const handleScroll = () => {
       if (ticking.current) return;
@@ -156,17 +158,37 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         const currentScrollY = window.scrollY;
         const scrollDiff = currentScrollY - lastScrollY.current;
         
-        // Always show filters at the very top
+        // Always show at top
         if (currentScrollY < TOP_ZONE) {
           setIsFiltersExpanded(true);
+          scrollAccumulator.current = 0;
         }
-        // Scrolling up - show filters
-        else if (scrollDiff < -SCROLL_THRESHOLD) {
-          setIsFiltersExpanded(true);
+        // Scrolling down
+        else if (scrollDiff > 0) {
+          // Reset accumulator when changing direction
+          if (scrollAccumulator.current < 0) {
+            scrollAccumulator.current = 0;
+          }
+          scrollAccumulator.current += scrollDiff;
+          
+          // Hide after small threshold
+          if (scrollAccumulator.current > HIDE_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
+            setIsFiltersExpanded(false);
+          }
         }
-        // Scrolling down - hide filters (only after minimum scroll position)
-        else if (scrollDiff > SCROLL_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
-          setIsFiltersExpanded(false);
+        // Scrolling up
+        else if (scrollDiff < 0) {
+          // Reset accumulator when changing direction
+          if (scrollAccumulator.current > 0) {
+            scrollAccumulator.current = 0;
+          }
+          scrollAccumulator.current += scrollDiff; // scrollDiff is negative
+          
+          // Show only after significant upward scroll
+          if (scrollAccumulator.current < -SHOW_THRESHOLD) {
+            setIsFiltersExpanded(true);
+            scrollAccumulator.current = 0; // Reset after showing
+          }
         }
         
         lastScrollY.current = currentScrollY;

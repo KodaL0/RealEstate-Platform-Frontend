@@ -1,34 +1,36 @@
-# Search Filter Scroll Behavior - Simple Implementation
+# Search Filter Scroll Behavior - Stable Implementation
 
 ## Overview
-Simple, performant scroll-triggered expand/collapse behavior for search filters on both Buy and Rent pages through the modular `ListingsPage` component.
+Stable, flicker-free scroll-triggered expand/collapse behavior for search filters on both Buy and Rent pages through the modular `ListingsPage` component.
 
 ## Behavior
 
-### Simple & Direct
-- **Scroll Down** → Filters hide (maximize content viewing)
-- **Scroll Up** → Filters show (easy refinement access)
+### Asymmetric Thresholds (Prevents Flickering)
+- **Scroll Down** → Filters hide after 10px (responsive)
+- **Scroll Up** → Filters show only after 100px cumulative scroll (prevents flickering)
 - **Near Top (0-100px)** → Filters always visible
 
-No animations, no delays - just instant response to scroll direction.
+Uses scroll distance accumulation to prevent rapid appearance/disappearance during normal scrolling.
 
 ### Configuration
 ```typescript
 const TOP_ZONE = 100;               // Always show filters near top
 const MIN_SCROLL_FOR_HIDE = 150;    // Minimum scroll position before hiding
-const SCROLL_THRESHOLD = 5;         // Minimum scroll distance to trigger change
+const HIDE_THRESHOLD = 10;          // Small threshold to hide (responsive)
+const SHOW_THRESHOLD = 100;         // Large threshold to show (prevents flickering)
 ```
 
 ### Logic
-- **Top Zone (0-100px):** Filters always expanded
-- **Scroll Up:** Immediately show filters
-- **Scroll Down:** Hide filters after scrolling past 150px
+- **Top Zone (0-100px):** Filters always expanded, accumulator resets
+- **Scroll Down:** Accumulate distance, hide after 10px threshold
+- **Scroll Up:** Accumulate distance, show only after 100px threshold
+- **Direction Change:** Accumulator resets to prevent false triggers
 
 ### Performance
 - **Request Animation Frame:** Batches scroll calculations with browser repaint
 - **Ticking Flag Pattern:** Prevents scroll handler stacking
 - **Passive Event Listeners:** Enables browser scroll optimizations
-- **Minimal Threshold:** 5px prevents false triggers from micro-scrolls
+- **Scroll Accumulator:** Tracks cumulative distance in current direction
 
 ## Technical Implementation
 
@@ -37,6 +39,7 @@ const SCROLL_THRESHOLD = 5;         // Minimum scroll distance to trigger change
 const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
 const lastScrollY = useRef(0);
 const ticking = useRef(false);
+const scrollAccumulator = useRef(0); // Tracks cumulative scroll distance
 ```
 
 ### Scroll Handler Logic
@@ -52,14 +55,34 @@ const handleScroll = () => {
     // Always show at top
     if (currentScrollY < TOP_ZONE) {
       setIsFiltersExpanded(true);
+      scrollAccumulator.current = 0;
     }
-    // Scrolling up - show
-    else if (scrollDiff < -SCROLL_THRESHOLD) {
-      setIsFiltersExpanded(true);
+    // Scrolling down
+    else if (scrollDiff > 0) {
+      // Reset accumulator when changing direction
+      if (scrollAccumulator.current < 0) {
+        scrollAccumulator.current = 0;
+      }
+      scrollAccumulator.current += scrollDiff;
+      
+      // Hide after small threshold
+      if (scrollAccumulator.current > HIDE_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
+        setIsFiltersExpanded(false);
+      }
     }
-    // Scrolling down - hide
-    else if (scrollDiff > SCROLL_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
-      setIsFiltersExpanded(false);
+    // Scrolling up
+    else if (scrollDiff < 0) {
+      // Reset accumulator when changing direction
+      if (scrollAccumulator.current > 0) {
+        scrollAccumulator.current = 0;
+      }
+      scrollAccumulator.current += scrollDiff; // scrollDiff is negative
+      
+      // Show only after significant upward scroll
+      if (scrollAccumulator.current < -SHOW_THRESHOLD) {
+        setIsFiltersExpanded(true);
+        scrollAccumulator.current = 0; // Reset after showing
+      }
     }
     
     lastScrollY.current = currentScrollY;
@@ -70,9 +93,10 @@ const handleScroll = () => {
 
 ### Flow
 1. **Event Fires** → Check ticking flag to prevent stacking
-2. **RAF Callback** → Calculate scroll direction
-3. **State Update** → Immediate show/hide based on direction
-4. **Re-render** → React conditionally renders filter section
+2. **RAF Callback** → Calculate scroll direction and distance
+3. **Accumulate Distance** → Add to accumulator if same direction, reset if changed
+4. **Check Thresholds** → Hide at 10px down, show at 100px up
+5. **State Update** → React conditionally renders filter section
 
 ## Performance
 
