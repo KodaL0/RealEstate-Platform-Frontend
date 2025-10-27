@@ -101,48 +101,55 @@ const handleScroll = () => {
 ## Performance
 
 - **Scroll handler:** Uses RAF for optimal timing
-- **State updates:** Only on direction changes (React's built-in optimization)
-- **No animations:** Instant visibility changes with zero overhead
-- **Result:** Maximum performance on all devices
+- **State updates:** Only when thresholds are met (React's built-in optimization)
+- **Accumulator overhead:** Minimal - simple arithmetic operations
+- **Result:** Smooth, flicker-free performance on all devices
 
 ## User Experience
 
-### Intuitive Behavior
-- **Scroll Down:** Content-focused mode - filters hide instantly
-- **Scroll Up:** Refinement mode - filters appear instantly
+### Stable Behavior
+- **Scroll Down:** Content-focused mode - filters hide responsively (10px)
+- **Scroll Up:** Refinement mode - filters appear only after intentional scroll (100px)
 - **At Top:** Always accessible for initial search setup
+- **No Flickering:** Large threshold prevents rapid toggling during normal browsing
 
-### Simple & Fast
-- No animations or transitions - instant response
-- Filter badges show context when collapsed
-- Minimal overhead - maximum performance
+### Asymmetric Design
+- Small threshold for hiding (10px) keeps it responsive
+- Large threshold for showing (100px) prevents accidental triggers
+- Direction change resets accumulator for clean state
+- Hysteresis effect improves user experience
 
 ### Mobile Optimized
-- Instant response to touch scrolling
-- No animation lag
+- Touch scrolling feels stable
+- No flicker during momentum scrolling
 - Optimal use of screen space
+- Intentional gestures work reliably
 
 ### Accessible
-- No motion to reduce
-- Keyboard navigation works
+- No animations to disable
+- Keyboard navigation unaffected
 - Screen reader friendly
+- Predictable behavior
 
 ## Testing Checklist
 
 ### Manual Testing:
-- [ ] Scroll down → filters disappear instantly
-- [ ] Scroll up → filters appear instantly
+- [ ] Scroll down slowly → filters hide after 10px
+- [ ] Scroll down fast → filters hide quickly
+- [ ] Scroll up < 100px → filters stay hidden (no flicker)
+- [ ] Scroll up 100px+ → filters appear
+- [ ] Quick back-and-forth scrolling → no flickering
 - [ ] At top (< 100px) → filters always visible
 - [ ] Active filter badges → visible when collapsed
-- [ ] No animations or delays
 - [ ] Works on both Buy and Rent pages
 
 ### Performance Testing:
 1. Open Chrome DevTools Performance
-2. Record scrolling session
+2. Record scrolling session with rapid direction changes
 3. Verify:
+   - No rapid show/hide toggling
    - Minimal layout shifts
-   - No animation overhead
+   - Smooth state transitions
    - Fast re-renders
 
 ### Cross-Browser:
@@ -165,10 +172,16 @@ const MIN_SCROLL_FOR_HIDE = 200;  // Hide later (more persistent)
 const MIN_SCROLL_FOR_HIDE = 100;  // Hide sooner (more aggressive)
 ```
 
-### Adjust Scroll Sensitivity:
+### Adjust Hide Threshold (scroll down sensitivity):
 ```typescript
-const SCROLL_THRESHOLD = 10;  // Less sensitive (more deliberate)
-const SCROLL_THRESHOLD = 2;   // More sensitive (instant response)
+const HIDE_THRESHOLD = 20;  // Less sensitive (more deliberate)
+const HIDE_THRESHOLD = 5;   // More sensitive (instant response)
+```
+
+### Adjust Show Threshold (scroll up sensitivity):
+```typescript
+const SHOW_THRESHOLD = 150;  // Require more scroll up (very stable)
+const SHOW_THRESHOLD = 50;   // Require less scroll up (more responsive)
 ```
 
 ## Future Enhancements

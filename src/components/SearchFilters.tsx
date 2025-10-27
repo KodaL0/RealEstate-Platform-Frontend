@@ -1,32 +1,27 @@
-import { useState, useEffect, useRef } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
 import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
 // Filter types
-interface ParsedFilters {
+interface FilterState {
   location?: string;
-  minPrice?: number;
-  maxPrice?: number;
-  propertyType?: string;
-  bedrooms?: number;
-  bathrooms?: number;
-  amenities?: string[];
   country?: string;
-  forSale: boolean;
+  minPrice?: string;
+  maxPrice?: string;
+  propertyType?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  amenities?: string[];
 }
 
 interface SearchFiltersProps {
-  forSale: boolean;
-  onSearch: (filters: ParsedFilters) => void;
-  initialLocation?: string;
+  filters: FilterState;
+  onFiltersChange: (filters: FilterState) => void;
+  isExpanded: boolean;
 }
 
 // Helper functions
-const parseMinNumber = (num: string): number | undefined =>
-  num === 'Any' ? undefined : parseInt(num.replace('+', ''), 10);
-
 const getPropertyTypeLabel = (value: string): string =>
   PROPERTY_TYPES.find(t => t.value === value)?.label || value;
 
@@ -56,118 +51,31 @@ const FilterBadge: React.FC<FilterBadgeProps> = ({
 );
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
-  forSale,
-  onSearch,
-  initialLocation = '',
+  filters,
+  onFiltersChange,
+  isExpanded,
 }) => {
-  const [searchParams, setSearchParams] = useSearchParams();
-  const onSearchRef = useRef(onSearch);
-
-  // State
-  const [location, setLocation] = useState(searchParams.get('location') || initialLocation);
-  const [country, setCountry] = useState(searchParams.get('country') || 'All');
-  const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
-  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
-  const [propertyType, setPropertyType] = useState(searchParams.get('type') || 'Any');
-  const [bedrooms, setBedrooms] = useState(searchParams.get('beds') || 'Any');
-  const [bathrooms, setBathrooms] = useState(searchParams.get('baths') || 'Any');
-  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(
-    searchParams.get('amenities')?.split(',').filter(Boolean) || []
-  );
+  // Only keep UI state
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [hasActiveFilters, setHasActiveFilters] = useState<boolean>(false);
-  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
-  // Update onSearch ref
-  useEffect(() => {
-    onSearchRef.current = onSearch;
-  }, [onSearch]);
-
-  // Keep location in sync
-  useEffect(() => {
-    setLocation(initialLocation);
-  }, [initialLocation]);
-
-  // Sync URL params
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (location) params.set('location', location);
-    if (country !== 'All') params.set('country', country);
-    if (minPrice) params.set('minPrice', minPrice);
-    if (maxPrice) params.set('maxPrice', maxPrice);
-    if (propertyType !== 'Any') params.set('type', propertyType);
-    if (bedrooms !== 'Any') params.set('beds', bedrooms);
-    if (bathrooms !== 'Any') params.set('baths', bathrooms);
-    if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
-    setSearchParams(params, { replace: true });
-  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, setSearchParams]);
-
-  // Trigger onSearch + check active filters
-  useEffect(() => {
-    const parsedBedrooms = parseMinNumber(bedrooms);
-    const parsedBathrooms = parseMinNumber(bathrooms);
-
-    const filters: ParsedFilters = {
-      location: location || undefined,
-      country: country !== 'All' ? country : undefined,
-      minPrice: minPrice ? parseFloat(minPrice) : undefined,
-      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
-      propertyType: propertyType === 'Any' ? undefined : propertyType,
-      bedrooms: parsedBedrooms,
-      bathrooms: parsedBathrooms,
-      amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
-      forSale,
-    };
-
-    onSearchRef.current(filters);
-
-    const active =
-      !!filters.location ||
-      !!filters.country ||
-      !!filters.minPrice ||
-      !!filters.maxPrice ||
-      !!filters.propertyType ||
-      !!filters.bedrooms ||
-      !!filters.bathrooms ||
-      !!(filters.amenities && filters.amenities.length > 0);
-
-    setHasActiveFilters(active);
-  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, forSale]);
-
-  // Scroll behavior (smooth + top expand)
-  useEffect(() => {
-    let timeout: ReturnType<typeof setTimeout>;
-
-    const handleScroll = () => {
-      clearTimeout(timeout);
-      timeout = setTimeout(() => {
-        if (window.scrollY < 100) {
-          setIsExpanded(true); // always expand near top
-        } else {
-          setIsExpanded(false); // collapse when scrolled down
-        }
-      }, 100);
-    };
-
-    window.addEventListener('scroll', handleScroll);
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
+  // Check if there are active filters
+  const hasActiveFilters = filters.location || (filters.country && filters.country !== 'All') || 
+    filters.minPrice || filters.maxPrice || (filters.propertyType && filters.propertyType !== 'Any') || 
+    (filters.bedrooms && filters.bedrooms !== 'Any') || (filters.bathrooms && filters.bathrooms !== 'Any') || 
+    (filters.amenities && filters.amenities.length > 0);
 
   // Clear filters
   const clearFilters = () => {
-    setLocation('');
-    setCountry('All');
-    setMinPrice('');
-    setMaxPrice('');
-    setPropertyType('Any');
-    setBedrooms('Any');
-    setBathrooms('Any');
-    setSelectedAmenities([]);
-    setHasActiveFilters(false);
-    setIsExpanded(true); // reopen full filters
+    onFiltersChange({
+      location: '',
+      country: 'All',
+      minPrice: '',
+      maxPrice: '',
+      propertyType: 'Any',
+      bedrooms: 'Any',
+      bathrooms: 'Any',
+      amenities: [],
+    });
   };
 
   // Rendering
@@ -181,50 +89,75 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     return (
       <div className="sticky top-0 z-40 bg-white shadow-sm px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
         <div className="flex items-center gap-2 flex-wrap">
-          {location && (
-            <FilterBadge label={location} emoji="📍" onRemove={() => setLocation('')} colorClass="bg-emerald-50 text-emerald-700" />
+          {filters.location && (
+            <FilterBadge 
+              label={filters.location} 
+              emoji="📍" 
+              onRemove={() => onFiltersChange({ ...filters, location: '' })} 
+              colorClass="bg-emerald-50 text-emerald-700" 
+            />
           )}
-          {country !== 'All' && (
-            <FilterBadge label={country} emoji="🌍" onRemove={() => setCountry('All')} colorClass="bg-indigo-50 text-indigo-700" />
+          {filters.country && filters.country !== 'All' && (
+            <FilterBadge 
+              label={filters.country} 
+              emoji="🌍" 
+              onRemove={() => onFiltersChange({ ...filters, country: 'All' })} 
+              colorClass="bg-indigo-50 text-indigo-700" 
+            />
           )}
-          {(minPrice || maxPrice) && (
+          {(filters.minPrice || filters.maxPrice) && (
             <FilterBadge
               label={
-                minPrice && maxPrice
-                  ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
-                  : minPrice
-                    ? `€${parseInt(minPrice).toLocaleString()}+`
-                    : `Up to €${parseInt(maxPrice).toLocaleString()}`
+                filters.minPrice && filters.maxPrice
+                  ? `€${parseInt(filters.minPrice).toLocaleString()} - €${parseInt(filters.maxPrice).toLocaleString()}`
+                  : filters.minPrice
+                    ? `€${parseInt(filters.minPrice).toLocaleString()}+`
+                    : `Up to €${parseInt(filters.maxPrice!).toLocaleString()}`
               }
               emoji="💰"
-              onRemove={() => {
-                setMinPrice('');
-                setMaxPrice('');
-              }}
+              onRemove={() => onFiltersChange({ ...filters, minPrice: '', maxPrice: '' })}
               colorClass="bg-blue-50 text-blue-700"
             />
           )}
-          {propertyType !== 'Any' && (
-            <FilterBadge label={getPropertyTypeLabel(propertyType)} emoji="🏠" onRemove={() => setPropertyType('Any')} colorClass="bg-purple-50 text-purple-700" />
+          {filters.propertyType && filters.propertyType !== 'Any' && (
+            <FilterBadge 
+              label={getPropertyTypeLabel(filters.propertyType)} 
+              emoji="🏠" 
+              onRemove={() => onFiltersChange({ ...filters, propertyType: 'Any' })} 
+              colorClass="bg-purple-50 text-purple-700" 
+            />
           )}
-          {bedrooms !== 'Any' && (
-            <FilterBadge label={bedrooms} emoji="🛏️" onRemove={() => setBedrooms('Any')} colorClass="bg-pink-50 text-pink-700" />
+          {filters.bedrooms && filters.bedrooms !== 'Any' && (
+            <FilterBadge 
+              label={filters.bedrooms} 
+              emoji="🛏️" 
+              onRemove={() => onFiltersChange({ ...filters, bedrooms: 'Any' })} 
+              colorClass="bg-pink-50 text-pink-700" 
+            />
           )}
-          {bathrooms !== 'Any' && (
-            <FilterBadge label={bathrooms} emoji="🚿" onRemove={() => setBathrooms('Any')} colorClass="bg-cyan-50 text-cyan-700" />
+          {filters.bathrooms && filters.bathrooms !== 'Any' && (
+            <FilterBadge 
+              label={filters.bathrooms} 
+              emoji="🚿" 
+              onRemove={() => onFiltersChange({ ...filters, bathrooms: 'Any' })} 
+              colorClass="bg-cyan-50 text-cyan-700" 
+            />
           )}
-          {selectedAmenities.slice(0, 3).map((amenityId) => (
+          {filters.amenities && filters.amenities.slice(0, 3).map((amenityId) => (
             <FilterBadge
               key={amenityId}
               label={getAmenityLabel(amenityId)}
               emoji="✨"
-              onRemove={() => setSelectedAmenities((prev) => prev.filter((id) => id !== amenityId))}
+              onRemove={() => onFiltersChange({ 
+                ...filters, 
+                amenities: filters.amenities!.filter((id) => id !== amenityId) 
+              })}
               colorClass="bg-amber-50 text-amber-700"
             />
           ))}
-          {selectedAmenities.length > 3 && (
+          {filters.amenities && filters.amenities.length > 3 && (
             <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs sm:text-sm font-medium">
-              +{selectedAmenities.length - 3} more
+              +{filters.amenities.length - 3} more
             </span>
           )}
           <button
@@ -254,8 +187,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 id="location"
                 placeholder="City, neighborhood..."
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                value={location}
-                onChange={(e) => setLocation(e.target.value)}
+                value={filters.location || ''}
+                onChange={(e) => onFiltersChange({ ...filters, location: e.target.value })}
               />
             </div>
             <div className="md:col-span-5">
@@ -263,8 +196,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <div className="flex items-center gap-1">
                 <button
                   type="button"
-                  onClick={() => setCountry('All')}
-                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${country === 'All'
+                  onClick={() => onFiltersChange({ ...filters, country: 'All' })}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${(filters.country || 'All') === 'All'
                     ? 'bg-blue-600 text-white'
                     : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
@@ -275,8 +208,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setCountry(opt.value)}
-                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${country === opt.value
+                    onClick={() => onFiltersChange({ ...filters, country: opt.value })}
+                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${filters.country === opt.value
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
@@ -296,10 +229,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <input
                 type="number"
                 id="minPrice"
-                placeholder={forSale ? "100k" : "500"}
+                placeholder="Min price"
                 className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={minPrice}
-                onChange={(e) => setMinPrice(e.target.value)}
+                value={filters.minPrice || ''}
+                onChange={(e) => onFiltersChange({ ...filters, minPrice: e.target.value })}
                 min="0"
               />
             </div>
@@ -308,10 +241,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <input
                 type="number"
                 id="maxPrice"
-                placeholder={forSale ? "500k" : "2000"}
+                placeholder="Max price"
                 className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                value={maxPrice}
-                onChange={(e) => setMaxPrice(e.target.value)}
+                value={filters.maxPrice || ''}
+                onChange={(e) => onFiltersChange({ ...filters, maxPrice: e.target.value })}
                 min="0"
               />
             </div>
@@ -320,8 +253,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <select
                 id="type"
                 className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                value={propertyType}
-                onChange={(e) => setPropertyType(e.target.value)}
+                value={filters.propertyType || 'Any'}
+                onChange={(e) => onFiltersChange({ ...filters, propertyType: e.target.value })}
               >
                 <option value="Any">Any</option>
                 {PROPERTY_TYPES.map((type) => (
@@ -334,8 +267,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <select
                 id="bedrooms"
                 className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                value={bedrooms}
-                onChange={(e) => setBedrooms(e.target.value)}
+                value={filters.bedrooms || 'Any'}
+                onChange={(e) => onFiltersChange({ ...filters, bedrooms: e.target.value })}
               >
                 <option>Any</option>
                 <option>1+</option>
@@ -350,8 +283,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <select
                 id="bathrooms"
                 className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                value={bathrooms}
-                onChange={(e) => setBathrooms(e.target.value)}
+                value={filters.bathrooms || 'Any'}
+                onChange={(e) => onFiltersChange({ ...filters, bathrooms: e.target.value })}
               >
                 <option>Any</option>
                 <option>1+</option>
@@ -371,9 +304,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             onClick={() => setAdvancedOpen(!advancedOpen)}
           >
             ✨ Amenities
-            {selectedAmenities.length > 0 && (
+            {filters.amenities && filters.amenities.length > 0 && (
               <span className="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">
-                {selectedAmenities.length}
+                {filters.amenities.length}
               </span>
             )}
             <ChevronDown className={`ml-1 h-3 w-3 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
@@ -390,7 +323,10 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
         {advancedOpen && (
           <div className="mt-3 pt-3 border-t border-gray-200">
-            <AmenityFilter selectedAmenities={selectedAmenities} onChange={setSelectedAmenities} />
+            <AmenityFilter 
+              selectedAmenities={filters.amenities || []} 
+              onChange={(amenities) => onFiltersChange({ ...filters, amenities })} 
+            />
           </div>
         )}
       </form>

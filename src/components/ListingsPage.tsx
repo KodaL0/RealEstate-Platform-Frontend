@@ -15,17 +15,15 @@ import analytics from "../utils/analytics";
 
 const PAGE_SIZE = 12;
 
-interface SearchFiltersType {
+interface FilterState {
   location?: string;
-  search?: string;
-  minPrice?: string | number;
-  maxPrice?: string | number;
-  bedrooms?: string | number;
-  bathrooms?: string | number;
-  propertyType?: string;
-  amenities?: string[];
-  order?: string;
   country?: string;
+  minPrice?: string;
+  maxPrice?: string;
+  propertyType?: string;
+  bedrooms?: string;
+  bathrooms?: string;
+  amenities?: string[];
 }
 
 export type ListingType = "sale" | "rent";
@@ -116,7 +114,7 @@ const themeConfigs: Record<ListingType, ThemeConfig> = {
 
 const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const theme = themeConfigs[listingType];
-  const [searchParams] = useSearchParams();
+  const [searchParams, setSearchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
@@ -130,8 +128,15 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
+  const [filters, setFilters] = useState<FilterState>({
     location: initialLocation,
+    country: 'All',
+    minPrice: '',
+    maxPrice: '',
+    propertyType: 'Any',
+    bedrooms: 'Any',
+    bathrooms: 'Any',
+    amenities: [],
   });
 
   const first = useRef(true);
@@ -140,7 +145,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       first.current = false;
       return;
     }
-    window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
+    // Only scroll if user is below filter area
+    if (window.scrollY > 400) {
+      window.scrollTo({ top: 200, left: 0, behavior: "smooth" });
+    }
   }, [currentPage]);
 
   // Scroll handling with accumulator - prevents flickering on scroll up
@@ -203,6 +211,38 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     };
   }, []);
 
+  // Stringify amenities for dependency to avoid unnecessary re-renders
+  const amenitiesKey = filters.amenities?.join(',') || '';
+
+  // Sync filters to URL params
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (filters.location) params.set('location', filters.location);
+    if (filters.country && filters.country !== 'All') params.set('country', filters.country);
+    if (filters.minPrice) params.set('minPrice', filters.minPrice);
+    if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
+    if (filters.propertyType && filters.propertyType !== 'Any') params.set('type', filters.propertyType);
+    if (filters.bedrooms && filters.bedrooms !== 'Any') params.set('beds', filters.bedrooms);
+    if (filters.bathrooms && filters.bathrooms !== 'Any') params.set('baths', filters.bathrooms);
+    if (filters.amenities && filters.amenities.length > 0) params.set('amenities', filters.amenities.join(','));
+    setSearchParams(params, { replace: true });
+  }, [filters, setSearchParams]);
+
+  // Reset pagination when filters or sort change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [
+    filters.location,
+    filters.country,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.bedrooms,
+    filters.bathrooms,
+    filters.propertyType,
+    amenitiesKey,
+    sortOption
+  ]);
+
   useEffect(() => {
     const fetchProperties = async () => {
       setIsLoading(true);
@@ -211,18 +251,17 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       const qp: Record<string, string> = {
         page_size: PAGE_SIZE.toString(),
       };
-      if (searchFilters.search)        qp.search        = searchFilters.search;
-      if (currentPage !== 1)           qp.page          = currentPage.toString();
-      if (searchFilters.minPrice)      qp.price_min     = String(searchFilters.minPrice);
-      if (searchFilters.maxPrice)      qp.price_max     = String(searchFilters.maxPrice);
-      if (searchFilters.bedrooms)      qp.bedrooms      = String(searchFilters.bedrooms);
-      if (searchFilters.bathrooms)     qp.bathrooms     = String(searchFilters.bathrooms);
-      if (searchFilters.propertyType)  qp.property_type = searchFilters.propertyType;
-      if (sortOption)                  qp.sort          = sortOption;
-      if (searchFilters.location)      qp.location      = searchFilters.location;
-      if (searchFilters.country)       qp.country       = searchFilters.country;
-      if (searchFilters.amenities && searchFilters.amenities.length > 0) {
-        qp.amenities = searchFilters.amenities.join(',');
+      if (filters.location) qp.location = filters.location;
+      if (filters.country && filters.country !== 'All') qp.country = filters.country;
+      if (currentPage !== 1) qp.page = currentPage.toString();
+      if (filters.minPrice) qp.price_min = filters.minPrice;
+      if (filters.maxPrice) qp.price_max = filters.maxPrice;
+      if (filters.bedrooms && filters.bedrooms !== 'Any') qp.bedrooms = filters.bedrooms.replace('+', '');
+      if (filters.bathrooms && filters.bathrooms !== 'Any') qp.bathrooms = filters.bathrooms.replace('+', '');
+      if (filters.propertyType && filters.propertyType !== 'Any') qp.property_type = filters.propertyType;
+      if (sortOption) qp.sort = sortOption;
+      if (filters.amenities && filters.amenities.length > 0) {
+        qp.amenities = filters.amenities.join(',');
       }
 
       console.log(`Fetching ${listingType.toUpperCase()} with query params:`, qp);
@@ -239,13 +278,13 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         setTotalPages(Math.ceil((paginatedData.count || 0) / PAGE_SIZE));
 
         analytics.trackPropertySearch({
-          search_term: searchFilters.search,
-          property_type: searchFilters.propertyType,
-          min_price: searchFilters.minPrice ? Number(searchFilters.minPrice) : undefined,
-          max_price: searchFilters.maxPrice ? Number(searchFilters.maxPrice) : undefined,
-          bedrooms: searchFilters.bedrooms ? Number(searchFilters.bedrooms) : undefined,
-          bathrooms: searchFilters.bathrooms ? Number(searchFilters.bathrooms) : undefined,
-          location: searchFilters.location,
+          search_term: undefined,
+          property_type: filters.propertyType !== 'Any' ? filters.propertyType : undefined,
+          min_price: filters.minPrice ? Number(filters.minPrice) : undefined,
+          max_price: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+          bedrooms: filters.bedrooms && filters.bedrooms !== 'Any' ? Number(filters.bedrooms.replace('+', '')) : undefined,
+          bathrooms: filters.bathrooms && filters.bathrooms !== 'Any' ? Number(filters.bathrooms.replace('+', '')) : undefined,
+          location: filters.location,
           property_status: listingType,
           sort_by: sortOption,
           results_count: paginatedData.count,
@@ -259,27 +298,33 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     };
 
     fetchProperties();
-  }, [sortOption, searchFilters.search, searchFilters.minPrice, searchFilters.maxPrice, searchFilters.bedrooms, searchFilters.bathrooms, searchFilters.propertyType, searchFilters.location, searchFilters.country, searchFilters.amenities, currentPage, listingType]);
+  }, [
+    sortOption,
+    filters.location,
+    filters.country,
+    filters.minPrice,
+    filters.maxPrice,
+    filters.bedrooms,
+    filters.bathrooms,
+    filters.propertyType,
+    amenitiesKey,
+    currentPage,
+    listingType
+  ]);
 
 
   const displayed = properties;
 
-  const handleSearch = (f: SearchFiltersType) => {
-    setSearchFilters(f);
-    setCurrentPage(1);
-  };
-
   // Check if there are active filters
-  const hasActiveFilters = searchFilters.location || searchFilters.country || 
-    searchFilters.minPrice || searchFilters.maxPrice || searchFilters.propertyType || 
-    searchFilters.bedrooms || searchFilters.bathrooms || 
-    (searchFilters.amenities && searchFilters.amenities.length > 0);
+  const hasActiveFilters = filters.location || (filters.country && filters.country !== 'All') || 
+    filters.minPrice || filters.maxPrice || (filters.propertyType && filters.propertyType !== 'Any') || 
+    (filters.bedrooms && filters.bedrooms !== 'Any') || (filters.bathrooms && filters.bathrooms !== 'Any') || 
+    (filters.amenities && filters.amenities.length > 0);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSort = e.target.value;
     analytics.trackSortChange(newSort, totalCount);
     setSortOption(newSort);
-    setCurrentPage(1);
   };
 
   const goToPage = (p: number) => setCurrentPage(p);
@@ -334,9 +379,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               </div>
             )}
             <SearchFilters
-              forSale={listingType === "sale"}
-              onSearch={handleSearch}
-              initialLocation={initialLocation}
+              filters={filters}
+              onFiltersChange={setFilters}
               isExpanded={isFiltersExpanded}
             />
           </div>
@@ -371,10 +415,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                       {totalCount === 1 ? 'Property' : 'Properties'} Available
                     </p>
                   </div>
-                  {searchFilters.country && (
+                  {filters.country && filters.country !== 'All' && (
                     <p className="text-sm text-gray-500 flex items-center gap-1.5">
                       <MapPin className="h-3.5 w-3.5" />
-                      <span>{searchFilters.country}</span>
+                      <span>{filters.country}</span>
                     </p>
                   )}
                 </div>
@@ -459,7 +503,16 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               </p>
               <button
                 onClick={() => {
-                  setSearchFilters({});
+                  setFilters({
+                    location: '',
+                    country: 'All',
+                    minPrice: '',
+                    maxPrice: '',
+                    propertyType: 'Any',
+                    bedrooms: 'Any',
+                    bathrooms: 'Any',
+                    amenities: [],
+                  });
                   setSortOption("recommended");
                 }}
                 className={`px-8 py-3.5 bg-gradient-to-r ${theme.buttonGradient} ${theme.buttonHoverGradient} text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
