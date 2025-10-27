@@ -353,8 +353,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.borderColor} to-transparent`}></div>
       </div>
 
-      {/* Sticky Search Filters - Always visible */}
-      <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg">
+      {/* Search Filters - Static position (scrolls away naturally) */}
+      <div className="bg-white border-b border-gray-200 shadow-sm">
         <div className="max-w-6xl mx-auto">
           <div className="px-4 sm:px-6 lg:px-8 pt-5">
             <div className="flex items-center gap-2 mb-3">
