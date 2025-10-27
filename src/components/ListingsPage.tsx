@@ -121,9 +121,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
-  const scrollVelocity = useRef(0);
-  const lastScrollTime = useRef(Date.now());
-  const debounceTimer = useRef<number | null>(null);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -145,14 +142,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Optimized scroll handling with velocity detection and debouncing
+  // Optimized scroll handling - hide on scroll down, show on scroll up
   useEffect(() => {
-    const COLLAPSE_THRESHOLD = 30;      // Pixels scrolled down before collapsing
-    const EXPAND_THRESHOLD = 20;        // Pixels scrolled up before expanding
-    const VELOCITY_MULTIPLIER = 0.3;    // Sensitivity to scroll speed
     const TOP_ZONE = 100;               // Always show filters near top
-    const MIN_SCROLL_FOR_HIDE = 200;    // Minimum scroll position before hiding
-    const DEBOUNCE_DELAY = 150;         // Delay before state update (ms)
+    const MIN_SCROLL_FOR_HIDE = 150;    // Minimum scroll position before hiding
+    const SCROLL_THRESHOLD = 5;         // Minimum scroll distance to trigger change
 
     const handleScroll = () => {
       if (ticking.current) return;
@@ -160,46 +154,22 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
       requestAnimationFrame(() => {
         const currentScrollY = window.scrollY;
-        const now = Date.now();
-        const timeDelta = Math.max(now - lastScrollTime.current, 1);
         const scrollDiff = currentScrollY - lastScrollY.current;
         
-        // Calculate scroll velocity (pixels per ms)
-        const velocity = Math.abs(scrollDiff) / timeDelta;
-        scrollVelocity.current = velocity;
-        
-        // Clear any pending debounce
-        if (debounceTimer.current) {
-          clearTimeout(debounceTimer.current);
+        // Always show filters at the very top
+        if (currentScrollY < TOP_ZONE) {
+          setIsFiltersExpanded(true);
         }
-
-        // Function to update filter visibility
-        const updateFilterVisibility = () => {
-          // Always expand at the very top
-          if (currentScrollY < TOP_ZONE) {
-            setIsFiltersExpanded(true);
-          }
-          // Scrolling up - expand with velocity consideration
-          else if (scrollDiff < 0) {
-            const expandThreshold = EXPAND_THRESHOLD - (velocity * VELOCITY_MULTIPLIER);
-            if (scrollDiff < -expandThreshold) {
-              setIsFiltersExpanded(true);
-            }
-          }
-          // Scrolling down - collapse with velocity consideration
-          else if (scrollDiff > 0 && currentScrollY > MIN_SCROLL_FOR_HIDE) {
-            const collapseThreshold = COLLAPSE_THRESHOLD - (velocity * VELOCITY_MULTIPLIER);
-            if (scrollDiff > collapseThreshold) {
-              setIsFiltersExpanded(false);
-            }
-          }
-        };
-
-        // Debounce the state update for smoother transitions
-        debounceTimer.current = setTimeout(updateFilterVisibility, DEBOUNCE_DELAY);
+        // Scrolling up - show filters
+        else if (scrollDiff < -SCROLL_THRESHOLD) {
+          setIsFiltersExpanded(true);
+        }
+        // Scrolling down - hide filters (only after minimum scroll position)
+        else if (scrollDiff > SCROLL_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
+          setIsFiltersExpanded(false);
+        }
         
         lastScrollY.current = currentScrollY;
-        lastScrollTime.current = now;
         ticking.current = false;
       });
     };
@@ -208,9 +178,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     
     return () => {
       window.removeEventListener('scroll', handleScroll);
-      if (debounceTimer.current) {
-        clearTimeout(debounceTimer.current);
-      }
     };
   }, []);
 
