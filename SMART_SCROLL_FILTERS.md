@@ -285,3 +285,4 @@ const Buy = () => {
 **Result: Properties are the main focus, filters intelligently hide/show!** 🎯
 
 
+
