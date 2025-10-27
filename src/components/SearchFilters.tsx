@@ -1,5 +1,8 @@
-import { useState, useEffect } from 'react';
-import { Search, ChevronDown, X } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import { ChevronDown, X } from 'lucide-react';
+import AmenityFilter from './AmenityFilter';
+import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
 // Define a more specific type for the filters passed to onSearch
 interface ParsedFilters {
@@ -9,6 +12,8 @@ interface ParsedFilters {
   propertyType?: string;
   bedrooms?: number;
   bathrooms?: number;
+  amenities?: string[];
+  country?: string;
   forSale: boolean;
 }
 
@@ -16,40 +21,7 @@ interface SearchFiltersProps {
   forSale?: boolean;
   onSearch: (filters: ParsedFilters) => void;
   initialLocation?: string;
-  buttonClassName?: string;
 }
-
-// Helper function to parse price string (e.g., "$100k - $300k", "$2M+", "Any")
-const parsePriceRange = (rangeString: string): { minPrice?: number; maxPrice?: number } => {
-  if (rangeString === 'Any') {
-    return { minPrice: undefined, maxPrice: undefined };
-  }
-
-  const cleaned = rangeString.replace(/[$|,]/g, '');
-  let minPrice: number | undefined;
-  let maxPrice: number | undefined;
-
-  const parseValue = (value: string): number => {
-    if (value.endsWith('k')) {
-      return parseFloat(value.replace('k', '')) * 1000;
-    }
-    if (value.endsWith('M')) {
-      return parseFloat(value.replace('M', '')) * 1000000;
-    }
-    return parseFloat(value);
-  };
-
-  if (cleaned.includes(' - ')) {
-    const [minStr, maxStr] = cleaned.split(' - ');
-    minPrice = parseValue(minStr);
-    maxPrice = parseValue(maxStr);
-  } else if (cleaned.endsWith('+')) {
-    minPrice = parseValue(cleaned.replace('+', ''));
-    maxPrice = undefined; // No upper limit
-  }
-
-  return { minPrice, maxPrice };
-};
 
 // Helper function to parse min number string (e.g., "3+", "Any")
 const parseMinNumber = (numberString: string): number | undefined => {
@@ -59,181 +31,229 @@ const parseMinNumber = (numberString: string): number | undefined => {
   return parseInt(numberString.replace('+', ''), 10);
 };
 
+// Helper to get property type label from value
+const getPropertyTypeLabel = (value: string): string => {
+  const type = PROPERTY_TYPES.find(t => t.value === value);
+  return type?.label || value;
+};
+
+// Reusable FilterBadge component
+interface FilterBadgeProps {
+  label: string;
+  emoji: string;
+  onRemove: () => void;
+  colorClass: string;
+  maxWidth?: string;
+}
+
+const FilterBadge: React.FC<FilterBadgeProps> = ({ label, emoji, onRemove, colorClass, maxWidth = 'max-w-[120px] sm:max-w-none' }) => (
+  <button
+    onClick={onRemove}
+    className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 ${colorClass} rounded-full text-xs sm:text-sm hover:brightness-95 transition-all active:scale-95`}
+  >
+    <span className={`truncate ${maxWidth}`}>{emoji} {label}</span>
+    <X className="h-3 w-3 flex-shrink-0" />
+  </button>
+);
+
 const SearchFilters: React.FC<SearchFiltersProps> = ({ 
   forSale = true, 
   onSearch, 
   initialLocation = '',
-  buttonClassName = "bg-emerald-600 hover:bg-emerald-700 text-white",
 }) => {
-  const [location, setLocation] = useState(initialLocation);
-  const [priceRange, setPriceRange] = useState('Any');
-  const [propertyType, setPropertyType] = useState('Any');
-  const [bedrooms, setBedrooms] = useState('Any');
-  const [bathrooms, setBathrooms] = useState('Any');
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Use ref to store latest onSearch to avoid infinite loops
+  const onSearchRef = useRef(onSearch);
+  
+  // Initialize state from URL params
+  const [location, setLocation] = useState(searchParams.get('location') || initialLocation);
+  const [country, setCountry] = useState(searchParams.get('country') || 'All');
+  const [minPrice, setMinPrice] = useState(searchParams.get('minPrice') || '');
+  const [maxPrice, setMaxPrice] = useState(searchParams.get('maxPrice') || '');
+  const [propertyType, setPropertyType] = useState(searchParams.get('type') || 'Any');
+  const [bedrooms, setBedrooms] = useState(searchParams.get('beds') || 'Any');
+  const [bathrooms, setBathrooms] = useState(searchParams.get('baths') || 'Any');
+  const [selectedAmenities, setSelectedAmenities] = useState<string[]>(
+    searchParams.get('amenities')?.split(',').filter(Boolean) || []
+  );
   const [advancedOpen, setAdvancedOpen] = useState(false);
+
+  // Keep ref updated with latest onSearch function
+  useEffect(() => {
+    onSearchRef.current = onSearch;
+  }, [onSearch]);
 
   useEffect(() => {
     setLocation(initialLocation);
   }, [initialLocation]);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    
+    if (location) params.set('location', location);
+    if (country !== 'All') params.set('country', country);
+    if (minPrice) params.set('minPrice', minPrice);
+    if (maxPrice) params.set('maxPrice', maxPrice);
+    if (propertyType !== 'Any') params.set('type', propertyType);
+    if (bedrooms !== 'Any') params.set('beds', bedrooms);
+    if (bathrooms !== 'Any') params.set('baths', bathrooms);
+    if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
+    
+    setSearchParams(params, { replace: true });
+  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, setSearchParams]);
 
-    const { minPrice, maxPrice } = parsePriceRange(priceRange);
+  // Trigger search when filters change (for URL sync, badges, and initial load)
+  useEffect(() => {
     const parsedBedrooms = parseMinNumber(bedrooms);
     const parsedBathrooms = parseMinNumber(bathrooms);
 
-    onSearch({
+    onSearchRef.current({
       location: location || undefined,
-      minPrice,
-      maxPrice,
-      propertyType: propertyType === 'Any' ? undefined : propertyType.toLowerCase().replace(' ', '_'),
+      country: country !== 'All' ? country : undefined,
+      minPrice: minPrice ? parseFloat(minPrice) : undefined,
+      maxPrice: maxPrice ? parseFloat(maxPrice) : undefined,
+      propertyType: propertyType === 'Any' ? undefined : propertyType,
       bedrooms: parsedBedrooms,
       bathrooms: parsedBathrooms,
+      amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       forSale,
     });
+  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, forSale]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Search is now handled by the useEffect above
+    // This just prevents form submission
   };
 
   const clearFilters = () => {
     setLocation('');
-    setPriceRange('Any');
+    setCountry('All');
+    setMinPrice('');
+    setMaxPrice('');
     setPropertyType('Any');
     setBedrooms('Any');
     setBathrooms('Any');
-    onSearch({
-      location: undefined,
-      minPrice: undefined,
-      maxPrice: undefined,
-      propertyType: undefined,
-      bedrooms: undefined,
-      bathrooms: undefined,
-      forSale,
-    });
+    setSelectedAmenities([]);
+    // Search will be triggered automatically by the useEffect
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-xl p-6 mb-8">
+    <div>
       <form onSubmit={handleSearch}>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
-          {/* Location */}
-          <div className="lg:col-span-2">
-            <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-              Location
-            </label>
-            <input
-              type="text"
-              id="location"
-              placeholder="City, neighborhood, or address"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
-              value={location}
-              onChange={(e) => setLocation(e.target.value)}
-            />
+        {/* Compact 2-row layout */}
+        <div className="space-y-2">
+          {/* Row 1: Location + Country */}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3">
+            <div className="md:col-span-7">
+              <label htmlFor="location" className="block text-xs font-medium text-gray-700 mb-1">
+                📍 Location
+              </label>
+              <input
+                type="text"
+                id="location"
+                placeholder="City, neighborhood..."
+                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                value={location}
+                onChange={(e) => setLocation(e.target.value)}
+              />
+            </div>
+
+            <div className="md:col-span-5">
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                🌍 Country
+              </label>
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setCountry('All')}
+                  className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                    country === 'All'
+                      ? 'bg-blue-600 text-white'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                >
+                  🌍
+                </button>
+                {COUNTRY_OPTIONS.map(opt => (
+                  <button
+                    key={opt.value}
+                    type="button"
+                    onClick={() => setCountry(opt.value)}
+                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                      country === opt.value
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                    title={opt.label}
+                  >
+                    {opt.label}
+                  </button>
+                ))}
+              </div>
+            </div>
           </div>
 
-          {/* Price Range */}
-          <div>
-            <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-1">
-              Price Range
-            </label>
-            <select
-              id="price"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
-              value={priceRange}
-              onChange={(e) => setPriceRange(e.target.value)}
-            >
-              <option>Any</option>
-              {forSale ? (
-                <>
-                  <option>$100k - $300k</option>
-                  <option>$300k - $500k</option>
-                  <option>$500k - $750k</option>
-                  <option>$750k - $1M</option>
-                  <option>$1M - $2M</option>
-                  <option>$2M+</option>
-                </>
-              ) : (
-                <>
-                  <option>$500 - $1,000</option>
-                  <option>$1,000 - $2,000</option>
-                  <option>$2,000 - $3,500</option>
-                  <option>$3,500 - $5,000</option>
-                  <option>$5,000 - $10,000</option>
-                  <option>$10,000+</option>
-                </>
-              )}
-            </select>
-          </div>
-
-          {/* Property Type */}
-          <div>
-            <label htmlFor="type" className="block text-sm font-medium text-gray-700 mb-1">
-              Property Type
-            </label>
-            <select
-              id="type"
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
-              value={propertyType}
-              onChange={(e) => setPropertyType(e.target.value)}
-            >
-              <option>Any</option>
-              <option>House</option>
-              <option>Apartment</option>
-              <option>Condo</option>
-              <option>Townhouse</option>
-              <option>Land</option>
-              <option>Hotel</option>
-              <option>Shop</option>
-              <option>Office</option>
-              <option>Residential Building</option>
-            </select>
-          </div>
-
-          {/* Search Button */}
-          <div>
-            {/* Invisible label to align the button with other fields */}
-            <label className="block text-sm font-medium text-transparent mb-1 select-none">
-              &nbsp;
-            </label>
-            <button
-              type="submit"
-              className={`w-full rounded-lg flex items-center justify-center transition-colors py-2 px-3 ${buttonClassName}`}
-            >
-              <Search className="h-4 w-4 mr-1" />
-              Search
-            </button>
-          </div>
-        </div>
-
-        {/* Advanced Filters Toggle */}
-        <div className="flex justify-between items-center">
-          <button
-            type="button"
-            className="text-emerald-600 hover:text-emerald-700 text-sm font-medium flex items-center"
-            onClick={() => setAdvancedOpen(!advancedOpen)}
-          >
-            Advanced Filters
-            <ChevronDown className={`ml-1 h-4 w-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
-          </button>
-
-          <button
-            type="button"
-            className="text-gray-500 hover:text-gray-700 text-sm font-medium flex items-center"
-            onClick={clearFilters}
-          >
-            <X className="h-4 w-4 mr-1" />
-            Clear All
-          </button>
-        </div>
-
-        {advancedOpen && (
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200">
+          {/* Row 2: Price + Type + Beds + Baths */}
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-2 sm:gap-3">
             <div>
-              <label htmlFor="bedrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                Bedrooms
+              <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700 mb-1">
+                💰 Min
+              </label>
+              <input
+                type="number"
+                id="minPrice"
+                placeholder={forSale ? "100k" : "500"}
+                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={minPrice}
+                onChange={(e) => setMinPrice(e.target.value)}
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700 mb-1">
+                💰 Max
+              </label>
+              <input
+                type="number"
+                id="maxPrice"
+                placeholder={forSale ? "500k" : "2000"}
+                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                value={maxPrice}
+                onChange={(e) => setMaxPrice(e.target.value)}
+                min="0"
+              />
+            </div>
+
+            <div className="md:col-span-2">
+              <label htmlFor="type" className="block text-xs font-medium text-gray-700 mb-1">
+                🏠 Type
+              </label>
+              <select
+                id="type"
+                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
+                value={propertyType}
+                onChange={(e) => setPropertyType(e.target.value)}
+              >
+                <option value="Any">Any</option>
+                {PROPERTY_TYPES.map(type => (
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div>
+              <label htmlFor="bedrooms" className="block text-xs font-medium text-gray-700 mb-1">
+                🛏️ Beds
               </label>
               <select
                 id="bedrooms"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
+                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                 value={bedrooms}
                 onChange={(e) => setBedrooms(e.target.value)}
               >
@@ -247,12 +267,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             </div>
 
             <div>
-              <label htmlFor="bathrooms" className="block text-sm font-medium text-gray-700 mb-1">
-                Bathrooms
+              <label htmlFor="bathrooms" className="block text-xs font-medium text-gray-700 mb-1">
+                🚿 Baths
               </label>
               <select
                 id="bathrooms"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
+                className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 appearance-none bg-white"
                 value={bathrooms}
                 onChange={(e) => setBathrooms(e.target.value)}
               >
@@ -263,27 +283,139 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 <option>4+</option>
               </select>
             </div>
+          </div>
+        </div>
 
-            <div>
-              <label htmlFor="features" className="block text-sm font-medium text-gray-700 mb-1">
-                Features
-              </label>
-              <select
-                id="features"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 appearance-none bg-white"
-              >
-                <option>Any Features</option>
-                <option>Pool</option>
-                <option>Garden</option>
-                <option>Garage</option>
-                <option>Air Conditioning</option>
-                <option>Gym</option>
-                <option>Waterfront</option>
-              </select>
-            </div>
+        {/* Action Buttons - Compact */}
+        <div className="flex items-center justify-between mt-3">
+          <button
+            type="button"
+            className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center"
+            onClick={() => setAdvancedOpen(!advancedOpen)}
+          >
+            ✨ Amenities
+            {selectedAmenities.length > 0 && (
+              <span className="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">
+                {selectedAmenities.length}
+              </span>
+            )}
+            <ChevronDown className={`ml-1 h-3 w-3 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
+          </button>
+
+          <button
+            type="button"
+            className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center"
+            onClick={clearFilters}
+          >
+            <X className="h-3 w-3 mr-1" />
+            Clear
+          </button>
+        </div>
+
+        {/* Advanced Filters - Amenities */}
+        {advancedOpen && (
+          <div className="mt-3 pt-3 border-t border-gray-200">
+            <AmenityFilter 
+              selectedAmenities={selectedAmenities}
+              onChange={setSelectedAmenities}
+            />
           </div>
         )}
       </form>
+
+      {/* Active Filters Display - Compact */}
+      {(location || country !== 'All' || minPrice || maxPrice || propertyType !== 'Any' || bedrooms !== 'Any' || bathrooms !== 'Any' || selectedAmenities.length > 0) && (
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <div className="flex items-center gap-2 flex-wrap">
+              {location && (
+                <FilterBadge 
+                  label={location} 
+                  emoji="📍" 
+                  onRemove={() => setLocation('')} 
+                  colorClass="bg-emerald-50 text-emerald-700"
+                />
+              )}
+
+              {country !== 'All' && (
+                <FilterBadge 
+                  label={country} 
+                  emoji="🌍" 
+                  onRemove={() => setCountry('All')} 
+                  colorClass="bg-indigo-50 text-indigo-700"
+                  maxWidth=""
+                />
+              )}
+
+              {(minPrice || maxPrice) && (
+                <FilterBadge 
+                  label={
+                    minPrice && maxPrice 
+                      ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
+                      : minPrice 
+                        ? `€${parseInt(minPrice).toLocaleString()}+`
+                        : `Up to €${parseInt(maxPrice).toLocaleString()}`
+                  } 
+                  emoji="💰" 
+                  onRemove={() => {
+                    setMinPrice('');
+                    setMaxPrice('');
+                  }} 
+                  colorClass="bg-blue-50 text-blue-700"
+                  maxWidth="max-w-[140px] sm:max-w-none"
+                />
+              )}
+
+              {propertyType !== 'Any' && (
+                <FilterBadge 
+                  label={getPropertyTypeLabel(propertyType)} 
+                  emoji="🏠" 
+                  onRemove={() => setPropertyType('Any')} 
+                  colorClass="bg-purple-50 text-purple-700"
+                  maxWidth="max-w-[100px] sm:max-w-none"
+                />
+              )}
+
+              {bedrooms !== 'Any' && (
+                <FilterBadge 
+                  label={bedrooms} 
+                  emoji="🛏️" 
+                  onRemove={() => setBedrooms('Any')} 
+                  colorClass="bg-pink-50 text-pink-700"
+                  maxWidth=""
+                />
+              )}
+
+              {bathrooms !== 'Any' && (
+                <FilterBadge 
+                  label={bathrooms} 
+                  emoji="🚿" 
+                  onRemove={() => setBathrooms('Any')} 
+                  colorClass="bg-cyan-50 text-cyan-700"
+                  maxWidth=""
+                />
+              )}
+
+              {selectedAmenities.slice(0, 3).map(amenityId => (
+                <FilterBadge 
+                  key={amenityId}
+                  label={getAmenityLabel(amenityId)} 
+                  emoji="✨" 
+                  onRemove={() => setSelectedAmenities(prev => prev.filter(id => id !== amenityId))} 
+                  colorClass="bg-amber-50 text-amber-700"
+                />
+              ))}
+
+              {selectedAmenities.length > 3 && (
+                <button
+                  onClick={() => setAdvancedOpen(true)}
+                  className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs sm:text-sm hover:bg-amber-200 transition-all font-medium"
+                >
+                  +{selectedAmenities.length - 3} more
+                </button>
+              )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

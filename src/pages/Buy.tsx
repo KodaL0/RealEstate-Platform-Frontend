@@ -5,13 +5,52 @@ import {
   useLayoutEffect,
 } from "react";
 import { useSearchParams } from "react-router-dom";
-import { MapPin, Filter, Grid, List, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, ChevronLeft, ChevronRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "../components/SearchFilters";
 import PropertyCard from "../components/cards/PropertyCard";
 import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
 import analytics from "../utils/analytics";
+
+// Custom hook for scroll detection
+const useScrollDirection = () => {
+  const [showFilters, setShowFilters] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    const updateScrollDirection = () => {
+      const scrollY = window.scrollY;
+      
+      if (scrollY < 100) {
+        // Always show at top
+        setShowFilters(true);
+      } else if (scrollY < lastScrollY.current - 50) {
+        // Scrolling up significantly (50px threshold)
+        setShowFilters(true);
+      } else if (scrollY > lastScrollY.current + 10) {
+        // Scrolling down
+        setShowFilters(false);
+      }
+      
+      lastScrollY.current = scrollY;
+      ticking.current = false;
+    };
+
+    const onScroll = () => {
+      if (!ticking.current) {
+        window.requestAnimationFrame(updateScrollDirection);
+        ticking.current = true;
+      }
+    };
+
+    window.addEventListener('scroll', onScroll);
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  return showFilters;
+};
 
 const PAGE_SIZE = 10;
 
@@ -23,6 +62,7 @@ interface SearchFiltersType {
   bedrooms?: string | number;
   bathrooms?: string | number;
   propertyType?: string;
+  amenities?: string[];
   order?: string;
   country?: string;
 }
@@ -30,6 +70,7 @@ interface SearchFiltersType {
 const Buy = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
+  const showFilters = useScrollDirection();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -38,9 +79,6 @@ const Buy = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCountry, setSelectedCountry] = useState<'Cyprus' | 'Greece' | 'all'>('all');
-  const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({
     location: initialLocation,
   });
@@ -73,6 +111,9 @@ const Buy = () => {
       if (sortOption)                  qp.sort          = sortOption;
       if (searchFilters.location)      qp.location      = searchFilters.location;
       if (searchFilters.country)       qp.country       = searchFilters.country;
+      if (searchFilters.amenities && searchFilters.amenities.length > 0) {
+        qp.amenities = searchFilters.amenities.join(',');
+      }
   
       console.log("Fetching BUY with query params:", qp);
   
@@ -107,18 +148,8 @@ const Buy = () => {
     };
   
     fetchProperties();
-  }, [sortOption, searchFilters.search, searchFilters.minPrice, searchFilters.maxPrice, searchFilters.bedrooms, searchFilters.bathrooms, searchFilters.propertyType, searchFilters.location, searchFilters.country, currentPage]);
+  }, [sortOption, searchFilters.search, searchFilters.minPrice, searchFilters.maxPrice, searchFilters.bedrooms, searchFilters.bathrooms, searchFilters.propertyType, searchFilters.location, searchFilters.country, searchFilters.amenities, currentPage]);
 
-
-  // Update search filters when country changes
-  useEffect(() => {
-    const countryFilter = selectedCountry === 'all' ? undefined : selectedCountry;
-    setSearchFilters(prev => ({
-      ...prev,
-      country: countryFilter
-    }));
-    setCurrentPage(1);
-  }, [selectedCountry]);
 
   const displayed = properties;
 
@@ -134,11 +165,6 @@ const Buy = () => {
     setCurrentPage(1);
   };
 
-  const handleCountryChange = (country: 'Cyprus' | 'Greece' | 'all') => {
-    analytics.trackFilterChange('country', country, totalCount);
-    setSelectedCountry(country);
-  };
-
   const goToPage = (p: number) => setCurrentPage(p);
   const prev = () => currentPage > 1 && setCurrentPage(p => p - 1);
   const next = () => currentPage < totalPages && setCurrentPage(p => p + 1);
@@ -151,146 +177,71 @@ const Buy = () => {
     { value: "oldest", label: "Oldest First" },
   ];
 
-  const countryOptions = [
-    { value: 'all', label: 'All Countries', flag: '🌍' },
-    { value: 'Cyprus', label: 'Cyprus', flag: '🇨🇾' },
-    { value: 'Greece', label: 'Greece', flag: '🇬🇷' },
-  ];
-
   return (
-    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+    <div className="min-h-screen bg-gray-50 pt-16">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200 pt-20 overflow-x-hidden">
-        <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 w-full">
-          <div className="py-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full">
-              <div className="mb-6 lg:mb-0">
-                <h1 className="text-3xl font-bold text-gray-900">Properties for Sale</h1>
-                <div className="flex items-center mt-2 text-gray-600">
-                  <MapPin className="h-4 w-4 mr-2" />
-                  <span>Discover your dream home</span>
-                </div>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4 w-full sm:w-auto">
-                {/* Country Filter */}
-                <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">Country:</span>
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                    {countryOptions.map((country) => (
-                      <button
-                        key={country.value}
-                        onClick={() => handleCountryChange(country.value as 'Cyprus' | 'Greece' | 'all')}
-                        className={`px-3 py-2 rounded-md transition-colors text-sm font-medium flex items-center space-x-2 ${
-                          selectedCountry === country.value 
-                            ? 'bg-white text-gray-900 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-900'
-                        }`}
-                      >
-                        <span className="text-base">{country.flag}</span>
-                        <span className="hidden sm:inline">{country.label}</span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* View Mode Toggle */}
-                <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">View:</span>
-                  <div className="flex items-center bg-gray-100 rounded-lg p-1">
-                    <button
-                      onClick={() => setViewMode('grid')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      <Grid className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => setViewMode('list')}
-                      className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
-                      }`}
-                    >
-                      <List className="h-4 w-4" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Filters Button */}
-                <button
-                  onClick={() => setShowFilters(!showFilters)}
-                  className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filters
-                </button>
-              </div>
-            </div>
+      <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white py-6 sm:py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-center">Properties for Sale</h1>
+          <div className="flex items-center justify-center mt-2 text-blue-100">
+            <MapPin className="h-4 w-4 mr-2" />
+            <span className="text-sm sm:text-base">Discover your dream home</span>
           </div>
         </div>
       </div>
 
-      {/* Filters */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: "auto", opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden bg-white border-b border-gray-200"
-          >
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-              <SearchFilters
-                forSale
-                onSearch={handleSearch}
-                buttonClassName="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-6 rounded-lg transition-colors"
-                initialLocation={initialLocation}
-              />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Search Filters - Auto Hide/Show on Scroll */}
+      <motion.div
+        initial={{ y: 0 }}
+        animate={{ y: showFilters ? 0 : -200 }}
+        transition={{ duration: 0.3, ease: "easeInOut" }}
+        className="bg-white border-b border-gray-200 sticky top-16 z-10 shadow-md"
+      >
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <SearchFilters
+            forSale
+            onSearch={handleSearch}
+            initialLocation={initialLocation}
+          />
+        </div>
+      </motion.div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-8 w-full overflow-x-hidden">
-        {/* Results Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8">
-          <div className="mb-4 sm:mb-0">
-            {isLoading ? (
-              <div className="flex items-center">
-                <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent mr-3"></div>
-                <span className="text-gray-600">Loading properties...</span>
-              </div>
-            ) : (
-              <div>
-                <p className="text-gray-600">
-                  <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> properties found
-                </p>
-                {selectedCountry !== 'all' && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Showing properties in {countryOptions.find(c => c.value === selectedCountry)?.label}
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center">
-              <label htmlFor="sort" className="text-sm font-medium text-gray-700 mr-3">
-                Sort by:
-              </label>
-              <select
-                id="sort"
-                value={sortOption}
-                onChange={handleSortChange}
-                disabled={isLoading}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            {/* Results Header */}
+            <div className="bg-white rounded-xl shadow-sm p-4 mb-6">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div>
+                  {isLoading ? (
+                    <div className="flex items-center">
+                      <div className="animate-spin rounded-full h-5 w-5 border-2 border-blue-600 border-t-transparent mr-3"></div>
+                      <span className="text-gray-600 text-sm">Loading...</span>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-gray-900 font-semibold text-lg">
+                        {totalCount.toLocaleString()} {totalCount === 1 ? 'Property' : 'Properties'}
+                      </p>
+                      {searchFilters.country && (
+                        <p className="text-xs text-gray-500 mt-0.5">
+                          in {searchFilters.country}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex items-center gap-4">
+                  {/* Sort */}
+                  <div className="flex items-center">
+                    <label htmlFor="sort" className="text-xs sm:text-sm font-medium text-gray-700 mr-2 hidden sm:block">
+                      Sort:
+                    </label>
+                    <select
+                      id="sort"
+                      value={sortOption}
+                      onChange={handleSortChange}
+                      disabled={isLoading}
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white text-base"
               >
                 {sortOptions.map(option => (
@@ -300,10 +251,11 @@ const Buy = () => {
                 ))}
               </select>
             </div>
-          </div>
-        </div>
+                </div>
+              </div>
+            </div>
 
-        {/* Error State */}
+            {/* Error State */}
         {error && (
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -358,8 +310,6 @@ const Buy = () => {
                 onClick={() => {
                   setSearchFilters({});
                   setSortOption("recommended");
-                  setSelectedCountry('all');
-                  setShowFilters(false);
                 }}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
               >
@@ -370,16 +320,12 @@ const Buy = () => {
         ) : (
           <AnimatePresence mode="wait">
             <motion.div
-              key={`${currentPage}-${viewMode}`}
+              key={currentPage}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className={
-                viewMode === 'grid'
-                  ? "grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8"
-                  : "space-y-4 sm:space-y-6"
-              }
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             >
               {displayed.map((property, index) => (
                 <motion.div

@@ -477,6 +477,87 @@ export const AMENITIES = [
   { id: 'heating', label: 'Central Heating', category: 'Legacy' },
 ];
 
+// ========================================
+// AMENITY UTILITIES FOR SEARCH/FILTER
+// ========================================
+
+/**
+ * Get all unique property amenity categories (excluding Legacy)
+ */
+export const PROPERTY_AMENITY_CATEGORIES = Array.from(
+  new Set(AMENITIES.map(a => a.category))
+).filter(cat => cat !== 'Legacy');
+
+/**
+ * Get amenities grouped by category
+ */
+export const AMENITIES_BY_CATEGORY = AMENITIES.reduce((acc, amenity) => {
+  if (!acc[amenity.category]) {
+    acc[amenity.category] = [];
+  }
+  acc[amenity.category].push(amenity);
+  return acc;
+}, {} as Record<string, typeof AMENITIES>);
+
+/**
+ * Get all amenities excluding Legacy category (recommended for filter UI)
+ */
+export const AMENITIES_FOR_FILTER = AMENITIES.filter(a => a.category !== 'Legacy');
+
+/**
+ * Map of amenity ID to amenity object for O(1) lookups
+ */
+export const AMENITY_MAP = new Map(
+  AMENITIES.map(amenity => [amenity.id, amenity])
+);
+
+/**
+ * Get all amenity IDs (useful for filtering operations)
+ */
+export const AMENITY_IDS = AMENITIES.map(a => a.id);
+
+/**
+ * Get amenity label from ID
+ */
+export function getAmenityLabel(amenityId: string): string {
+  return AMENITY_MAP.get(amenityId)?.label || amenityId;
+}
+
+/**
+ * Get amenity object from ID
+ */
+export function getAmenity(amenityId: string) {
+  return AMENITY_MAP.get(amenityId);
+}
+
+/**
+ * Get amenities for a specific category
+ */
+export function getAmenitiesByCategory(category: string) {
+  return AMENITIES.filter(a => a.category === category);
+}
+
+/**
+ * Check if a property has a specific amenity
+ */
+export function propertyHasAmenity(property: Property, amenityId: string): boolean {
+  return property.amenities.includes(amenityId);
+}
+
+/**
+ * Check if a property has all specified amenities (AND logic)
+ */
+export function propertyHasAllAmenities(property: Property, amenityIds: string[]): boolean {
+  return amenityIds.every(id => property.amenities.includes(id));
+}
+
+/**
+ * Check if a property has any of the specified amenities (OR logic)
+ */
+export function propertyHasAnyAmenity(property: Property, amenityIds: string[]): boolean {
+  return amenityIds.some(id => property.amenities.includes(id));
+}
+
 export interface Developer {
   id: string;
   name: string;
