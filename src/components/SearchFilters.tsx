@@ -147,6 +147,11 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     propertyType !== 'Any' || bedrooms !== 'Any' || bathrooms !== 'Any' || 
     selectedAmenities.length > 0;
 
+  // If collapsed and no active filters, hide completely
+  if (isCollapsed && !hasActiveFilters) {
+    return null;
+  }
+
   // Collapsed view - show only active filters
   if (isCollapsed && hasActiveFilters) {
     return (
