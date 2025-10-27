@@ -40,7 +40,13 @@ interface FilterBadgeProps {
   maxWidth?: string;
 }
 
-const FilterBadge: React.FC<FilterBadgeProps> = ({ label, emoji, onRemove, colorClass, maxWidth = 'max-w-[120px] sm:max-w-none' }) => (
+const FilterBadge: React.FC<FilterBadgeProps> = ({
+  label,
+  emoji,
+  onRemove,
+  colorClass,
+  maxWidth = 'max-w-[120px] sm:max-w-none'
+}) => (
   <button
     onClick={onRemove}
     className={`inline-flex items-center gap-1.5 px-3 py-1.5 ${colorClass} rounded-full text-sm font-medium hover:brightness-95 transition-all active:scale-95 shadow-sm border`}
@@ -56,7 +62,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   initialLocation = '',
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
-
   const onSearchRef = useRef(onSearch);
 
   const [location, setLocation] = useState(searchParams.get('location') || initialLocation);
@@ -92,7 +97,17 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     if (selectedAmenities.length > 0) params.set('amenities', selectedAmenities.join(','));
 
     setSearchParams(params, { replace: true });
-  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, setSearchParams]);
+  }, [
+    location,
+    country,
+    minPrice,
+    maxPrice,
+    propertyType,
+    bedrooms,
+    bathrooms,
+    selectedAmenities,
+    setSearchParams
+  ]);
 
   useEffect(() => {
     const parsedBedrooms = parseMinNumber(bedrooms);
@@ -109,7 +124,17 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
       forSale,
     });
-  }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, forSale]);
+  }, [
+    location,
+    country,
+    minPrice,
+    maxPrice,
+    propertyType,
+    bedrooms,
+    bathrooms,
+    selectedAmenities,
+    forSale
+  ]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -127,7 +152,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+    <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6 relative">
+      {/* normal scrollable filter bar */}
       <form onSubmit={handleSearch}>
         <div className="space-y-3">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3">
@@ -159,21 +185,21 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                       : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200'
                   }`}
                 >
-                  All
+                  🌐
                 </button>
                 {COUNTRY_OPTIONS.map(opt => (
                   <button
                     key={opt.value}
                     type="button"
                     onClick={() => setCountry(opt.value)}
-                    className={`flex-1 px-3 py-2.5 rounded-lg text-xl font-medium transition-all shadow-sm ${
+                    className={`flex-1 px-3 py-2.5 rounded-lg text-2xl transition-all shadow-sm ${
                       country === opt.value
                         ? 'bg-blue-600 text-white shadow-md ring-2 ring-blue-300'
                         : 'bg-gray-50 hover:bg-gray-100 border border-gray-200'
                     }`}
                     title={opt.label}
                   >
-                    {opt.label}
+                    {opt.label} {/* assuming label contains the flag emoji */}
                   </button>
                 ))}
               </div>
@@ -188,7 +214,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <input
                 type="number"
                 id="minPrice"
-                placeholder={forSale ? "100k" : "500"}
+                placeholder={forSale ? '100k' : '500'}
                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={minPrice}
                 onChange={(e) => setMinPrice(e.target.value)}
@@ -203,7 +229,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
               <input
                 type="number"
                 id="maxPrice"
-                placeholder={forSale ? "500k" : "2000"}
+                placeholder={forSale ? '500k' : '2000'}
                 className="w-full px-3 py-2.5 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 value={maxPrice}
                 onChange={(e) => setMaxPrice(e.target.value)}
@@ -304,95 +330,104 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
         )}
       </form>
 
-      {(location || country !== 'All' || minPrice || maxPrice || propertyType !== 'Any' || bedrooms !== 'Any' || bathrooms !== 'Any' || selectedAmenities.length > 0) && (
+      {(location ||
+        country !== 'All' ||
+        minPrice ||
+        maxPrice ||
+        propertyType !== 'Any' ||
+        bedrooms !== 'Any' ||
+        bathrooms !== 'Any' ||
+        selectedAmenities.length > 0) && (
         <div className="mt-4 pt-4 border-t border-gray-100">
           <div className="flex items-center gap-2 flex-wrap">
-              {location && (
-                <FilterBadge
-                  label={location}
-                  emoji="📍"
-                  onRemove={() => setLocation('')}
-                  colorClass="bg-emerald-50 text-emerald-700 border-emerald-200"
-                />
-              )}
+            {location && (
+              <FilterBadge
+                label={location}
+                emoji="📍"
+                onRemove={() => setLocation('')}
+                colorClass="bg-emerald-50 text-emerald-700 border-emerald-200"
+              />
+            )}
 
-              {country !== 'All' && (
-                <FilterBadge
-                  label={country}
-                  emoji="🌍"
-                  onRemove={() => setCountry('All')}
-                  colorClass="bg-blue-50 text-blue-700 border-blue-200"
-                  maxWidth=""
-                />
-              )}
+            {country !== 'All' && (
+              <FilterBadge
+                label={country}
+                emoji="🌍"
+                onRemove={() => setCountry('All')}
+                colorClass="bg-blue-50 text-blue-700 border-blue-200"
+                maxWidth=""
+              />
+            )}
 
-              {(minPrice || maxPrice) && (
-                <FilterBadge
-                  label={
-                    minPrice && maxPrice
-                      ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
-                      : minPrice
-                        ? `€${parseInt(minPrice).toLocaleString()}+`
-                        : `Up to €${parseInt(maxPrice).toLocaleString()}`
-                  }
-                  emoji="💰"
-                  onRemove={() => {
-                    setMinPrice('');
-                    setMaxPrice('');
-                  }}
-                  colorClass="bg-green-50 text-green-700 border-green-200"
-                  maxWidth="max-w-[140px] sm:max-w-none"
-                />
-              )}
+            {(minPrice || maxPrice) && (
+              <FilterBadge
+                label={
+                  minPrice && maxPrice
+                    ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
+                    : minPrice
+                      ? `€${parseInt(minPrice).toLocaleString()}+`
+                      : `Up to €${parseInt(maxPrice).toLocaleString()}`
+                }
+                emoji="💰"
+                onRemove={() => {
+                  setMinPrice('');
+                  setMaxPrice('');
+                }}
+                colorClass="bg-green-50 text-green-700 border-green-200"
+                maxWidth="max-w-[140px] sm:max-w-none"
+              />
+            )}
 
-              {propertyType !== 'Any' && (
-                <FilterBadge
-                  label={getPropertyTypeLabel(propertyType)}
-                  emoji="🏠"
-                  onRemove={() => setPropertyType('Any')}
-                  colorClass="bg-orange-50 text-orange-700 border-orange-200"
-                  maxWidth="max-w-[100px] sm:max-w-none"
-                />
-              )}
+            {propertyType !== 'Any' && (
+              <FilterBadge
+                label={getPropertyTypeLabel(propertyType)}
+                emoji="🏠"
+                onRemove={() => setPropertyType('Any')}
+                colorClass="bg-orange-50 text-orange-700 border-orange-200"
+                maxWidth="max-w-[100px] sm:max-w-none"
+              />
+            )}
 
-              {bedrooms !== 'Any' && (
-                <FilterBadge
-                  label={bedrooms}
-                  emoji="🛏️"
-                  onRemove={() => setBedrooms('Any')}
-                  colorClass="bg-pink-50 text-pink-700 border-pink-200"
-                  maxWidth=""
-                />
-              )}
+            {bedrooms !== 'Any' && (
+              <FilterBadge
+                label={bedrooms}
+                emoji="🛏️"
+                onRemove={() => setBedrooms('Any')}
+                colorClass="bg-pink-50 text-pink-700 border-pink-200"
+                maxWidth=""
+              />
+            )}
 
-              {bathrooms !== 'Any' && (
-                <FilterBadge
-                  label={bathrooms}
-                  emoji="🚿"
-                  onRemove={() => setBathrooms('Any')}
-                  colorClass="bg-cyan-50 text-cyan-700 border-cyan-200"
-                  maxWidth=""
-                />
-              )}
+            {bathrooms !== 'Any' && (
+              <FilterBadge
+                label={bathrooms}
+                emoji="🚿"
+                onRemove={() => setBathrooms('Any')}
+                colorClass="bg-cyan-50 text-cyan-700 border-cyan-200"
+                maxWidth=""
+              />
+            )}
 
-              {selectedAmenities.slice(0, 3).map(amenityId => (
-                <FilterBadge
-                  key={amenityId}
-                  label={getAmenityLabel(amenityId)}
-                  emoji="✨"
-                  onRemove={() => setSelectedAmenities(prev => prev.filter(id => id !== amenityId))}
-                  colorClass="bg-amber-50 text-amber-700 border-amber-200"
-                />
-              ))}
+            {selectedAmenities.slice(0, 3).map(amenityId => (
+              <FilterBadge
+                key={amenityId}
+                label={getAmenityLabel(amenityId)}
+                emoji="✨"
+                onRemove={() =>
+                  setSelectedAmenities(prev => prev.filter(id => id !== amenityId))
+                }
+                colorClass="bg-amber-50 text-amber-700 border-amber-200"
+              />
+            ))}
 
-              {selectedAmenities.length > 3 && (
-                <button
-                  onClick={() => setAdvancedOpen(true)}
-                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold hover:bg-amber-200 transition-all shadow-sm border border-amber-200"
-                >
-                  +{selectedAmenities.length - 3} more
-                </button>
-              )}
+            {selectedAmenities.length > 3 && (
+              <button
+                onClick={() => setAdvancedOpen(true)}
+                className="inline-flex items-center gap-1 px-3 py-1.5 bg-amber-100 text-amber-800 rounded-full text-sm font-semibold hover:bg-amber-200 transition-all shadow-sm border border-amber-200"
+              >
+                +{selectedAmenities.length - 3} more
+              </button>
+            )}
           </div>
         </div>
       )}
