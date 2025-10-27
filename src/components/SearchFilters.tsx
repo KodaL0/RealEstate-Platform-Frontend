@@ -4,7 +4,7 @@ import { ChevronDown, X } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
 import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
-// Define a more specific type for the filters passed to onSearch
+// Filter types
 interface ParsedFilters {
   location?: string;
   minPrice?: number;
@@ -18,24 +18,19 @@ interface ParsedFilters {
 }
 
 interface SearchFiltersProps {
-  forSale: boolean;  // true for Buy page, false for Rent page
+  forSale: boolean;
   onSearch: (filters: ParsedFilters) => void;
   initialLocation?: string;
 }
 
-// Helper to parse min number string
-const parseMinNumber = (numberString: string): number | undefined => {
-  if (numberString === 'Any') return undefined;
-  return parseInt(numberString.replace('+', ''), 10);
-};
+// Helper functions
+const parseMinNumber = (num: string): number | undefined =>
+  num === 'Any' ? undefined : parseInt(num.replace('+', ''), 10);
 
-// Helper to get property type label
-const getPropertyTypeLabel = (value: string): string => {
-  const type = PROPERTY_TYPES.find(t => t.value === value);
-  return type?.label || value;
-};
+const getPropertyTypeLabel = (value: string): string =>
+  PROPERTY_TYPES.find(t => t.value === value)?.label || value;
 
-// FilterBadge component
+// Badge component
 interface FilterBadgeProps {
   label: string;
   emoji: string;
@@ -80,20 +75,20 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     searchParams.get('amenities')?.split(',').filter(Boolean) || []
   );
   const [advancedOpen, setAdvancedOpen] = useState(false);
-  const [hasActiveFilters, setHasActiveFilters] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [hasActiveFilters, setHasActiveFilters] = useState<boolean>(false);
+  const [isExpanded, setIsExpanded] = useState<boolean>(true);
 
-  // Keep latest onSearch ref
+  // Update onSearch ref
   useEffect(() => {
     onSearchRef.current = onSearch;
   }, [onSearch]);
 
-  // Keep location in sync with initialLocation
+  // Keep location in sync
   useEffect(() => {
     setLocation(initialLocation);
   }, [initialLocation]);
 
-  // Update URL params
+  // Sync URL params
   useEffect(() => {
     const params = new URLSearchParams();
     if (location) params.set('location', location);
@@ -107,7 +102,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     setSearchParams(params, { replace: true });
   }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, setSearchParams]);
 
-  // Trigger search + detect active filters
+  // Trigger onSearch + check active filters
   useEffect(() => {
     const parsedBedrooms = parseMinNumber(bedrooms);
     const parsedBathrooms = parseMinNumber(bathrooms);
@@ -134,25 +129,34 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
       !!filters.propertyType ||
       !!filters.bedrooms ||
       !!filters.bathrooms ||
-      (filters.amenities && filters.amenities.length > 0);
+      !!(filters.amenities && filters.amenities.length > 0);
 
-    setHasActiveFilters(Boolean(active));
+    setHasActiveFilters(active);
   }, [location, country, minPrice, maxPrice, propertyType, bedrooms, bathrooms, selectedAmenities, forSale]);
 
-  // Collapse logic on scroll
+  // Scroll behavior (smooth + top expand)
   useEffect(() => {
+    let timeout: ReturnType<typeof setTimeout>;
+
     const handleScroll = () => {
-      if (!hasActiveFilters) {
-        setIsExpanded(window.scrollY < 100);
-      } else {
-        setIsExpanded(false);
-      }
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (window.scrollY < 100) {
+          setIsExpanded(true); // always expand near top
+        } else {
+          setIsExpanded(false); // collapse when scrolled down
+        }
+      }, 100);
     };
 
     window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, [hasActiveFilters]);
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []);
 
+  // Clear filters
   const clearFilters = () => {
     setLocation('');
     setCountry('All');
@@ -162,15 +166,18 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     setBedrooms('Any');
     setBathrooms('Any');
     setSelectedAmenities([]);
+    setHasActiveFilters(false);
+    setIsExpanded(true); // reopen full filters
   };
 
-  // If collapsed and no active filters -> hide
-  if (!isExpanded && !hasActiveFilters) {
-    return null;
-  }
+  // Rendering
+  const showCollapsed = !isExpanded && hasActiveFilters;
+  const showExpanded = isExpanded;
 
-  // Collapsed view — show only active filters
-  if (!isExpanded && hasActiveFilters) {
+  if (!showCollapsed && !showExpanded) return null;
+
+  // Collapsed (badges)
+  if (showCollapsed) {
     return (
       <div className="sticky top-0 z-40 bg-white shadow-sm px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
         <div className="flex items-center gap-2 flex-wrap">
@@ -178,7 +185,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             <FilterBadge label={location} emoji="📍" onRemove={() => setLocation('')} colorClass="bg-emerald-50 text-emerald-700" />
           )}
           {country !== 'All' && (
-            <FilterBadge label={country} emoji="🌍" onRemove={() => setCountry('All')} colorClass="bg-indigo-50 text-indigo-700" maxWidth="" />
+            <FilterBadge label={country} emoji="🌍" onRemove={() => setCountry('All')} colorClass="bg-indigo-50 text-indigo-700" />
           )}
           {(minPrice || maxPrice) && (
             <FilterBadge
@@ -195,7 +202,6 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 setMaxPrice('');
               }}
               colorClass="bg-blue-50 text-blue-700"
-              maxWidth="max-w-[140px] sm:max-w-none"
             />
           )}
           {propertyType !== 'Any' && (
@@ -234,7 +240,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     );
   }
 
-  // Expanded view — full form
+  // Expanded (full filter form)
   return (
     <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-300">
       <form onSubmit={(e) => e.preventDefault()}>
