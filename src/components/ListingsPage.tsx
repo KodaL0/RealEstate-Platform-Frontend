@@ -121,6 +121,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
+  const scrollVelocity = useRef(0);
+  const lastScrollTime = useRef(Date.now());
+  const debounceTimer = useRef<number | null>(null);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -142,32 +145,73 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
 
-  // Simple scroll handling for filter expand/collapse
+  // Optimized scroll handling with velocity detection and debouncing
   useEffect(() => {
+    const COLLAPSE_THRESHOLD = 30;      // Pixels scrolled down before collapsing
+    const EXPAND_THRESHOLD = 20;        // Pixels scrolled up before expanding
+    const VELOCITY_MULTIPLIER = 0.3;    // Sensitivity to scroll speed
+    const TOP_ZONE = 100;               // Always show filters near top
+    const MIN_SCROLL_FOR_HIDE = 200;    // Minimum scroll position before hiding
+    const DEBOUNCE_DELAY = 150;         // Delay before state update (ms)
+
     const handleScroll = () => {
       if (ticking.current) return;
       ticking.current = true;
 
       requestAnimationFrame(() => {
         const currentScrollY = window.scrollY;
+        const now = Date.now();
+        const timeDelta = Math.max(now - lastScrollTime.current, 1);
         const scrollDiff = currentScrollY - lastScrollY.current;
         
-        // React automatically skips re-renders if state value hasn't changed
-        if (currentScrollY < 50) {
-          setIsFiltersExpanded(true);
-        } else if (scrollDiff < -50) { // Increased threshold for scroll up
-          setIsFiltersExpanded(true);
-        } else if (scrollDiff > 20 && currentScrollY > 150) { // Increased threshold for scroll down
-          setIsFiltersExpanded(false);
+        // Calculate scroll velocity (pixels per ms)
+        const velocity = Math.abs(scrollDiff) / timeDelta;
+        scrollVelocity.current = velocity;
+        
+        // Clear any pending debounce
+        if (debounceTimer.current) {
+          clearTimeout(debounceTimer.current);
         }
+
+        // Function to update filter visibility
+        const updateFilterVisibility = () => {
+          // Always expand at the very top
+          if (currentScrollY < TOP_ZONE) {
+            setIsFiltersExpanded(true);
+          }
+          // Scrolling up - expand with velocity consideration
+          else if (scrollDiff < 0) {
+            const expandThreshold = EXPAND_THRESHOLD - (velocity * VELOCITY_MULTIPLIER);
+            if (scrollDiff < -expandThreshold) {
+              setIsFiltersExpanded(true);
+            }
+          }
+          // Scrolling down - collapse with velocity consideration
+          else if (scrollDiff > 0 && currentScrollY > MIN_SCROLL_FOR_HIDE) {
+            const collapseThreshold = COLLAPSE_THRESHOLD - (velocity * VELOCITY_MULTIPLIER);
+            if (scrollDiff > collapseThreshold) {
+              setIsFiltersExpanded(false);
+            }
+          }
+        };
+
+        // Debounce the state update for smoother transitions
+        debounceTimer.current = setTimeout(updateFilterVisibility, DEBOUNCE_DELAY);
         
         lastScrollY.current = currentScrollY;
+        lastScrollTime.current = now;
         ticking.current = false;
       });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (debounceTimer.current) {
+        clearTimeout(debounceTimer.current);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -290,16 +334,38 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
       {/* Enhanced Sticky Search Filters - Only show when expanded OR when collapsed with active filters */}
       {(isFiltersExpanded || hasActiveFilters) && (
-        <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg transition-all duration-300">
+        <motion.div 
+          initial={false}
+          animate={{ 
+            opacity: 1,
+            y: 0,
+          }}
+          transition={{ 
+            duration: 0.3,
+            ease: [0.4, 0.0, 0.2, 1], // Custom easing for smooth motion
+          }}
+          className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg"
+        >
           <div className="max-w-6xl mx-auto">
-            {isFiltersExpanded && (
-              <div className="px-4 sm:px-6 lg:px-8 pt-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
-                  <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
-                </div>
-              </div>
-            )}
+            <AnimatePresence mode="sync">
+              {isFiltersExpanded && (
+                <motion.div
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ 
+                    duration: 0.25,
+                    ease: [0.4, 0.0, 0.2, 1],
+                  }}
+                  className="px-4 sm:px-6 lg:px-8 pt-5 overflow-hidden"
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
+                    <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             <SearchFilters
               forSale={listingType === "sale"}
               onSearch={handleSearch}
@@ -307,7 +373,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               isExpanded={isFiltersExpanded}
             />
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Main Content */}

@@ -155,8 +155,8 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   // Collapsed view - show only active filters
   if (!isExpanded && hasActiveFilters) {
     return (
-      <div className="px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
-        <div className="flex items-center gap-2 flex-wrap">
+      <div className="px-4 sm:px-6 lg:px-8 py-3 transition-all duration-200 ease-out">
+        <div className="flex items-center gap-2 flex-wrap fade-in">
             {location && (
               <FilterBadge 
                 label={location} 
@@ -256,7 +256,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
 
   // Expanded view - show full form
   return (
-    <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-300">
+    <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-200 ease-out">
       <form onSubmit={handleSearch}>
         {/* Compact 2-row layout */}
         <div className="space-y-2">
