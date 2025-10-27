@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
+import { ChevronDown, X, SlidersHorizontal } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
 import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
@@ -19,6 +19,7 @@ interface SearchFiltersProps {
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
   isExpanded: boolean;
+  onToggleExpand?: () => void;
 }
 
 // Helper functions
@@ -82,7 +83,23 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   const showCollapsed = !isExpanded && hasActiveFilters;
   const showExpanded = isExpanded;
 
-  if (!showCollapsed && !showExpanded) return null;
+  // Show floating button when scrolled and no active filters
+  if (!showCollapsed && !showExpanded) {
+    return (
+      <div className="fixed bottom-6 right-6 z-50">
+        <button
+          onClick={() => {
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          }}
+          className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-blue-500/50 transition-all transform hover:scale-110 active:scale-95 flex items-center gap-2"
+          title="Show Filters"
+        >
+          <SlidersHorizontal className="h-6 w-6" />
+          <span className="text-sm font-semibold pr-1">Filters</span>
+        </button>
+      </div>
+    );
+  }
 
   // Collapsed (badges)
   if (showCollapsed) {

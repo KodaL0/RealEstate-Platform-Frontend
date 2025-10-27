@@ -3,6 +3,7 @@ import {
   useEffect,
   useRef,
   useLayoutEffect,
+  useCallback,
 } from "react";
 import { useSearchParams } from "react-router-dom";
 import { MapPin, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
@@ -115,7 +116,6 @@ const themeConfigs: Record<ListingType, ThemeConfig> = {
 const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const theme = themeConfigs[listingType];
   const [searchParams, setSearchParams] = useSearchParams();
-  const initialLocation = searchParams.get("location") || "";
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
   const ticking = useRef(false);
@@ -128,16 +128,61 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [filters, setFilters] = useState<FilterState>({
-    location: initialLocation,
-    country: 'All',
-    minPrice: '',
-    maxPrice: '',
-    propertyType: 'Any',
-    bedrooms: 'Any',
-    bathrooms: 'Any',
-    amenities: [],
+  
+  // Initialize filters from URL params
+  const [filters, setFilters] = useState<FilterState>(() => {
+    const location = searchParams.get('location') || '';
+    const country = searchParams.get('country') || 'All';
+    const minPrice = searchParams.get('minPrice') || '';
+    const maxPrice = searchParams.get('maxPrice') || '';
+    const propertyType = searchParams.get('type') || 'Any';
+    const bedrooms = searchParams.get('beds') || 'Any';
+    const bathrooms = searchParams.get('baths') || 'Any';
+    const amenitiesParam = searchParams.get('amenities');
+    const amenities = amenitiesParam ? amenitiesParam.split(',').filter(Boolean) : [];
+
+    return {
+      location,
+      country,
+      minPrice,
+      maxPrice,
+      propertyType,
+      bedrooms,
+      bathrooms,
+      amenities,
+    };
   });
+
+  // Local filters for immediate UI updates (debounced)
+  const [localFilters, setLocalFilters] = useState<FilterState>(filters);
+  const debounceTimerRef = useRef<number | null>(null);
+  const isFirstRender = useRef(true);
+  const isURLSyncRef = useRef(false);
+
+  // Debounced filter change handler
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
+    // Update local state immediately for responsive UI
+    setLocalFilters(newFilters);
+
+    // Clear existing timer
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    // Set new timer to update actual filters (triggers API call)
+    debounceTimerRef.current = setTimeout(() => {
+      setFilters(newFilters);
+    }, 500); // 500ms debounce delay
+  }, []);
+
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, []);
 
   const first = useRef(true);
   useLayoutEffect(() => {
@@ -214,8 +259,20 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   // Stringify amenities for dependency to avoid unnecessary re-renders
   const amenitiesKey = filters.amenities?.join(',') || '';
 
-  // Sync filters to URL params
+  // Sync filters to URL params (skip first render to prevent loop)
   useEffect(() => {
+    // Skip on first render (already read from URL)
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+
+    // Prevent sync if this update came from URL
+    if (isURLSyncRef.current) {
+      isURLSyncRef.current = false;
+      return;
+    }
+
     const params = new URLSearchParams();
     if (filters.location) params.set('location', filters.location);
     if (filters.country && filters.country !== 'All') params.set('country', filters.country);
@@ -315,11 +372,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
   const displayed = properties;
 
-  // Check if there are active filters
-  const hasActiveFilters = filters.location || (filters.country && filters.country !== 'All') || 
-    filters.minPrice || filters.maxPrice || (filters.propertyType && filters.propertyType !== 'Any') || 
-    (filters.bedrooms && filters.bedrooms !== 'Any') || (filters.bathrooms && filters.bathrooms !== 'Any') || 
-    (filters.amenities && filters.amenities.length > 0);
+  // Check if there are active filters (use localFilters for immediate UI response)
+  const hasActiveFilters = localFilters.location || (localFilters.country && localFilters.country !== 'All') || 
+    localFilters.minPrice || localFilters.maxPrice || (localFilters.propertyType && localFilters.propertyType !== 'Any') || 
+    (localFilters.bedrooms && localFilters.bedrooms !== 'Any') || (localFilters.bathrooms && localFilters.bathrooms !== 'Any') || 
+    (localFilters.amenities && localFilters.amenities.length > 0);
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSort = e.target.value;
@@ -379,8 +436,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               </div>
             )}
             <SearchFilters
-              filters={filters}
-              onFiltersChange={setFilters}
+              filters={localFilters}
+              onFiltersChange={handleFiltersChange}
               isExpanded={isFiltersExpanded}
             />
           </div>
@@ -503,7 +560,12 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               </p>
               <button
                 onClick={() => {
-                  setFilters({
+                  // Clear debounce timer
+                  if (debounceTimerRef.current) {
+                    clearTimeout(debounceTimerRef.current);
+                  }
+                  
+                  const clearedFilters = {
                     location: '',
                     country: 'All',
                     minPrice: '',
@@ -512,7 +574,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                     bedrooms: 'Any',
                     bathrooms: 'Any',
                     amenities: [],
-                  });
+                  };
+                  
+                  // Update both local and actual filters immediately
+                  setLocalFilters(clearedFilters);
+                  setFilters(clearedFilters);
                   setSortOption("recommended");
                 }}
                 className={`px-8 py-3.5 bg-gradient-to-r ${theme.buttonGradient} ${theme.buttonHoverGradient} text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
