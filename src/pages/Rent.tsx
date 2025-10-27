@@ -335,6 +335,21 @@ const Rent = () => {
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.1 }}
+                  onClick={() => {
+                    // Track search result click (non-blocking)
+                    try {
+                      if (navigator.sendBeacon) {
+                        const data = JSON.stringify({
+                          property_id: property.id,
+                          position: index + 1
+                        });
+                        const blob = new Blob([data], { type: 'application/json' });
+                        navigator.sendBeacon('/api/analytics/search/click/', blob);
+                      }
+                    } catch (err) {
+                      console.error('Failed to track search click:', err);
+                    }
+                  }}
                 >
                   <PropertyCard property={property} />
                 </motion.div>
