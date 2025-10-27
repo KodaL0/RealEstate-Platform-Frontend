@@ -18,10 +18,10 @@ interface ParsedFilters {
 }
 
 interface SearchFiltersProps {
-  forSale?: boolean;
-  onSearch: (filters: ParsedFilters) => void;
-  initialLocation?: string;
-  isCollapsed?: boolean;
+  forSale: boolean;  // Required: true for Buy page, false for Rent page
+  onSearch: (filters: ParsedFilters) => void;  // Required: callback when filters change
+  initialLocation?: string;  // Optional: pre-fill location from URL
+  isExpanded?: boolean;  // Optional: true = show full form, false = show only active filter badges (default: true)
 }
 
 // Helper function to parse min number string (e.g., "3+", "Any")
@@ -58,10 +58,10 @@ const FilterBadge: React.FC<FilterBadgeProps> = ({ label, emoji, onRemove, color
 );
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({ 
-  forSale = true, 
+  forSale, 
   onSearch, 
   initialLocation = '',
-  isCollapsed = false,
+  isExpanded = true,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -148,12 +148,12 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     selectedAmenities.length > 0;
 
   // If collapsed and no active filters, hide completely
-  if (isCollapsed && !hasActiveFilters) {
+  if (!isExpanded && !hasActiveFilters) {
     return null;
   }
 
   // Collapsed view - show only active filters
-  if (isCollapsed && hasActiveFilters) {
+  if (!isExpanded && hasActiveFilters) {
     return (
       <div className="px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
         <div className="flex items-center gap-2 flex-wrap">

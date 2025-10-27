@@ -14,38 +14,50 @@ import api from "../config/api";
 import analytics from "../utils/analytics";
 
 const useScrollDirection = () => {
-  const [showFilters, setShowFilters] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(true);
   const lastScrollY = useRef(0);
-  const ticking = useRef(false);
+  const scrollTimeout = useRef<number>();
 
   useEffect(() => {
-    const updateScrollDirection = () => {
-      const scrollY = window.scrollY;
-
-      if (scrollY < 100) {
-        setShowFilters(true);
-      } else if (scrollY < lastScrollY.current - 50) {
-        setShowFilters(true);
-      } else if (scrollY > lastScrollY.current + 10) {
-        setShowFilters(false);
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Clear any pending timeout
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
       }
 
-      lastScrollY.current = scrollY;
-      ticking.current = false;
+      // Debounce to prevent rapid toggling
+      scrollTimeout.current = setTimeout(() => {
+        const scrollDiff = currentScrollY - lastScrollY.current;
+        
+        // Always expanded at top of page
+        if (currentScrollY < 50) {
+          setIsExpanded(true);
+        }
+        // Scrolling up significantly - expand
+        else if (scrollDiff < -30) {
+          setIsExpanded(true);
+        }
+        // Scrolling down and past threshold - collapse
+        else if (scrollDiff > 10 && currentScrollY > 100) {
+          setIsExpanded(false);
+        }
+        
+        lastScrollY.current = currentScrollY;
+      }, 100); // 100ms debounce
     };
 
-    const onScroll = () => {
-      if (!ticking.current) {
-        window.requestAnimationFrame(updateScrollDirection);
-        ticking.current = true;
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      if (scrollTimeout.current) {
+        clearTimeout(scrollTimeout.current);
       }
     };
-
-    window.addEventListener('scroll', onScroll);
-    return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
-  return showFilters;
+  return isExpanded;
 };
 
 const PAGE_SIZE = 12;
@@ -66,7 +78,7 @@ interface SearchFiltersType {
 const Buy = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
-  const showFilters = useScrollDirection();
+  const isFiltersExpanded = useScrollDirection();
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -205,15 +217,10 @@ const Buy = () => {
       </div>
 
       {/* Enhanced Sticky Search Filters - Only show when expanded OR when collapsed with active filters */}
-      {(showFilters || hasActiveFilters) && (
-        <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-16 z-10 shadow-lg">
-          <motion.div
-            initial={{ opacity: 1 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.3 }}
-            className="max-w-6xl mx-auto"
-          >
-            {showFilters && (
+      {(isFiltersExpanded || hasActiveFilters) && (
+        <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-16 z-10 shadow-lg transition-all duration-300">
+          <div className="max-w-6xl mx-auto">
+            {isFiltersExpanded && (
               <div className="px-4 sm:px-6 lg:px-8 pt-5">
                 <div className="flex items-center gap-2 mb-3">
                   <SlidersHorizontal className="h-4 w-4 text-blue-600" />
@@ -222,12 +229,12 @@ const Buy = () => {
               </div>
             )}
             <SearchFilters
-              forSale
+              forSale={true}
               onSearch={handleSearch}
               initialLocation={initialLocation}
-              isCollapsed={!showFilters}
+              isExpanded={isFiltersExpanded}
             />
-          </motion.div>
+          </div>
         </div>
       )}
 
