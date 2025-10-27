@@ -33,6 +33,7 @@ const Buy = () => {
   const initialLocation = searchParams.get("location") || "";
   const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
   const lastScrollY = useRef(0);
+  const ticking = useRef(false);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -57,18 +58,25 @@ const Buy = () => {
   // Simple scroll handling for filter expand/collapse
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
-      const scrollDiff = currentScrollY - lastScrollY.current;
-      
-      if (currentScrollY < 50) {
-        setIsFiltersExpanded(true);
-      } else if (scrollDiff < -30) {
-        setIsFiltersExpanded(true);
-      } else if (scrollDiff > 10 && currentScrollY > 150) {
-        setIsFiltersExpanded(false);
-      }
-      
-      lastScrollY.current = currentScrollY;
+      if (ticking.current) return;
+      ticking.current = true;
+
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const scrollDiff = currentScrollY - lastScrollY.current;
+        
+        // React automatically skips re-renders if state value hasn't changed
+        if (currentScrollY < 50) {
+          setIsFiltersExpanded(true);
+        } else if (scrollDiff < -50) { // Increased threshold for scroll up
+          setIsFiltersExpanded(true);
+        } else if (scrollDiff > 20 && currentScrollY > 150) { // Increased threshold for scroll down
+          setIsFiltersExpanded(false);
+        }
+        
+        lastScrollY.current = currentScrollY;
+        ticking.current = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
