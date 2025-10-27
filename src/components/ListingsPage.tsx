@@ -116,10 +116,6 @@ const themeConfigs: Record<ListingType, ThemeConfig> = {
 const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const theme = themeConfigs[listingType];
   const [searchParams, setSearchParams] = useSearchParams();
-  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-  const scrollAccumulator = useRef(0);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -195,66 +191,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       window.scrollTo({ top: 200, left: 0, behavior: "smooth" });
     }
   }, [currentPage]);
-
-  // Scroll handling with accumulator - prevents flickering on scroll up
-  useEffect(() => {
-    const TOP_ZONE = 100;               // Always show filters near top
-    const MIN_SCROLL_FOR_HIDE = 150;    // Minimum scroll position before hiding
-    const HIDE_THRESHOLD = 10;          // Small threshold to hide (responsive)
-    const SHOW_THRESHOLD = 100;         // Large threshold to show (prevents flickering)
-
-    const handleScroll = () => {
-      if (ticking.current) return;
-      ticking.current = true;
-
-      requestAnimationFrame(() => {
-        const currentScrollY = window.scrollY;
-        const scrollDiff = currentScrollY - lastScrollY.current;
-        
-        // Always show at top
-        if (currentScrollY < TOP_ZONE) {
-          setIsFiltersExpanded(true);
-          scrollAccumulator.current = 0;
-        }
-        // Scrolling down
-        else if (scrollDiff > 0) {
-          // Reset accumulator when changing direction
-          if (scrollAccumulator.current < 0) {
-            scrollAccumulator.current = 0;
-          }
-          scrollAccumulator.current += scrollDiff;
-          
-          // Hide after small threshold
-          if (scrollAccumulator.current > HIDE_THRESHOLD && currentScrollY > MIN_SCROLL_FOR_HIDE) {
-            setIsFiltersExpanded(false);
-          }
-        }
-        // Scrolling up
-        else if (scrollDiff < 0) {
-          // Reset accumulator when changing direction
-          if (scrollAccumulator.current > 0) {
-            scrollAccumulator.current = 0;
-          }
-          scrollAccumulator.current += scrollDiff; // scrollDiff is negative
-          
-          // Show only after significant upward scroll
-          if (scrollAccumulator.current < -SHOW_THRESHOLD) {
-            setIsFiltersExpanded(true);
-            scrollAccumulator.current = 0; // Reset after showing
-          }
-        }
-        
-        lastScrollY.current = currentScrollY;
-        ticking.current = false;
-      });
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
-  }, []);
 
   // Stringify amenities for dependency to avoid unnecessary re-renders
   const amenitiesKey = filters.amenities?.join(',') || '';
@@ -372,12 +308,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
   const displayed = properties;
 
-  // Check if there are active filters (use localFilters for immediate UI response)
-  const hasActiveFilters = localFilters.location || (localFilters.country && localFilters.country !== 'All') || 
-    localFilters.minPrice || localFilters.maxPrice || (localFilters.propertyType && localFilters.propertyType !== 'Any') || 
-    (localFilters.bedrooms && localFilters.bedrooms !== 'Any') || (localFilters.bathrooms && localFilters.bathrooms !== 'Any') || 
-    (localFilters.amenities && localFilters.amenities.length > 0);
-
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newSort = e.target.value;
     analytics.trackSortChange(newSort, totalCount);
@@ -423,26 +353,21 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.borderColor} to-transparent`}></div>
       </div>
 
-      {/* Sticky Search Filters - Show when expanded OR when collapsed with active filters */}
-      {(isFiltersExpanded || hasActiveFilters) && (
-        <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg">
-          <div className="max-w-6xl mx-auto">
-            {isFiltersExpanded && (
-              <div className="px-4 sm:px-6 lg:px-8 pt-5">
-                <div className="flex items-center gap-2 mb-3">
-                  <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
-                  <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
-                </div>
-              </div>
-            )}
-            <SearchFilters
-              filters={localFilters}
-              onFiltersChange={handleFiltersChange}
-              isExpanded={isFiltersExpanded}
-            />
+      {/* Sticky Search Filters - Always visible */}
+      <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg">
+        <div className="max-w-6xl mx-auto">
+          <div className="px-4 sm:px-6 lg:px-8 pt-5">
+            <div className="flex items-center gap-2 mb-3">
+              <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
+              <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
+            </div>
           </div>
+          <SearchFilters
+            filters={localFilters}
+            onFiltersChange={handleFiltersChange}
+          />
         </div>
-      )}
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

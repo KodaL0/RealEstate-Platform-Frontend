@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { ChevronDown, X, SlidersHorizontal } from 'lucide-react';
+import { ChevronDown, X } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
-import { getAmenityLabel, PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
+import { PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
 
 // Filter types
 interface FilterState {
@@ -18,52 +18,14 @@ interface FilterState {
 interface SearchFiltersProps {
   filters: FilterState;
   onFiltersChange: (filters: FilterState) => void;
-  isExpanded: boolean;
-  onToggleExpand?: () => void;
 }
-
-// Helper functions
-const getPropertyTypeLabel = (value: string): string =>
-  PROPERTY_TYPES.find(t => t.value === value)?.label || value;
-
-// Badge component
-interface FilterBadgeProps {
-  label: string;
-  emoji: string;
-  onRemove: () => void;
-  colorClass: string;
-  maxWidth?: string;
-}
-
-const FilterBadge: React.FC<FilterBadgeProps> = ({
-  label,
-  emoji,
-  onRemove,
-  colorClass,
-  maxWidth = 'max-w-[120px] sm:max-w-none'
-}) => (
-  <button
-    onClick={onRemove}
-    className={`inline-flex items-center gap-1 px-2 sm:px-3 py-1 ${colorClass} rounded-full text-xs sm:text-sm hover:brightness-95 transition-all active:scale-95`}
-  >
-    <span className={`truncate ${maxWidth}`}>{emoji} {label}</span>
-    <X className="h-3 w-3 flex-shrink-0" />
-  </button>
-);
 
 const SearchFilters: React.FC<SearchFiltersProps> = ({
   filters,
   onFiltersChange,
-  isExpanded,
 }) => {
   // Only keep UI state
   const [advancedOpen, setAdvancedOpen] = useState(false);
-
-  // Check if there are active filters
-  const hasActiveFilters = filters.location || (filters.country && filters.country !== 'All') || 
-    filters.minPrice || filters.maxPrice || (filters.propertyType && filters.propertyType !== 'Any') || 
-    (filters.bedrooms && filters.bedrooms !== 'Any') || (filters.bathrooms && filters.bathrooms !== 'Any') || 
-    (filters.amenities && filters.amenities.length > 0);
 
   // Clear filters
   const clearFilters = () => {
@@ -79,118 +41,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     });
   };
 
-  // Rendering
-  const showCollapsed = !isExpanded && hasActiveFilters;
-  const showExpanded = isExpanded;
-
-  // Show floating button when scrolled and no active filters
-  if (!showCollapsed && !showExpanded) {
-    return (
-      <div className="fixed bottom-6 right-6 z-50">
-        <button
-          onClick={() => {
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-          }}
-          className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-full shadow-2xl hover:shadow-blue-500/50 transition-all transform hover:scale-110 active:scale-95 flex items-center gap-2"
-          title="Show Filters"
-        >
-          <SlidersHorizontal className="h-6 w-6" />
-          <span className="text-sm font-semibold pr-1">Filters</span>
-        </button>
-      </div>
-    );
-  }
-
-  // Collapsed (badges)
-  if (showCollapsed) {
-    return (
-      <div className="sticky top-0 z-40 bg-white shadow-sm px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
-        <div className="flex items-center gap-2 flex-wrap">
-          {filters.location && (
-            <FilterBadge 
-              label={filters.location} 
-              emoji="📍" 
-              onRemove={() => onFiltersChange({ ...filters, location: '' })} 
-              colorClass="bg-emerald-50 text-emerald-700" 
-            />
-          )}
-          {filters.country && filters.country !== 'All' && (
-            <FilterBadge 
-              label={filters.country} 
-              emoji="🌍" 
-              onRemove={() => onFiltersChange({ ...filters, country: 'All' })} 
-              colorClass="bg-indigo-50 text-indigo-700" 
-            />
-          )}
-          {(filters.minPrice || filters.maxPrice) && (
-            <FilterBadge
-              label={
-                filters.minPrice && filters.maxPrice
-                  ? `€${parseInt(filters.minPrice).toLocaleString()} - €${parseInt(filters.maxPrice).toLocaleString()}`
-                  : filters.minPrice
-                    ? `€${parseInt(filters.minPrice).toLocaleString()}+`
-                    : `Up to €${parseInt(filters.maxPrice!).toLocaleString()}`
-              }
-              emoji="💰"
-              onRemove={() => onFiltersChange({ ...filters, minPrice: '', maxPrice: '' })}
-              colorClass="bg-blue-50 text-blue-700"
-            />
-          )}
-          {filters.propertyType && filters.propertyType !== 'Any' && (
-            <FilterBadge 
-              label={getPropertyTypeLabel(filters.propertyType)} 
-              emoji="🏠" 
-              onRemove={() => onFiltersChange({ ...filters, propertyType: 'Any' })} 
-              colorClass="bg-purple-50 text-purple-700" 
-            />
-          )}
-          {filters.bedrooms && filters.bedrooms !== 'Any' && (
-            <FilterBadge 
-              label={filters.bedrooms} 
-              emoji="🛏️" 
-              onRemove={() => onFiltersChange({ ...filters, bedrooms: 'Any' })} 
-              colorClass="bg-pink-50 text-pink-700" 
-            />
-          )}
-          {filters.bathrooms && filters.bathrooms !== 'Any' && (
-            <FilterBadge 
-              label={filters.bathrooms} 
-              emoji="🚿" 
-              onRemove={() => onFiltersChange({ ...filters, bathrooms: 'Any' })} 
-              colorClass="bg-cyan-50 text-cyan-700" 
-            />
-          )}
-          {filters.amenities && filters.amenities.slice(0, 3).map((amenityId) => (
-            <FilterBadge
-              key={amenityId}
-              label={getAmenityLabel(amenityId)}
-              emoji="✨"
-              onRemove={() => onFiltersChange({ 
-                ...filters, 
-                amenities: filters.amenities!.filter((id) => id !== amenityId) 
-              })}
-              colorClass="bg-amber-50 text-amber-700"
-            />
-          ))}
-          {filters.amenities && filters.amenities.length > 3 && (
-            <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs sm:text-sm font-medium">
-              +{filters.amenities.length - 3} more
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={clearFilters}
-            className="ml-auto text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center"
-          >
-            <X className="h-3 w-3 mr-1" />
-            Clear All
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  // Expanded (full filter form)
+  // Always show expanded filter form
   return (
     <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-300">
       <form onSubmit={(e) => e.preventDefault()}>
