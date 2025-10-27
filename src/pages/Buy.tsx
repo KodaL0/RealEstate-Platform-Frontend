@@ -16,19 +16,16 @@ import analytics from "../utils/analytics";
 const useScrollDirection = () => {
   const [isExpanded, setIsExpanded] = useState(true);
   const lastScrollY = useRef(0);
-  const scrollTimeout = useRef<number>();
+  const ticking = useRef(false);
 
   useEffect(() => {
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      if (ticking.current) return;
       
-      // Clear any pending timeout
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-
-      // Debounce to prevent rapid toggling
-      scrollTimeout.current = setTimeout(() => {
+      ticking.current = true;
+      
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
         const scrollDiff = currentScrollY - lastScrollY.current;
         
         // Always expanded at top of page
@@ -40,21 +37,17 @@ const useScrollDirection = () => {
           setIsExpanded(true);
         }
         // Scrolling down and past threshold - collapse
-        else if (scrollDiff > 10 && currentScrollY > 100) {
+        else if (scrollDiff > 10 && currentScrollY > 150) {
           setIsExpanded(false);
         }
         
         lastScrollY.current = currentScrollY;
-      }, 100); // 100ms debounce
+        ticking.current = false;
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-      if (scrollTimeout.current) {
-        clearTimeout(scrollTimeout.current);
-      }
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   return isExpanded;
@@ -218,7 +211,7 @@ const Buy = () => {
 
       {/* Enhanced Sticky Search Filters - Only show when expanded OR when collapsed with active filters */}
       {(isFiltersExpanded || hasActiveFilters) && (
-        <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-16 z-10 shadow-lg transition-all duration-300">
+        <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg transition-all duration-300">
           <div className="max-w-6xl mx-auto">
             {isFiltersExpanded && (
               <div className="px-4 sm:px-6 lg:px-8 pt-5">
