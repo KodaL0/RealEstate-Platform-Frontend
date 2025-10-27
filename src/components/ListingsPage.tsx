@@ -299,40 +299,18 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.borderColor} to-transparent`}></div>
       </div>
 
-      {/* Enhanced Sticky Search Filters - Only show when expanded OR when collapsed with active filters */}
+      {/* Sticky Search Filters - Show when expanded OR when collapsed with active filters */}
       {(isFiltersExpanded || hasActiveFilters) && (
-        <motion.div 
-          initial={false}
-          animate={{ 
-            opacity: 1,
-            y: 0,
-          }}
-          transition={{ 
-            duration: 0.3,
-            ease: [0.4, 0.0, 0.2, 1], // Custom easing for smooth motion
-          }}
-          className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg"
-        >
+        <div className="bg-white/98 backdrop-blur-md border-b border-gray-200 sticky top-16 z-40 shadow-lg">
           <div className="max-w-6xl mx-auto">
-            <AnimatePresence mode="sync">
-              {isFiltersExpanded && (
-                <motion.div
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: "auto" }}
-                  exit={{ opacity: 0, height: 0 }}
-                  transition={{ 
-                    duration: 0.25,
-                    ease: [0.4, 0.0, 0.2, 1],
-                  }}
-                  className="px-4 sm:px-6 lg:px-8 pt-5 overflow-hidden"
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
-                    <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
+            {isFiltersExpanded && (
+              <div className="px-4 sm:px-6 lg:px-8 pt-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
+                  <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
+                </div>
+              </div>
+            )}
             <SearchFilters
               forSale={listingType === "sale"}
               onSearch={handleSearch}
@@ -340,7 +318,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               isExpanded={isFiltersExpanded}
             />
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Main Content */}
