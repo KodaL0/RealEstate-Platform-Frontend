@@ -13,46 +13,6 @@ import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
 import analytics from "../utils/analytics";
 
-const useScrollDirection = () => {
-  const [isExpanded, setIsExpanded] = useState(true);
-  const lastScrollY = useRef(0);
-  const ticking = useRef(false);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (ticking.current) return;
-      
-      ticking.current = true;
-      
-      requestAnimationFrame(() => {
-        const currentScrollY = window.scrollY;
-        const scrollDiff = currentScrollY - lastScrollY.current;
-        
-        // Always expanded at top of page
-        if (currentScrollY < 50) {
-          setIsExpanded(true);
-        }
-        // Scrolling up significantly - expand
-        else if (scrollDiff < -30) {
-          setIsExpanded(true);
-        }
-        // Scrolling down and past threshold - collapse
-        else if (scrollDiff > 10 && currentScrollY > 150) {
-          setIsExpanded(false);
-        }
-        
-        lastScrollY.current = currentScrollY;
-        ticking.current = false;
-      });
-    };
-
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  return isExpanded;
-};
-
 const PAGE_SIZE = 12;
 
 interface SearchFiltersType {
@@ -71,7 +31,8 @@ interface SearchFiltersType {
 const Buy = () => {
   const [searchParams] = useSearchParams();
   const initialLocation = searchParams.get("location") || "";
-  const isFiltersExpanded = useScrollDirection();
+  const [isFiltersExpanded, setIsFiltersExpanded] = useState(true);
+  const lastScrollY = useRef(0);
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [totalPages, setTotalPages] = useState(1);
@@ -92,6 +53,27 @@ const Buy = () => {
     }
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
   }, [currentPage]);
+
+  // Simple scroll handling for filter expand/collapse
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      const scrollDiff = currentScrollY - lastScrollY.current;
+      
+      if (currentScrollY < 50) {
+        setIsFiltersExpanded(true);
+      } else if (scrollDiff < -30) {
+        setIsFiltersExpanded(true);
+      } else if (scrollDiff > 10 && currentScrollY > 150) {
+        setIsFiltersExpanded(false);
+      }
+      
+      lastScrollY.current = currentScrollY;
+    };
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   useEffect(() => {
     const fetchProperties = async () => {
