@@ -201,24 +201,29 @@ const Rent = () => {
       </div>
 
       {/* Enhanced Sticky Search Filters */}
-      <motion.div
-        initial={{ y: 0 }}
-        animate={{ y: showFilters ? 0 : -200 }}
-        transition={{ duration: 0.3, ease: "easeInOut" }}
-        className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-16 z-10 shadow-lg"
-      >
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
-          <div className="flex items-center gap-2 mb-3">
-            <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
-            <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
-          </div>
+      <div className="bg-white/95 backdrop-blur-md border-b border-gray-200 sticky top-16 z-10 shadow-lg">
+        <motion.div
+          initial={{ opacity: 1 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+          className="max-w-6xl mx-auto"
+        >
+          {showFilters && (
+            <div className="px-4 sm:px-6 lg:px-8 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <SlidersHorizontal className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
+              </div>
+            </div>
+          )}
           <SearchFilters
             forSale={false}
             onSearch={handleSearch}
             initialLocation={initialLocation}
+            isCollapsed={!showFilters}
           />
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">

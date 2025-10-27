@@ -21,6 +21,7 @@ interface SearchFiltersProps {
   forSale?: boolean;
   onSearch: (filters: ParsedFilters) => void;
   initialLocation?: string;
+  isCollapsed?: boolean;
 }
 
 // Helper function to parse min number string (e.g., "3+", "Any")
@@ -60,6 +61,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
   forSale = true, 
   onSearch, 
   initialLocation = '',
+  isCollapsed = false,
 }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   
@@ -140,8 +142,116 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
     // Search will be triggered automatically by the useEffect
   };
 
+  // Check if there are active filters
+  const hasActiveFilters = location || country !== 'All' || minPrice || maxPrice || 
+    propertyType !== 'Any' || bedrooms !== 'Any' || bathrooms !== 'Any' || 
+    selectedAmenities.length > 0;
+
+  // Collapsed view - show only active filters
+  if (isCollapsed && hasActiveFilters) {
+    return (
+      <div className="px-4 sm:px-6 lg:px-8 py-3 transition-all duration-300">
+        <div className="flex items-center gap-2 flex-wrap">
+            {location && (
+              <FilterBadge 
+                label={location} 
+                emoji="📍" 
+                onRemove={() => setLocation('')} 
+                colorClass="bg-emerald-50 text-emerald-700"
+              />
+            )}
+
+            {country !== 'All' && (
+              <FilterBadge 
+                label={country} 
+                emoji="🌍" 
+                onRemove={() => setCountry('All')} 
+                colorClass="bg-indigo-50 text-indigo-700"
+                maxWidth=""
+              />
+            )}
+
+            {(minPrice || maxPrice) && (
+              <FilterBadge 
+                label={
+                  minPrice && maxPrice 
+                    ? `€${parseInt(minPrice).toLocaleString()} - €${parseInt(maxPrice).toLocaleString()}`
+                    : minPrice 
+                      ? `€${parseInt(minPrice).toLocaleString()}+`
+                      : `Up to €${parseInt(maxPrice).toLocaleString()}`
+                } 
+                emoji="💰" 
+                onRemove={() => {
+                  setMinPrice('');
+                  setMaxPrice('');
+                }} 
+                colorClass="bg-blue-50 text-blue-700"
+                maxWidth="max-w-[140px] sm:max-w-none"
+              />
+            )}
+
+            {propertyType !== 'Any' && (
+              <FilterBadge 
+                label={getPropertyTypeLabel(propertyType)} 
+                emoji="🏠" 
+                onRemove={() => setPropertyType('Any')} 
+                colorClass="bg-purple-50 text-purple-700"
+                maxWidth="max-w-[100px] sm:max-w-none"
+              />
+            )}
+
+            {bedrooms !== 'Any' && (
+              <FilterBadge 
+                label={bedrooms} 
+                emoji="🛏️" 
+                onRemove={() => setBedrooms('Any')} 
+                colorClass="bg-pink-50 text-pink-700"
+                maxWidth=""
+              />
+            )}
+
+            {bathrooms !== 'Any' && (
+              <FilterBadge 
+                label={bathrooms} 
+                emoji="🚿" 
+                onRemove={() => setBathrooms('Any')} 
+                colorClass="bg-cyan-50 text-cyan-700"
+                maxWidth=""
+              />
+            )}
+
+            {selectedAmenities.slice(0, 3).map(amenityId => (
+              <FilterBadge 
+                key={amenityId}
+                label={getAmenityLabel(amenityId)} 
+                emoji="✨" 
+                onRemove={() => setSelectedAmenities(prev => prev.filter(id => id !== amenityId))} 
+                colorClass="bg-amber-50 text-amber-700"
+              />
+            ))}
+
+            {selectedAmenities.length > 3 && (
+              <span className="inline-flex items-center gap-1 px-2 sm:px-3 py-1 bg-amber-100 text-amber-800 rounded-full text-xs sm:text-sm font-medium">
+                +{selectedAmenities.length - 3} more
+              </span>
+            )}
+
+            <button
+              type="button"
+              onClick={clearFilters}
+              className="ml-auto text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center"
+            >
+              <X className="h-3 w-3 mr-1" />
+              Clear All
+            </button>
+        </div>
+      </div>
+    );
+  }
+
+  // Expanded view - show full form
   return (
-    <div>
+    <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-300">
       <form onSubmit={handleSearch}>
         {/* Compact 2-row layout */}
         <div className="space-y-2">
