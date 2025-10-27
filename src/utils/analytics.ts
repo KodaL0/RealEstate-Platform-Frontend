@@ -9,6 +9,7 @@
  */
 
 import consentManager from '../services/ConsentManager';
+import api from '../config/api';
 
 // Type-safe gtag declaration
 declare global {
@@ -101,9 +102,10 @@ export const trackPropertyImageView = (propertyId: string, imageIndex: number, t
   });
 };
 
-export const trackPropertyContact = (propertyId: string, contactMethod: 'phone' | 'email' | 'chat' | 'whatsapp') => {
+export const trackPropertyContact = async (propertyId: string, contactMethod: 'phone' | 'email' | 'chat' | 'whatsapp') => {
   if (!canTrack()) return;
   
+  // Track to Google Analytics
   window.gtag!('event', 'contact_property_owner', {
     property_id: propertyId,
     contact_method: contactMethod,
@@ -116,6 +118,17 @@ export const trackPropertyContact = (propertyId: string, contactMethod: 'phone' 
     currency: 'EUR',
     value: 1,
   });
+
+  // Track to backend database for property owner analytics
+  try {
+    await api.post('/analytics/track-conversion/', {
+      property_id: parseInt(propertyId),
+      contact_method: contactMethod
+    });
+  } catch (error) {
+    // Silent fail - don't block user interaction if tracking fails
+    console.warn('Failed to track contact conversion to backend:', error);
+  }
 };
 
 export const trackPropertyFavorite = (propertyId: string, action: 'add' | 'remove', propertyType?: string) => {

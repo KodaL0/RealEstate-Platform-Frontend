@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart3, Eye, Users, Phone, Mail, MessageCircle, TrendingUp, X } from 'lucide-react';
+import { BarChart3, Eye, Users, Phone, Mail, MessageCircle, TrendingUp, X, Heart } from 'lucide-react';
 import api from '../../config/api';
 
 interface PropertyAnalyticsProps {
@@ -22,6 +22,9 @@ interface AnalyticsData {
     email_clicks: number;
     chat_clicks: number;
     conversion_rate: number;
+    favorites: number;
+    unfavorites: number;
+    net_favorites: number;
   };
   permissions: {
     is_owner: boolean;
@@ -186,6 +189,20 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
             <h3 className="text-sm font-semibold text-purple-900 mb-1">Conversion Rate</h3>
             <p className="text-xs text-purple-600">
               Views to contacts
+            </p>
+          </div>
+
+          {/* Net Favorites */}
+          <div className="bg-gradient-to-br from-rose-50 to-rose-100/50 rounded-xl p-5 border border-rose-200">
+            <div className="flex items-center justify-between mb-2">
+              <div className="w-10 h-10 bg-rose-500 rounded-lg flex items-center justify-center">
+                <Heart className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-2xl font-bold text-rose-700">{data.net_favorites}</span>
+            </div>
+            <h3 className="text-sm font-semibold text-rose-900 mb-1">Favorites</h3>
+            <p className="text-xs text-rose-600">
+              {data.favorites} added, {data.unfavorites} removed
             </p>
           </div>
         </div>
