@@ -370,7 +370,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       </div>
 
       {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="container mx-auto px-4 py-8">
         {/* Enhanced Results Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -520,7 +520,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8"
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
               {displayed.map((property, index) => (
                 <motion.div
