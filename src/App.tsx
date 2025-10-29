@@ -222,6 +222,7 @@ function AppContent() {
           <Route path="/" element={<Home />} />
           <Route path="/buy" element={<Buy />} />
           <Route path="/rent" element={<Rent />} />
+          {/* Legacy property URL - redirects to new format */}
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/login" element={<AuthPage />} />
           <Route path="/auth" element={<AuthPage />} />
@@ -317,8 +318,12 @@ function AppContent() {
             }
           />
 
-          {/* Public profile route - must be last to avoid conflicts */}
+          {/* Public profile route - must come before property route to catch 1-2 segment URLs */}
           <Route path="/:username/:tab?" element={<PublicProfile />} />
+          
+          {/* Property detail route with new URL format: /username/country/location-type-id */}
+          {/* This MUST come after profile route since it requires exactly 3 segments */}
+          <Route path="/:username/:country/:locationSlug" element={<PropertyDetails />} />
         </Routes>
       </main>
 

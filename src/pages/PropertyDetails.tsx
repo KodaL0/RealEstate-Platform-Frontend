@@ -191,11 +191,32 @@ const amenityIcons: Record<string, JSX.Element> = {
 /* ───────────────── component ───────────────── */
 
 const PropertyDetails: React.FC = () => {
-  const { id } = useParams<{ id: string }>();
-  const thumbsPerRow = useThumbsPerRow();
-  const numericId = Number(id);
-  const { user, isLoading: userLoading } = useUser();
+  // Support both URL formats:
+  // Legacy: /property/:id
+  // New: /:username/:country/:locationSlug (where locationSlug = location-type-id)
+  const { id, username, country, locationSlug } = useParams<{ 
+    id?: string; 
+    username?: string; 
+    country?: string; 
+    locationSlug?: string; 
+  }>();
+  
   const navigate = useNavigate();
+  
+  // Extract property ID from either format
+  const propertyId = id || (locationSlug ? locationSlug.split('-').pop() : null);
+  const numericId = propertyId ? Number(propertyId) : 0;
+  
+  // If we have username/country but no locationSlug, redirect to user profile
+  // This handles URLs like /john_doe/cyprus (which should go to profile, not property)
+  useEffect(() => {
+    if (username && country && !locationSlug && !id) {
+      navigate(`/${username}`, { replace: true });
+    }
+  }, [username, country, locationSlug, id, navigate]);
+  
+  const thumbsPerRow = useThumbsPerRow();
+  const { user, isLoading: userLoading } = useUser();
   const [property, setProperty] = useState<Property | null>(null);
   const [coords, setCoords] = useState<{ lat: number; lng: number } | null>(null);
   const [activeImage, setActiveImage] = useState<number>(0);

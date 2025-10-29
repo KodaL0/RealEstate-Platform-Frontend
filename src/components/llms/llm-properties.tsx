@@ -21,12 +21,17 @@ interface LLMPropertyDataProps {
 export const LLMPropertyData: React.FC<LLMPropertyDataProps> = ({ property }) => {
   const generateStructuredData = (property: Property) => {
     // Build Schema.org RealEstateListing structured data
+    // Use canonical URL from API if available, otherwise fall back to legacy format
+    const propertyUrl = property.url 
+      ? `https://propertpro.com${property.url}` 
+      : `https://propertpro.com/property/${property.id}`;
+    
     const structuredData = {
       "@context": "https://schema.org",
       "@type": "RealEstateListing",
       "name": property.title,
       "description": property.description,
-      "url": `https://propertpro.com/property/${property.id}`,
+      "url": propertyUrl,
       
       // Offer details
       "offers": {

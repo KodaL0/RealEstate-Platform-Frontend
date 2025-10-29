@@ -92,6 +92,8 @@ export interface Property {
   instagram_posted?: boolean;
   instagram_post_count?: number;
   last_instagram_post?: string;
+  // Canonical URL for property
+  url?: string;
 }
 
 /* Normalize helper */

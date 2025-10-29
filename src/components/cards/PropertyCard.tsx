@@ -59,7 +59,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     property_status,
     property_type,
     is_favourite,
+    url,
   } = property;
+  
+  // Use the URL from API if available, otherwise fall back to legacy format
+  const propertyUrl = url || `/property/${id}`;
 
   // Slideshow state
   const [currentImage, setCurrentImage] = useState(0);
@@ -437,7 +441,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
           </div>
         )}
 
-        <Link to={`/property/${id}`} className="block">
+        <Link to={propertyUrl} className="block">
           <div 
             className="relative overflow-hidden"
             onTouchStart={onTouchStart}
@@ -489,7 +493,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
       <div className="p-6 flex flex-col flex-1">
         {/* Title */}
         <div className="mb-4">
-          <Link to={`/property/${id}`}>
+          <Link to={propertyUrl}>
             <h3 className="text-xl font-bold text-gray-900 hover:text-emerald-600 transition-colors duration-300 line-clamp-2 leading-tight">
               {title}
             </h3>
