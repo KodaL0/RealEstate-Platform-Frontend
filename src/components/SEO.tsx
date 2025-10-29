@@ -36,12 +36,45 @@ interface SEOProps {
   
   // Profile-specific data
   author?: string;
+  profileType?: 'Person' | 'Organization';
+  
+  // Person schema data
+  personData?: {
+    name: string;
+    jobTitle?: string;
+    telephone?: string;
+    email?: string;
+    url?: string;
+    address?: string;
+    image?: string;
+    sameAs?: string[]; // Social media profiles
+    memberSince?: string;
+  };
+  
+  // Organization schema data
+  organizationData?: {
+    name: string;
+    description?: string;
+    telephone?: string;
+    email?: string;
+    url?: string;
+    address?: string;
+    logo?: string;
+    foundingDate?: string;
+    numberOfEmployees?: string;
+    aggregateRating?: {
+      ratingValue: number;
+      reviewCount: number;
+    };
+    sameAs?: string[]; // Social media profiles
+  };
   
   // Additional meta
   publishedTime?: string;
   modifiedTime?: string;
   canonical?: string;
   noindex?: boolean;
+  breadcrumbs?: Array<{ name: string; url: string }>;
 }
 
 export const SEO: React.FC<SEOProps> = ({
@@ -57,10 +90,14 @@ export const SEO: React.FC<SEOProps> = ({
   location,
   propertyType,
   author,
+  profileType,
+  personData,
+  organizationData,
   publishedTime,
   modifiedTime,
   canonical,
-  noindex = false
+  noindex = false,
+  breadcrumbs
 }) => {
   // Ensure absolute URLs
   const siteUrl = 'https://www.propertpro.com';
@@ -82,6 +119,70 @@ export const SEO: React.FC<SEOProps> = ({
   
   // Generate keywords
   const metaKeywords = keywords || generateKeywords({ location, propertyType, type });
+  
+  // Generate JSON-LD structured data
+  const generatePersonSchema = () => {
+    if (!personData) return null;
+    
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Person',
+      name: personData.name,
+      ...(personData.jobTitle && { jobTitle: personData.jobTitle }),
+      ...(personData.telephone && { telephone: personData.telephone }),
+      ...(personData.email && { email: personData.email }),
+      ...(personData.url && { url: personData.url }),
+      ...(personData.address && { address: { '@type': 'PostalAddress', addressLocality: personData.address } }),
+      ...(personData.image && { image: personData.image }),
+      ...(personData.sameAs && personData.sameAs.length > 0 && { sameAs: personData.sameAs }),
+      ...(personData.memberSince && { memberOf: { '@type': 'Organization', name: 'PropertPro', foundingDate: personData.memberSince } })
+    };
+  };
+  
+  const generateOrganizationSchema = () => {
+    if (!organizationData) return null;
+    
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'Organization',
+      name: organizationData.name,
+      ...(organizationData.description && { description: organizationData.description }),
+      ...(organizationData.telephone && { telephone: organizationData.telephone }),
+      ...(organizationData.email && { email: organizationData.email }),
+      ...(organizationData.url && { url: organizationData.url }),
+      ...(organizationData.address && { address: { '@type': 'PostalAddress', addressLocality: organizationData.address } }),
+      ...(organizationData.logo && { logo: organizationData.logo }),
+      ...(organizationData.foundingDate && { foundingDate: organizationData.foundingDate }),
+      ...(organizationData.numberOfEmployees && { numberOfEmployees: organizationData.numberOfEmployees }),
+      ...(organizationData.aggregateRating && {
+        aggregateRating: {
+          '@type': 'AggregateRating',
+          ratingValue: organizationData.aggregateRating.ratingValue,
+          reviewCount: organizationData.aggregateRating.reviewCount
+        }
+      }),
+      ...(organizationData.sameAs && organizationData.sameAs.length > 0 && { sameAs: organizationData.sameAs })
+    };
+  };
+  
+  const generateBreadcrumbSchema = () => {
+    if (!breadcrumbs || breadcrumbs.length === 0) return null;
+    
+    return {
+      '@context': 'https://schema.org',
+      '@type': 'BreadcrumbList',
+      itemListElement: breadcrumbs.map((crumb, index) => ({
+        '@type': 'ListItem',
+        position: index + 1,
+        name: crumb.name,
+        item: crumb.url.startsWith('http') ? crumb.url : `${siteUrl}${crumb.url}`
+      }))
+    };
+  };
+  
+  const personSchema = generatePersonSchema();
+  const organizationSchema = generateOrganizationSchema();
+  const breadcrumbSchema = generateBreadcrumbSchema();
   
   return (
     <Helmet>
@@ -148,6 +249,23 @@ export const SEO: React.FC<SEOProps> = ({
       {/* Microsoft */}
       <meta name="msapplication-TileColor" content="#2563eb" />
       <meta name="msapplication-TileImage" content="/favicon-96x96.png" />
+      
+      {/* JSON-LD Structured Data */}
+      {personSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(personSchema)}
+        </script>
+      )}
+      {organizationSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(organizationSchema)}
+        </script>
+      )}
+      {breadcrumbSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(breadcrumbSchema)}
+        </script>
+      )}
     </Helmet>
   );
 };

@@ -14,6 +14,7 @@ import { normalizePropertyData, Property, PublicProfileData, Review, ReviewStats
 import api from '../config/api';
 import { useChat } from '../context/ChatContext';
 import LLMProfileData from '../components/llms/llm-profile';
+import { SEO } from '../components/SEO';
 
 const formatDateOnly = (dateString: string) => {
   const date = new Date(dateString);
@@ -1016,8 +1017,49 @@ const PublicProfile: React.FC = () => {
 
   if (!profileData) return null;
 
+  // Generate SEO data
+  const profileTitle = profileData.name || `@${profileData.username}`;
+  const profileDescription = profileData.bio 
+    ? profileData.bio 
+    : `${profileTitle} is a real estate professional on PropertPro with ${profileData.properties_count} ${profileData.properties_count === 1 ? 'listing' : 'listings'} and ${profileData.connections_count} connections. ${overallRating ? `Rated ${overallRating.toFixed(1)}/5 from ${overallReviewsCount} reviews.` : ''}`;
+  
+  const profileUrl = `/${profileData.username}`;
+  const profileImage = profileData.avatar || undefined;
+  
+  // Build social links array if website exists
+  const socialLinks = profileData.website ? [profileData.website] : undefined;
+
   return (
     <div className="pt-20 bg-gray-50 min-h-screen">
+      {/* SEO */}
+      <SEO
+        title={profileTitle}
+        description={profileDescription}
+        url={profileUrl}
+        image={profileImage}
+        imageAlt={`${profileTitle} profile picture`}
+        type="profile"
+        profileType="Person"
+        location={profileData.location}
+        author={profileData.name || profileData.username}
+        modifiedTime={profileData.date_joined}
+        personData={{
+          name: profileData.name || profileData.username,
+          jobTitle: 'Real Estate Professional',
+          telephone: profileData.phone,
+          url: profileData.website,
+          address: profileData.location,
+          image: profileData.avatar,
+          sameAs: socialLinks,
+          memberSince: profileData.date_joined
+        }}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Profiles', url: '/profiles' },
+          { name: profileData.username, url: profileUrl }
+        ]}
+      />
+      
       {/* Profile Header */}
       <section className="py-6 sm:py-8 bg-gradient-to-r from-blue-600 to-indigo-600">
         <div className="container mx-auto px-4">

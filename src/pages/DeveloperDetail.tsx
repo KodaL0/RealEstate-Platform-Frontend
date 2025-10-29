@@ -21,6 +21,7 @@ import { Developer, Project } from "../types";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
 import { getProjectUrl } from "../utils/developerUtils";
+import { SEO } from "../components/SEO";
 
 const DeveloperDetail = () => {
   const { id, identifier } = useParams<{ id?: string; identifier?: string }>();
@@ -108,8 +109,57 @@ const DeveloperDetail = () => {
     { id: 'contact', label: 'Contact' },
   ];
 
+  // Generate SEO data
+  const developerTitle = developer.name;
+  const developerDescription = developer.description 
+    ? developer.description 
+    : `${developer.name} is a real estate developer in ${developer.location}${developer.country ? `, ${developer.country}` : ''} with ${developer.totalProjects || projects.length} projects. ${developer.rating ? `Rated ${developer.rating}/5 from ${developer.reviewCount || 0} reviews.` : ''}`;
+  
+  const developerUrl = developer.slug ? `/developers/${developer.slug}` : `/developer/${developer.id}`;
+  const developerImage = developer.image || undefined;
+  
+  // Build social links array
+  const socialLinks = developer.website ? [developer.website] : undefined;
+  
+  // Build founding date
+  const foundingDate = developer.established ? `${developer.established}-01-01` : undefined;
+
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* SEO */}
+      <SEO
+        title={developerTitle}
+        description={developerDescription}
+        url={developerUrl}
+        image={developerImage}
+        imageAlt={`${developer.name} logo`}
+        type="profile"
+        profileType="Organization"
+        location={developer.location}
+        author={developer.name}
+        organizationData={{
+          name: developer.name,
+          description: developer.description,
+          telephone: developer.phone,
+          email: developer.email,
+          url: developer.website,
+          address: `${developer.location}${developer.country ? `, ${developer.country}` : ''}`,
+          logo: developer.image,
+          foundingDate: foundingDate,
+          numberOfEmployees: undefined,
+          aggregateRating: developer.rating && developer.reviewCount ? {
+            ratingValue: developer.rating,
+            reviewCount: developer.reviewCount
+          } : undefined,
+          sameAs: socialLinks
+        }}
+        breadcrumbs={[
+          { name: 'Home', url: '/' },
+          { name: 'Developers', url: '/developers' },
+          { name: developer.name, url: developerUrl }
+        ]}
+      />
+      
       {/* Hero Section */}
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
