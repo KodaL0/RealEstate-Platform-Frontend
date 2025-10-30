@@ -140,10 +140,12 @@ const WizardContent: React.FC<WizardProps> = (props) => {
 
   return (
     <form onSubmit={handleSubmitWithReset} noValidate className="h-full flex flex-col">
-      <div className="flex-shrink-0">
-        <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
-      </div>
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4">
+        {/* Move ProgressBar inside the scrollable content */}
+        <div className="w-full pt-4">
+          <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
+        </div>
+
         <div className="w-full py-4">
           {steps[currentStep]}
         </div>
