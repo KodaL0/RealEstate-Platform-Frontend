@@ -11,9 +11,7 @@ import {
   Euro,
   Hash,
   ChevronLeft,
-  ChevronRight,
-  CheckCircle,
-  AlertCircle
+  ChevronRight
 } from 'lucide-react';
 import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
@@ -395,120 +393,67 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 setLocationCoords?.({ lat, lng });
               }}
               selectedCountry={formData.country}
-              placeholder="Type address and select from dropdown..."
+              placeholder="Start typing address..."
               inputClassName="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
             />
           </div>
-          
-          {/* Warning: User typed but didn't select from dropdown */}
-          {formData.location && !formData.city && (
-            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
-              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
-              <div className="text-sm text-yellow-800">
-                <strong>Please select from dropdown or enter city manually below</strong>
-                <br />
-                Type your address and click on a suggestion for automatic location data, or fill in the fields manually.
-              </div>
-            </div>
-          )}
-          
-          {/* Success: Location data captured */}
-          {formData.city && (
-            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
-              <div className="flex items-center text-green-800 mb-1">
-                <CheckCircle className="h-4 w-4 mr-2" />
-                <span className="font-semibold">Location captured:</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-gray-700 ml-6">
-                <div>City: <strong>{formData.city}</strong></div>
-                {formData.region && <div>Region: <strong>{formData.region}</strong></div>}
-                <div>Country: <strong>{formData.country}</strong></div>
-                {formData.postal_code && <div>Postal: <strong>{formData.postal_code}</strong></div>}
-              </div>
-            </div>
-          )}
         </div>
 
-        {/* Manual Location Fields - Fallback if Mapbox fails or for corrections */}
-        <div className="lg:col-span-2">
-          <details className="group">
-            <summary className="cursor-pointer text-sm font-medium text-gray-700 hover:text-blue-600 flex items-center gap-2">
-              <span>✏️ Edit location details manually</span>
-              <span className="text-xs text-gray-500">(optional - use if autocomplete doesn't work)</span>
-            </summary>
-            <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg border border-gray-200">
-              {/* City */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  City <span className="text-red-500">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="city"
-                  value={formData.city || ''}
-                  onChange={handleChangeWithPatch}
-                  placeholder="e.g., Πύλα, Limassol, Nicosia"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+        {/* Location Details - Auto-filled from autocomplete, editable */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            City <span className="text-red-500">*</span>
+          </label>
+          <input
+            type="text"
+            name="city"
+            value={formData.city || ''}
+            onChange={handleChangeWithPatch}
+            placeholder="e.g., Παραλίμνι"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-              {/* Region */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Region / District
-                </label>
-                <input
-                  type="text"
-                  name="region"
-                  value={formData.region || ''}
-                  onChange={handleChangeWithPatch}
-                  placeholder="e.g., Larnaca, Limassol District"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Region
+          </label>
+          <input
+            type="text"
+            name="region"
+            value={formData.region || ''}
+            onChange={handleChangeWithPatch}
+            placeholder="e.g., Famagusta"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-              {/* Postal Code */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Postal Code
-                </label>
-                <input
-                  type="text"
-                  name="postal_code"
-                  value={formData.postal_code || ''}
-                  onChange={handleChangeWithPatch}
-                  placeholder="e.g., 7081"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Postal Code
+          </label>
+          <input
+            type="text"
+            name="postal_code"
+            value={formData.postal_code || ''}
+            onChange={handleChangeWithPatch}
+            placeholder="e.g., 5290"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
 
-              {/* Street Address */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Street Address
-                </label>
-                <input
-                  type="text"
-                  name="street"
-                  value={formData.street || ''}
-                  onChange={handleChangeWithPatch}
-                  placeholder="e.g., 28 Oktovriou 123"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                />
-              </div>
-
-              {/* Info text */}
-              <div className="md:col-span-2">
-                <p className="text-xs text-gray-600 flex items-start gap-2">
-                  <span>💡</span>
-                  <span>
-                    These fields are automatically filled when you select from the address dropdown. 
-                    You can edit them here if the autocomplete data is incorrect or if you prefer to enter the information manually.
-                  </span>
-                </p>
-              </div>
-            </div>
-          </details>
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Street Address
+          </label>
+          <input
+            type="text"
+            name="street"
+            value={formData.street || ''}
+            onChange={handleChangeWithPatch}
+            placeholder="e.g., Filellinon"
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
         </div>
 
         {/* Status */}
