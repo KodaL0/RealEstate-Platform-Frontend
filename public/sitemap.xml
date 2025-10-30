@@ -4,17 +4,31 @@
   <!-- Static pages sitemap -->
   <sitemap>
     <loc>https://www.propertpro.com/sitemap-static.xml</loc>
-    <lastmod>2025-10-30</lastmod>
+    <lastmod>2025-01-30</lastmod>
   </sitemap>
   
-  <!-- Dynamic property listings sitemap (from backend API) -->
+  <!-- Dynamic property listings sitemap (includes images) -->
   <sitemap>
-    <loc>https://api.propertpro.com/api/properties/sitemap-properties.xml</loc>
+    <loc>https://www.propertpro.com/sitemap-properties.xml</loc>
+    <lastmod>2025-01-30</lastmod>
   </sitemap>
   
-  <!-- User profiles sitemap (from backend API) -->
+  <!-- User profiles sitemap -->
   <sitemap>
-    <loc>https://api.propertpro.com/api/properties/sitemap-profiles.xml</loc>
+    <loc>https://www.propertpro.com/sitemap-profiles.xml</loc>
+    <lastmod>2025-01-30</lastmod>
+  </sitemap>
+  
+  <!-- Location-based buy/rent pages sitemap -->
+  <sitemap>
+    <loc>https://www.propertpro.com/sitemap-locations.xml</loc>
+    <lastmod>2025-01-30</lastmod>
+  </sitemap>
+  
+  <!-- Developer organizations and projects sitemap -->
+  <sitemap>
+    <loc>https://www.propertpro.com/sitemap-developers.xml</loc>
+    <lastmod>2025-01-30</lastmod>
   </sitemap>
 
 </sitemapindex>

@@ -40,6 +40,7 @@ import Developers from "./pages/Developers";
 import DeveloperProjects from "./pages/DeveloperProjects";
 import DeveloperDetail from "./pages/DeveloperDetail";
 import ProjectDetail from "./pages/ProjectDetail";
+import SitemapViewer from "./pages/SitemapViewer";
 import DeveloperPortal from "./developer-api/DeveloperPortal";
 import { RequireDeveloper } from "./components/RequireAuth";
 
@@ -246,6 +247,8 @@ function AppContent() {
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
           <Route path="/developers" element={<Developers />} />
+          <Route path="/sitemap-view" element={<SitemapViewer />} />
+          <Route path="/sitemap" element={<SitemapViewer />} />
           <Route path="/projects/:id" element={<ProjectDetail />} />
           <Route path="/developers/:orgSlug/:projectSlug" element={<ProjectDetail />} />
           <Route path="/developer/:id" element={<DeveloperDetail />} />
