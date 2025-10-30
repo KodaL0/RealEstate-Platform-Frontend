@@ -106,7 +106,12 @@ Allow: /buy
 Allow: /rent
 Allow: /developers
 Allow: /projects
-Allow: /property/*
+
+# IMPORTANT: Do not crawl legacy /property/:id URLs
+# These redirect to canonical URLs (/{username}/{country}/{location-type-id})
+Disallow: /property/
+
+# Allow user profiles and canonical property URLs
 Allow: /*/
 
 # Disallow admin and API endpoints

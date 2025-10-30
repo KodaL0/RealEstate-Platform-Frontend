@@ -88,6 +88,8 @@ const mapPropertyData = (raw: any): Property => ({
   // Add latitude/longitude if API returns them:
   latitude: raw?.latitude != null ? +raw.latitude : undefined,
   longitude: raw?.longitude != null ? +raw.longitude : undefined,
+  // Add canonical URL for SEO
+  url: raw?.url ?? undefined,
 });
 
 // Which specs are relevant per property_type
@@ -240,6 +242,14 @@ const PropertyDetails: React.FC = () => {
         if (!isMounted) return;
         setProperty(mapped);
   
+        // REDIRECT LEGACY URLs TO CANONICAL URLs
+        // If we're on the old /property/:id format, redirect to the new SEO-friendly format
+        if (id && !locationSlug && mapped.url) {
+          console.log(`Redirecting from legacy URL /property/${id} to canonical URL ${mapped.url}`);
+          navigate(mapped.url, { replace: true });
+          return; // Don't continue with setup if redirecting
+        }
+  
         // Track property view
         analytics.trackPropertyView({
           property_id: String(mapped.id),
@@ -283,7 +293,7 @@ const PropertyDetails: React.FC = () => {
     return () => {
       isMounted = false;
     };
-  }, [numericId, userLoading, user?.email]);
+  }, [numericId, userLoading, user?.email, id, locationSlug, navigate]);
 
   const totalImages = property?.images.length ?? 0;
 
@@ -411,7 +421,8 @@ const PropertyDetails: React.FC = () => {
 
 
   // Generate SEO data
-  const propertyUrl = `/property/${property.id}`;
+  // Use canonical URL for SEO, fallback to legacy format if not available
+  const propertyUrl = property.url || `/property/${property.id}`;
   const primaryImage = property.images?.[0];
   const imageUrl = primaryImage ? (typeof primaryImage === 'string' ? primaryImage : primaryImage.image) : undefined;
   
@@ -439,6 +450,7 @@ const PropertyDetails: React.FC = () => {
         image={imageUrl}
         imageAlt={`${property.title} - ${property.city}`}
         url={propertyUrl}
+        canonical={property.url ? `https://www.propertpro.com${property.url}` : undefined}
         type="property"
         price={property.price}
         currency="EUR"
