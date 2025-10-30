@@ -135,7 +135,8 @@ export default function LocationAutocomplete({
             <li
               key={i}
               className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={() => {
+              onMouseDown={(e) => {
+                e.preventDefault(); // Prevent input from losing focus
                 onSelect(s.display_name, s.lat, s.lon, s.structured_data);
                 setOpen(false);
               }}
