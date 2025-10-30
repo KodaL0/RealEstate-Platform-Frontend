@@ -31,6 +31,7 @@ import PrivacySettings from "./pages/PrivacySettings";
 import ChatContainer from './pages/ChatContainer';
 import PublicProfile from "./pages/PublicProfile";
 import Connections from "./pages/Connections";
+import BlogPage from "./pages/BlogPage";
 
 import { EmailVerification } from "./components/EmailVerification";
 import { ForgotPassword } from "./pages/ForgotPassword";
@@ -250,6 +251,7 @@ function AppContent() {
           <Route path="/developer/:id" element={<DeveloperDetail />} />
           <Route path="/developers/:identifier" element={<DeveloperDetail />} />
           <Route path="/projects" element={<DeveloperProjects />} />
+          <Route path="/blog" element={<BlogPage />} />
           <Route
             path="/developer-api/*"
             element={
