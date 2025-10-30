@@ -226,7 +226,27 @@ const SitemapViewer: React.FC = () => {
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
               >
-                <span>View XML Sitemap</span>
+                <span>View XML Sitemap Index</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+              <span>•</span>
+              <a
+                href="/sitemap-static.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+              >
+                <span>Static Pages XML</span>
+                <ExternalLink className="h-3 w-3" />
+              </a>
+              <span>•</span>
+              <a
+                href="/sitemap-properties.xml"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:text-blue-700 flex items-center space-x-1"
+              >
+                <span>Properties XML</span>
                 <ExternalLink className="h-3 w-3" />
               </a>
             </div>
