@@ -158,7 +158,7 @@
             <a href="/sitemap-properties.xml" class="nav-link">🏠 Property Listings</a>
             <a href="/sitemap-profiles.xml" class="nav-link">👤 User Profiles</a>
             <a href="/sitemap-locations.xml" class="nav-link">📍 Location Pages</a>
-            <a href="/sitemap-developers.xml" class="nav-link">🏢 Developers & Projects</a>
+            <a href="/sitemap-developers.xml" class="nav-link">🏢 Developers &amp; Projects</a>
             <a href="/sitemap" class="nav-link">🎨 Visual Sitemap Viewer</a>
             <a href="/" class="nav-link">🏡 Homepage</a>
           </div>
