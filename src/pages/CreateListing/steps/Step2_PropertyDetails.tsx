@@ -11,7 +11,9 @@ import {
   Euro,
   Hash,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  CheckCircle,
+  AlertCircle
 } from 'lucide-react';
 import { useWizardNavigation } from '../../../context/ListingWizardContext';
 import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
@@ -224,6 +226,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     !!formData.price &&
     !!formData.country &&
     !!formData.location?.trim() &&
+    !!formData.city?.trim() &&  // ← ADDED: Ensure city is populated from dropdown selection
     !!formData.propertyStatus &&
     !!ptype;
 
@@ -241,6 +244,43 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
+
+  // Enhanced next handler with location validation
+  const handleNext = () => {
+    // Check basic validation first
+    if (!validBasics || !validSpecs) {
+      toast.error('Please fill in all required fields');
+      return;
+    }
+    
+    // Validate city field specifically
+    if (!formData.city || formData.city.trim() === '') {
+      toast.error(
+        'Please select your address from the dropdown suggestions. This ensures accurate location data for your property.',
+        { duration: 5000 }
+      );
+      return;
+    }
+    
+    // Warn if city seems suspiciously long (might be a description)
+    if (formData.city.length > 50) {
+      toast.error(
+        'City name seems unusually long. Make sure you selected from the dropdown, not typed manually.',
+        { duration: 5000 }
+      );
+    }
+    
+    // Warn if coordinates are missing (indicates manual typing)
+    if (!formData.latitude || !formData.longitude) {
+      toast.error(
+        'Location coordinates are missing. For best results, select your address from the dropdown.',
+        { duration: 4000 }
+      );
+    }
+    
+    // All validations passed - proceed to next step
+    next();
+  };
 
   // Debounced PATCH update for property details
   const debouncedUpdate = useCallback(
@@ -371,10 +411,38 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 setLocationCoords?.({ lat, lng });
               }}
               selectedCountry={formData.country}
-              placeholder="Type address…"
+              placeholder="Type address and select from dropdown..."
               inputClassName="pl-10 w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-white"
             />
           </div>
+          
+          {/* Warning: User typed but didn't select from dropdown */}
+          {formData.location && !formData.city && (
+            <div className="mt-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-start">
+              <AlertCircle className="h-5 w-5 text-yellow-600 mr-2 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-yellow-800">
+                <strong>Please select from dropdown</strong>
+                <br />
+                Type your address and click on a suggestion to ensure accurate location data.
+              </div>
+            </div>
+          )}
+          
+          {/* Success: Location data captured */}
+          {formData.city && (
+            <div className="mt-2 p-3 bg-green-50 border border-green-200 rounded-lg text-sm">
+              <div className="flex items-center text-green-800 mb-1">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                <span className="font-semibold">Location captured:</span>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-gray-700 ml-6">
+                <div>City: <strong>{formData.city}</strong></div>
+                {formData.region && <div>Region: <strong>{formData.region}</strong></div>}
+                <div>Country: <strong>{formData.country}</strong></div>
+                {formData.postal_code && <div>Postal: <strong>{formData.postal_code}</strong></div>}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Status */}
@@ -644,7 +712,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         <button
           type="button"
           disabled={!valid}
-          onClick={next}
+          onClick={handleNext}
           className={`group px-8 py-4 rounded-xl font-semibold text-white ${
             valid ? 'bg-gradient-to-r from-blue-600 to-purple-600' : 'bg-gray-300 cursor-not-allowed'
           }`}
