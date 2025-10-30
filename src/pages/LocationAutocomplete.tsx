@@ -89,19 +89,26 @@ export default function LocationAutocomplete({
   };
 
   // Helper function to extract region from context with multiple fallbacks
-  const extractRegion = (context: MapboxContext[]): string | undefined => {
+  const extractRegion = (
+    context: MapboxContext[],
+    city: string | undefined
+  ): string | undefined => {
     // Priority order: region > district > province > state
     const region = context.find((c) => c.id.startsWith('region'))?.text;
-    if (region) return region;
+    if (region && region !== city) return region; // Don't use region if it's the same as city
 
     const district = context.find((c) => c.id.startsWith('district'))?.text;
-    if (district) return district;
+    if (district && district !== city) return district; // Don't use district if it's the same as city
 
     const province = context.find((c) => c.id.startsWith('province'))?.text;
-    if (province) return province;
+    if (province && province !== city) return province;
 
     const state = context.find((c) => c.id.startsWith('state'))?.text;
-    return state;
+    if (state && state !== city) return state;
+
+    // Don't fallback to parsing place_name if we already have a city
+    // Region should be a different administrative level
+    return undefined;
   };
 
   // Helper function to extract city from context with multiple fallbacks
@@ -286,8 +293,8 @@ export default function LocationAutocomplete({
 
           // Extract structured data using robust helper functions
           const country = extractCountry(context, selectedCountry);
-          const region = extractRegion(context);
           const city = extractCity(context, placeName, placeTypes);
+          const region = extractRegion(context, city); // Pass city to avoid duplicate
           const postalCode = extractPostalCode(context, placeName);
           const street = extractStreet(f, city, placeTypes);
 
