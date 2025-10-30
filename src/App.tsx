@@ -59,6 +59,7 @@ function AppContent() {
   const location = useLocation();
   const isChatRoute = location.pathname.startsWith('/chat');
   const isDeveloperRoute = location.pathname.startsWith('/developer-api');
+  const isCreateListingRoute = location.pathname.startsWith('/create-listing') || location.pathname.startsWith('/edit-listing');
   const { user, isLoading } = useUser();
   
   const [showConsentBanner, setShowConsentBanner] = useState(false);
@@ -327,8 +328,8 @@ function AppContent() {
         </Routes>
       </main>
 
-      {/* Footer visible on all routes except chat and developer portal */}
-      {!isChatRoute && !isDeveloperRoute && <Footer />}
+      {/* Footer visible on all routes except chat, developer portal, and create/edit listing */}
+      {!isChatRoute && !isDeveloperRoute && !isCreateListingRoute && <Footer />}
       
       {/* Toast Notifications */}
       <Toaster 
