@@ -14,6 +14,22 @@
       "dest": "https://api.propertpro.com/oauth/$1"
     },
     {
+      "src": "^/sitemap-properties\\.xml$",
+      "dest": "https://api.propertpro.com/api/properties/sitemap-properties.xml"
+    },
+    {
+      "src": "^/sitemap-profiles\\.xml$",
+      "dest": "https://api.propertpro.com/api/properties/sitemap-profiles.xml"
+    },
+    {
+      "src": "^/sitemap-locations\\.xml$",
+      "dest": "https://api.propertpro.com/api/properties/sitemap-locations.xml"
+    },
+    {
+      "src": "^/sitemap-developers\\.xml$",
+      "dest": "https://api.propertpro.com/api/properties/sitemap-developers.xml"
+    },
+    {
       "handle": "filesystem"
     },
     {

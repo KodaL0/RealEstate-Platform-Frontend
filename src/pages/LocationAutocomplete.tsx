@@ -1,5 +1,14 @@
 // LocationAutocomplete.tsx
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback, useId } from 'react';
+
+// Structured data type
+type Structured = {
+  country: string;
+  region?: string;
+  city?: string;
+  postal_code?: string;
+  street?: string;
+};
 
 // Mapbox API response types
 interface MapboxContext {
@@ -13,7 +22,7 @@ interface MapboxProperties {
   address?: string;
   category?: string;
   maki?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 
 interface MapboxFeature {
@@ -22,11 +31,11 @@ interface MapboxFeature {
   place_type: string[];
   relevance: number;
   properties: MapboxProperties;
-  text: string;
+  text: string; // street name for address types
   place_name: string;
   center: [number, number]; // [longitude, latitude]
   context?: MapboxContext[];
-  address?: string;
+  address?: string; // house/building number for address types
 }
 
 interface MapboxResponse {
@@ -39,22 +48,71 @@ interface Suggestion {
   display_name: string;
   lat: number;
   lon: number;
-  structured_data?: {
-    country: string;
-    region?: string;
-    city?: string;
-    postal_code?: string;
-    street?: string;
-  };
+  structured_data?: Structured;
 }
 
 interface Props {
   value: string;
   onChange: (val: string) => void;
-  onSelect: (address: string, lat: number, lng: number, structuredData?: any) => void;
+  onSelect: (address: string, lat: number, lng: number, structuredData?: Structured) => void;
   placeholder?: string;
   inputClassName?: string;
-  selectedCountry?: string; // To filter results by country
+  selectedCountry?: string;
+  proximity?: { lng: number; lat: number }; // optional proximity bias
+}
+
+const COUNTRY_CODE: Record<string, string> = {
+  Cyprus: 'cy',
+  Greece: 'gr'
+};
+
+// Debounce hook
+function useDebounced<T>(value: T, delay = 300): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+}
+
+// Parse Mapbox feature into structured address data
+function parseFeature(feature: MapboxFeature, fallbackCountry: string): Structured {
+  // Build context map: type -> text (e.g., "country" -> "Cyprus")
+  const contextMap = new Map<string, string>();
+  (feature.context ?? []).forEach((ctx) => {
+    const type = ctx.id.split('.')[0];
+    if (!contextMap.has(type)) contextMap.set(type, ctx.text);
+  });
+
+  const isAddress = feature.place_type?.includes('address') ?? false;
+  const country = contextMap.get('country') || fallbackCountry;
+  const city = contextMap.get('place') || contextMap.get('locality');
+  
+  // Region: try region > district > province > state (first that's different from city)
+  const region = ['region', 'district', 'province', 'state']
+    .map(type => contextMap.get(type))
+    .find(val => val && val !== city);
+
+  // For address types: street name is feature.text, number is feature.address
+  const street = isAddress
+    ? [feature.text, feature.address].filter(Boolean).join(' ').trim() || undefined
+    : undefined;
+
+  return {
+    country,
+    region,
+    city,
+    postal_code: contextMap.get('postcode') || contextMap.get('postal_code'),
+    street
+  };
 }
 
 export default function LocationAutocomplete({
@@ -63,335 +121,180 @@ export default function LocationAutocomplete({
   onSelect,
   placeholder = 'Type address…',
   inputClassName = 'pl-3',
-  selectedCountry = 'Cyprus'
+  selectedCountry = 'Cyprus',
+  proximity
 }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [activeIndex, setActiveIndex] = useState<number>(-1);
   const containerRef = useRef<HTMLDivElement>(null);
-  const isSelectingRef = useRef(false); // Track when we're selecting from suggestions
+  const abortRef = useRef<AbortController | null>(null);
+  const cacheRef = useRef<Map<string, Suggestion[]>>(new Map());
+  const inputId = useId();
+  const listboxId = `${inputId}-listbox`;
 
-  // <- use VITE_ var via import.meta.env
-  const MAPBOX_TOKEN = import.meta.env.VITE_MAPBOX_TOKEN as string;
+  const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+  const debounced = useDebounced(value.trim(), 250);
+  const countryCode = COUNTRY_CODE[selectedCountry] ?? 'cy';
 
-  // Get country code for Mapbox API
-  const getCountryCode = (country: string) => {
-    switch (country) {
-      case 'Cyprus': return 'cy';
-      case 'Greece': return 'gr';
-      default: return 'cy';
-    }
-  };
-
-  // Helper function to extract country from context
-  const extractCountry = (context: MapboxContext[], fallback: string): string => {
-    const country = context.find((c) => c.id.startsWith('country'))?.text;
-    return country || fallback;
-  };
-
-  // Helper function to extract region from context with multiple fallbacks
-  const extractRegion = (
-    context: MapboxContext[],
-    city: string | undefined
-  ): string | undefined => {
-    // Priority order: region > district > province > state
-    const region = context.find((c) => c.id.startsWith('region'))?.text;
-    if (region && region !== city) return region; // Don't use region if it's the same as city
-
-    const district = context.find((c) => c.id.startsWith('district'))?.text;
-    if (district && district !== city) return district; // Don't use district if it's the same as city
-
-    const province = context.find((c) => c.id.startsWith('province'))?.text;
-    if (province && province !== city) return province;
-
-    const state = context.find((c) => c.id.startsWith('state'))?.text;
-    if (state && state !== city) return state;
-
-    // Don't fallback to parsing place_name if we already have a city
-    // Region should be a different administrative level
-    return undefined;
-  };
-
-  // Helper function to extract city from context with multiple fallbacks
-  const extractCity = (
-    context: MapboxContext[],
-    placeName: string,
-    placeTypes: string[]
-  ): string | undefined => {
-    // Priority order: place > locality > district > neighborhood
-    const place = context.find((c) => c.id.startsWith('place'))?.text;
-    if (place) return place;
-
-    const locality = context.find((c) => c.id.startsWith('locality'))?.text;
-    if (locality) return locality;
-
-    // District might be city-level in some countries
-    const district = context.find((c) => c.id.startsWith('district'))?.text;
-    if (district && !placeTypes.includes('address')) {
-      // Only use district as city if it's not an address result
-      return district;
-    }
-
-    const neighborhood = context.find((c) => c.id.startsWith('neighborhood'))?.text;
-    if (neighborhood) return neighborhood;
-
-    // Fallback: Parse place_name if context is empty or incomplete
-    if (placeName) {
-      const parts = placeName.split(', ');
-      if (parts.length >= 2) {
-        // For "Street, City, Country" format: extract second-to-last part
-        // For "City, Country" format: extract first part
-        if (parts.length === 2) {
-          // "City, Country" - city is first part
-          return parts[0].trim();
-        } else {
-          // "Street, City, [Region], Country" - city is usually second-to-last
-          // Try to find city (usually second-to-last before country)
-          const potentialCity = parts[parts.length - 2]?.trim();
-          if (potentialCity && potentialCity.length > 0) {
-            return potentialCity;
-          }
-        }
-      }
-    }
-
-    return undefined;
-  };
-
-  // Helper function to extract postal code from context
-  const extractPostalCode = (
-    context: MapboxContext[],
-    placeName: string
-  ): string | undefined => {
-    // Check context first
-    const postcode = context.find((c) => c.id.startsWith('postcode'))?.text;
-    if (postcode) return postcode;
-
-    const postalCode = context.find((c) => c.id.startsWith('postal_code'))?.text;
-    if (postalCode) return postalCode;
-
-    // Fallback: Extract from place_name using regex
-    // Common formats: "12345", "12345-6789", "SW1A 1AA", etc.
-    if (placeName) {
-      // Look for postal code patterns in place_name
-      // Usually appears as standalone or after city name
-      const postalPatterns = [
-        /\b\d{4,5}(-\d{4})?\b/, // US/Canada: 12345 or 12345-6789
-        /\b[A-Z]{1,2}\d{1,2}[A-Z]?\s?\d[A-Z]{2}\b/i, // UK: SW1A 1AA
-        /\b\d{5}\b/, // Generic 5-digit
-      ];
-
-      for (const pattern of postalPatterns) {
-        const match = placeName.match(pattern);
-        if (match) {
-          return match[0].trim();
-        }
-      }
-    }
-
-    return undefined;
-  };
-
-  // Helper function to extract street address with multiple strategies
-  const extractStreet = (
-    feature: MapboxFeature,
-    city: string | undefined,
-    placeTypes: string[]
-  ): string | undefined => {
-    // Strategy 1: Use address property if available (most reliable)
-    if (feature.properties?.address) {
-      return feature.properties.address;
-    }
-    if (feature.address) {
-      return feature.address;
-    }
-
-    // Strategy 2: Check if result type includes 'address'
-    const isAddressType = placeTypes.includes('address');
-    
-    if (isAddressType && feature.place_name) {
-      const parts = feature.place_name.split(', ');
-      if (parts.length > 0) {
-        const firstPart = parts[0].trim();
-        
-        // If first part is different from city, it's likely the street
-        if (city && firstPart !== city && firstPart.length > 0) {
-          return firstPart;
-        }
-        
-        // If no city found but we have multiple parts, first part is likely street
-        if (!city && parts.length >= 2) {
-          return firstPart;
-        }
-      }
-    }
-
-    // Strategy 3: For place types (not address), street might be empty or in place_name
-    if (!isAddressType) {
-      // If place_name starts with something that looks like a street address
-      // (contains numbers or common street indicators)
-      const firstPart = feature.place_name.split(', ')[0]?.trim();
-      if (firstPart && city && firstPart !== city) {
-        // Check if it looks like a street (contains numbers or street keywords)
-        const streetPattern = /\d+|street|st|avenue|ave|road|rd|boulevard|blvd|drive|dr|lane|ln/i;
-        if (streetPattern.test(firstPart)) {
-          return firstPart;
-        }
-      }
-    }
-
-    return undefined;
-  };
-
+  // Close on outside pointerdown (better than click for avoiding focus issues)
   useEffect(() => {
-    // Skip if we're currently selecting from suggestions (prevents race condition)
-    if (isSelectingRef.current) {
-      return;
-    }
-
-    if (value.length < 3) {
-      setSuggestions([]);
-      setOpen(false);
-      return;
-    }
-    const tid = setTimeout(async () => {
-      const q = encodeURIComponent(value);
-      const countryCode = getCountryCode(selectedCountry);
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${q}.json`
-                + `?autocomplete=true`
-                + `&limit=5`
-                + `&country=${countryCode}`
-                + `&types=address,place`
-                + `&access_token=${MAPBOX_TOKEN}`;
-
-      const res = await fetch(url);
-      if (!res.ok) {
-        console.error('Mapbox error', res.status);
-        setSuggestions([]);
-        setOpen(false);
-        return;
-      }
-
-      const data: MapboxResponse = await res.json();
-      const features = data.features || [];
-
-      // Log unexpected structures in development mode
-      if (import.meta.env.DEV && features.length > 0) {
-        const firstFeature = features[0];
-        if (!firstFeature.place_name) {
-          console.warn('[LocationAutocomplete] Missing place_name in Mapbox response:', firstFeature);
-        }
-        if (!firstFeature.context || firstFeature.context.length === 0) {
-          console.warn('[LocationAutocomplete] Empty context array in Mapbox response:', firstFeature);
-        }
-      }
-
-      const js = features.map((f: MapboxFeature) => {
-        try {
-          const context = f.context || [];
-          const placeTypes = f.place_type || [];
-          const placeName = f.place_name || '';
-
-          // Extract structured data using robust helper functions
-          const country = extractCountry(context, selectedCountry);
-          const city = extractCity(context, placeName, placeTypes);
-          const region = extractRegion(context, city); // Pass city to avoid duplicate
-          const postalCode = extractPostalCode(context, placeName);
-          const street = extractStreet(f, city, placeTypes);
-
-          return {
-            display_name: placeName,
-            lat: f.center[1],
-            lon: f.center[0],
-            structured_data: {
-              country,
-              region: region || undefined,
-              city: city || undefined,
-              postal_code: postalCode || undefined,
-              street: street || undefined
-            }
-          };
-        } catch (error) {
-          // Handle parsing errors gracefully
-          if (import.meta.env.DEV) {
-            console.error('[LocationAutocomplete] Error parsing Mapbox feature:', error, f);
-          }
-          
-          // Return minimal valid structure
-          return {
-            display_name: f.place_name || 'Unknown location',
-            lat: f.center?.[1] || 0,
-            lon: f.center?.[0] || 0,
-            structured_data: {
-              country: selectedCountry,
-              region: undefined,
-              city: undefined,
-              postal_code: undefined,
-              street: undefined
-            }
-          };
-        }
-      });
-      setSuggestions(js);
-      setOpen(js.length > 0);
-    }, 300);
-
-    return () => clearTimeout(tid);
-  }, [value, MAPBOX_TOKEN, selectedCountry]);
-
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
+    const handler = (e: Event) => {
       if (!containerRef.current?.contains(e.target as Node)) {
         setOpen(false);
       }
     };
-    document.addEventListener('click', onClick);
-    return () => document.removeEventListener('click', onClick);
+    document.addEventListener('pointerdown', handler, { capture: true });
+    return () => document.removeEventListener('pointerdown', handler, { capture: true } as any);
   }, []);
 
-  // Reset selection flag when value changes externally (not from our selection)
-  useEffect(() => {
-    // If value matches a suggestion exactly, don't reset flag (we just selected it)
-    const matchesSuggestion = suggestions.some(s => s.display_name === value);
-    if (!matchesSuggestion) {
-      isSelectingRef.current = false;
+  // Fetch suggestions with AbortController and caching
+  const fetchSuggestions = useCallback(async (query: string) => {
+    if (!token) {
+      console.error('[LocationAutocomplete] Missing Mapbox token');
+      setSuggestions([]);
+      setOpen(false);
+      return;
     }
-  }, [value, suggestions]);
+
+    // Cache hit
+    if (cacheRef.current.has(query)) {
+      const cached = cacheRef.current.get(query)!;
+      setSuggestions(cached);
+      setOpen(cached.length > 0);
+      return;
+    }
+
+    // Cancel previous request
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    setLoading(true);
+
+    try {
+      const params = new URLSearchParams({
+        autocomplete: 'true',
+        limit: '5',
+        country: countryCode,
+        types: 'address,place',
+        access_token: token
+      });
+
+      if (proximity) {
+        params.set('proximity', `${proximity.lng},${proximity.lat}`);
+      }
+
+      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
+      const res = await fetch(url, { signal: ac.signal });
+
+      if (!res.ok) throw new Error(`Mapbox ${res.status}`);
+
+      const data: MapboxResponse = await res.json();
+      const features = data?.features ?? [];
+
+      const mapped: Suggestion[] = features.map((f) => ({
+        display_name: f.place_name ?? 'Unknown location',
+        lat: f.center?.[1] ?? 0,
+        lon: f.center?.[0] ?? 0,
+        structured_data: parseFeature(f, selectedCountry)
+      }));
+
+      cacheRef.current.set(query, mapped);
+      setSuggestions(mapped);
+      setOpen(mapped.length > 0);
+    } catch (err) {
+      if ((err as any)?.name !== 'AbortError') {
+        console.error('[LocationAutocomplete] Fetch error:', err);
+        setSuggestions([]);
+        setOpen(false);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [token, countryCode, proximity, selectedCountry]);
+
+  // Query flow
+  useEffect(() => {
+    setActiveIndex(-1);
+
+    if (debounced.length < 3) {
+      setSuggestions([]);
+      setOpen(false);
+      abortRef.current?.abort();
+      return;
+    }
+
+    fetchSuggestions(debounced);
+  }, [debounced, fetchSuggestions]);
+
+  const handleSelect = useCallback((s: Suggestion) => {
+    onSelect(s.display_name, s.lat, s.lon, s.structured_data);
+    setOpen(false);
+  }, [onSelect]);
 
   return (
     <div ref={containerRef} className="relative">
       <input
+        id={inputId}
         type="text"
-        className={`
-          w-full ${inputClassName}
-          pr-3 py-2 border border-gray-300 rounded-lg
-          focus:ring-2 focus:ring-blue-500 focus:border-transparent
-        `}
+        className={`w-full ${inputClassName} pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent`}
         placeholder={placeholder}
         value={value}
-        onChange={e => onChange(e.target.value)}
+        onChange={(e) => onChange(e.target.value)}
         onFocus={() => suggestions.length > 0 && setOpen(true)}
+        role="combobox"
+        aria-expanded={open}
+        aria-controls={listboxId}
+        aria-autocomplete="list"
+        aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
+        onKeyDown={(e) => {
+          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+            setOpen(suggestions.length > 0);
+            return;
+          }
+
+          if (e.key === 'ArrowDown') {
+            e.preventDefault();
+            setActiveIndex(i => Math.min(i + 1, suggestions.length - 1));
+          } else if (e.key === 'ArrowUp') {
+            e.preventDefault();
+            setActiveIndex(i => Math.max(i - 1, 0));
+          } else if (e.key === 'Enter') {
+            if (open && activeIndex >= 0) {
+              e.preventDefault();
+              handleSelect(suggestions[activeIndex]);
+            }
+          } else if (e.key === 'Escape') {
+            setOpen(false);
+          }
+        }}
       />
 
-      {open && suggestions.length > 0 && (
-        <ul className="absolute z-10 bg-white border border-gray-200 rounded-lg w-full mt-1 max-h-60 overflow-auto shadow-lg">
-          {suggestions.map((s, i) => (
+      {open && (
+        <ul
+          id={listboxId}
+          role="listbox"
+          className="absolute z-10 bg-white border border-gray-200 rounded-lg w-full mt-1 max-h-60 overflow-auto shadow-lg"
+        >
+          {loading && (
+            <li className="px-4 py-2 text-sm text-gray-500">Loading…</li>
+          )}
+          {!loading && suggestions.length === 0 && (
+            <li className="px-4 py-2 text-sm text-gray-500">No results</li>
+          )}
+          {!loading && suggestions.map((s, i) => (
             <li
-              key={i}
-              className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation(); // Prevent document click handler from firing
-                isSelectingRef.current = true; // Set flag to prevent useEffect from running
-                onSelect(s.display_name, s.lat, s.lon, s.structured_data);
-                setOpen(false);
-                // Reset flag after a short delay to allow the value to update
-                setTimeout(() => {
-                  isSelectingRef.current = false;
-                }, 100);
-              }}
+              id={`${listboxId}-opt-${i}`}
+              role="option"
+              aria-selected={i === activeIndex}
+              key={`${s.display_name}-${i}`}
+              className={`px-4 py-2 cursor-pointer ${i === activeIndex ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
               onMouseDown={(e) => {
-                e.preventDefault(); // Prevent input from losing focus on click
+                e.preventDefault();
+                handleSelect(s);
               }}
+              onMouseEnter={() => setActiveIndex(i)}
             >
               {s.display_name}
             </li>

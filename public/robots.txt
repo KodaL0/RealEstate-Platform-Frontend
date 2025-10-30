@@ -5,13 +5,22 @@
 # Allow major search engines with full access
 User-agent: Googlebot
 Allow: /
+Allow: /buy/
+Allow: /rent/
+Allow: /developers/
 Crawl-delay: 0.5
 
 User-agent: Googlebot-Image
 Allow: /
+Allow: /buy/
+Allow: /rent/
+Allow: /developers/
 
 User-agent: Bingbot
 Allow: /
+Allow: /buy/
+Allow: /rent/
+Allow: /developers/
 Crawl-delay: 0.5
 
 User-agent: Slurp
@@ -101,11 +110,15 @@ User-agent: WebCopier
 Disallow: /
 
 # ===== CRAWL RULES =====
-# Allow all authenticated user pages
+# Allow main property browsing pages
 Allow: /buy
 Allow: /rent
 Allow: /developers
 Allow: /projects
+
+# Allow location-based pages (for SEO)
+Allow: /buy/*/
+Allow: /rent/*/
 
 # IMPORTANT: Do not crawl legacy /property/:id URLs
 # These redirect to canonical URLs (/{username}/{country}/{location-type-id})
@@ -147,3 +160,4 @@ Sitemap: https://www.propertpro.com/sitemap.xml
 # - Properties API: https://api.propertpro.com/api/properties/ai/
 # - Profiles API: https://api.propertpro.com/api/users/ai/profiles/
 # - Rate limits apply to all endpoints
+# - Location-based URLs (e.g., /buy/cyprus/limassol) are indexed for better SEO

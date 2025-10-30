@@ -68,6 +68,12 @@ const Footer = () => {
                     About Us
                   </a>
                 </li>
+                <li>
+                  <a href="/sitemap" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                    <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
+                    Sitemap
+                  </a>
+                </li>
               </ul>
             </div>
 
