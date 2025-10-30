@@ -117,7 +117,7 @@ export default function BlogPage() {
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <div className="text-center mb-16">
-          <h2 className="text-6xl font-bold text-gray-900 mb-6 tracking-tight">PropertyPro Insights</h2>
+          <h2 className="text-6xl font-bold text-gray-900 mb-6 tracking-tight">PropertPro Media</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
             Expert advice, market trends, and insider tips to help you navigate the real estate market with confidence
           </p>
