@@ -81,8 +81,15 @@ export default function LocationAutocomplete({
         const postalCode = context.find((c: any) => c.id.startsWith('postcode'))?.text;
         
         // Extract street from address components
+        // Only use first part as street if it's actually a street address (not just city name)
         const addressParts = f.place_name.split(', ');
-        const street = addressParts[0] || '';
+        let street = '';
+        
+        // If the first part is different from the city name, it's likely a street address
+        if (addressParts[0] && addressParts[0] !== city) {
+          street = addressParts[0];
+        }
+        // Otherwise leave street empty (user selected just a city/region)
 
         return {
           display_name: f.place_name,
