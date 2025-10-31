@@ -133,10 +133,9 @@ export default function LocationAutocomplete({
   const cacheRef = useRef<Map<string, Suggestion[]>>(new Map());
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
-
-  const token = import.meta.env.VITE_MAPBOX_TOKEN as string | undefined;
+  
   const debounced = useDebounced(value.trim(), 250);
-  const countryCode = COUNTRY_CODE[selectedCountry] ?? 'cy';
+  
 
   // Close on outside pointerdown (better than click for avoiding focus issues)
   useEffect(() => {
@@ -151,8 +150,9 @@ export default function LocationAutocomplete({
 
   // Fetch suggestions with AbortController and caching
   const fetchSuggestions = useCallback(async (query: string) => {
-    if (!token) {
-      console.error('[LocationAutocomplete] Missing Mapbox token');
+    const apiKey = import.meta.env.VITE_GEOAPIFY_KEY;
+    if (!apiKey) {
+      console.error('[LocationAutocomplete] Missing Geoapify key');
       setSuggestions([]);
       setOpen(false);
       return;
@@ -166,7 +166,6 @@ export default function LocationAutocomplete({
       return;
     }
 
-    // Cancel previous request
     abortRef.current?.abort();
     const ac = new AbortController();
     abortRef.current = ac;
@@ -174,30 +173,32 @@ export default function LocationAutocomplete({
 
     try {
       const params = new URLSearchParams({
-        autocomplete: 'true',
+        text: query,
         limit: '5',
-        country: countryCode,
-        types: 'address,place',
-        access_token: token
+        lang: 'en',
+        countrycodes: 'gr,cy',
+        apiKey,
       });
 
-      if (proximity) {
-        params.set('proximity', `${proximity.lng},${proximity.lat}`);
-      }
-
-      const url = `https://api.mapbox.com/geocoding/v5/mapbox.places/${encodeURIComponent(query)}.json?${params}`;
+      const url = `https://api.geoapify.com/v1/geocode/autocomplete?${params.toString()}`;
       const res = await fetch(url, { signal: ac.signal });
+      if (!res.ok) throw new Error(`Geoapify ${res.status}`);
 
-      if (!res.ok) throw new Error(`Mapbox ${res.status}`);
+      const data = await res.json();
 
-      const data: MapboxResponse = await res.json();
-      const features = data?.features ?? [];
-
-      const mapped: Suggestion[] = features.map((f) => ({
-        display_name: f.place_name ?? 'Unknown location',
-        lat: f.center?.[1] ?? 0,
-        lon: f.center?.[0] ?? 0,
-        structured_data: parseFeature(f, selectedCountry)
+      const mapped: Suggestion[] = (data.features ?? []).map((f: any) => ({
+        display_name: f.properties.formatted,
+        lat: f.geometry.coordinates[1],
+        lon: f.geometry.coordinates[0],
+        structured_data: {
+          country: f.properties.country,
+          region: f.properties.state,
+          city: f.properties.city,
+          postal_code: f.properties.postcode,
+          street: [f.properties.street, f.properties.housenumber]
+            .filter(Boolean)
+            .join(' ') || undefined,
+        },
       }));
 
       cacheRef.current.set(query, mapped);
@@ -205,14 +206,15 @@ export default function LocationAutocomplete({
       setOpen(mapped.length > 0);
     } catch (err) {
       if ((err as any)?.name !== 'AbortError') {
-        console.error('[LocationAutocomplete] Fetch error:', err);
+        console.error('[LocationAutocomplete] Geoapify fetch error:', err);
         setSuggestions([]);
         setOpen(false);
       }
     } finally {
       setLoading(false);
     }
-  }, [token, countryCode, proximity, selectedCountry]);
+  }, []);
+
 
   // Query flow
   useEffect(() => {
