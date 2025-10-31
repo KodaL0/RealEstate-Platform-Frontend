@@ -131,6 +131,7 @@ export default function LocationAutocomplete({
   const containerRef = useRef<HTMLDivElement>(null);
   const abortRef = useRef<AbortController | null>(null);
   const cacheRef = useRef<Map<string, Suggestion[]>>(new Map());
+  const suppressFetchRef = useRef(false);
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
   
@@ -218,6 +219,12 @@ export default function LocationAutocomplete({
 
   // Query flow
   useEffect(() => {
+    // Prevent immediate refetch right after selection
+    if (suppressFetchRef.current) {
+      suppressFetchRef.current = false;
+      return;
+    }
+
     setActiveIndex(-1);
 
     if (debounced.length < 3) {
@@ -230,10 +237,15 @@ export default function LocationAutocomplete({
     fetchSuggestions(debounced);
   }, [debounced, fetchSuggestions]);
 
+
   const handleSelect = useCallback((s: Suggestion) => {
+    // Prevent dropdown reopening and re-fetching after selection
+    suppressFetchRef.current = true;
+    
     onSelect(s.display_name, s.lat, s.lon, s.structured_data);
     setOpen(false);
   }, [onSelect]);
+
 
   return (
     <div ref={containerRef} className="relative">
