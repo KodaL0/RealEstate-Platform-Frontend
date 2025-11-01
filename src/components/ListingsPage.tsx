@@ -145,11 +145,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const { "*": slugParam = "" } = useParams();
   const listingRouteType: RouteListingType = listingType === "sale" ? "buy" : "rent";
 
-  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
+  // Track if we've already converted legacy query to prevent loops
+  const legacyConvertedRef = useRef(false);
 
-  const legacyQuery = useMemo(() => {
-    if (!location.search) return null;
+  // Handle legacy query string conversion (only once on mount or when search changes)
+  useEffect(() => {
+    if (!location.search) {
+      legacyConvertedRef.current = false; // Reset when no query string
+      return;
+    }
 
+    if (legacyConvertedRef.current) return; // Already converted
+
+    const searchParams = new URLSearchParams(location.search);
     let hasLegacyKey = false;
     const normalized = new URLSearchParams();
 
@@ -165,30 +173,26 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     });
 
     if (!hasLegacyKey) {
-      return null;
+      legacyConvertedRef.current = true;
+      return;
     }
 
-    const decoded = decodeLegacyQuery(normalized);
-    return { decoded, normalized };
-  }, [location.search, searchParams]);
+    legacyConvertedRef.current = true;
+    const { filters, extras } = decodeLegacyQuery(normalized);
+    const canonicalPath = encodeCanonicalPath(listingRouteType, filters, {
+      sort: extras.sort,
+      page: extras.page,
+    });
 
+    if (canonicalPath !== location.pathname) {
+      navigate(canonicalPath, { replace: true });
+    }
+  }, [location.search, location.pathname, listingRouteType, navigate]);
+
+  // Decode canonical path from URL slug
   const decodedCanonical = useMemo(() => {
-    const base = decodeCanonicalPath(slugParam || "");
-    if (!legacyQuery) {
-      return base;
-    }
-
-    const canonicalPath = encodeCanonicalPath(
-      listingRouteType,
-      legacyQuery.decoded.filters,
-      {
-        sort: legacyQuery.decoded.extras.sort,
-        page: legacyQuery.decoded.extras.page,
-      }
-    );
-    const slugOnly = canonicalPath.replace(`/${listingRouteType}/`, "");
-    return decodeCanonicalPath(slugOnly);
-  }, [legacyQuery, listingRouteType, slugParam]);
+    return decodeCanonicalPath(slugParam || "");
+  }, [slugParam]);
 
   const canonicalFilters = useMemo<FilterState>(() => ({
     location: decodedCanonical.filters.location,
@@ -200,22 +204,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     bathrooms: decodedCanonical.filters.bathrooms,
     amenities: [...decodedCanonical.filters.amenities],
   }), [decodedCanonical]);
-
-  useEffect(() => {
-    if (!legacyQuery) return;
-
-    const { filters, extras } = legacyQuery.decoded;
-    const nextPath = encodeCanonicalPath(listingRouteType, filters, {
-      sort: extras.sort,
-      page: extras.page,
-    });
-
-    if (location.pathname === nextPath && !location.search) {
-      return;
-    }
-
-    navigate(nextPath, { replace: true });
-  }, [legacyQuery, listingRouteType, navigate, location.pathname, location.search]);
 
   useEffect(() => {
     if (!import.meta?.env?.DEV) return;
@@ -259,6 +247,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const isHydratingRef = useRef(true);
   const lastSyncedSlugRef = useRef<string | null>(slugParam || "");
   const lastResultsSyncedRef = useRef<number | undefined>(decodedCanonical.extras.results);
+  const isSyncingRef = useRef(false);
   const lastMismatchSlugRef = useRef<string | null>(null);
 
   const handleFiltersChange = useCallback((newFilters: FilterState) => {
@@ -299,9 +288,17 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   // Stringify amenities for dependency to avoid unnecessary re-renders
   const amenitiesKey = filters.amenities?.join(",") || "";
 
+  // Hydrate filters from URL when slug changes (but prevent loops)
   useEffect(() => {
     const normalizedSlug = slugParam || "";
+    
+    // Skip if slug hasn't changed and we're not hydrating
     if (lastSyncedSlugRef.current === normalizedSlug && !isHydratingRef.current) {
+      return;
+    }
+
+    // Skip if we're already syncing to prevent loops
+    if (isSyncingRef.current) {
       return;
     }
 
@@ -322,15 +319,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     lastResultsSyncedRef.current = decodedCanonical.extras.results;
     lastSyncedSlugRef.current = normalizedSlug;
 
+    // Mark hydration complete after state updates settle
     const timeout = window.setTimeout(() => {
       isHydratingRef.current = false;
-    }, 0);
+    }, 50);
 
     return () => window.clearTimeout(timeout);
   }, [canonicalFilters, decodedCanonical.extras.page, decodedCanonical.extras.results, decodedCanonical.extras.sort, slugParam]);
 
+  // Unified canonical URL sync - only runs when user changes filters, not during hydration
   const syncCanonicalUrl = useCallback(
     (results?: number) => {
+      if (isHydratingRef.current || isSyncingRef.current) return;
+
       const extras: CanonicalExtras = {
         sort: sortOption,
         page: currentPage,
@@ -338,19 +339,27 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       if (typeof results === "number") {
         extras.results = results;
       }
+
       const nextPath = encodeCanonicalPath(listingRouteType, filters, extras);
       const slugOnly = nextPath.replace(`/${listingRouteType}/`, "");
-      if (lastSyncedSlugRef.current !== slugOnly || location.pathname !== nextPath) {
+
+      // Only navigate if path actually changed
+      if (lastSyncedSlugRef.current !== slugOnly && location.pathname !== nextPath) {
+        isSyncingRef.current = true;
         lastSyncedSlugRef.current = slugOnly;
         navigate(nextPath, { replace: true });
+        // Reset sync flag after navigation completes
+        setTimeout(() => {
+          isSyncingRef.current = false;
+        }, 100);
       }
     },
     [filters, sortOption, currentPage, listingRouteType, navigate, location.pathname]
   );
 
+  // Sync URL when filters/sort/page change (but not during hydration)
   useEffect(() => {
-    if (isHydratingRef.current) return;
-    lastResultsSyncedRef.current = undefined;
+    if (isHydratingRef.current || isSyncingRef.current) return;
     syncCanonicalUrl();
   }, [filters, sortOption, currentPage, syncCanonicalUrl]);
 
@@ -404,10 +413,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         setTotalCount(count);
         setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
 
-        if (!isHydratingRef.current) {
+        // Update results count in URL after fetch completes
+        if (!isHydratingRef.current && !isSyncingRef.current) {
           if (lastResultsSyncedRef.current !== count) {
-            syncCanonicalUrl(count);
             lastResultsSyncedRef.current = count;
+            syncCanonicalUrl(count);
           }
         } else {
           lastResultsSyncedRef.current = count;
