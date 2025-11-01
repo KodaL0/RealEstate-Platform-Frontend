@@ -14,8 +14,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useWizardNavigation } from '../../../context/ListingWizardContext';
-import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS, AMENITIES } from '../../../types';
+import { ListingForm, PROPERTY_STATUS, COUNTRY_OPTIONS } from '../../../types';
 import LocationAutocomplete from '../../LocationAutocomplete';
+import AmenityFilter from '../../../components/AmenityFilter';
 import api from '../../../config/api';
 import toast from 'react-hot-toast';
 
@@ -124,6 +125,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const ptype = (formData.propertyType || '') as PT;
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+  const [amenitiesModalOpen, setAmenitiesModalOpen] = React.useState(false);
 
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
@@ -654,44 +656,34 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 </span>
               )}
             </label>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
-              {AMENITIES.map((a: { id: string; label: string; category: string }) => {
-                const selected = Array.isArray(formData.amenities) && formData.amenities.includes(a.id);
+            <button
+              type="button"
+              onClick={() => setAmenitiesModalOpen(true)}
+              className="w-full px-4 py-3 border-2 border-gray-200 rounded-lg hover:border-blue-400 hover:bg-blue-50 transition-all duration-200 text-left flex items-center justify-between"
+            >
+              <span className="text-sm font-medium text-gray-700">
+                {formData.amenities && formData.amenities.length > 0
+                  ? `${formData.amenities.length} amenit${formData.amenities.length === 1 ? 'y' : 'ies'} selected`
+                  : 'Select amenities'}
+              </span>
+              <span className="text-blue-600 font-semibold">+</span>
+            </button>
+            <AmenityFilter
+              selectedAmenities={Array.isArray(formData.amenities) ? formData.amenities : []}
+              onChange={(amenities) => {
+                setFormData((f: ListingForm) => ({
+                  ...f,
+                  amenities: amenities,
+                }));
                 
-                return (
-                  <label
-                    key={a.id}
-                    className={`flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all duration-200 ${
-                      selected 
-                        ? 'bg-green-50 border-green-500 shadow-sm' 
-                        : 'bg-white border-gray-200 hover:border-blue-400 hover:shadow-sm'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      className="sr-only"
-                      checked={selected}
-                      onChange={() => {
-                        const newAmenities = selected
-                          ? formData.amenities.filter((x: string) => x !== a.id)
-                          : [...(formData.amenities || []), a.id];
-                        
-                        setFormData((f: ListingForm) => ({
-                          ...f,
-                          amenities: newAmenities,
-                        }));
-                      }}
-                    />
-                    <span className={`text-sm font-medium ${selected ? 'text-green-700' : 'text-gray-700'}`}>
-                      {a.label}
-                    </span>
-                    {selected && (
-                      <span className="text-xs px-2 py-1 bg-green-600 text-white rounded font-bold">✓</span>
-                    )}
-                  </label>
-                );
-              })}
-            </div>
+                // If editing and not initial load, also update via PATCH (debounced)
+                if (isEditing && propertyId && username && !isInitialLoad) {
+                  debouncedUpdate('amenities', amenities);
+                }
+              }}
+              isOpen={amenitiesModalOpen}
+              onClose={() => setAmenitiesModalOpen(false)}
+            />
           </div>
         )}
 
