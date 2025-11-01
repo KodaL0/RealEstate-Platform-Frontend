@@ -10,6 +10,7 @@ import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { MapPin, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "./SearchFilters";
+import ActiveFilters from "./ActiveFilters";
 import PropertyCard from "./cards/PropertyCard";
 import SEO from "./SEO";
 import { normalizePropertyData, Property } from "../types";
@@ -264,6 +265,37 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       });
     }, 500);
   }, []);
+
+  const handleRemoveFilter = useCallback((key: keyof FilterState, value?: string) => {
+    if (key === 'amenities') {
+      const updatedAmenities = value ? value.split(',').filter(Boolean) : [];
+      handleFiltersChange({
+        ...localFilters,
+        amenities: updatedAmenities,
+      });
+    } else if (key === 'minPrice' || key === 'maxPrice') {
+      handleFiltersChange({
+        ...localFilters,
+        minPrice: '',
+        maxPrice: '',
+      });
+    } else {
+      const defaults: Record<keyof FilterState, string | string[]> = {
+        location: '',
+        country: 'All',
+        minPrice: '',
+        maxPrice: '',
+        propertyType: 'Any',
+        bedrooms: 'Any',
+        bathrooms: 'Any',
+        amenities: [],
+      };
+      handleFiltersChange({
+        ...localFilters,
+        [key]: defaults[key],
+      });
+    }
+  }, [localFilters, handleFiltersChange]);
 
   useEffect(() => {
     return () => {
@@ -598,6 +630,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           <SearchFilters
             filters={localFilters}
             onFiltersChange={handleFiltersChange}
+          />
+          <ActiveFilters
+            filters={localFilters}
+            onRemoveFilter={handleRemoveFilter}
           />
         </div>
       </div>
