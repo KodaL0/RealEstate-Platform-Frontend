@@ -203,8 +203,17 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     propertyType: decodedCanonical.filters.propertyType,
     bedrooms: decodedCanonical.filters.bedrooms,
     bathrooms: decodedCanonical.filters.bathrooms,
-    amenities: [...decodedCanonical.filters.amenities],
-  }), [decodedCanonical]);
+    amenities: decodedCanonical.filters.amenities,
+  }), [
+    decodedCanonical.filters.location,
+    decodedCanonical.filters.country,
+    decodedCanonical.filters.minPrice,
+    decodedCanonical.filters.maxPrice,
+    decodedCanonical.filters.propertyType,
+    decodedCanonical.filters.bedrooms,
+    decodedCanonical.filters.bathrooms,
+    decodedCanonical.filters.amenities?.join(',') || '',
+  ]);
 
   useEffect(() => {
     if (!import.meta?.env?.DEV) return;
@@ -305,6 +314,18 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     };
   }, []);
 
+  // Initialize hydration state - prevent initial sync loop
+  useEffect(() => {
+    // On mount, wait a bit before allowing sync
+    const initTimer = setTimeout(() => {
+      if (isHydratingRef.current) {
+        isHydratingRef.current = false;
+      }
+    }, 400);
+    
+    return () => clearTimeout(initTimer);
+  }, []);
+
   const first = useRef(true);
   useLayoutEffect(() => {
     if (first.current) {
@@ -324,8 +345,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   useEffect(() => {
     const normalizedSlug = slugParam || "";
     
-    // Skip if slug hasn't changed and we're not hydrating
-    if (lastSyncedSlugRef.current === normalizedSlug && !isHydratingRef.current) {
+    // Skip if slug hasn't changed
+    if (lastSyncedSlugRef.current === normalizedSlug) {
       return;
     }
 
@@ -334,9 +355,26 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       return;
     }
 
+    // Compare current filters with canonical filters to avoid unnecessary updates
+    const filtersChanged = 
+      filters.location !== canonicalFilters.location ||
+      filters.country !== canonicalFilters.country ||
+      filters.minPrice !== canonicalFilters.minPrice ||
+      filters.maxPrice !== canonicalFilters.maxPrice ||
+      filters.propertyType !== canonicalFilters.propertyType ||
+      filters.bedrooms !== canonicalFilters.bedrooms ||
+      filters.bathrooms !== canonicalFilters.bathrooms ||
+      (filters.amenities?.join(',') || '') !== (canonicalFilters.amenities?.join(',') || '');
+
+    // Only update if filters actually changed or if this is a new slug
+    if (!filtersChanged && lastSyncedSlugRef.current) {
+      lastSyncedSlugRef.current = normalizedSlug;
+      return;
+    }
+
     const nextFilters: FilterState = {
       ...canonicalFilters,
-      amenities: [...(canonicalFilters.amenities || [])],
+      amenities: canonicalFilters.amenities || [],
     };
 
     isHydratingRef.current = true;
@@ -354,10 +392,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     // Mark hydration complete after state updates settle
     const timeout = window.setTimeout(() => {
       isHydratingRef.current = false;
-    }, 50);
+    }, 200);
 
     return () => window.clearTimeout(timeout);
-  }, [canonicalFilters, decodedCanonical.extras.page, decodedCanonical.extras.results, decodedCanonical.extras.sort, slugParam]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [slugParam]);
 
   // Unified canonical URL sync - only runs when user changes filters, not during hydration
   const syncCanonicalUrl = useCallback(
@@ -383,7 +422,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         // Reset sync flag after navigation completes
         setTimeout(() => {
           isSyncingRef.current = false;
-        }, 100);
+        }, 300);
+      } else if (lastSyncedSlugRef.current !== slugOnly) {
+        // Update ref even if we don't navigate (pathname might match)
+        lastSyncedSlugRef.current = slugOnly;
       }
     },
     [filters, sortOption, currentPage, listingRouteType, navigate, location.pathname]
@@ -392,7 +434,13 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   // Sync URL when filters/sort/page change (but not during hydration)
   useEffect(() => {
     if (isHydratingRef.current || isSyncingRef.current) return;
-    syncCanonicalUrl();
+    
+    // Debounce sync to avoid rapid updates
+    const syncTimer = setTimeout(() => {
+      syncCanonicalUrl();
+    }, 100);
+    
+    return () => clearTimeout(syncTimer);
   }, [filters, sortOption, currentPage, syncCanonicalUrl]);
 
   useEffect(() => {
@@ -476,6 +524,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     };
 
     fetchProperties();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     sortOption,
     filters.location,
@@ -488,7 +537,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     amenitiesKey,
     currentPage,
     listingType,
-    syncCanonicalUrl
   ]);
 
 
