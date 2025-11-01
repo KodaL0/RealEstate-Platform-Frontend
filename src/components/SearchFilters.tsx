@@ -2,18 +2,10 @@ import { useState } from 'react';
 import { ChevronDown, X } from 'lucide-react';
 import AmenityFilter from './AmenityFilter';
 import { PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
+import type { SearchFilterState } from '../utils/searchCanonical';
 
 // Filter types
-interface FilterState {
-  location?: string;
-  country?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  propertyType?: string;
-  bedrooms?: string;
-  bathrooms?: string;
-  amenities?: string[];
-}
+type FilterState = SearchFilterState;
 
 interface SearchFiltersProps {
   filters: FilterState;

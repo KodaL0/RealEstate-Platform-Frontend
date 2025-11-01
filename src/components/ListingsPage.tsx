@@ -4,28 +4,53 @@ import {
   useRef,
   useLayoutEffect,
   useCallback,
+  useMemo,
 } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { MapPin, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "./SearchFilters";
 import PropertyCard from "./cards/PropertyCard";
+import SEO from "./SEO";
 import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
 import analytics from "../utils/analytics";
+import {
+  decodeCanonicalPath,
+  decodeLegacyQuery,
+  encodeCanonicalPath,
+  type SearchFilterState,
+  type ListingType as RouteListingType,
+  type CanonicalExtras,
+} from "../utils/searchCanonical";
 
 const PAGE_SIZE = 12;
+const SITE_URL = "https://www.propertpro.com";
+const LEGACY_QUERY_KEY_MAP: Record<string, string> = {
+  location: "location",
+  country: "country",
+  minprice: "minPrice",
+  maxprice: "maxPrice",
+  type: "type",
+  beds: "beds",
+  baths: "baths",
+  amenities: "amenities",
+  sort: "sort",
+  page: "page",
+};
+const LEGACY_QUERY_KEY_SET = new Set(Object.keys(LEGACY_QUERY_KEY_MAP));
 
-interface FilterState {
-  location?: string;
-  country?: string;
-  minPrice?: string;
-  maxPrice?: string;
-  propertyType?: string;
-  bedrooms?: string;
-  bathrooms?: string;
-  amenities?: string[];
-}
+const capitalizeWords = (value: string): string =>
+  value
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
+
+const formatPropertyType = (value: string): string =>
+  capitalizeWords(value.replace(/_/g, " "));
+
+type FilterState = SearchFilterState;
 
 export type ListingType = "sale" | "rent";
 
@@ -115,67 +140,146 @@ const themeConfigs: Record<ListingType, ThemeConfig> = {
 
 const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const theme = themeConfigs[listingType];
-  const [searchParams, setSearchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { "*": slugParam = "" } = useParams();
+  const listingRouteType: RouteListingType = listingType === "sale" ? "buy" : "rent";
 
-  const [properties, setProperties] = useState<Property[]>([]);
-  const [totalPages, setTotalPages] = useState(1);
-  const [totalCount, setTotalCount] = useState(0);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [sortOption, setSortOption] = useState("recommended");
-  
-  // Initialize filters from URL params
-  const [filters, setFilters] = useState<FilterState>(() => {
-    const location = searchParams.get('location') || '';
-    const country = searchParams.get('country') || 'All';
-    const minPrice = searchParams.get('minPrice') || '';
-    const maxPrice = searchParams.get('maxPrice') || '';
-    const propertyType = searchParams.get('type') || 'Any';
-    const bedrooms = searchParams.get('beds') || 'Any';
-    const bathrooms = searchParams.get('baths') || 'Any';
-    const amenitiesParam = searchParams.get('amenities');
-    const amenities = amenitiesParam ? amenitiesParam.split(',').filter(Boolean) : [];
+  const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
 
-    return {
-      location,
-      country,
-      minPrice,
-      maxPrice,
-      propertyType,
-      bedrooms,
-      bathrooms,
-      amenities,
-    };
-  });
+  const legacyQuery = useMemo(() => {
+    if (!location.search) return null;
 
-  // Local filters for immediate UI updates (debounced)
-  const [localFilters, setLocalFilters] = useState<FilterState>(filters);
-  const debounceTimerRef = useRef<number | null>(null);
-  const isFirstRender = useRef(true);
-  const isURLSyncRef = useRef(false);
+    let hasLegacyKey = false;
+    const normalized = new URLSearchParams();
 
-  // Debounced filter change handler
-  const handleFiltersChange = useCallback((newFilters: FilterState) => {
-    // Update local state immediately for responsive UI
-    setLocalFilters(newFilters);
+    searchParams.forEach((value, key) => {
+      const normalizedKey = key.toLowerCase();
+      if (LEGACY_QUERY_KEY_SET.has(normalizedKey)) {
+        hasLegacyKey = true;
+        const canonicalKey = LEGACY_QUERY_KEY_MAP[normalizedKey];
+        if (canonicalKey && !normalized.has(canonicalKey)) {
+          normalized.set(canonicalKey, value);
+        }
+      }
+    });
 
-    // Clear existing timer
-    if (debounceTimerRef.current) {
-      clearTimeout(debounceTimerRef.current);
+    if (!hasLegacyKey) {
+      return null;
     }
 
-    // Set new timer to update actual filters (triggers API call)
-    debounceTimerRef.current = setTimeout(() => {
-      setFilters(newFilters);
-    }, 500); // 500ms debounce delay
+    const decoded = decodeLegacyQuery(normalized);
+    return { decoded, normalized };
+  }, [location.search, searchParams]);
+
+  const decodedCanonical = useMemo(() => {
+    const base = decodeCanonicalPath(slugParam || "");
+    if (!legacyQuery) {
+      return base;
+    }
+
+    const canonicalPath = encodeCanonicalPath(
+      listingRouteType,
+      legacyQuery.decoded.filters,
+      {
+        sort: legacyQuery.decoded.extras.sort,
+        page: legacyQuery.decoded.extras.page,
+      }
+    );
+    const slugOnly = canonicalPath.replace(`/${listingRouteType}/`, "");
+    return decodeCanonicalPath(slugOnly);
+  }, [legacyQuery, listingRouteType, slugParam]);
+
+  const canonicalFilters = useMemo<FilterState>(() => ({
+    location: decodedCanonical.filters.location,
+    country: decodedCanonical.filters.country,
+    minPrice: decodedCanonical.filters.minPrice,
+    maxPrice: decodedCanonical.filters.maxPrice,
+    propertyType: decodedCanonical.filters.propertyType,
+    bedrooms: decodedCanonical.filters.bedrooms,
+    bathrooms: decodedCanonical.filters.bathrooms,
+    amenities: [...decodedCanonical.filters.amenities],
+  }), [decodedCanonical]);
+
+  useEffect(() => {
+    if (!legacyQuery) return;
+
+    const { filters, extras } = legacyQuery.decoded;
+    const nextPath = encodeCanonicalPath(listingRouteType, filters, {
+      sort: extras.sort,
+      page: extras.page,
+    });
+
+    if (location.pathname === nextPath && !location.search) {
+      return;
+    }
+
+    navigate(nextPath, { replace: true });
+  }, [legacyQuery, listingRouteType, navigate, location.pathname, location.search]);
+
+  useEffect(() => {
+    if (!import.meta?.env?.DEV) return;
+
+    const slugFromLocation = slugParam || "";
+    const canonicalSlug = encodeCanonicalPath(listingRouteType, decodedCanonical.filters, {
+      sort: decodedCanonical.extras.sort,
+      page: decodedCanonical.extras.page,
+      results: decodedCanonical.extras.results,
+    }).replace(`/${listingRouteType}/`, "");
+
+    if (slugFromLocation && slugFromLocation !== canonicalSlug) {
+      if (lastMismatchSlugRef.current !== slugFromLocation) {
+        lastMismatchSlugRef.current = slugFromLocation;
+        // eslint-disable-next-line no-console
+        console.warn("[canonical-sync] slug mismatch", {
+          slugFromLocation,
+          canonicalSlug,
+          filters: decodedCanonical.filters,
+          extras: decodedCanonical.extras,
+        });
+      }
+    } else if (lastMismatchSlugRef.current) {
+      lastMismatchSlugRef.current = null;
+    }
+  }, [decodedCanonical, listingRouteType, slugParam]);
+
+  const [properties, setProperties] = useState<Property[]>([]);
+  const [totalPages, setTotalPages] = useState(
+    Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE))
+  );
+  const [totalCount, setTotalCount] = useState(decodedCanonical.extras.results ?? 0);
+  const [currentPage, setCurrentPage] = useState(decodedCanonical.extras.page);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [sortOption, setSortOption] = useState(decodedCanonical.extras.sort);
+
+  const [filters, setFilters] = useState<FilterState>(canonicalFilters);
+  const [localFilters, setLocalFilters] = useState<FilterState>(canonicalFilters);
+  const debounceTimerRef = useRef<number | null>(null);
+  const isHydratingRef = useRef(true);
+  const lastSyncedSlugRef = useRef<string | null>(slugParam || "");
+  const lastResultsSyncedRef = useRef<number | undefined>(decodedCanonical.extras.results);
+  const lastMismatchSlugRef = useRef<string | null>(null);
+
+  const handleFiltersChange = useCallback((newFilters: FilterState) => {
+    setLocalFilters(newFilters);
+
+    if (debounceTimerRef.current) {
+      window.clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = window.setTimeout(() => {
+      setFilters({
+        ...newFilters,
+        amenities: [...(newFilters.amenities || [])],
+      });
+    }, 500);
   }, []);
 
-  // Cleanup timer on unmount
   useEffect(() => {
     return () => {
       if (debounceTimerRef.current) {
-        clearTimeout(debounceTimerRef.current);
+        window.clearTimeout(debounceTimerRef.current);
       }
     };
   }, []);
@@ -193,36 +297,65 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   }, [currentPage]);
 
   // Stringify amenities for dependency to avoid unnecessary re-renders
-  const amenitiesKey = filters.amenities?.join(',') || '';
+  const amenitiesKey = filters.amenities?.join(",") || "";
 
-  // Sync filters to URL params (skip first render to prevent loop)
   useEffect(() => {
-    // Skip on first render (already read from URL)
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    const normalizedSlug = slugParam || "";
+    if (lastSyncedSlugRef.current === normalizedSlug && !isHydratingRef.current) {
       return;
     }
 
-    // Prevent sync if this update came from URL
-    if (isURLSyncRef.current) {
-      isURLSyncRef.current = false;
-      return;
-    }
+    const nextFilters: FilterState = {
+      ...canonicalFilters,
+      amenities: [...(canonicalFilters.amenities || [])],
+    };
 
-    const params = new URLSearchParams();
-    if (filters.location) params.set('location', filters.location);
-    if (filters.country && filters.country !== 'All') params.set('country', filters.country);
-    if (filters.minPrice) params.set('minPrice', filters.minPrice);
-    if (filters.maxPrice) params.set('maxPrice', filters.maxPrice);
-    if (filters.propertyType && filters.propertyType !== 'Any') params.set('type', filters.propertyType);
-    if (filters.bedrooms && filters.bedrooms !== 'Any') params.set('beds', filters.bedrooms);
-    if (filters.bathrooms && filters.bathrooms !== 'Any') params.set('baths', filters.bathrooms);
-    if (filters.amenities && filters.amenities.length > 0) params.set('amenities', filters.amenities.join(','));
-    setSearchParams(params, { replace: true });
-  }, [filters, setSearchParams]);
+    isHydratingRef.current = true;
+    setFilters(nextFilters);
+    setLocalFilters(nextFilters);
+    setSortOption(decodedCanonical.extras.sort);
+    setCurrentPage(decodedCanonical.extras.page);
+    setTotalCount(decodedCanonical.extras.results ?? 0);
+    setTotalPages(
+      Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE))
+    );
+    lastResultsSyncedRef.current = decodedCanonical.extras.results;
+    lastSyncedSlugRef.current = normalizedSlug;
 
-  // Reset pagination when filters or sort change
+    const timeout = window.setTimeout(() => {
+      isHydratingRef.current = false;
+    }, 0);
+
+    return () => window.clearTimeout(timeout);
+  }, [canonicalFilters, decodedCanonical.extras.page, decodedCanonical.extras.results, decodedCanonical.extras.sort, slugParam]);
+
+  const syncCanonicalUrl = useCallback(
+    (results?: number) => {
+      const extras: CanonicalExtras = {
+        sort: sortOption,
+        page: currentPage,
+      };
+      if (typeof results === "number") {
+        extras.results = results;
+      }
+      const nextPath = encodeCanonicalPath(listingRouteType, filters, extras);
+      const slugOnly = nextPath.replace(`/${listingRouteType}/`, "");
+      if (lastSyncedSlugRef.current !== slugOnly || location.pathname !== nextPath) {
+        lastSyncedSlugRef.current = slugOnly;
+        navigate(nextPath, { replace: true });
+      }
+    },
+    [filters, sortOption, currentPage, listingRouteType, navigate, location.pathname]
+  );
+
   useEffect(() => {
+    if (isHydratingRef.current) return;
+    lastResultsSyncedRef.current = undefined;
+    syncCanonicalUrl();
+  }, [filters, sortOption, currentPage, syncCanonicalUrl]);
+
+  useEffect(() => {
+    if (isHydratingRef.current) return;
     setCurrentPage(1);
   }, [
     filters.location,
@@ -266,9 +399,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         console.log(`${listingType.toUpperCase()} pagination data:`, paginatedData);
 
         const normalized = (paginatedData.results || []).map(normalizePropertyData);
+        const count = paginatedData.count ?? 0;
         setProperties(normalized);
-        setTotalCount(paginatedData.count || 0);
-        setTotalPages(Math.ceil((paginatedData.count || 0) / PAGE_SIZE));
+        setTotalCount(count);
+        setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
+
+        if (!isHydratingRef.current) {
+          if (lastResultsSyncedRef.current !== count) {
+            syncCanonicalUrl(count);
+            lastResultsSyncedRef.current = count;
+          }
+        } else {
+          lastResultsSyncedRef.current = count;
+        }
 
         analytics.trackPropertySearch({
           search_term: undefined,
@@ -280,7 +423,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           location: filters.location,
           property_status: listingType,
           sort_by: sortOption,
-          results_count: paginatedData.count,
+          results_count: count,
         });
       } catch (err) {
         console.error(`Error fetching ${listingType.toUpperCase()} properties:`, err);
@@ -302,9 +445,72 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     filters.propertyType,
     amenitiesKey,
     currentPage,
-    listingType
+    listingType,
+    syncCanonicalUrl
   ]);
 
+
+  const canonicalPath = location.pathname || `/${listingRouteType}`;
+  const locationLabel = filters.location || (filters.country && filters.country !== "All" ? filters.country : "");
+  const propertyLabel = filters.propertyType && filters.propertyType !== "Any"
+    ? formatPropertyType(filters.propertyType)
+    : "Properties";
+  const actionLabel = listingType === "sale" ? "for Sale" : "for Rent";
+  const metaTitle = `${propertyLabel} ${actionLabel}${locationLabel ? ` in ${locationLabel}` : ""} | PropertPro`;
+  const resultsDescriptor = totalCount > 0 ? `${totalCount.toLocaleString()} ` : "the latest ";
+  const locationDescriptor = locationLabel
+    ? ` in ${locationLabel}`
+    : filters.country && filters.country !== "All"
+      ? ` in ${filters.country}`
+      : "";
+  const metaDescription = `Explore ${resultsDescriptor}${propertyLabel.toLowerCase()} ${actionLabel.toLowerCase()}${locationDescriptor}. Refine by price, bedrooms, bathrooms, and amenities on PropertPro.`;
+
+  const breadcrumbs = useMemo(() => {
+    const crumbs = [
+      { name: "Home", url: "/" },
+      { name: listingType === "sale" ? "Buy" : "Rent", url: `/${listingRouteType}` },
+    ];
+    if (filters.location) {
+      crumbs.push({ name: filters.location, url: canonicalPath });
+    } else if (filters.country && filters.country !== "All") {
+      crumbs.push({ name: filters.country, url: canonicalPath });
+    }
+    return crumbs;
+  }, [listingType, listingRouteType, filters.location, filters.country, canonicalPath]);
+
+  const itemListSchema = useMemo(() => {
+    if (!properties.length) return null;
+    const basePosition = (currentPage - 1) * PAGE_SIZE;
+
+    const elements = properties.map((property, index) => {
+      const url = property.url || `/property/${property.id}`;
+      const absoluteUrl = url.startsWith("http") ? url : `${SITE_URL}${url}`;
+      const primaryImage = property.images?.[0]?.image;
+      const imageUrl = primaryImage
+        ? (primaryImage.startsWith("http") ? primaryImage : `${SITE_URL}${primaryImage}`)
+        : undefined;
+
+      const item: Record<string, unknown> = {
+        "@type": "ListItem",
+        position: basePosition + index + 1,
+        url: absoluteUrl,
+        name: property.title,
+      };
+
+      if (imageUrl) {
+        item.image = imageUrl;
+      }
+
+      return item;
+    });
+
+    return {
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      numberOfItems: totalCount,
+      itemListElement: elements,
+    };
+  }, [properties, currentPage, totalCount]);
 
   const displayed = properties;
 
@@ -327,7 +533,24 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
+    <>
+      <SEO
+        title={metaTitle}
+        description={metaDescription}
+        canonical={canonicalPath}
+        url={canonicalPath}
+        location={locationLabel || undefined}
+        propertyType={filters.propertyType !== "Any" ? filters.propertyType : undefined}
+        breadcrumbs={breadcrumbs}
+      />
+      {itemListSchema && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
+        />
+      )}
+
+      <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
       {/* Enhanced Hero Header */}
       <div className={`relative bg-gradient-to-br ${theme.gradient} text-white overflow-hidden`}>
         <div className={`absolute inset-0 ${theme.radialGradient1}`}></div>
@@ -626,7 +849,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           </motion.p>
         )}
       </div>
-    </div>
+      </div>
+    </>
   );
 };
 

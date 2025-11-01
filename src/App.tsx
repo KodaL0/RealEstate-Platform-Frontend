@@ -223,8 +223,8 @@ function AppContent() {
         <Routes>
           {/* Public */}
           <Route path="/" element={<Home />} />
-          <Route path="/buy" element={<Buy />} />
-          <Route path="/rent" element={<Rent />} />
+          <Route path="/buy/*" element={<Buy />} />
+          <Route path="/rent/*" element={<Rent />} />
           {/* Legacy property URL - redirects to new format */}
           <Route path="/property/:id" element={<PropertyDetails />} />
           <Route path="/login" element={<AuthPage />} />
