@@ -129,6 +129,22 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const show = useMemo(() => new Set((FIELD_MATRIX[ptype] ?? [])), [ptype]);
   const showField = (k: keyof ListingForm) => show.has(k);
 
+  // Debug logging for amenities visibility
+  useEffect(() => {
+    if (isEditing) {
+      const shouldShowAmenities = showField('amenities');
+      const isInAmenitiesList = ['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype);
+      console.log('🔍 Step2 Debug:', {
+        ptype,
+        propertyType: formData.propertyType,
+        'showField(amenities)': shouldShowAmenities,
+        'amenities in ptype list': isInAmenitiesList,
+        'will render': isInAmenitiesList && (shouldShowAmenities || (isEditing && formData.propertyType)),
+        amenitiesCount: Array.isArray(formData.amenities) ? formData.amenities.length : 0,
+      });
+    }
+  }, [isEditing, ptype, formData.propertyType, formData.amenities]);
+
   // Disable initial load flag after a short delay to allow data to populate
   useEffect(() => {
     if (isEditing && hasLoadedPropertyData && isInitialLoad) {
@@ -170,6 +186,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         }
 
         console.log('📋 Step2: Loaded amenities:', d.amenities);
+        console.log('📋 Step2: Property type from API:', d.property_type);
         
         // Update form data with property details
         setFormData(prev => ({
@@ -644,8 +661,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         )}
 
         {/* Amenities */}
-        {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype)) &&
-          showField('amenities') && (
+        {(['house', 'apartment', 'condo', 'townhouse', 'hotel', 'residential_building'].includes(ptype) &&
+          (showField('amenities') || (isEditing && formData.propertyType))) && (
           <div className="lg:col-span-2">
             <label className="block text-sm font-semibold text-gray-700 mb-3">
               Amenities
