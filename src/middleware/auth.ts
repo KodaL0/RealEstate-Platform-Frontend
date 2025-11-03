@@ -3,17 +3,74 @@ import api, { apiClient } from '../config/api';
 // Functions to manage auth tokens and cookies
 
 /**
+ * Check if auth cookies exist
+ */
+export function hasAuthCookies(): boolean {
+  if (typeof document === 'undefined') return false;
+  
+  const cookieString = document.cookie;
+  const authCookieNames = [
+    'access_token',
+    'refresh_token',
+    'mobile_access_token',
+    'mobile_refresh_token',
+    'sessionid'
+  ];
+  
+  return authCookieNames.some(name => {
+    const regex = new RegExp(`(^|; )${name}=`);
+    return regex.test(cookieString);
+  });
+}
+
+/**
  * Clear auth cookies (to be used on logout/session expiry)
  */
 export function clearAuthCookies() {
-  // Clear auth-related cookies with proper cross-domain attributes
+  if (typeof document === 'undefined') return;
   
-  // Clear cookies without domain specification
-  document.cookie = 'access_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-  document.cookie = 'refresh_token=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
-  document.cookie = 'csrftoken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure';
+  const cookieNames = [
+    'access_token',
+    'refresh_token',
+    'mobile_access_token',
+    'mobile_refresh_token',
+    'csrftoken',
+    'sessionid'
+  ];
   
-  console.log("Auth cookies cleared");
+  // Get current hostname to determine domains
+  const hostname = window.location.hostname;
+  
+  // Define all possible domain combinations
+  const domains: (string | undefined)[] = [
+    undefined,  // Host-only (no domain) - covers current domain
+  ];
+  
+  // Add .propertpro.com domain if we're on a propertpro.com domain (covers all subdomains)
+  if (hostname.includes('propertpro.com')) {
+    domains.push('.propertpro.com');
+  }
+  
+  // Clear each cookie with all domain combinations and SameSite attributes
+  cookieNames.forEach(name => {
+    domains.forEach(domain => {
+      // Clear with SameSite=None; Secure (for cross-origin cookies in production)
+      let cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`;
+      if (domain) {
+        cookieString += `; domain=${domain}`;
+      }
+      document.cookie = cookieString;
+      
+      // Clear with SameSite=Lax (for mobile browsers and same-site cookies)
+      cookieString = `${name}=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax`;
+      if (domain) {
+        cookieString += `; domain=${domain}`;
+      }
+      document.cookie = cookieString;
+    });
+  });
+  
+  console.log('✅ Auth cookies cleared with all domain combinations');
 }
 
 /**

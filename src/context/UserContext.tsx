@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import api from "../config/api";
 import analytics from "../utils/analytics";
 import { apiCache } from "../utils/apiCache";
+import { hasAuthCookies, clearAuthCookies } from "../middleware/auth";
 
 // Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
@@ -75,6 +76,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const fetchUser = async () => {
     setIsLoading(true);
     try {
+      // Check if auth cookies exist before making API call
+      if (!hasAuthCookies()) {
+        console.log("No auth cookies found, user not authenticated");
+        setUser(null);
+        return;
+      }
+
       const response = await api.auth.getUser();
       console.log("UserContext: Response from API:", response.data);
       
@@ -103,8 +111,12 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         console.log("No valid user data found in response");
         setUser(null);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch user:", error);
+      // If 401, also clear cookies
+      if (error?.response?.status === 401) {
+        clearAuthCookies();
+      }
       setUser(null);
     } finally {
       setIsLoading(false);
