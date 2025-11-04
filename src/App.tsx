@@ -78,26 +78,33 @@ function AppContent() {
     const authSuccess = searchParams.get('auth_success');
     const authError = searchParams.get('error');
 
+    console.log('[App] Checking OAuth callback params:', { authSuccess, authError, search: location.search });
+
     if (authSuccess === 'true') {
       console.log('[App] OAuth success detected, refreshing user state...');
+      console.log('[App] Current URL:', window.location.href);
+      console.log('[App] Cookies available:', document.cookie);
       
-      // Refresh user state from cookies
-      refreshUser().then(() => {
-        console.log('[App] User state refreshed after OAuth login');
-        
-        // Clean the URL by removing auth_success parameter
-        searchParams.delete('auth_success');
-        const newSearch = searchParams.toString();
-        const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
-        navigate(newUrl, { replace: true });
-      }).catch((error) => {
-        console.error('[App] Failed to refresh user after OAuth completion:', error);
-        // Still clean the URL even if refresh fails
-        searchParams.delete('auth_success');
-        const newSearch = searchParams.toString();
-        const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
-        navigate(newUrl, { replace: true });
-      });
+      // Small delay to ensure cookies are available after redirect
+      setTimeout(() => {
+        // Refresh user state from cookies
+        refreshUser().then(() => {
+          console.log('[App] User state refreshed after OAuth login');
+          
+          // Clean the URL by removing auth_success parameter
+          searchParams.delete('auth_success');
+          const newSearch = searchParams.toString();
+          const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
+          navigate(newUrl, { replace: true });
+        }).catch((error) => {
+          console.error('[App] Failed to refresh user after OAuth completion:', error);
+          // Still clean the URL even if refresh fails
+          searchParams.delete('auth_success');
+          const newSearch = searchParams.toString();
+          const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
+          navigate(newUrl, { replace: true });
+        });
+      }, 100);
     }
 
     if (authError) {
@@ -108,7 +115,7 @@ function AppContent() {
       const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
       navigate(`/login?error=${authError}`, { replace: true });
     }
-  }, [location.search, refreshUser, navigate]);
+  }, [location.search, refreshUser, navigate, location.pathname, location.hash]);
 
   // Unified initialization effect - waits for user loading before deciding which modal to show
   useEffect(() => {
