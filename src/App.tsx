@@ -1,4 +1,4 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+import { BrowserRouter as Router, Routes, Route, Navigate, useLocation, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { Toaster } from 'react-hot-toast';
 
@@ -59,10 +59,11 @@ function RouteChangeTracker() {
 
 function AppContent() {
   const location = useLocation();
+  const navigate = useNavigate();
   const isChatRoute = location.pathname.startsWith('/chat');
   const isDeveloperRoute = location.pathname.startsWith('/developer-api');
   const isCreateListingRoute = location.pathname.startsWith('/create-listing') || location.pathname.startsWith('/edit-listing');
-  const { user, isLoading } = useUser();
+  const { user, isLoading, refreshUser } = useUser();
   
   const [showConsentBanner, setShowConsentBanner] = useState(false);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
@@ -70,6 +71,44 @@ function AppContent() {
   
   // Legal documents hook
   const { acceptanceStatus, needsAcceptance, checkAcceptanceStatus } = useLegalDocuments();
+
+  // Handle OAuth callback with auth_success parameter
+  useEffect(() => {
+    const searchParams = new URLSearchParams(location.search);
+    const authSuccess = searchParams.get('auth_success');
+    const authError = searchParams.get('error');
+
+    if (authSuccess === 'true') {
+      console.log('[App] OAuth success detected, refreshing user state...');
+      
+      // Refresh user state from cookies
+      refreshUser().then(() => {
+        console.log('[App] User state refreshed after OAuth login');
+        
+        // Clean the URL by removing auth_success parameter
+        searchParams.delete('auth_success');
+        const newSearch = searchParams.toString();
+        const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
+        navigate(newUrl, { replace: true });
+      }).catch((error) => {
+        console.error('[App] Failed to refresh user after OAuth completion:', error);
+        // Still clean the URL even if refresh fails
+        searchParams.delete('auth_success');
+        const newSearch = searchParams.toString();
+        const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
+        navigate(newUrl, { replace: true });
+      });
+    }
+
+    if (authError) {
+      console.error(`[App] OAuth error: ${authError}`);
+      // Clean the URL and redirect to login
+      searchParams.delete('error');
+      const newSearch = searchParams.toString();
+      const newUrl = `${location.pathname}${newSearch ? `?${newSearch}` : ''}${location.hash || ''}`;
+      navigate(`/login?error=${authError}`, { replace: true });
+    }
+  }, [location.search, refreshUser, navigate]);
 
   // Unified initialization effect - waits for user loading before deciding which modal to show
   useEffect(() => {
