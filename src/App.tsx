@@ -84,11 +84,14 @@ function AppContent() {
       console.log('[App] OAuth success detected, refreshing user state...');
       console.log('[App] Current URL:', window.location.href);
       console.log('[App] Cookies available:', document.cookie);
+      console.log('[App] Note: HttpOnly cookies (access_token, refresh_token) are not visible in document.cookie but will be sent with API requests');
       
       // Small delay to ensure cookies are available after redirect
       setTimeout(() => {
         // Refresh user state from cookies
-        refreshUser().then(() => {
+        // Pass forceCheck=true because HttpOnly cookies won't be visible in document.cookie
+        // but they will still be sent automatically by the browser with API requests
+        refreshUser(true).then(() => {
           console.log('[App] User state refreshed after OAuth login');
           
           // Clean the URL by removing auth_success parameter

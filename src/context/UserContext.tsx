@@ -73,11 +73,13 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [isRefreshingGDPR, setIsRefreshingGDPR] = useState(false);
 
   // Direct API call without auth.ts wrapper
-  const fetchUser = async () => {
+  const fetchUser = async (forceCheck = false) => {
     setIsLoading(true);
     try {
       // Check if auth cookies exist before making API call
-      if (!hasAuthCookies()) {
+      // Note: HttpOnly cookies won't be visible in document.cookie, but will still be sent with requests
+      // If forceCheck is true, skip cookie check and make API call anyway (for OAuth flow)
+      if (!forceCheck && !hasAuthCookies()) {
         console.log("No auth cookies found, user not authenticated");
         setUser(null);
         return;
@@ -142,8 +144,8 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   };
 
   // Expose refreshUser to let other parts of the app force a refresh
-  const refreshUser = async () => {
-    await fetchUser();
+  const refreshUser = async (forceCheck = false) => {
+    await fetchUser(forceCheck);
   };
 
   // Update user data without fetching from server (for local updates)
