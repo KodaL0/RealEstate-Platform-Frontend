@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 import api from "../config/api";
 import analytics from "../utils/analytics";
 import { apiCache } from "../utils/apiCache";
-import { hasAuthCookies, clearAuthCookies } from "../middleware/auth";
+import { clearAuthCookies } from "../middleware/auth";
 
 // Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
@@ -76,15 +76,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const fetchUser = async (forceCheck = false) => {
     setIsLoading(true);
     try {
-      // Check if auth cookies exist before making API call
-      // Note: HttpOnly cookies won't be visible in document.cookie, but will still be sent with requests
-      // If forceCheck is true, skip cookie check and make API call anyway (for OAuth flow)
-      if (!forceCheck && !hasAuthCookies()) {
-        console.log("No auth cookies found, user not authenticated");
-        setUser(null);
-        return;
-      }
-
+      // Always attempt the API call - HttpOnly cookies won't be visible in document.cookie
+      // but will still be sent automatically with requests via withCredentials: true
+      // The backend is the source of truth for authentication status
       const response = await api.auth.getUser();
       console.log("UserContext: Response from API:", response.data);
       
