@@ -29,11 +29,10 @@ interface ProjectCardProps {
   };
 }
 
-function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preloadedStats }: ProjectCardProps) {
+function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _onEdit, onDelete: _onDelete, preloadedStats }: ProjectCardProps) {
   const [units, setUnits] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
-  const [showManage, setShowManage] = useState(false);
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPublished, setIsPublished] = useState<boolean>(Boolean((project as any).is_published));
   const [isBusy, setIsBusy] = useState(false);
