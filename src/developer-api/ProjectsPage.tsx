@@ -29,7 +29,6 @@ export default function ProjectsPage() {
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [slugById, setSlugById] = useState<Record<number, string>>({});
   const [projectStats, setProjectStats] = useState<Record<number, { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }>>({});
-  const [currentProjectStats, setCurrentProjectStats] = useState<{ units: number; assets: number; photos: number } | null>(null);
 
   // Build unique slugs using project names. Duplicates become name(2), name(3), ...
   const buildUniqueSlugs = (items: Project[]): Record<number, string> => {
@@ -78,7 +77,6 @@ export default function ProjectsPage() {
       const tab = (projectMatch?.params.tab as any) || 'overview';
       if (!routeSlug) {
         setActiveProject(null);
-        setCurrentProjectStats(null);
         return;
       }
       setProjectSection(tab);
@@ -89,8 +87,6 @@ export default function ProjectsPage() {
         const found = projects.find(p => String(p.id) === String(id));
         if (found) {
           setActiveProject(found);
-          // Reset current stats - will be updated when ProjectManagement loads
-          setCurrentProjectStats(null);
           return;
         }
       }
@@ -105,7 +101,6 @@ export default function ProjectsPage() {
           setSlugById(map);
           const resolved = items.find(p => map[p.id] === routeSlug) || null;
           setActiveProject(resolved);
-          setCurrentProjectStats(null);
         } catch (e) {
           console.error('Failed to resolve project by slug', e);
         }
@@ -212,9 +207,9 @@ export default function ProjectsPage() {
             onViewChange={handleProjectViewChange}
             activeView={projectSection}
             stats={{
-              units: currentProjectStats?.units ?? projectStats[activeProject.id]?.unitsCount ?? 0,
-              assets: currentProjectStats?.assets ?? projectStats[activeProject.id]?.assetsCount ?? 0,
-              photos: currentProjectStats?.photos ?? projectStats[activeProject.id]?.photosCount ?? 0,
+              units: projectStats[activeProject.id]?.unitsCount || 0,
+              assets: projectStats[activeProject.id]?.assetsCount || 0,
+              photos: projectStats[activeProject.id]?.photosCount || 0,
             }}
             compact={false}
             showHeader={false}
@@ -227,19 +222,6 @@ export default function ProjectsPage() {
           activeSection={projectSection} 
           onProjectUpdate={handleProjectUpdate}
           onViewChange={handleProjectViewChange}
-          onStatsChange={(stats) => {
-            setCurrentProjectStats(stats);
-            // Also update projectStats for consistency
-            setProjectStats(prev => ({
-              ...prev,
-              [activeProject.id]: {
-                unitsCount: stats.units,
-                assetsCount: stats.assets,
-                photosCount: stats.photos,
-                firstPhotoUrl: prev[activeProject.id]?.firstPhotoUrl,
-              },
-            }));
-          }}
         />
       </div>
     );
