@@ -100,15 +100,22 @@ class DeveloperPortalApiService {
       projects.forEach(project => {
         const projectUnits = units.filter(u => u.project === project.id);
         const projectAssets = assets.filter(a => a.project === project.id);
-        const projectPhotos = projectAssets.filter(a => 
-          a.asset_type === 'image' && a.image_category === 'photos'
-        );
+        
+        // Get all image assets (not just 'photos' - that category doesn't exist in DeveloperAsset)
+        const projectImages = projectAssets.filter(a => a.asset_type === 'image');
+        
+        // Prioritize: featured images first, then by upload date (most recent first)
+        const sortedImages = [...projectImages].sort((a, b) => {
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+        });
 
         projectStats[project.id] = {
           unitsCount: projectUnits.length,
           assetsCount: projectAssets.length,
-          photosCount: projectPhotos.length,
-          firstPhotoUrl: projectPhotos[0]?.file_url || projectPhotos[0]?.file || project.main_image,
+          photosCount: projectImages.length, // Count all images, not just 'photos'
+          firstPhotoUrl: sortedImages[0]?.file_url || sortedImages[0]?.file || project.main_image,
         };
       });
 

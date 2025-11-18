@@ -78,11 +78,18 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
         setUnits(projectUnits);
         setAssets(assetsData);
 
-        // Filter photos from assets (images with photo category)
-        const projectPhotos = assetsData.filter(asset => 
-          asset.asset_type === 'image' && asset.image_category === 'photos'
-        );
-        setPhotos(projectPhotos);
+        // Filter images from assets (all image assets, not just 'photos' category)
+        // DeveloperAsset doesn't have 'photos' category - it has: exterior, interior, construction, etc.
+        const projectImages = assetsData.filter(asset => asset.asset_type === 'image');
+        
+        // Sort: featured first, then by upload date
+        const sortedImages = [...projectImages].sort((a, b) => {
+          if (a.is_featured && !b.is_featured) return -1;
+          if (!a.is_featured && b.is_featured) return 1;
+          return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+        });
+        
+        setPhotos(sortedImages);
         
       } catch (error) {
         console.error('Failed to load project stats:', error);

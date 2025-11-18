@@ -48,7 +48,8 @@ export default function PhotoUploadForm({ projectId, onClose, onUpload }: PhotoU
             file: photoData.file,
             project: projectId,
             asset_type: 'image',
-            image_category: 'photos',
+            image_category: 'exterior', // Default to 'exterior' - valid category in DeveloperAsset
+            // Valid categories: 'exterior', 'interior', 'construction', 'amenities', 'surroundings', 'renderings', 'floor_plans', 'other_images'
             title: title || photoData.file.name.split('.')[0],
             description: description,
           });
