@@ -41,13 +41,25 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
   const imageRef = useRef<HTMLDivElement>(null);
   const { hasBeenVisible } = useImageLazyLoad(imageRef, { rootMargin: '100px' });
 
+  // Determine image source - prioritize main_image, then preloaded, then photos
+  const getImageSource = () => {
+    if (project.main_image) return project.main_image;
+    if (preloadedStats?.firstPhotoUrl) return preloadedStats.firstPhotoUrl;
+    if (photos[0]?.file_url) return photos[0].file_url;
+    if (photos[0]?.file) return photos[0].file;
+    return null;
+  };
+
+  const imageSource = getImageSource();
+
   // Use preloaded stats if available, otherwise fetch (lazy load stats)
   useEffect(() => {
     if (preloadedStats) {
       // Use preloaded data
       setUnits(Array(preloadedStats.unitsCount || 0).fill(null));
       setAssets(Array(preloadedStats.assetsCount || 0).fill(null));
-      setPhotos(preloadedStats.firstPhotoUrl ? [{ file_url: preloadedStats.firstPhotoUrl }] : []);
+      // Set photos array for stats display, but image will use preloadedStats.firstPhotoUrl
+      setPhotos(preloadedStats.firstPhotoUrl ? [{ file_url: preloadedStats.firstPhotoUrl, file: preloadedStats.firstPhotoUrl }] : []);
       return;
     }
 
@@ -102,13 +114,13 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
           </div>
         )}
 
-        {/* Actual image - only load when visible */}
-        {hasBeenVisible && (project.main_image || photos[0]?.file_url || photos[0]?.file) && !imageError ? (
+        {/* Actual image - load immediately if we have preloaded stats or main_image, otherwise wait for visibility */}
+        {imageSource && !imageError && (preloadedStats?.firstPhotoUrl || project.main_image || hasBeenVisible) ? (
           <img 
-            src={project.main_image || photos[0]?.file_url || photos[0]?.file} 
+            src={imageSource} 
             alt={project.name}
             className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
-            loading="lazy"
+            loading={preloadedStats?.firstPhotoUrl || project.main_image ? "eager" : "lazy"}
             onLoad={() => setImageLoaded(true)}
             onError={() => {
               setImageError(true);
@@ -118,7 +130,7 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
         ) : null}
 
         {/* Fallback icon when no image or error */}
-        <div className={`w-full h-full flex items-center justify-center ${(hasBeenVisible && (project.main_image || photos[0]?.file_url || photos[0]?.file) && !imageError) ? 'hidden' : ''}`}>
+        <div className={`w-full h-full flex items-center justify-center ${(imageSource && !imageError) ? 'hidden' : ''}`}>
           <Building className="w-16 h-16 text-gray-400" />
         </div>
 

@@ -6,6 +6,7 @@ import ProjectManagement from './projects/components/ProjectManagement';
 import ProjectCreationModal from './components/ProjectCreationModal';
 import ProjectToolbar from './projects/components/ProjectToolbar';
 import developersApi, { Project } from '../config/developers-api';
+import developerPortalApi from './services/DeveloperPortalApi';
 
 function slugify(text: string): string {
   return text
@@ -43,49 +44,18 @@ export default function ProjectsPage() {
     return result;
   };
 
-  // Fetch projects and organization - optimized with parallel fetching and caching
+  // Fetch projects and organization using centralized API service
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch organization and projects in parallel
-        const [orgResponse, projectsResponse] = await Promise.all([
-          developersApi.organizations.getMine(),
-          developersApi.projects.listCached(), // Use cached version
-        ]);
+        // Use centralized portal API service
+        const portalData = await developerPortalApi.initialize();
         
-        if (orgResponse.organization) {
-          setOrganizationId(orgResponse.organization.id);
-          const items = projectsResponse || [];
-          setProjects(items);
-          setSlugById(buildUniqueSlugs(items));
-          
-          // Pre-fetch stats for all projects in parallel (but don't block UI)
-          // This will populate cache for faster card rendering
-          Promise.all([
-            developersApi.units.listCached(),
-            developersApi.assets.listCached(),
-          ]).then(([unitsData, assetsData]) => {
-            const stats: Record<number, { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }> = {};
-            
-            items.forEach(project => {
-              const projectUnits = unitsData.filter(u => u.project === project.id);
-              const projectAssets = assetsData.filter(a => a.project === project.id);
-              const projectPhotos = projectAssets.filter(a => 
-                a.asset_type === 'image' && a.image_category === 'photos'
-              );
-              
-              stats[project.id] = {
-                unitsCount: projectUnits.length,
-                assetsCount: projectAssets.length,
-                photosCount: projectPhotos.length,
-                firstPhotoUrl: projectPhotos[0]?.file_url || projectPhotos[0]?.file || project.main_image,
-              };
-            });
-            
-            setProjectStats(stats);
-          }).catch(err => {
-            console.error('Error pre-loading project stats:', err);
-          });
+        if (portalData.organization) {
+          setOrganizationId(portalData.organization.id);
+          setProjects(portalData.projects);
+          setSlugById(buildUniqueSlugs(portalData.projects));
+          setProjectStats(portalData.projectStats);
         }
       } catch (error: any) {
         console.error('Error fetching data:', error);
@@ -159,19 +129,45 @@ export default function ProjectsPage() {
     navigate('/developer-api/projects');
   };
 
-  const handleProjectCreated = (newProject: Project) => {
+  const handleProjectCreated = async (newProject: Project) => {
+    // Add to portal API cache
+    await developerPortalApi.addProject(newProject);
+    
+    // Update local state
     setProjects(prev => {
       const next = [...prev, newProject];
       setSlugById(buildUniqueSlugs(next));
       return next;
     });
+    
+    // Update stats
+    const stats = await developerPortalApi.getProjectStats(newProject.id);
+    if (stats) {
+      setProjectStats(prev => ({
+        ...prev,
+        [newProject.id]: stats,
+      }));
+    }
   };
 
-  const handleProjectUpdate = (updatedProject: Project) => {
+  const handleProjectUpdate = async (updatedProject: Project) => {
+    // Update portal API cache
+    await developerPortalApi.updateProject(updatedProject);
+    
+    // Update local state
     setProjects(prev => {
       const next = prev.map(p => p.id === updatedProject.id ? updatedProject : p);
       return next;
     });
+    
+    // Update stats
+    const stats = await developerPortalApi.getProjectStats(updatedProject.id);
+    if (stats) {
+      setProjectStats(prev => ({
+        ...prev,
+        [updatedProject.id]: stats,
+      }));
+    }
     
     // Also update the active project if it's the one being updated
     if (activeProject && activeProject.id === updatedProject.id) {
