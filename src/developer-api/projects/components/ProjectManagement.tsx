@@ -6,6 +6,7 @@ import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../assets/AssetManager';
 import ProjectPreview from './ProjectPreview';
 import developersApi, { Unit, DeveloperAsset } from '../../../config/developers-api';
+import environment from '../../../config/environment';
 
 type Project = {
   id: number;
@@ -28,8 +29,8 @@ interface ProjectManagementProps {
 
 export default function ProjectManagement({ project, activeSection, onViewChange }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
-  const [assets, setAssets] = useState<DeveloperAsset[]>([]);
-  const [photos, setPhotos] = useState<DeveloperAsset[]>([]);
+  const [assets, setAssets] = useState<DeveloperAsset[]>([]); // Documents (DeveloperAsset)
+  const [photos, setPhotos] = useState<any[]>([]); // Photos (ProjectAsset)
   const [isLoading, setIsLoading] = useState(true);
   const [showUnitForm, setShowUnitForm] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -45,22 +46,23 @@ export default function ProjectManagement({ project, activeSection, onViewChange
         const projectUnits = unitsData.filter(unit => unit.project === project.id);
         setUnits(projectUnits);
 
-        // Fetch assets for this project
-        const assetsData = await developersApi.assets.getByProject(project.id);
-        setAssets(assetsData);
+        // Photos come from project.assets (ProjectAsset with category='photos')
+        // Documents come from assets endpoint (DeveloperAsset)
+        const [projectData, documentsData] = await Promise.all([
+          developersApi.projects.get(project.id), // Get project with assets (photos)
+          developersApi.assets.getByProject(project.id), // Get documents
+        ]);
         
-        // Filter images from assets (all image assets)
-        // DeveloperAsset doesn't have 'photos' category - it has: exterior, interior, construction, etc.
-        const projectImages = assetsData.filter(asset => asset.asset_type === 'image');
+        // Photos from project.assets (ProjectAsset)
+        const projectPhotos = (projectData.assets || []).filter((asset: any) => asset.category === 'photos');
         
-        // Sort: featured first, then by upload date
-        const sortedImages = [...projectImages].sort((a, b) => {
-          if (a.is_featured && !b.is_featured) return -1;
-          if (!a.is_featured && b.is_featured) return 1;
+        // Sort photos by upload date (most recent first)
+        const sortedPhotos = [...projectPhotos].sort((a, b) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
         });
         
-        setPhotos(sortedImages);
+        setPhotos(sortedPhotos);
+        setAssets(documentsData); // Documents (DeveloperAsset)
         
       } catch (error) {
         console.error('Failed to load project data:', error);
@@ -76,10 +78,21 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     loadProjectData();
   }, [project.id]);
 
+  // Helper to resolve relative file URLs to absolute URLs
+  const resolveFileUrl = (fileUrl: string | undefined): string => {
+    if (!fileUrl) return '';
+    if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      return fileUrl; // Already absolute
+    }
+    // If relative URL, prepend API base URL
+    const apiBaseUrl = environment.baseUrl;
+    return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+  };
+
   const getHeroImage = () => {
     if (photos.length > 0) {
-      // Use the first uploaded photo
-      return photos[0].file_url || photos[0].file;
+      // Use the first uploaded photo (ProjectAsset uses 'file' field)
+      return resolveFileUrl(photos[0].file);
     }
     if (project.main_image) {
       return project.main_image;
@@ -103,10 +116,16 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     if (!confirm('Are you sure you want to delete this photo?')) return;
 
     try {
-      await developersApi.assets.delete(photoId);
-      setPhotos(photos.filter(photo => photo.id !== photoId));
-      // Also remove from assets since photos are stored as assets
-      setAssets(assets.filter(asset => asset.id !== photoId));
+      // Photos are ProjectAsset - use projectAssets API
+      await developersApi.projectAssets.delete(photoId);
+      
+      // Reload project to get updated assets
+      const projectData = await developersApi.projects.get(project.id);
+      const projectPhotos = (projectData.assets || []).filter((asset: any) => asset.category === 'photos');
+      const sortedPhotos = [...projectPhotos].sort((a, b) => {
+        return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+      });
+      setPhotos(sortedPhotos);
     } catch (error) {
       console.error('Failed to delete photo:', error);
     }
@@ -129,11 +148,8 @@ export default function ProjectManagement({ project, activeSection, onViewChange
   };
 
   const handleAssetUpload = (newAsset: DeveloperAsset) => {
+    // This is for documents (DeveloperAsset)
     setAssets([newAsset, ...assets]);
-    // If it's an image, also add to photos (all images are considered photos for display)
-    if (newAsset.asset_type === 'image') {
-      setPhotos([newAsset, ...photos]);
-    }
     setShowAssetUpload(false);
   };
 
@@ -472,7 +488,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
                 <div key={photo.id} className="group relative">
                   <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl overflow-hidden shadow-lg shadow-slate-200/50 group-hover:shadow-xl group-hover:shadow-slate-300/50 transition-all duration-300">
                     <img 
-                      src={photo.file_url || photo.file} 
+                      src={resolveFileUrl(photo.file)}
                       alt={photo.title || `Photo ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />

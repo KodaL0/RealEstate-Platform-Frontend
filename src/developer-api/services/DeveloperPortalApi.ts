@@ -7,6 +7,7 @@ import developersApi, {
   Unit, 
   DeveloperAsset 
 } from '../../config/developers-api';
+import environment from '../../config/environment';
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types
@@ -99,23 +100,33 @@ class DeveloperPortalApiService {
       
       projects.forEach(project => {
         const projectUnits = units.filter(u => u.project === project.id);
-        const projectAssets = assets.filter(a => a.project === project.id);
+        const projectDocuments = assets.filter(a => a.project === project.id); // DeveloperAsset (documents)
         
-        // Get all image assets (not just 'photos' - that category doesn't exist in DeveloperAsset)
-        const projectImages = projectAssets.filter(a => a.asset_type === 'image');
+        // Photos come from project.assets (ProjectAsset with category='photos')
+        // Documents come from assets endpoint (DeveloperAsset)
+        const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
         
-        // Prioritize: featured images first, then by upload date (most recent first)
-        const sortedImages = [...projectImages].sort((a, b) => {
-          if (a.is_featured && !b.is_featured) return -1;
-          if (!a.is_featured && b.is_featured) return 1;
+        // Sort photos by upload date (most recent first)
+        const sortedPhotos = [...projectPhotos].sort((a, b) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
         });
 
+        // Resolve relative file URLs to absolute URLs
+        const resolveFileUrl = (fileUrl: string | undefined): string | undefined => {
+          if (!fileUrl) return undefined;
+          if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+            return fileUrl; // Already absolute
+          }
+          // If relative URL, prepend API base URL
+          const apiBaseUrl = environment.baseUrl;
+          return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+        };
+
         projectStats[project.id] = {
           unitsCount: projectUnits.length,
-          assetsCount: projectAssets.length,
-          photosCount: projectImages.length, // Count all images, not just 'photos'
-          firstPhotoUrl: sortedImages[0]?.file_url || sortedImages[0]?.file || project.main_image,
+          assetsCount: projectDocuments.length, // Document count from DeveloperAsset
+          photosCount: projectPhotos.length, // Photo count from ProjectAsset
+          firstPhotoUrl: resolveFileUrl(sortedPhotos[0]?.file) || project.main_image,
         };
       });
 

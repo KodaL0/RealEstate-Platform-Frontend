@@ -3,6 +3,7 @@ import { Building } from 'lucide-react';
 import UnitPublishModal from './UnitPublishModal';
 import developersApi from '../../../config/developers-api';
 import { useImageLazyLoad } from '../../../hooks/useImageLazyLoad';
+import environment from '../../../config/environment';
 
 type Project = {
   id: number;
@@ -42,11 +43,21 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
   const { hasBeenVisible } = useImageLazyLoad(imageRef, { rootMargin: '100px' });
 
   // Determine image source - prioritize main_image, then preloaded, then photos
+  // Photos come from project.assets (ProjectAsset), not DeveloperAsset
   const getImageSource = () => {
     if (project.main_image) return project.main_image;
     if (preloadedStats?.firstPhotoUrl) return preloadedStats.firstPhotoUrl;
-    if (photos[0]?.file_url) return photos[0].file_url;
-    if (photos[0]?.file) return photos[0].file;
+    if (photos[0]?.file) {
+      // Resolve relative URLs to absolute URLs
+      const fileUrl = photos[0].file;
+      if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+        return fileUrl; // Already absolute
+      }
+      // If relative URL, prepend API base URL
+      // fileUrl is like "/mediafiles/..." - need to make it absolute
+      const apiBaseUrl = environment.baseUrl;
+      return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+    }
     return null;
   };
 
@@ -59,7 +70,8 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
       setUnits(Array(preloadedStats.unitsCount || 0).fill(null));
       setAssets(Array(preloadedStats.assetsCount || 0).fill(null));
       // Set photos array for stats display, but image will use preloadedStats.firstPhotoUrl
-      setPhotos(preloadedStats.firstPhotoUrl ? [{ file_url: preloadedStats.firstPhotoUrl, file: preloadedStats.firstPhotoUrl }] : []);
+      // ProjectAsset uses 'file' field, not 'file_url'
+      setPhotos(preloadedStats.firstPhotoUrl ? [{ file: preloadedStats.firstPhotoUrl, category: 'photos' }] : []);
       return;
     }
 
@@ -69,27 +81,24 @@ function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preload
     const loadProjectStats = async () => {
       try {
         // Use cached APIs for better performance
-        const [unitsData, assetsData] = await Promise.all([
+        const [unitsData, projectData] = await Promise.all([
           developersApi.units.listCached(),
-          developersApi.assets.getByProject(project.id),
+          developersApi.projects.get(project.id), // Get full project with assets (photos)
         ]);
         
         const projectUnits = unitsData.filter(unit => unit.project === project.id);
         setUnits(projectUnits);
-        setAssets(assetsData);
-
-        // Filter images from assets (all image assets, not just 'photos' category)
-        // DeveloperAsset doesn't have 'photos' category - it has: exterior, interior, construction, etc.
-        const projectImages = assetsData.filter(asset => asset.asset_type === 'image');
         
-        // Sort: featured first, then by upload date
-        const sortedImages = [...projectImages].sort((a, b) => {
-          if (a.is_featured && !b.is_featured) return -1;
-          if (!a.is_featured && b.is_featured) return 1;
+        // Photos come from project.assets (ProjectAsset with category='photos')
+        const projectPhotos = (projectData.assets || []).filter((asset: any) => asset.category === 'photos');
+        
+        // Sort by upload date (most recent first)
+        const sortedPhotos = [...projectPhotos].sort((a, b) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
         });
         
-        setPhotos(sortedImages);
+        setPhotos(sortedPhotos);
+        setAssets(projectData.assets || []); // Store all project assets
         
       } catch (error) {
         console.error('Failed to load project stats:', error);

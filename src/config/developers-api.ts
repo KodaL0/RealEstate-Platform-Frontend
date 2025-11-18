@@ -311,8 +311,21 @@ export interface Project {
   is_published: boolean;
   created_at: string;
   updated_at: string;
-  assets?: DeveloperAsset[];
+  assets?: ProjectAsset[]; // Photos come from Project.assets (ProjectAsset with category='photos')
+  developer_assets?: DeveloperAsset[]; // Documents come from DeveloperAsset endpoint
   units?: Unit[];
+}
+
+// ProjectAsset interface for photos (from projects endpoint)
+export interface ProjectAsset {
+  id: number;
+  project: number;
+  file: string;
+  category: 'floor_plans' | 'brochures' | 'legal_documents' | 'photos' | 'videos' | 'presentations' | 'specifications' | 'contracts' | 'permits' | 'other';
+  title?: string;
+  description?: string;
+  metadata: Record<string, any>;
+  uploaded_at: string;
 }
 
 export interface Unit {
@@ -699,7 +712,39 @@ export const unitsApi = {
 };
 
 // ────────────────────────────────────────────────────────────────────────────
-// Developer Assets API (Enhanced)
+// Project Assets API (Photos - from projects endpoint)
+// ────────────────────────────────────────────────────────────────────────────
+
+export const projectAssetsApi = {
+  // Get project assets (photos) - these come from project.assets
+  // Use projects.get(id) to get project with assets included
+  
+  // Delete a photo (ProjectAsset)
+  delete: (id: number): Promise<void> =>
+    devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`)),
+  
+  // Create a photo (ProjectAsset) - use projects.uploadAsset instead
+  create: (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
+    if (data.file) {
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value !== undefined && key !== 'file') {
+          if (key === 'metadata' && typeof value === 'object') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            formData.append(key, value as string | Blob);
+          }
+        }
+      });
+      formData.append('file', data.file);
+      return devApiFormPost<ProjectAsset>(formatDevEndpoint('project-assets'), formData);
+    }
+    return devApiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data);
+  },
+};
+
+// ────────────────────────────────────────────────────────────────────────────
+// Developer Assets API (Enhanced - Documents)
 // ────────────────────────────────────────────────────────────────────────────
 
 export const assetsApi = {
@@ -844,7 +889,8 @@ export const developersApi = {
   organizations: organizationsApi,
   projects: projectsApi,
   units: unitsApi,
-  assets: assetsApi,
+  projectAssets: projectAssetsApi, // Photos (ProjectAsset)
+  assets: assetsApi, // Documents (DeveloperAsset)
   
   // Cache management methods
   cache: developerApiCache,

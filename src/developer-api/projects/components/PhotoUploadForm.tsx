@@ -44,12 +44,11 @@ export default function PhotoUploadForm({ projectId, onClose, onUpload }: PhotoU
     try {
       const uploadPromises = uploadedPhotos.map(async (photoData) => {
         try {
-          const response = await developersApi.assets.create({
+          // Photos are ProjectAsset, not DeveloperAsset - use projectAssets API
+          const response = await developersApi.projectAssets.create({
             file: photoData.file,
             project: projectId,
-            asset_type: 'image',
-            image_category: 'exterior', // Default to 'exterior' - valid category in DeveloperAsset
-            // Valid categories: 'exterior', 'interior', 'construction', 'amenities', 'surroundings', 'renderings', 'floor_plans', 'other_images'
+            category: 'photos', // ProjectAsset uses 'category' field with 'photos' value
             title: title || photoData.file.name.split('.')[0],
             description: description,
           });
