@@ -95,15 +95,13 @@ class DeveloperPortalApiService {
 
       const organization = orgResponse.organization || null;
 
-      // Calculate project stats
+      // Use denormalized count fields from API instead of calculating
       const projectStats: Record<number, ProjectStats> = {};
       
       projects.forEach(project => {
+        // Use count fields from project object (denormalized, maintained by signals)
+        // Fallback to calculating if fields not available (backward compatibility)
         const projectUnits = units.filter(u => u.project === project.id);
-        const projectDocuments = assets.filter(a => a.project === project.id); // DeveloperAsset (documents)
-        
-        // Photos come from project.assets (ProjectAsset with category='photos')
-        // Documents come from assets endpoint (DeveloperAsset)
         const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
         
         // Sort photos by upload date (most recent first)
@@ -123,9 +121,9 @@ class DeveloperPortalApiService {
         };
 
         projectStats[project.id] = {
-          unitsCount: projectUnits.length,
-          assetsCount: projectDocuments.length, // Document count from DeveloperAsset
-          photosCount: projectPhotos.length, // Photo count from ProjectAsset
+          unitsCount: project.total_units || projectUnits.length, // Use denormalized field
+          assetsCount: project.assets_count ?? (assets.filter(a => a.project === project.id).length), // Use denormalized field with fallback
+          photosCount: project.photos_count ?? projectPhotos.length, // Use denormalized field with fallback
           firstPhotoUrl: resolveFileUrl(sortedPhotos[0]?.file) || project.main_image,
         };
       });
@@ -247,18 +245,17 @@ class DeveloperPortalApiService {
         this.dataCache.projects.push(project);
       }
       
-      // Recalculate stats for this project
-      const projectUnits = this.dataCache.units.filter(u => u.project === project.id);
-      const projectAssets = this.dataCache.assets.filter(a => a.project === project.id);
-      const projectPhotos = projectAssets.filter(a => 
-        a.asset_type === 'image' && a.image_category === 'photos'
-      );
+      // Use denormalized count fields from project object
+      const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
+      const sortedPhotos = [...projectPhotos].sort((a, b) => {
+        return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+      });
 
       this.dataCache.projectStats[project.id] = {
-        unitsCount: projectUnits.length,
-        assetsCount: projectAssets.length,
-        photosCount: projectPhotos.length,
-        firstPhotoUrl: projectPhotos[0]?.file_url || projectPhotos[0]?.file || project.main_image,
+        unitsCount: project.total_units || 0,
+        assetsCount: project.assets_count ?? 0,
+        photosCount: project.photos_count ?? 0,
+        firstPhotoUrl: sortedPhotos[0]?.file || project.main_image,
       };
     }
   }
@@ -270,9 +267,9 @@ class DeveloperPortalApiService {
     if (this.dataCache) {
       this.dataCache.projects.push(project);
       this.dataCache.projectStats[project.id] = {
-        unitsCount: 0,
-        assetsCount: 0,
-        photosCount: 0,
+        unitsCount: project.total_units || 0,
+        assetsCount: project.assets_count ?? 0,
+        photosCount: project.photos_count ?? 0,
         firstPhotoUrl: project.main_image,
       };
     }

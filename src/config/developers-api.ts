@@ -298,6 +298,8 @@ export interface Project {
   completion_date?: string;
   total_units: number;
   available_units: number;
+  assets_count?: number; // Count of DeveloperAsset documents (denormalized)
+  photos_count?: number; // Count of ProjectAsset photos (denormalized)
   price_min?: number;
   price_max?: number;
   currency: string;
