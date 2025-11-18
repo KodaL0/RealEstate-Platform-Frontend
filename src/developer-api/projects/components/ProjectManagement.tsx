@@ -25,9 +25,11 @@ interface ProjectManagementProps {
   project: Project;
   activeSection: 'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team';
   onViewChange?: (view: string) => void;
+  onStatsChange?: (stats: { units: number; assets: number; photos: number }) => void;
+  onProjectUpdate?: (project: Project) => void;
 }
 
-export default function ProjectManagement({ project, activeSection, onViewChange }: ProjectManagementProps) {
+export default function ProjectManagement({ project, activeSection, onViewChange, onStatsChange, onProjectUpdate }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
   const [assets, setAssets] = useState<DeveloperAsset[]>([]); // Documents (DeveloperAsset)
   const [photos, setPhotos] = useState<any[]>([]); // Photos (ProjectAsset)
@@ -64,6 +66,15 @@ export default function ProjectManagement({ project, activeSection, onViewChange
         setPhotos(sortedPhotos);
         setAssets(documentsData); // Documents (DeveloperAsset)
         
+        // Notify parent component of stats
+        if (onStatsChange) {
+          onStatsChange({
+            units: projectUnits.length,
+            assets: documentsData.length,
+            photos: sortedPhotos.length,
+          });
+        }
+        
       } catch (error) {
         console.error('Failed to load project data:', error);
         // Set empty arrays on error
@@ -76,7 +87,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     };
 
     loadProjectData();
-  }, [project.id]);
+  }, [project.id, onStatsChange]);
 
   // Helper to resolve relative file URLs to absolute URLs
   const resolveFileUrl = (fileUrl: string | undefined): string => {
@@ -106,7 +117,17 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     
     try {
       await developersApi.units.delete(unitId);
-      setUnits(units.filter(unit => unit.id !== unitId));
+      const updatedUnits = units.filter(unit => unit.id !== unitId);
+      setUnits(updatedUnits);
+      
+      // Update stats
+      if (onStatsChange) {
+        onStatsChange({
+          units: updatedUnits.length,
+          assets: assets.length,
+          photos: photos.length,
+        });
+      }
     } catch (error) {
       console.error('Failed to delete unit:', error);
     }
@@ -126,20 +147,41 @@ export default function ProjectManagement({ project, activeSection, onViewChange
         return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
       });
       setPhotos(sortedPhotos);
+      
+      // Update stats
+      if (onStatsChange) {
+        onStatsChange({
+          units: units.length,
+          assets: assets.length,
+          photos: sortedPhotos.length,
+        });
+      }
     } catch (error) {
       console.error('Failed to delete photo:', error);
     }
   };
 
   const handleSaveUnit = (savedUnit: Unit) => {
+    let updatedUnits: Unit[];
     if (savedUnit.id) {
       // Update existing unit
-      setUnits(prev => prev.map(unit => unit.id === savedUnit.id ? savedUnit : unit));
+      updatedUnits = units.map(unit => unit.id === savedUnit.id ? savedUnit : unit);
+      setUnits(updatedUnits);
     } else {
       // Add new unit
-      setUnits(prev => [...prev, savedUnit]);
+      updatedUnits = [...units, savedUnit];
+      setUnits(updatedUnits);
     }
     setShowUnitForm(false);
+    
+    // Update stats
+    if (onStatsChange) {
+      onStatsChange({
+        units: updatedUnits.length,
+        assets: assets.length,
+        photos: photos.length,
+      });
+    }
   };
 
   const handleCancelUnitForm = () => {
@@ -149,13 +191,33 @@ export default function ProjectManagement({ project, activeSection, onViewChange
 
   const handleAssetUpload = (newAsset: DeveloperAsset) => {
     // This is for documents (DeveloperAsset)
-    setAssets([newAsset, ...assets]);
+    const updatedAssets = [newAsset, ...assets];
+    setAssets(updatedAssets);
     setShowAssetUpload(false);
+    
+    // Update stats
+    if (onStatsChange) {
+      onStatsChange({
+        units: units.length,
+        assets: updatedAssets.length,
+        photos: photos.length,
+      });
+    }
   };
 
   const handlePhotoUpload = (newPhoto: any) => {
-    setPhotos([newPhoto, ...photos]);
+    const updatedPhotos = [newPhoto, ...photos];
+    setPhotos(updatedPhotos);
     setShowPhotoUpload(false);
+    
+    // Update stats
+    if (onStatsChange) {
+      onStatsChange({
+        units: units.length,
+        assets: assets.length,
+        photos: updatedPhotos.length,
+      });
+    }
   };
 
   const getStatusBadgeStyle = (status: string) => {
@@ -430,7 +492,20 @@ export default function ProjectManagement({ project, activeSection, onViewChange
 
       {activeSection === 'assets' && (
         <div className="bg-white/70 backdrop-blur-sm border border-slate-200/60 rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden">
-          <AssetManager projectId={project.id} />
+          <AssetManager 
+            projectId={project.id}
+            onStatsChange={(assetStats) => {
+              // AssetManager reports DeveloperAsset counts
+              // Update our assets state and notify parent
+              if (onStatsChange) {
+                onStatsChange({
+                  units: units.length,
+                  assets: assetStats.assets, // Use count from AssetManager
+                  photos: photos.length, // Keep photos from ProjectAsset
+                });
+              }
+            }}
+          />
         </div>
       )}
 
