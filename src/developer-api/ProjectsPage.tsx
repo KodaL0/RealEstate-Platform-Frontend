@@ -207,9 +207,9 @@ export default function ProjectsPage() {
             onViewChange={handleProjectViewChange}
             activeView={projectSection}
             stats={{
-              units: 0, // TODO: Get actual counts from ProjectManagement
-              assets: 0, // TODO: Get actual counts from ProjectManagement
-              photos: 0, // TODO: Get actual counts from ProjectManagement
+              units: projectStats[activeProject.id]?.unitsCount || 0,
+              assets: projectStats[activeProject.id]?.assetsCount || 0,
+              photos: projectStats[activeProject.id]?.photosCount || 0,
             }}
             compact={false}
             showHeader={false}
@@ -222,6 +222,22 @@ export default function ProjectsPage() {
           activeSection={projectSection} 
           onProjectUpdate={handleProjectUpdate}
           onViewChange={handleProjectViewChange}
+          onStatsUpdate={async (stats) => {
+            // Update project stats when data changes
+            setProjectStats(prev => ({
+              ...prev,
+              [activeProject.id]: {
+                unitsCount: stats.units,
+                assetsCount: stats.assets,
+                photosCount: stats.photos,
+                firstPhotoUrl: prev[activeProject.id]?.firstPhotoUrl,
+              },
+            }));
+            
+            // Also update the portal API cache
+            const projectData = await developersApi.projects.get(activeProject.id);
+            await developerPortalApi.updateProject(projectData);
+          }}
         />
       </div>
     );

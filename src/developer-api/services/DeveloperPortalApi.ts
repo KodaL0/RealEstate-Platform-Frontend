@@ -248,17 +248,31 @@ class DeveloperPortalApiService {
       }
       
       // Recalculate stats for this project
+      // Photos come from project.assets (ProjectAsset), not DeveloperAsset
       const projectUnits = this.dataCache.units.filter(u => u.project === project.id);
-      const projectAssets = this.dataCache.assets.filter(a => a.project === project.id);
-      const projectPhotos = projectAssets.filter(a => 
-        a.asset_type === 'image' && a.image_category === 'photos'
-      );
+      const projectDocuments = this.dataCache.assets.filter(a => a.project === project.id); // DeveloperAsset (documents)
+      const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
+
+      // Sort photos by upload date (most recent first)
+      const sortedPhotos = [...projectPhotos].sort((a, b) => {
+        return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
+      });
+
+      // Resolve relative file URLs to absolute URLs
+      const resolveFileUrl = (fileUrl: string | undefined): string | undefined => {
+        if (!fileUrl) return undefined;
+        if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+          return fileUrl; // Already absolute
+        }
+        const apiBaseUrl = environment.baseUrl;
+        return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+      };
 
       this.dataCache.projectStats[project.id] = {
         unitsCount: projectUnits.length,
-        assetsCount: projectAssets.length,
-        photosCount: projectPhotos.length,
-        firstPhotoUrl: projectPhotos[0]?.file_url || projectPhotos[0]?.file || project.main_image,
+        assetsCount: projectDocuments.length, // Document count from DeveloperAsset
+        photosCount: projectPhotos.length, // Photo count from ProjectAsset
+        firstPhotoUrl: resolveFileUrl(sortedPhotos[0]?.file) || project.main_image,
       };
     }
   }
