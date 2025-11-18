@@ -44,10 +44,11 @@ export default function PhotoUploadForm({ projectId, onClose, onUpload }: PhotoU
     try {
       const uploadPromises = uploadedPhotos.map(async (photoData) => {
         try {
-          const response = await developersApi.projectAssets.create({
+          const response = await developersApi.assets.create({
             file: photoData.file,
             project: projectId,
-            category: 'photos' as const,
+            asset_type: 'image',
+            image_category: 'photos',
             title: title || photoData.file.name.split('.')[0],
             description: description,
           });
@@ -57,10 +58,10 @@ export default function PhotoUploadForm({ projectId, onClose, onUpload }: PhotoU
         }
       });
 
-      const uploadedProjectAssets = await Promise.all(uploadPromises);
+      const uploadedAssets = await Promise.all(uploadPromises);
       
       // Call onUpload for each successfully uploaded photo
-      uploadedProjectAssets.forEach(photo => onUpload(photo));
+      uploadedAssets.forEach(photo => onUpload(photo));
       
       onClose();
     } catch (error) {

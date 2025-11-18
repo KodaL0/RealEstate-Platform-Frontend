@@ -16,7 +16,6 @@ interface CacheStore {
   units: CacheEntry<any[]> | null;
   assets: CacheEntry<any[]> | null;
   projects: CacheEntry<any[]> | null;
-  projectAssets: CacheEntry<any[]> | null;
 }
 
 class DeveloperApiCache {
@@ -24,7 +23,6 @@ class DeveloperApiCache {
     units: null,
     assets: null,
     projects: null,
-    projectAssets: null,
   };
 
   private pendingRequests: Map<string, Promise<any>> = new Map();
@@ -89,7 +87,6 @@ class DeveloperApiCache {
       units: null,
       assets: null,
       projects: null,
-      projectAssets: null,
     };
   }
 
@@ -131,17 +128,15 @@ class DeveloperApiCache {
 
   async bulkFetch(api: any): Promise<void> {
     try {
-      const [units, assets, projects, projectAssets] = await Promise.all([
+      const [units, assets, projects] = await Promise.all([
         api.units.list(),
         api.assets.list(),
         api.projects.list(),
-        api.projectAssets.list(),
       ]);
 
       this.set('units', units);
       this.set('assets', assets);
       this.set('projects', projects);
-      this.set('projectAssets', projectAssets);
 
       console.log('Developer API: Bulk data cached successfully');
     } catch (error) {
@@ -316,19 +311,8 @@ export interface Project {
   is_published: boolean;
   created_at: string;
   updated_at: string;
-  assets?: ProjectAsset[];
+  assets?: DeveloperAsset[];
   units?: Unit[];
-}
-
-export interface ProjectAsset {
-  id: number;
-  project: number;
-  file: string;
-  category: 'floor_plans' | 'brochures' | 'legal_documents' | 'photos' | 'videos' | 'presentations' | 'specifications' | 'contracts' | 'permits' | 'other';
-  title?: string;
-  description?: string;
-  metadata: Record<string, any>;
-  uploaded_at: string;
 }
 
 export interface Unit {
@@ -597,22 +581,24 @@ export const projectsApi = {
   getPublic: (id: number): Promise<Project> =>
     devApiGet<Project>(formatDevEndpoint(`projects/${id}/public_detail`)),
 
-  // Upload project asset
+  // Upload project asset (legacy endpoint - use assets.create instead)
   uploadAsset: (projectId: number, data: {
     file: File;
     type?: string;
     title?: string;
     metadata?: Record<string, any>;
     progress_date?: string;
-  }): Promise<ProjectAsset> => {
+  }): Promise<DeveloperAsset> => {
     const formData = new FormData();
     formData.append('file', data.file);
-    if (data.type) formData.append('type', data.type);
+    formData.append('project', String(projectId));
+    if (data.type) formData.append('asset_type', data.type);
     if (data.title) formData.append('title', data.title);
     if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata));
     if (data.progress_date) formData.append('progress_date', data.progress_date);
     
-    return devApiFormPost<ProjectAsset>(formatDevEndpoint(`projects/${projectId}/upload_asset`), formData);
+    // Use the enhanced assets API instead of legacy project-assets endpoint
+    return devApiFormPost<DeveloperAsset>(formatDevEndpoint('assets'), formData);
   },
 
   // Ingest pricelist from text
@@ -709,66 +695,6 @@ export const unitsApi = {
     if (data.is_primary !== undefined) formData.append('is_primary', String(data.is_primary));
     
     return devApiFormPost<UnitMedia>(formatDevEndpoint(`units/${unitId}/upload_media`), formData);
-  },
-};
-
-// ────────────────────────────────────────────────────────────────────────────
-// Project Assets API (Legacy)
-// ────────────────────────────────────────────────────────────────────────────
-
-export const projectAssetsApi = {
-  // Raw API methods
-  list: (): Promise<ProjectAsset[]> =>
-    devApiGet<ProjectAsset[]>(formatDevEndpoint('project-assets')),
-
-  get: (id: number): Promise<ProjectAsset> =>
-    devApiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)),
-
-  create: (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
-    if (data.file) {
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (key === 'metadata' && typeof value === 'object') {
-            formData.append(key, JSON.stringify(value));
-          } else {
-            formData.append(key, value as string | Blob);
-          }
-        }
-      });
-      return devApiFormPost<ProjectAsset>(formatDevEndpoint('project-assets'), formData);
-    }
-    return devApiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data);
-  },
-
-  update: (id: number, data: Partial<ProjectAsset>): Promise<ProjectAsset> =>
-    devApiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data),
-
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`)),
-
-  // Cache-integrated methods
-  listCached: (): Promise<ProjectAsset[]> =>
-    developerApiCache.getCachedData('projectAssets', () => devApiGet<ProjectAsset[]>(formatDevEndpoint('project-assets'))),
-
-  getCached: (id: number): Promise<ProjectAsset> =>
-    devApiGet<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`)),
-
-  createAndCache: async (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
-    const result = await projectAssetsApi.create(data);
-    developerApiCache.addItem('projectAssets', result);
-    return result;
-  },
-
-  updateAndCache: async (id: number, data: Partial<ProjectAsset>): Promise<ProjectAsset> => {
-    const result = await devApiPut<ProjectAsset>(formatDevEndpoint(`project-assets/${id}`), data);
-    developerApiCache.updateItem('projectAssets', result);
-    return result;
-  },
-
-  deleteAndCache: async (id: number): Promise<void> => {
-    await devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`));
-    developerApiCache.removeItem('projectAssets', id);
   },
 };
 
@@ -918,7 +844,6 @@ export const developersApi = {
   organizations: organizationsApi,
   projects: projectsApi,
   units: unitsApi,
-  projectAssets: projectAssetsApi, // Legacy support
   assets: assetsApi,
   
   // Cache management methods

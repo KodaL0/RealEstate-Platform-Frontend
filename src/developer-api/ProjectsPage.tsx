@@ -27,6 +27,7 @@ export default function ProjectsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [slugById, setSlugById] = useState<Record<number, string>>({});
+  const [projectStats, setProjectStats] = useState<Record<number, { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }>>({});
 
   // Build unique slugs using project names. Duplicates become name(2), name(3), ...
   const buildUniqueSlugs = (items: Project[]): Record<number, string> => {
@@ -42,17 +43,49 @@ export default function ProjectsPage() {
     return result;
   };
 
-  // Fetch projects and organization
+  // Fetch projects and organization - optimized with parallel fetching and caching
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const orgResponse = await developersApi.organizations.getMine();
+        // Fetch organization and projects in parallel
+        const [orgResponse, projectsResponse] = await Promise.all([
+          developersApi.organizations.getMine(),
+          developersApi.projects.listCached(), // Use cached version
+        ]);
+        
         if (orgResponse.organization) {
           setOrganizationId(orgResponse.organization.id);
-          const projectsResponse = await developersApi.projects.list();
           const items = projectsResponse || [];
           setProjects(items);
           setSlugById(buildUniqueSlugs(items));
+          
+          // Pre-fetch stats for all projects in parallel (but don't block UI)
+          // This will populate cache for faster card rendering
+          Promise.all([
+            developersApi.units.listCached(),
+            developersApi.assets.listCached(),
+          ]).then(([unitsData, assetsData]) => {
+            const stats: Record<number, { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }> = {};
+            
+            items.forEach(project => {
+              const projectUnits = unitsData.filter(u => u.project === project.id);
+              const projectAssets = assetsData.filter(a => a.project === project.id);
+              const projectPhotos = projectAssets.filter(a => 
+                a.asset_type === 'image' && a.image_category === 'photos'
+              );
+              
+              stats[project.id] = {
+                unitsCount: projectUnits.length,
+                assetsCount: projectAssets.length,
+                photosCount: projectPhotos.length,
+                firstPhotoUrl: projectPhotos[0]?.file_url || projectPhotos[0]?.file || project.main_image,
+              };
+            });
+            
+            setProjectStats(stats);
+          }).catch(err => {
+            console.error('Error pre-loading project stats:', err);
+          });
         }
       } catch (error: any) {
         console.error('Error fetching data:', error);
@@ -243,6 +276,7 @@ export default function ProjectsPage() {
                 onViewChange={() => {}}
                 onEdit={() => {}}
                 onDelete={() => {}}
+                preloadedStats={projectStats[project.id]}
               />
             ))}
           </div>

@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, memo } from 'react';
 import { Building } from 'lucide-react';
 import UnitPublishModal from './UnitPublishModal';
 import developersApi from '../../../config/developers-api';
+import { useImageLazyLoad } from '../../../hooks/useImageLazyLoad';
 
 type Project = {
   id: number;
@@ -18,9 +19,16 @@ interface ProjectCardProps {
   onViewChange?: (view: string) => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  // Pre-loaded stats to avoid N+1 queries
+  preloadedStats?: {
+    unitsCount?: number;
+    assetsCount?: number;
+    photosCount?: number;
+    firstPhotoUrl?: string;
+  };
 }
 
-export default function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete }: ProjectCardProps) {
+function ProjectCard({ project, onClick, onViewChange, onEdit, onDelete, preloadedStats }: ProjectCardProps) {
   const [units, setUnits] = useState<any[]>([]);
   const [assets, setAssets] = useState<any[]>([]);
   const [photos, setPhotos] = useState<any[]>([]);
@@ -28,22 +36,40 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [isPublished, setIsPublished] = useState<boolean>(Boolean((project as any).is_published));
   const [isBusy, setIsBusy] = useState(false);
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageError, setImageError] = useState(false);
+  const imageRef = useRef<HTMLDivElement>(null);
+  const { hasBeenVisible } = useImageLazyLoad(imageRef, { rootMargin: '100px' });
 
+  // Use preloaded stats if available, otherwise fetch (lazy load stats)
   useEffect(() => {
+    if (preloadedStats) {
+      // Use preloaded data
+      setUnits(Array(preloadedStats.unitsCount || 0).fill(null));
+      setAssets(Array(preloadedStats.assetsCount || 0).fill(null));
+      setPhotos(preloadedStats.firstPhotoUrl ? [{ file_url: preloadedStats.firstPhotoUrl }] : []);
+      return;
+    }
+
+    // Fallback: lazy load stats only when card becomes visible
+    if (!hasBeenVisible) return;
+
     const loadProjectStats = async () => {
       try {
-        // Fetch units for this project
-        const unitsData = await developersApi.units.list();
+        // Use cached APIs for better performance
+        const [unitsData, assetsData] = await Promise.all([
+          developersApi.units.listCached(),
+          developersApi.assets.getByProject(project.id),
+        ]);
+        
         const projectUnits = unitsData.filter(unit => unit.project === project.id);
         setUnits(projectUnits);
+        setAssets(assetsData);
 
-        // Fetch assets for this project
-        const assetsData = await developersApi.projectAssets.list();
-        const projectAssets = assetsData.filter(asset => asset.project === project.id);
-        setAssets(projectAssets);
-
-        // Filter photos from assets
-        const projectPhotos = projectAssets.filter(asset => asset.category === 'photos');
+        // Filter photos from assets (images with photo category)
+        const projectPhotos = assetsData.filter(asset => 
+          asset.asset_type === 'image' && asset.image_category === 'photos'
+        );
         setPhotos(projectPhotos);
         
       } catch (error) {
@@ -55,7 +81,7 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     };
 
     loadProjectStats();
-  }, [project.id]);
+  }, [project.id, preloadedStats, hasBeenVisible]);
 
 
 
@@ -63,24 +89,36 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     <div 
       className="bg-white border rounded-lg hover:border-gray-300 transition-colors overflow-hidden"
     >
-      {/* Image */}
+      {/* Image with lazy loading */}
       <div 
-        className="h-36 bg-gray-100 relative cursor-pointer" 
+        ref={imageRef}
+        className="h-36 bg-gray-100 relative cursor-pointer overflow-hidden" 
         onClick={() => onClick(project)}
       >
-        {project.main_image || photos[0]?.file ? (
+        {/* Placeholder while loading */}
+        {!imageLoaded && !imageError && (
+          <div className="absolute inset-0 bg-gradient-to-br from-gray-200 to-gray-300 animate-pulse flex items-center justify-center">
+            <Building className="w-12 h-12 text-gray-400" />
+          </div>
+        )}
+
+        {/* Actual image - only load when visible */}
+        {hasBeenVisible && (project.main_image || photos[0]?.file_url || photos[0]?.file) && !imageError ? (
           <img 
-            src={project.main_image || photos[0]?.file} 
+            src={project.main_image || photos[0]?.file_url || photos[0]?.file} 
             alt={project.name}
-            className="w-full h-full object-cover"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-              e.currentTarget.nextElementSibling?.classList.remove('hidden');
+            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            loading="lazy"
+            onLoad={() => setImageLoaded(true)}
+            onError={() => {
+              setImageError(true);
+              setImageLoaded(false);
             }}
           />
         ) : null}
 
-        <div className={`w-full h-full flex items-center justify-center ${(project.main_image || photos[0]?.file) ? 'hidden' : ''}`}>
+        {/* Fallback icon when no image or error */}
+        <div className={`w-full h-full flex items-center justify-center ${(hasBeenVisible && (project.main_image || photos[0]?.file_url || photos[0]?.file) && !imageError) ? 'hidden' : ''}`}>
           <Building className="w-16 h-16 text-gray-400" />
         </div>
 
@@ -144,7 +182,11 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
 
         {/* Quick Stats Summary */}
         <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-          <span>📊 {units.length} units • {assets.length} assets • {photos.length} photos</span>
+          <span>📊 {
+            preloadedStats 
+              ? `${preloadedStats.unitsCount || 0} units • ${preloadedStats.assetsCount || 0} assets • ${preloadedStats.photosCount || 0} photos`
+              : `${units.length} units • ${assets.length} assets • ${photos.length} photos`
+          }</span>
           <span className="text-xs text-gray-400">ID: {project.id}</span>
         </div>
       </div>
@@ -162,3 +204,6 @@ export default function ProjectCard({ project, onClick, onViewChange, onEdit, on
     </div>
   );
 }
+
+// Memoize to prevent unnecessary re-renders
+export default memo(ProjectCard);

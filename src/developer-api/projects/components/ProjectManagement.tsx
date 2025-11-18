@@ -5,7 +5,7 @@ import PhotoUploadForm from './PhotoUploadForm';
 import EnhancedUnitsManager from './EnhancedUnitsManager';
 import AssetManager from '../../assets/AssetManager';
 import ProjectPreview from './ProjectPreview';
-import developersApi, { Unit, ProjectAsset } from '../../../config/developers-api';
+import developersApi, { Unit, DeveloperAsset } from '../../../config/developers-api';
 
 type Project = {
   id: number;
@@ -28,8 +28,8 @@ interface ProjectManagementProps {
 
 export default function ProjectManagement({ project, activeSection, onViewChange }: ProjectManagementProps) {
   const [units, setUnits] = useState<Unit[]>([]);
-  const [assets, setAssets] = useState<ProjectAsset[]>([]);
-  const [photos, setPhotos] = useState<ProjectAsset[]>([]);
+  const [assets, setAssets] = useState<DeveloperAsset[]>([]);
+  const [photos, setPhotos] = useState<DeveloperAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showUnitForm, setShowUnitForm] = useState(false);
   const [editingUnit, setEditingUnit] = useState<Unit | null>(null);
@@ -46,12 +46,13 @@ export default function ProjectManagement({ project, activeSection, onViewChange
         setUnits(projectUnits);
 
         // Fetch assets for this project
-        const assetsData = await developersApi.projectAssets.list();
-        const projectAssets = assetsData.filter(asset => asset.project === project.id);
-        setAssets(projectAssets);
+        const assetsData = await developersApi.assets.getByProject(project.id);
+        setAssets(assetsData);
         
-        // Filter photos from assets
-        const projectPhotos = projectAssets.filter(asset => asset.category === 'photos');
+        // Filter photos from assets (images with photo category)
+        const projectPhotos = assetsData.filter(asset => 
+          asset.asset_type === 'image' && asset.image_category === 'photos'
+        );
         setPhotos(projectPhotos);
         
       } catch (error) {
@@ -71,7 +72,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
   const getHeroImage = () => {
     if (photos.length > 0) {
       // Use the first uploaded photo
-      return photos[0].file;
+      return photos[0].file_url || photos[0].file;
     }
     if (project.main_image) {
       return project.main_image;
@@ -95,7 +96,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     if (!confirm('Are you sure you want to delete this photo?')) return;
 
     try {
-      await developersApi.projectAssets.delete(photoId);
+      await developersApi.assets.delete(photoId);
       setPhotos(photos.filter(photo => photo.id !== photoId));
       // Also remove from assets since photos are stored as assets
       setAssets(assets.filter(asset => asset.id !== photoId));
@@ -120,20 +121,12 @@ export default function ProjectManagement({ project, activeSection, onViewChange
     setEditingUnit(null);
   };
 
-  const handleAssetUpload = (newAsset: any) => {
-    // Normalize to ProjectAsset-like structure if coming from new assets API
-    const normalized: ProjectAsset = {
-      id: newAsset.id,
-      project: project.id,
-      category: newAsset.document_category || newAsset.image_category || newAsset.video_category || 'other',
-      title: newAsset.title,
-      description: newAsset.description,
-      file: newAsset.file_url || newAsset.file,
-      uploaded_at: newAsset.uploaded_at || new Date().toISOString(),
-      metadata: newAsset.metadata || {}
-    } as any;
-
-    setAssets([normalized, ...assets]);
+  const handleAssetUpload = (newAsset: DeveloperAsset) => {
+    setAssets([newAsset, ...assets]);
+    // If it's a photo, also add to photos
+    if (newAsset.asset_type === 'image' && newAsset.image_category === 'photos') {
+      setPhotos([newAsset, ...photos]);
+    }
     setShowAssetUpload(false);
   };
 
@@ -472,7 +465,7 @@ export default function ProjectManagement({ project, activeSection, onViewChange
                 <div key={photo.id} className="group relative">
                   <div className="aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl overflow-hidden shadow-lg shadow-slate-200/50 group-hover:shadow-xl group-hover:shadow-slate-300/50 transition-all duration-300">
                     <img 
-                      src={photo.file} 
+                      src={photo.file_url || photo.file} 
                       alt={photo.title || `Photo ${index + 1}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                     />
