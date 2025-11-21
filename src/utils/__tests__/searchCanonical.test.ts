@@ -70,7 +70,7 @@ describe("searchCanonical", () => {
     };
 
     const segments = encodeCanonicalSegments(filters, {});
-    const amenitiesIdx = segments.findIndex((segment) => segment === "amenities");
+    const amenitiesIdx = segments.indexOf("amenities");
     expect(amenitiesIdx).toBeGreaterThan(-1);
     expect(segments[amenitiesIdx + 1]).toBe("parking,pool");
 
@@ -124,4 +124,3 @@ describe("searchCanonical", () => {
     expect(decoded.extras.sort).toBe("price-asc");
   });
 });
-

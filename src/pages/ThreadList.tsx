@@ -1,64 +1,14 @@
-import { Link, useParams } from "react-router-dom";
+import { CheckCheck, Clock, Home, MapPin, MessageCircle, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { useEffect, useState } from "react";
-import {
-  MapPin,
-  Search,
-  Home,
-  MessageCircle,
-  Clock,
-  CheckCheck
-} from "lucide-react";
 
 export default function ThreadList() {
   const { threads, messages } = useChat();
   const { user } = useUser();
-  const { id: activeId } = useParams<{ id: string }>();
   const [filteredThreads, setFilteredThreads] = useState(threads);
   const [searchTerm, setSearchTerm] = useState("");
-
-  useEffect(() => {
-    let filtered = [...threads];
-    if (searchTerm) {
-      filtered = filtered.filter((thread) =>
-        thread.property_title
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        thread.project_info?.name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        thread.organization_info?.name
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        thread.other_username
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        thread.property_address
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase()) ||
-        thread.project_info?.location
-          ?.toLowerCase()
-          .includes(searchTerm.toLowerCase())
-      );
-    }
-    filtered.sort((a, b) => {
-      const aLast = getLastMessage(a.id);
-      const bLast = getLastMessage(b.id);
-      const aTime =
-        aLast?.created_at ||
-        a.last_message?.created_at ||
-        a.updated_at ||
-        "0";
-      const bTime =
-        bLast?.created_at ||
-        b.last_message?.created_at ||
-        b.updated_at ||
-        "0";
-      return new Date(bTime).getTime() - new Date(aTime).getTime();
-    });
-    setFilteredThreads(filtered);
-  }, [threads, searchTerm, messages]);
 
   const getLastMessage = (threadId: string) => {
     const threadMessages = messages[threadId];
@@ -72,17 +22,37 @@ export default function ThreadList() {
         thread_id: threadId,
         property_id: thread.property,
         sender: thread.last_message.sender,
-        recipient:
-          thread.user1 === thread.last_message.sender
-            ? thread.user2
-            : thread.user1,
+        recipient: thread.user1 === thread.last_message.sender ? thread.user2 : thread.user1,
         content: thread.last_message.content,
         created_at: thread.last_message.created_at,
-        read_at: thread.last_message.read_at
+        read_at: thread.last_message.read_at,
       };
     }
     return null;
   };
+
+  useEffect(() => {
+    let filtered = [...threads];
+    if (searchTerm) {
+      filtered = filtered.filter(
+        (thread) =>
+          thread.property_title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          thread.project_info?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          thread.organization_info?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          thread.other_username?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          thread.property_address?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          thread.project_info?.location?.toLowerCase().includes(searchTerm.toLowerCase()),
+      );
+    }
+    filtered.sort((a, b) => {
+      const aLast = getLastMessage(a.id);
+      const bLast = getLastMessage(b.id);
+      const aTime = aLast?.created_at || a.last_message?.created_at || a.updated_at || "0";
+      const bTime = bLast?.created_at || b.last_message?.created_at || b.updated_at || "0";
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
+    });
+    setFilteredThreads(filtered);
+  }, [threads, searchTerm, messages]);
 
   const formatTime = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -101,7 +71,7 @@ export default function ThreadList() {
     } else {
       return date.toLocaleDateString("en-GB", {
         day: "numeric",
-        month: "short"
+        month: "short",
       });
     }
   };
@@ -109,9 +79,7 @@ export default function ThreadList() {
   const getTotalUnreadCount = () =>
     filteredThreads.reduce((total, thread) => {
       const unreadMessages =
-        messages[thread.id]?.filter(
-          (msg) => !msg.read_at && msg.sender !== user?.id
-        ) || [];
+        messages[thread.id]?.filter((msg) => !msg.read_at && msg.sender !== user?.id) || [];
       return total + unreadMessages.length;
     }, 0);
 
@@ -125,9 +93,7 @@ export default function ThreadList() {
               <MessageCircle size={20} className="text-white" />
             </div>
             <div>
-              <h1 className="text-2xl font-bold text-slate-800">
-                Messages
-              </h1>
+              <h1 className="text-2xl font-bold text-slate-800">Messages</h1>
               <div className="flex items-center gap-3 text-sm text-slate-500">
                 <span>
                   {filteredThreads.length} conversation
@@ -205,11 +171,23 @@ export default function ThreadList() {
                   <div className="px-6 py-5 flex items-start gap-4">
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      {(thread.property_image || thread.project_info?.image || thread.organization_info?.logo) ? (
+                      {thread.property_image ||
+                      thread.project_info?.image ||
+                      thread.organization_info?.logo ? (
                         <div className="relative">
                           <img
-                            src={thread.property_image || thread.project_info?.image || thread.organization_info?.logo || ''}
-                            alt={thread.property_title || thread.project_info?.name || thread.organization_info?.name || "Thread"}
+                            src={
+                              thread.property_image ||
+                              thread.project_info?.image ||
+                              thread.organization_info?.logo ||
+                              ""
+                            }
+                            alt={
+                              thread.property_title ||
+                              thread.project_info?.name ||
+                              thread.organization_info?.name ||
+                              "Thread"
+                            }
                             className="w-14 h-14 rounded-xl object-cover border-2 border-white shadow-lg ring-2 ring-slate-100 group-hover:ring-slate-200 transition-all duration-200"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl" />
@@ -312,22 +290,15 @@ export default function ThreadList() {
                             {lastMessage
                               ? formatTime(lastMessage.created_at)
                               : thread.last_message
-                              ? formatTime(thread.last_message.created_at)
-                              : formatTime(new Date().toISOString())}
+                                ? formatTime(thread.last_message.created_at)
+                                : formatTime(new Date().toISOString())}
                           </span>
                           {isOwn && (
                             <div className="flex items-center gap-1">
-                              {(lastMessage?.read_at ||
-                                thread.last_message?.read_at) ? (
-                                <CheckCheck
-                                  size={12}
-                                  className="text-blue-500"
-                                />
+                              {lastMessage?.read_at || thread.last_message?.read_at ? (
+                                <CheckCheck size={12} className="text-blue-500" />
                               ) : (
-                                <Clock
-                                  size={12}
-                                  className="text-slate-400"
-                                />
+                                <Clock size={12} className="text-slate-400" />
                               )}
                             </div>
                           )}
@@ -338,9 +309,7 @@ export default function ThreadList() {
                         {lastMessage ? (
                           <p
                             className={`text-sm truncate ${
-                              hasUnread
-                                ? "font-medium text-slate-700"
-                                : "text-slate-600"
+                              hasUnread ? "font-medium text-slate-700" : "text-slate-600"
                             }`}
                           >
                             <span
@@ -362,10 +331,7 @@ export default function ThreadList() {
 
                       {(thread.property_address || thread.project_info?.location) && (
                         <div className="flex items-center text-xs text-slate-500 gap-1.5 mb-2">
-                          <MapPin
-                            size={12}
-                            className="flex-shrink-0 text-slate-400"
-                          />
+                          <MapPin size={12} className="flex-shrink-0 text-slate-400" />
                           <span className="truncate">
                             {thread.property_address || thread.project_info?.location}
                           </span>
@@ -376,9 +342,7 @@ export default function ThreadList() {
                         {hasUnread && (
                           <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                            <span className="text-xs font-medium text-blue-600">
-                              New messages
-                            </span>
+                            <span className="text-xs font-medium text-blue-600">New messages</span>
                           </div>
                         )}
                         <div className="opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-x-2 group-hover:translate-x-0">
@@ -414,25 +378,19 @@ export default function ThreadList() {
               <div className="text-xl font-bold text-slate-800 group-hover:text-blue-600 transition-colors">
                 {threads.length}
               </div>
-              <div className="text-xs text-slate-500 font-medium">
-                Total Chats
-              </div>
+              <div className="text-xs text-slate-500 font-medium">Total Chats</div>
             </div>
             <div className="group">
               <div className="text-xl font-bold text-slate-800 group-hover:text-green-600 transition-colors">
-                {threads.filter(t => t.property || t.project_info).length}
+                {threads.filter((t) => t.property || t.project_info).length}
               </div>
-              <div className="text-xs text-slate-500 font-medium">
-                Listings
-              </div>
+              <div className="text-xs text-slate-500 font-medium">Listings</div>
             </div>
             <div className="group">
               <div className="text-xl font-bold text-slate-800 group-hover:text-red-600 transition-colors">
                 {getTotalUnreadCount()}
               </div>
-              <div className="text-xs text-slate-500 font-medium">
-                Unread
-              </div>
+              <div className="text-xs text-slate-500 font-medium">Unread</div>
             </div>
           </div>
         </div>

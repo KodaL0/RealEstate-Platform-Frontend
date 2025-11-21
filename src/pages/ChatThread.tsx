@@ -1,11 +1,10 @@
-import { useParams, Link, useNavigate } from "react-router-dom";
-import { useEffect, useState, useRef, useMemo } from "react";
+import { ChevronDown, Send, Trash2, User as UserIcon, X } from "lucide-react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { apiClient } from "../config/api";
 import { useChat } from "../context/ChatContext";
 import { useUser } from "../context/UserContext";
-import { Send, MoreVertical, Phone, Video, Info, ArrowLeft, User as UserIcon, ChevronDown, X, Trash2 } from "lucide-react";
-import { Message } from "../types";
-import { apiClient } from "../config/api";
-import axios from "axios";
+import type { Message } from "../types";
 
 // Generic pagination type from DRF
 interface Paginated<T> {
@@ -38,8 +37,19 @@ function waitForStableHeight(element: HTMLElement, timeout = 500): Promise<void>
 
 export default function ChatThread() {
   const { id } = useParams<{ id: string }>();
-  const navigate = useNavigate();
-  const { threads, messages, setMessages, sendMessage, unsendMessage, markThreadRead, sendTypingStart, sendTypingStop, typingUsers, userStatuses, recalculateUnreadCounts } = useChat();
+  const {
+    threads,
+    messages,
+    setMessages,
+    sendMessage,
+    unsendMessage,
+    markThreadRead,
+    sendTypingStart,
+    sendTypingStop,
+    typingUsers,
+    userStatuses,
+    recalculateUnreadCounts,
+  } = useChat();
   const { user } = useUser();
   const [input, setInput] = useState("");
   const [localMsgs, setLocalMsgs] = useState<Message[]>([]);
@@ -57,15 +67,22 @@ export default function ChatThread() {
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const topSentinelRef = useRef<HTMLDivElement>(null);
   const currentFetchRef = useRef<string | null>(null);
-  const typingTimeoutRef = useRef<number | null>(null);
   const longPressTimerRef = useRef<number | null>(null);
   // Ref to the textarea so we can ensure it receives focus programmatically on mobile
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
+  // Helper function to fetch paginated messages
+  const fetchPage = useCallback(async (url: string): Promise<{ data: Paginated<Message> }> => {
+    // Handle both relative and absolute URLs
+    const endpoint = url.startsWith("http") ? url : url.startsWith("/") ? url.slice(1) : url;
+    const response = await apiClient.get<Paginated<Message>>(endpoint);
+    return response;
+  }, []);
+
   // Reset local state when thread changes
   useEffect(() => {
     if (!id) return;
-    
+
     // Clear local state when switching threads
     setLocalMsgs([]);
     setNextUrl(null);
@@ -98,7 +115,7 @@ export default function ChatThread() {
     setIsInitialLoading(true);
 
     fetchPage(`chat/${id}/messages/?limit=30`)
-      .then(async (res) => {
+      .then(async (res: { data: Paginated<Message> }) => {
         if (currentFetchRef.current === id) {
           const reversed = res.data.results.reverse();
           setLocalMsgs(reversed);
@@ -113,25 +130,23 @@ export default function ChatThread() {
           setIsInitialLoading(false);
         }
       })
-      .catch((err) => {
+      .catch((err: unknown) => {
         console.error("Failed to fetch messages:", err);
         if (currentFetchRef.current === id) {
           currentFetchRef.current = null;
           setIsInitialLoading(false);
         }
       });
-  }, [id, messages, setMessages, isInitialLoading]);
+  }, [id, messages, setMessages, isInitialLoading, fetchPage]);
 
   useEffect(() => {
     if (!id || !user) return;
-    
+
     const threadMessages = messages[id];
     if (!threadMessages) return;
-  
-    const unreadFromOthers = threadMessages.filter(
-      (msg) => !msg.read_at && msg.sender !== user.id
-    );
-  
+
+    const unreadFromOthers = threadMessages.filter((msg) => !msg.read_at && msg.sender !== user.id);
+
     if (unreadFromOthers.length > 0) {
       markThreadRead(id);
       // Recalculate unread counts after marking as read to update notifications
@@ -139,21 +154,21 @@ export default function ChatThread() {
         recalculateUnreadCounts();
       }, 100);
     }
-  }, [id, messages, user?.id, markThreadRead, recalculateUnreadCounts]);
+  }, [id, messages, user?.id, markThreadRead, recalculateUnreadCounts, user]);
 
   useEffect(() => {
     if (!id) return;
-    
+
     const threadMessages = messages[id];
     if (!threadMessages) return;
-    
+
     // If we're switching to a thread that already has messages cached,
     // and localMsgs is empty, set it directly
     if (localMsgs.length === 0 && threadMessages.length > 0) {
       setLocalMsgs(threadMessages);
       return;
     }
-    
+
     // Otherwise, merge new messages
     setLocalMsgs((prev) => {
       const seen = new Set(prev.map((m) => m.id));
@@ -162,12 +177,12 @@ export default function ChatThread() {
         if (!seen.has(m.id)) {
           // Check if this is a real message that should replace an optimistic one
           const optimisticIndex = merged.findIndex(
-            (existing) => 
-              existing.id.startsWith('temp_') && 
-              existing.content === m.content && 
-              existing.sender === m.sender
+            (existing) =>
+              existing.id.startsWith("temp_") &&
+              existing.content === m.content &&
+              existing.sender === m.sender,
           );
-          
+
           if (optimisticIndex !== -1) {
             // Replace optimistic message with real message
             merged[optimisticIndex] = m;
@@ -184,7 +199,8 @@ export default function ChatThread() {
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    const isNearBottom =
+      container.scrollHeight - container.scrollTop - container.clientHeight < 100;
 
     setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
 
@@ -198,7 +214,8 @@ export default function ChatThread() {
     if (!container) return;
 
     const handleScroll = () => {
-      const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+      const isNearBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight < 100;
       setShowJumpToNewest(!isNearBottom && localMsgs.length > 0);
     };
 
@@ -213,18 +230,16 @@ export default function ChatThread() {
       ? thread.user2
       : thread.user1
     : localMsgs[0]
-    ? localMsgs[0].sender === user?.id
-      ? localMsgs[0].recipient
-      : localMsgs[0].sender
-    : null;
+      ? localMsgs[0].sender === user?.id
+        ? localMsgs[0].recipient
+        : localMsgs[0].sender
+      : null;
 
-  const propertyId: number | null = thread
-    ? thread.property
-    : localMsgs[0]?.property_id ?? null;
+  const propertyId: number | null = thread ? thread.property : (localMsgs[0]?.property_id ?? null);
 
   // Check if other user is typing and online
   const isOtherUserTyping = id ? typingUsers[id] || false : false;
-  const isOtherUserOnline = recipientId ? userStatuses[recipientId] === 'online' : false;
+  const isOtherUserOnline = recipientId ? userStatuses[recipientId] === "online" : false;
 
   const handleSend = () => {
     if (!input.trim() || !id || !user || !recipientId) return;
@@ -243,12 +258,10 @@ export default function ChatThread() {
   const handleUnsend = async (messageId: string) => {
     try {
       await unsendMessage(messageId);
-      
+
       // Immediately update local state to remove the deleted message
-      setLocalMsgs(prevMessages => 
-        prevMessages.filter(msg => msg.id !== messageId)
-      );
-      
+      setLocalMsgs((prevMessages) => prevMessages.filter((msg) => msg.id !== messageId));
+
       setShowContextMenu(false);
       setSelectedMessage(null);
       setHoveredMessage(null); // Also clear any hover state
@@ -262,14 +275,14 @@ export default function ChatThread() {
   const handleLongPressStart = (messageId: string, event: React.TouchEvent | React.MouseEvent) => {
     // Prevent browser context menu
     event.preventDefault();
-    
+
     if (longPressTimerRef.current) {
       clearTimeout(longPressTimerRef.current);
     }
-    
+
     // Show visual feedback immediately
     setLongPressActive(messageId);
-    
+
     longPressTimerRef.current = window.setTimeout(() => {
       setSelectedMessage(messageId);
       setShowContextMenu(true);
@@ -308,13 +321,13 @@ export default function ChatThread() {
   const handleMessageTap = (messageId: string) => {
     const now = Date.now();
     const timeDiff = now - lastTapTime;
-    
+
     if (timeDiff < 300 && lastTappedMessage === messageId) {
       // Double tap detected - show unsend button
       setHoveredMessage(messageId);
       setTimeout(() => setHoveredMessage(null), 3000);
     }
-    
+
     setLastTapTime(now);
     setLastTappedMessage(messageId);
   };
@@ -324,9 +337,10 @@ export default function ChatThread() {
     event.preventDefault(); // Prevent browser context menu
   };
 
-  const formatTime = (timestamp: string) => new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+  const formatTime = (timestamp: string) =>
+    new Date(timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
-  const formatDate = (timestamp: string) => {
+  const formatDate = useCallback((timestamp: string) => {
     const date = new Date(timestamp);
     const today = new Date();
     const yesterday = new Date(today);
@@ -339,7 +353,31 @@ export default function ChatThread() {
       day: "numeric",
       month: "short",
     });
-  };
+  }, []);
+
+  const loadMore = useCallback(() => {
+    if (!nextUrl || isFetchingMore) return;
+    setIsFetchingMore(true);
+
+    fetchPage(nextUrl).then((res: { data: Paginated<Message> }) => {
+      const older = res.data.results.reverse();
+      const container = messagesContainerRef.current;
+      const prevHeight = container ? container.scrollHeight : 0;
+
+      setLocalMsgs((prev) => {
+        const seen = new Set(prev.map((m: Message) => m.id));
+        return [...older.filter((m: Message) => !seen.has(m.id)), ...prev];
+      });
+      setNextUrl(res.data.next);
+      setIsFetchingMore(false);
+
+      setTimeout(() => {
+        if (container) {
+          container.scrollTop = container.scrollHeight - prevHeight;
+        }
+      }, 0);
+    });
+  }, [nextUrl, isFetchingMore, fetchPage]);
 
   const jumpToNewest = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -355,37 +393,7 @@ export default function ChatThread() {
       out[out.length - 1].items.push(m);
     });
     return out;
-  }, [localMsgs]);
-
-  const fetchPage = (url: string) => {
-    return url.startsWith("http")
-      ? axios.get<Paginated<Message>>(url, { withCredentials: true })
-      : apiClient.get<Paginated<Message>>(url);
-  };
-
-  const loadMore = () => {
-    if (!nextUrl || isFetchingMore) return;
-    setIsFetchingMore(true);
-
-    fetchPage(nextUrl).then((res) => {
-      const older = res.data.results.reverse();
-      const container = messagesContainerRef.current;
-      const prevHeight = container ? container.scrollHeight : 0;
-
-      setLocalMsgs((prev) => {
-        const seen = new Set(prev.map((m) => m.id));
-        return [...older.filter((m) => !seen.has(m.id)), ...prev];
-      });
-      setNextUrl(res.data.next);
-      setIsFetchingMore(false);
-
-      setTimeout(() => {
-        if (container) {
-          container.scrollTop = container.scrollHeight - prevHeight;
-        }
-      }, 0);
-    });
-  };
+  }, [localMsgs, formatDate]);
 
   useEffect(() => {
     if (!nextUrl) return;
@@ -400,12 +408,12 @@ export default function ChatThread() {
           }
         });
       },
-      { root: messagesContainerRef.current, threshold: 0 }
+      { root: messagesContainerRef.current, threshold: 0 },
     );
 
     observer.observe(sentinel);
     return () => observer.disconnect();
-  }, [nextUrl, isFetchingMore]);
+  }, [nextUrl, loadMore]);
 
   /* ------------------------------------------------------------------ */
   /*                    Mobile keyboard / typing indicator               */
@@ -436,7 +444,7 @@ export default function ChatThread() {
           </div>
           <div className="min-w-0 flex-1 overflow-hidden">
             {thread?.property ? (
-              <Link 
+              <Link
                 to={`/property/${propertyId}`}
                 className="block hover:text-blue-600 transition-colors group"
                 title={thread?.property_title || `Property #${propertyId}`}
@@ -446,20 +454,20 @@ export default function ChatThread() {
                 </h2>
               </Link>
             ) : (
-              <Link 
+              <Link
                 to={`/${thread?.other_username}`}
                 className="block hover:text-blue-600 transition-colors group"
                 title={`View ${thread?.other_username}'s profile`}
               >
                 <h2 className="font-semibold text-slate-800 group-hover:text-blue-600 transition-colors text-sm sm:text-base leading-tight mb-0.5 break-words line-clamp-2">
-                  {thread?.other_username || 'Direct Message'}
+                  {thread?.other_username || "Direct Message"}
                 </h2>
               </Link>
             )}
             <div className="flex items-center gap-1 sm:gap-2 min-w-0">
               {thread?.property ? (
                 thread.other_username ? (
-                  <Link 
+                  <Link
                     to={`/${thread.other_username}`}
                     className="text-xs sm:text-sm text-slate-500 hover:text-blue-600 transition-colors truncate flex-shrink min-w-0"
                     title={`View ${thread.other_username}'s profile`}
@@ -479,7 +487,7 @@ export default function ChatThread() {
               <div className="flex items-center gap-1 flex-shrink-0">
                 <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
                 <span className="text-[10px] sm:text-xs text-green-600 font-medium hidden sm:inline">
-                  {isOtherUserOnline ? 'Online' : 'Offline'}
+                  {isOtherUserOnline ? "Online" : "Offline"}
                 </span>
               </div>
             </div>
@@ -488,12 +496,12 @@ export default function ChatThread() {
       </div>
 
       {/* Enhanced Messages Area - Mobile Optimized */}
-      <div 
-        ref={messagesContainerRef} 
+      <div
+        ref={messagesContainerRef}
         className="flex-1 overflow-y-auto px-3 sm:px-4 py-4 sm:py-6 space-y-4 sm:space-y-6 min-h-0 scroll-smooth touch-pan-y isolate chat-messages"
       >
         <div ref={topSentinelRef} className="h-1" />
-        
+
         {groupedMessages.map(({ label, items }) => (
           <div key={label} className="space-y-3 sm:space-y-4">
             {/* Enhanced Date Separator - Mobile Optimized */}
@@ -502,46 +510,58 @@ export default function ChatThread() {
                 {label}
               </div>
             </div>
-            
+
             {/* Messages - Mobile Optimized */}
             <div className="space-y-2 sm:space-y-3">
               {items.map((message, idx) => {
                 const isOwn = message.sender === user?.id;
                 const showAvatar = idx === 0 || items[idx - 1]?.sender !== message.sender;
-                
+
                 return (
-                  <div key={message.id} className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} group ${hoveredMessage === message.id ? 'message-active' : ''}`}>
+                  <div
+                    key={message.id}
+                    className={`flex items-end gap-2 ${isOwn ? "justify-end" : "justify-start"} group ${hoveredMessage === message.id ? "message-active" : ""}`}
+                  >
                     {/* Avatar for incoming messages */}
                     {!isOwn && (
-                      <div className={`w-7 h-7 rounded-full flex-shrink-0 transition-opacity duration-200 ${showAvatar ? 'opacity-100' : 'opacity-0'}`}>
+                      <div
+                        className={`w-7 h-7 rounded-full flex-shrink-0 transition-opacity duration-200 ${showAvatar ? "opacity-100" : "opacity-0"}`}
+                      >
                         <div className="w-full h-full bg-gradient-to-br from-slate-400 to-slate-500 rounded-full flex items-center justify-center shadow-sm">
                           <UserIcon size={12} className="text-white" />
                         </div>
                       </div>
                     )}
-                    
+
                     {/* Message Bubble */}
-                    <div 
+                    <div
                       className={`
                         max-w-[75%] sm:max-w-md lg:max-w-lg xl:max-w-xl
-                        ${isOwn 
-                          ? message.is_unsent 
-                            ? 'bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25' 
-                            : 'bg-gradient-to-br from-blue-100 to-blue-200 text-slate-800 shadow-lg shadow-blue-100/25'
-                          : 'bg-white border border-slate-200/60 shadow-sm'
+                        ${
+                          isOwn
+                            ? message.is_unsent
+                              ? "bg-gradient-to-br from-gray-400 to-gray-500 text-white shadow-lg shadow-gray-500/25"
+                              : "bg-gradient-to-br from-blue-100 to-blue-200 text-slate-800 shadow-lg shadow-blue-100/25"
+                            : "bg-white border border-slate-200/60 shadow-sm"
                         }
                         rounded-2xl px-4 py-3 relative
                         transform transition-all duration-200 hover:scale-[1.02] hover:shadow-lg
-                        ${isOwn ? 'rounded-br-md' : 'rounded-bl-md'}
-                        ${message.is_unsent ? 'opacity-75' : ''}
-                        ${longPressActive === message.id ? 'scale-95 shadow-xl ring-2 ring-blue-300/50' : ''}
+                        ${isOwn ? "rounded-br-md" : "rounded-bl-md"}
+                        ${message.is_unsent ? "opacity-75" : ""}
+                        ${longPressActive === message.id ? "scale-95 shadow-xl ring-2 ring-blue-300/50" : ""}
                         touch-manipulation select-text
                       `}
-                      onTouchStart={isOwn && !message.is_unsent ? (e) => {
-                        handleMessagePress(message.id);
-                        handleLongPressStart(message.id, e);
-                      } : undefined}
-                      onClick={isOwn && !message.is_unsent ? () => handleMessageTap(message.id) : undefined}
+                      onTouchStart={
+                        isOwn && !message.is_unsent
+                          ? (e) => {
+                              handleMessagePress(message.id);
+                              handleLongPressStart(message.id, e);
+                            }
+                          : undefined
+                      }
+                      onClick={
+                        isOwn && !message.is_unsent ? () => handleMessageTap(message.id) : undefined
+                      }
                       onTouchEnd={() => {
                         handleLongPressEnd();
                         handleMessageRelease();
@@ -550,21 +570,31 @@ export default function ChatThread() {
                         handleLongPressEnd();
                         setHoveredMessage(null);
                       }}
-                      onMouseEnter={isOwn && !message.is_unsent ? () => setHoveredMessage(message.id) : undefined}
+                      onMouseEnter={
+                        isOwn && !message.is_unsent
+                          ? () => setHoveredMessage(message.id)
+                          : undefined
+                      }
                       onMouseLeave={() => setHoveredMessage(null)}
-                      onMouseDown={isOwn && !message.is_unsent ? (e) => handleLongPressStart(message.id, e) : undefined}
+                      onMouseDown={
+                        isOwn && !message.is_unsent
+                          ? (e) => handleLongPressStart(message.id, e)
+                          : undefined
+                      }
                       onMouseUp={handleLongPressEnd}
                       onContextMenu={handleContextMenu}
                     >
                       {/* Sender name for incoming messages */}
                       {!isOwn && showAvatar && (
                         <div className="text-xs font-medium text-slate-600 mb-1">
-                          {thread?.other_username || 'Other User'}
+                          {thread?.other_username || "Other User"}
                         </div>
                       )}
-                      
+
                       {/* Message content */}
-                      <div className={`whitespace-pre-wrap break-words ${isOwn ? 'text-slate-800' : 'text-slate-800'} ${message.is_unsent ? 'italic' : ''}`}>
+                      <div
+                        className={`whitespace-pre-wrap break-words ${isOwn ? "text-slate-800" : "text-slate-800"} ${message.is_unsent ? "italic" : ""}`}
+                      >
                         {message.content}
                       </div>
 
@@ -579,15 +609,15 @@ export default function ChatThread() {
                           Long press or double tap
                         </div>
                       )}
-                      
+
                       {/* Enhanced Unsend button for all devices */}
                       {isOwn && !message.is_unsent && (
                         <button
                           onClick={() => handleUnsend(message.id)}
                           className={`absolute -top-1 sm:-top-2 -right-1 sm:-right-2 bg-red-500/90 hover:bg-red-600 focus:bg-red-600 active:bg-red-700 text-white rounded-full p-1.5 sm:p-1 transition-all duration-300 shadow-md hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-red-300/60 focus:ring-offset-1 min-w-[32px] min-h-[32px] sm:min-w-[24px] sm:min-h-[24px] flex items-center justify-center touch-manipulation active:scale-90 hover:scale-110 backdrop-blur-sm border border-red-400/20 ${
-                            hoveredMessage === message.id || longPressActive === message.id 
-                              ? 'opacity-100 scale-110' 
-                              : 'opacity-0 group-hover:opacity-100 focus:opacity-100'
+                            hoveredMessage === message.id || longPressActive === message.id
+                              ? "opacity-100 scale-110"
+                              : "opacity-0 group-hover:opacity-100 focus:opacity-100"
                           }`}
                           title="Delete message"
                           aria-label="Delete this message"
@@ -595,28 +625,52 @@ export default function ChatThread() {
                           <X size={14} className="sm:w-3 sm:h-3" />
                         </button>
                       )}
-                      
+
                       {/* Time and status */}
-                      <div className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? 'text-slate-500' : 'text-slate-400'}`}>
+                      <div
+                        className={`flex items-center justify-end gap-1 mt-2 text-xs ${isOwn ? "text-slate-500" : "text-slate-400"}`}
+                      >
                         <span>{formatTime(message.created_at)}</span>
-                        {message.is_unsent && (
-                          <span className="text-xs opacity-75">• Unsent</span>
-                        )}
+                        {message.is_unsent && <span className="text-xs opacity-75">• Unsent</span>}
                         {isOwn && !message.is_unsent && (
                           <div className="flex items-center gap-1">
                             {/* Double check for read */}
                             {message.read_at ? (
                               <div className="flex">
-                                <svg className="w-3 h-3 text-slate-500 -mr-1" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                <svg
+                                  className="w-3 h-3 text-slate-500 -mr-1"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
-                                <svg className="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
-                                  <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                                <svg
+                                  className="w-3 h-3 text-slate-500"
+                                  fill="currentColor"
+                                  viewBox="0 0 20 20"
+                                >
+                                  <path
+                                    fillRule="evenodd"
+                                    d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                    clipRule="evenodd"
+                                  />
                                 </svg>
                               </div>
                             ) : (
-                              <svg className="w-3 h-3 text-slate-500" fill="currentColor" viewBox="0 0 20 20">
-                                <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                              <svg
+                                className="w-3 h-3 text-slate-500"
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path
+                                  fillRule="evenodd"
+                                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                                  clipRule="evenodd"
+                                />
                               </svg>
                             )}
                           </div>
@@ -639,7 +693,7 @@ export default function ChatThread() {
               </div>
               <div className="flex space-x-1">
                 {[0, 1, 2].map((i) => (
-                  <div 
+                  <div
                     key={i}
                     className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
                     style={{ animationDelay: `${i * 0.2}s` }}
@@ -660,7 +714,7 @@ export default function ChatThread() {
             <div className="bg-white border border-slate-200/60 shadow-sm rounded-2xl rounded-bl-md px-4 py-3">
               <div className="flex space-x-1">
                 {[0, 1, 2].map((i) => (
-                  <div 
+                  <div
                     key={i}
                     className="w-2 h-2 bg-slate-400 rounded-full animate-bounce"
                     style={{ animationDelay: `${i * 0.3}s` }}
@@ -692,25 +746,25 @@ export default function ChatThread() {
 
       {/* Delicate Mobile Context Menu for Message Actions */}
       {showContextMenu && selectedMessage && (
-        <div 
-          className="fixed inset-0 bg-black/10 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200" 
+        <div
+          className="fixed inset-0 bg-black/10 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in duration-200"
           onClick={handleCloseContextMenu}
         >
-          <div 
-            className="bg-white/95 backdrop-blur-xl rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200/50 overflow-hidden w-full sm:min-w-[320px] sm:max-w-sm sm:mx-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 ease-out" 
+          <div
+            className="bg-white/95 backdrop-blur-xl rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200/50 overflow-hidden w-full sm:min-w-[320px] sm:max-w-sm sm:mx-auto animate-in slide-in-from-bottom-4 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-300 ease-out"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drag indicator for mobile */}
             <div className="flex justify-center pt-3 pb-2 sm:hidden">
               <div className="w-10 h-1 bg-slate-300 rounded-full"></div>
             </div>
-            
+
             {/* Header */}
             <div className="px-5 py-4 border-b border-slate-200/60 bg-slate-50/50">
               <h3 className="font-semibold text-slate-800 text-base">Message Actions</h3>
               <p className="text-sm text-slate-500 mt-0.5">What would you like to do?</p>
             </div>
-            
+
             {/* Actions */}
             <div className="py-3">
               <button
@@ -726,7 +780,7 @@ export default function ChatThread() {
                 </div>
               </button>
             </div>
-            
+
             {/* Cancel button */}
             <div className="px-5 pb-5 pt-2">
               <button
@@ -766,7 +820,7 @@ export default function ChatThread() {
               rows={1}
               placeholder="Type your message..."
               style={{
-                height: Math.min(Math.max(44, input.split("\n").length * 20 + 24), 100) + "px",
+                height: `${Math.min(Math.max(44, input.split("\n").length * 20 + 24), 100)}px`,
               }}
             />
             {/* Mobile-optimized character count */}
@@ -776,7 +830,7 @@ export default function ChatThread() {
               </div>
             )}
           </div>
-          
+
           <button
             onClick={handleSend}
             disabled={!input.trim() || !recipientId}
@@ -785,26 +839,31 @@ export default function ChatThread() {
               focus:outline-none focus:ring-4 focus:ring-blue-500/20
               min-w-[44px] min-h-[44px] sm:min-w-[48px] sm:min-h-[48px]
               touch-manipulation active:scale-95
-              ${input.trim() && recipientId
-                                        ? "bg-gradient-to-br from-blue-300 to-blue-400 text-white hover:from-blue-400 hover:to-blue-500 hover:shadow-xl hover:scale-105" 
-                : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              ${
+                input.trim() && recipientId
+                  ? "bg-gradient-to-br from-blue-300 to-blue-400 text-white hover:from-blue-400 hover:to-blue-500 hover:shadow-xl hover:scale-105"
+                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
               }
             `}
           >
             <Send size={16} className="sm:w-[18px] sm:h-[18px]" />
           </button>
         </div>
-        
+
         {/* Enhanced Status Bar - Mobile Optimized */}
         <div className="flex justify-between items-center mt-2 sm:mt-3 text-xs text-slate-500">
           <div className="flex items-center gap-2 sm:gap-4">
-            <span className="hidden sm:inline">Press Enter to send • Shift + Enter for new line</span>
+            <span className="hidden sm:inline">
+              Press Enter to send • Shift + Enter for new line
+            </span>
             <span className="sm:hidden text-[10px]">Enter to send</span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <div className="flex items-center gap-1 sm:gap-1.5">
               <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-400 rounded-full animate-pulse shadow-sm"></div>
-              <span className="font-medium text-green-600 text-[10px] sm:text-xs">{isOtherUserOnline ? 'Online' : 'Offline'}</span>
+              <span className="font-medium text-green-600 text-[10px] sm:text-xs">
+                {isOtherUserOnline ? "Online" : "Offline"}
+              </span>
             </div>
           </div>
         </div>

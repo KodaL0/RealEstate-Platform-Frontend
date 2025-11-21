@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Shield, AlertTriangle, CheckCircle } from 'lucide-react';
-import { useUser } from '../context/UserContext';
-import GDPRApiService, { ConsentPreferences, handleGDPRError } from '../services/gdprApi';
-import IdentityVerificationModal from '../components/IdentityVerificationModal';
+import { AlertTriangle, CheckCircle, Shield } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import IdentityVerificationModal from "../components/IdentityVerificationModal";
+import { useUser } from "../context/UserContext";
+import GDPRApiService, { type ConsentPreferences, handleGDPRError } from "../services/gdprApi";
 
 // Local interface for processing restriction data
 interface ProcessingRestrictionData {
@@ -18,7 +19,7 @@ const PrivacySettings: React.FC = () => {
   const { user, refreshGDPRStatus, updateGDPRConsent, getGDPRStatus } = useUser();
   const [isLoading, setIsLoading] = useState(true);
   const [isUpdating, setIsUpdating] = useState(false);
-  const [activeTab, setActiveTab] = useState<'consents' | 'rights' | 'account'>('consents');
+  const [activeTab, setActiveTab] = useState<"consents" | "rights" | "account">("consents");
   const [verificationModal, setVerificationModal] = useState<{
     isOpen: boolean;
     operation: string;
@@ -31,27 +32,27 @@ const PrivacySettings: React.FC = () => {
   const gdprStatus = getGDPRStatus();
 
   // Load GDPR status when user becomes available
-  useEffect(() => {
-    if (user) {
-      loadGDPRStatus();
-    }
-  }, [user?.id]); // Re-run when user ID changes (user logs in/out)
-
   // REMOVED: Auto-showing consent modal on PrivacySettings page
   // Users come to this page TO set preferences, they shouldn't be forced with a modal
   // The cookie banner already handles initial consent collection
   // This page is for managing existing preferences, not forcing initial collection
 
-  const loadGDPRStatus = async () => {
+  const loadGDPRStatus = useCallback(async () => {
     try {
       setIsLoading(true);
       await refreshGDPRStatus();
     } catch (error) {
-      console.error('Failed to load GDPR status:', error);
+      console.error("Failed to load GDPR status:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [refreshGDPRStatus]);
+
+  useEffect(() => {
+    if (user) {
+      loadGDPRStatus();
+    }
+  }, [user?.id, loadGDPRStatus, user]); // Re-run when user ID changes (user logs in/out)
 
   const updateConsent = async (consentType: keyof ConsentPreferences, value: boolean) => {
     try {
@@ -61,22 +62,26 @@ const PrivacySettings: React.FC = () => {
       if (success) {
         // Refresh GDPR status from backend to confirm save
         await refreshGDPRStatus();
-        showToast('Consent preferences updated successfully', 'success');
+        showToast("Consent preferences updated successfully", "success");
       } else {
-        showToast('Failed to update consent preferences', 'error');
+        showToast("Failed to update consent preferences", "error");
       }
     } catch (error) {
-      console.error('Failed to update consent:', error);
-      showToast('Failed to update consent preferences', 'error');
+      console.error("Failed to update consent:", error);
+      showToast("Failed to update consent preferences", "error");
     } finally {
       setIsUpdating(false);
     }
   };
 
   const handleDataExport = async () => {
-    const password = await showPasswordVerificationModal('data export', async (password: string) => {
-      await GDPRApiService.exportData(password);
-    }, setVerificationModal);
+    const password = await showPasswordVerificationModal(
+      "data export",
+      async (password: string) => {
+        await GDPRApiService.exportData(password);
+      },
+      setVerificationModal,
+    );
     if (!password) return;
 
     try {
@@ -84,50 +89,54 @@ const PrivacySettings: React.FC = () => {
 
       // Create download link for the JSON data
       const dataStr = JSON.stringify(response.data, null, 2);
-      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const dataBlob = new Blob([dataStr], { type: "application/json" });
       const url = window.URL.createObjectURL(dataBlob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
-      a.download = `propertpro-data-export-${new Date().toISOString().split('T')[0]}.json`;
+      a.download = `propertpro-data-export-${new Date().toISOString().split("T")[0]}.json`;
       document.body.appendChild(a);
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
 
-      showToast('Data export downloaded successfully', 'success');
+      showToast("Data export downloaded successfully", "success");
     } catch (error) {
-      console.error('Export failed:', error);
+      console.error("Export failed:", error);
       const gdprError = handleGDPRError(error);
-      showToast(gdprError.message, 'error');
+      showToast(gdprError.message, "error");
     }
   };
 
   const handleDeleteAccount = async () => {
     const confirmed = window.confirm(
-      'Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.'
+      "Are you sure you want to delete your account? This action cannot be undone and will permanently remove all your data.",
     );
 
     if (!confirmed) return;
 
-    const password = await showPasswordVerificationModal('account deletion', async (password: string) => {
-      await GDPRApiService.deleteAccount(password);
-    }, setVerificationModal);
+    const password = await showPasswordVerificationModal(
+      "account deletion",
+      async (password: string) => {
+        await GDPRApiService.deleteAccount(password);
+      },
+      setVerificationModal,
+    );
     if (!password) return;
 
     try {
       const response = await GDPRApiService.deleteAccount(password);
 
-      if (response.status === 'deletion_scheduled') {
+      if (response.status === "deletion_scheduled") {
         showToast(
           `Account deletion scheduled for ${response.deletion_date}. You can cancel within ${response.grace_period_days} days.`,
-          'warning'
+          "warning",
         );
         // Optionally redirect to login or show deletion confirmation
       }
     } catch (error) {
-      console.error('Account deletion failed:', error);
+      console.error("Account deletion failed:", error);
       const gdprError = handleGDPRError(error);
-      showToast(gdprError.message, 'error');
+      showToast(gdprError.message, "error");
     }
   };
 
@@ -173,17 +182,17 @@ const PrivacySettings: React.FC = () => {
             <div className="border-b border-gray-200">
               <nav className="-mb-px flex space-x-8">
                 {[
-                  { id: 'consents', label: 'Consent Preferences', icon: CheckCircle },
-                  { id: 'rights', label: 'Data Rights', icon: Shield },
-                  { id: 'account', label: 'Account Control', icon: AlertTriangle }
-                ].map(tab => (
+                  { id: "consents", label: "Consent Preferences", icon: CheckCircle },
+                  { id: "rights", label: "Data Rights", icon: Shield },
+                  { id: "account", label: "Account Control", icon: AlertTriangle },
+                ].map((tab) => (
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id as any)}
                     className={`py-2 px-1 border-b-2 font-medium text-sm flex items-center ${
                       activeTab === tab.id
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700'
+                        ? "border-blue-500 text-blue-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700"
                     }`}
                   >
                     <tab.icon className="h-4 w-4 mr-2" />
@@ -196,7 +205,7 @@ const PrivacySettings: React.FC = () => {
 
           {/* Tab Content */}
           <div className="bg-white rounded-lg shadow-md">
-            {activeTab === 'consents' && (
+            {activeTab === "consents" && (
               <ConsentManagementTab
                 consents={gdprStatus?.consents || { analytics: false, marketing: false }}
                 onUpdate={updateConsent}
@@ -205,7 +214,7 @@ const PrivacySettings: React.FC = () => {
               />
             )}
 
-            {activeTab === 'rights' && (
+            {activeTab === "rights" && (
               <DataRightsTab
                 onExport={handleDataExport}
                 restrictionStatus={gdprStatus?.processingRestricted}
@@ -214,7 +223,7 @@ const PrivacySettings: React.FC = () => {
               />
             )}
 
-            {activeTab === 'account' && (
+            {activeTab === "account" && (
               <AccountControlTab
                 onDeleteAccount={handleDeleteAccount}
                 restrictionStatus={gdprStatus?.processingRestricted}
@@ -254,7 +263,8 @@ const ConsentManagementTab: React.FC<{
   <div className="p-6">
     <h2 className="text-xl font-semibold mb-4">Your Consent Preferences</h2>
     <p className="text-gray-600 mb-4">
-      Control how we use your data for different purposes. You can change these preferences at any time.
+      Control how we use your data for different purposes. You can change these preferences at any
+      time.
     </p>
 
     {consentGivenAt && (
@@ -266,7 +276,11 @@ const ConsentManagementTab: React.FC<{
     )}
 
     <p className="text-gray-600 mb-6">
-      Review our <Link to="/privacy" className="text-blue-600 hover:text-blue-800 underline">Privacy Policy</Link> to understand how we process your data.
+      Review our{" "}
+      <Link to="/privacy" className="text-blue-600 hover:text-blue-800 underline">
+        Privacy Policy
+      </Link>{" "}
+      to understand how we process your data.
     </p>
 
     <div className="space-y-6">
@@ -276,27 +290,29 @@ const ConsentManagementTab: React.FC<{
           <div className="flex-1">
             <div className="flex items-center mb-2">
               <h3 className="font-medium">Analytics & Performance</h3>
-              <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                consents.analytics ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {consents.analytics ? 'Enabled' : 'Opted Out'}
+              <span
+                className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                  consents.analytics ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {consents.analytics ? "Enabled" : "Opted Out"}
               </span>
             </div>
             <p className="text-sm text-gray-600 mb-3">
-              We use analytics to improve the platform and understand how you use our services. 
-              You can opt out at any time.
+              We use analytics to improve the platform and understand how you use our services. You
+              can opt out at any time.
             </p>
           </div>
           <button
-            onClick={() => onUpdate('analytics', !consents.analytics)}
+            onClick={() => onUpdate("analytics", !consents.analytics)}
             disabled={isUpdating}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               consents.analytics
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-green-600 text-white hover:bg-green-700'
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {consents.analytics ? 'Opt Out' : 'Enable'}
+            {consents.analytics ? "Opt Out" : "Enable"}
           </button>
         </div>
       </div>
@@ -307,29 +323,29 @@ const ConsentManagementTab: React.FC<{
           <div className="flex-1">
             <div className="flex items-center mb-2">
               <h3 className="font-medium">Marketing & Recommendations</h3>
-              <span className={`ml-2 px-2 py-1 text-xs rounded-full ${
-                consents.marketing ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-              }`}>
-                {consents.marketing ? 'Enabled' : 'Disabled'}
+              <span
+                className={`ml-2 px-2 py-1 text-xs rounded-full ${
+                  consents.marketing ? "bg-green-100 text-green-800" : "bg-gray-100 text-gray-800"
+                }`}
+              >
+                {consents.marketing ? "Enabled" : "Disabled"}
               </span>
             </div>
             <p className="text-sm text-gray-600 mb-3">
               Receive property recommendations, platform updates, and promotional content.
             </p>
-            <p className="text-xs text-gray-500">
-              Legal basis: Consent (Article 6.1.a GDPR)
-            </p>
+            <p className="text-xs text-gray-500">Legal basis: Consent (Article 6.1.a GDPR)</p>
           </div>
           <button
-            onClick={() => onUpdate('marketing', !consents.marketing)}
+            onClick={() => onUpdate("marketing", !consents.marketing)}
             disabled={isUpdating}
             className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
               consents.marketing
-                ? 'bg-red-600 text-white hover:bg-red-700'
-                : 'bg-green-600 text-white hover:bg-green-700'
+                ? "bg-red-600 text-white hover:bg-red-700"
+                : "bg-green-600 text-white hover:bg-green-700"
             }`}
           >
-            {consents.marketing ? 'Withdraw Consent' : 'Give Consent'}
+            {consents.marketing ? "Withdraw Consent" : "Give Consent"}
           </button>
         </div>
       </div>
@@ -357,8 +373,8 @@ const DataRightsTab: React.FC<{
           <div className="flex-1">
             <h3 className="font-medium mb-2">Export Your Data (Article 15 & 20)</h3>
             <p className="text-sm text-gray-600 mb-3">
-              Download a copy of all your personal data in machine-readable JSON format.
-              Includes profile, properties, messages, reviews, and activity history.
+              Download a copy of all your personal data in machine-readable JSON format. Includes
+              profile, properties, messages, reviews, and activity history.
             </p>
           </div>
           <button
@@ -390,7 +406,7 @@ const DataRightsTab: React.FC<{
             onClick={() => setShowRestrictionForm(!showRestrictionForm)}
             className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 transition-colors"
           >
-            ⚙️ {showRestrictionForm ? 'Hide Form' : 'Request Restriction'}
+            ⚙️ {showRestrictionForm ? "Hide Form" : "Request Restriction"}
           </button>
         </div>
       </div>
@@ -406,17 +422,17 @@ const AccountControlTab: React.FC<{
   setShowRestrictionForm: (show: boolean) => void;
 }> = ({ onDeleteAccount, restrictionStatus, showRestrictionForm, setShowRestrictionForm }) => {
   const [restrictionForm, setRestrictionForm] = useState<ProcessingRestrictionData>({
-    reason: 'accuracy_contested',
-    reasonDetail: '',
+    reason: "accuracy_contested",
+    reasonDetail: "",
     restrictAnalytics: true,
     restrictMarketing: true,
-    restrictProfileUpdates: false
+    restrictProfileUpdates: false,
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleRestrictionSubmit = async () => {
     if (!restrictionForm.reasonDetail.trim()) {
-      showToast('Please provide details for your restriction request', 'error');
+      showToast("Please provide details for your restriction request", "error");
       return;
     }
 
@@ -427,16 +443,16 @@ const AccountControlTab: React.FC<{
         reason_detail: restrictionForm.reasonDetail,
         restrict_analytics: restrictionForm.restrictAnalytics,
         restrict_marketing: restrictionForm.restrictMarketing,
-        restrict_profile_updates: restrictionForm.restrictProfileUpdates
+        restrict_profile_updates: restrictionForm.restrictProfileUpdates,
       });
 
-      showToast('Processing restriction request submitted successfully', 'success');
+      showToast("Processing restriction request submitted successfully", "success");
       setShowRestrictionForm(false);
       // Refresh GDPR status to show new restriction
       window.location.reload(); // Simple refresh for demo
     } catch (error) {
-      console.error('Failed to submit restriction request:', error);
-      showToast('Failed to submit restriction request', 'error');
+      console.error("Failed to submit restriction request:", error);
+      showToast("Failed to submit restriction request", "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -446,19 +462,19 @@ const AccountControlTab: React.FC<{
     <div className="p-6">
       <h2 className="text-xl font-semibold mb-4">Account Control</h2>
 
-    {restrictionStatus && (
-      <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
-        <div className="flex items-center">
-          <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
-          <div>
-            <h3 className="font-semibold text-red-800">Processing Restricted</h3>
-            <p className="text-red-700 text-sm">
-              Account deletion and some features are restricted while processing is limited.
-            </p>
+      {restrictionStatus && (
+        <div className="bg-red-50 border border-red-200 rounded-md p-4 mb-6">
+          <div className="flex items-center">
+            <AlertTriangle className="h-5 w-5 text-red-600 mr-2" />
+            <div>
+              <h3 className="font-semibold text-red-800">Processing Restricted</h3>
+              <p className="text-red-700 text-sm">
+                Account deletion and some features are restricted while processing is limited.
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-    )}
+      )}
 
       {/* Processing Restriction Form */}
       {showRestrictionForm && (
@@ -472,7 +488,12 @@ const AccountControlTab: React.FC<{
               </label>
               <select
                 value={restrictionForm.reason}
-                onChange={(e) => setRestrictionForm((prev: ProcessingRestrictionData) => ({ ...prev, reason: e.target.value }))}
+                onChange={(e) =>
+                  setRestrictionForm((prev: ProcessingRestrictionData) => ({
+                    ...prev,
+                    reason: e.target.value,
+                  }))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
               >
                 <option value="accuracy_contested">Data accuracy is contested</option>
@@ -489,7 +510,12 @@ const AccountControlTab: React.FC<{
               </label>
               <textarea
                 value={restrictionForm.reasonDetail}
-                onChange={(e) => setRestrictionForm((prev: ProcessingRestrictionData) => ({ ...prev, reasonDetail: e.target.value }))}
+                onChange={(e) =>
+                  setRestrictionForm((prev: ProcessingRestrictionData) => ({
+                    ...prev,
+                    reasonDetail: e.target.value,
+                  }))
+                }
                 placeholder="Please explain why you need to restrict processing..."
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
@@ -506,7 +532,12 @@ const AccountControlTab: React.FC<{
                   <input
                     type="checkbox"
                     checked={restrictionForm.restrictAnalytics}
-                    onChange={(e) => setRestrictionForm((prev: ProcessingRestrictionData) => ({ ...prev, restrictAnalytics: e.target.checked }))}
+                    onChange={(e) =>
+                      setRestrictionForm((prev: ProcessingRestrictionData) => ({
+                        ...prev,
+                        restrictAnalytics: e.target.checked,
+                      }))
+                    }
                     className="mr-2"
                   />
                   <span className="text-sm">Analytics and performance tracking</span>
@@ -515,7 +546,12 @@ const AccountControlTab: React.FC<{
                   <input
                     type="checkbox"
                     checked={restrictionForm.restrictMarketing}
-                    onChange={(e) => setRestrictionForm((prev: ProcessingRestrictionData) => ({ ...prev, restrictMarketing: e.target.checked }))}
+                    onChange={(e) =>
+                      setRestrictionForm((prev: ProcessingRestrictionData) => ({
+                        ...prev,
+                        restrictMarketing: e.target.checked,
+                      }))
+                    }
                     className="mr-2"
                   />
                   <span className="text-sm">Marketing and recommendations</span>
@@ -524,7 +560,12 @@ const AccountControlTab: React.FC<{
                   <input
                     type="checkbox"
                     checked={restrictionForm.restrictProfileUpdates}
-                    onChange={(e) => setRestrictionForm((prev: ProcessingRestrictionData) => ({ ...prev, restrictProfileUpdates: e.target.checked }))}
+                    onChange={(e) =>
+                      setRestrictionForm((prev: ProcessingRestrictionData) => ({
+                        ...prev,
+                        restrictProfileUpdates: e.target.checked,
+                      }))
+                    }
                     className="mr-2"
                   />
                   <span className="text-sm">Profile updates and changes</span>
@@ -538,7 +579,7 @@ const AccountControlTab: React.FC<{
                 disabled={isSubmitting || !restrictionForm.reasonDetail.trim()}
                 className="px-4 py-2 bg-orange-600 text-white rounded-md text-sm font-medium hover:bg-orange-700 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                {isSubmitting ? "Submitting..." : "Submit Request"}
               </button>
               <button
                 onClick={() => setShowRestrictionForm(false)}
@@ -551,45 +592,48 @@ const AccountControlTab: React.FC<{
         </div>
       )}
 
-    <div className="space-y-6">
-      {/* Account Deletion */}
-      <div className="border border-red-200 rounded-lg p-4">
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h3 className="font-medium text-red-800 mb-2">Delete Account (Article 17)</h3>
-            <p className="text-sm text-gray-600 mb-3">
-              Permanently delete your account and all associated data. This action cannot be undone.
-            </p>
-            <div className="bg-red-50 border border-red-200 rounded p-3">
-              <h4 className="font-medium text-red-800 text-sm mb-2">What happens when you delete your account?</h4>
-              <ul className="text-red-700 text-sm space-y-1">
-                <li>• Your profile and all personal data will be removed</li>
-                <li>• Your properties will be anonymized</li>
-                <li>• Your messages and reviews will be deleted</li>
-                <li>• You'll lose access to your account permanently</li>
-              </ul>
+      <div className="space-y-6">
+        {/* Account Deletion */}
+        <div className="border border-red-200 rounded-lg p-4">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h3 className="font-medium text-red-800 mb-2">Delete Account (Article 17)</h3>
+              <p className="text-sm text-gray-600 mb-3">
+                Permanently delete your account and all associated data. This action cannot be
+                undone.
+              </p>
+              <div className="bg-red-50 border border-red-200 rounded p-3">
+                <h4 className="font-medium text-red-800 text-sm mb-2">
+                  What happens when you delete your account?
+                </h4>
+                <ul className="text-red-700 text-sm space-y-1">
+                  <li>• Your profile and all personal data will be removed</li>
+                  <li>• Your properties will be anonymized</li>
+                  <li>• Your messages and reviews will be deleted</li>
+                  <li>• You'll lose access to your account permanently</li>
+                </ul>
+              </div>
             </div>
+            <button
+              onClick={onDeleteAccount}
+              disabled={restrictionStatus}
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                restrictionStatus
+                  ? "bg-gray-400 text-gray-200 cursor-not-allowed"
+                  : "bg-red-600 text-white hover:bg-red-700"
+              }`}
+            >
+              🗑️ Delete My Account
+            </button>
           </div>
-          <button
-            onClick={onDeleteAccount}
-            disabled={restrictionStatus}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              restrictionStatus
-                ? 'bg-gray-400 text-gray-200 cursor-not-allowed'
-                : 'bg-red-600 text-white hover:bg-red-700'
-            }`}
-          >
-            🗑️ Delete My Account
-          </button>
         </div>
       </div>
-    </div>
     </div>
   );
 };
 
 // Helper function for toast notifications (implement based on your toast system)
-const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
+const showToast = (message: string, type: "success" | "error" | "warning") => {
   // For now, use browser alert - replace with your toast system
   alert(`${type.toUpperCase()}: ${message}`);
 };
@@ -598,7 +642,7 @@ const showToast = (message: string, type: 'success' | 'error' | 'warning') => {
 const showPasswordVerificationModal = (
   operation: string,
   onVerify: (password: string) => Promise<void>,
-  setVerificationModal: (modal: any) => void
+  setVerificationModal: (modal: any) => void,
 ): Promise<string | null> => {
   return new Promise((resolve) => {
     // Set modal state to show the verification modal
@@ -610,11 +654,11 @@ const showPasswordVerificationModal = (
           await onVerify(password);
           setVerificationModal(null);
           resolve(password);
-        } catch (error) {
+        } catch (_error) {
           // Keep modal open on error for retry
           resolve(null);
         }
-      }
+      },
     });
   });
 };

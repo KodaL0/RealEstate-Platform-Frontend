@@ -1,59 +1,60 @@
-import React, { useState } from 'react';
-import { login, register } from '../middleware/auth';
-import { useUser } from '../context/UserContext';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
+import type React from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import { login, register } from "../middleware/auth";
 
 interface NativeLoginProps {
   onSuccess?: () => void;
   onCancel?: () => void;
-  initialMode?: 'login' | 'register';
+  initialMode?: "login" | "register";
 }
 
 export const NativeLogin: React.FC<NativeLoginProps> = ({
   onSuccess,
   onCancel,
-  initialMode = 'login'
+  initialMode = "login",
 }) => {
-  const [isLogin, setIsLogin] = useState(initialMode === 'login');
+  const [isLogin, setIsLogin] = useState(initialMode === "login");
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-    username: '',
-    password2: '',
+    email: "",
+    password: "",
+    username: "",
+    password2: "",
     acceptedTerms: false,
     acceptedPrivacy: false,
-    marketingConsent: false
+    marketingConsent: false,
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   const { setUser } = useUser();
   const navigate = useNavigate();
   const location = useLocation();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target;
-    const newValue = type === 'checkbox' ? checked : value;
-    
+    const newValue = type === "checkbox" ? checked : value;
+
     // Special case: When accepting Terms, also accept Privacy Policy (single checkbox for both)
-    if (name === 'acceptedTerms' && type === 'checkbox') {
-      setFormData(prev => ({ 
-        ...prev, 
+    if (name === "acceptedTerms" && type === "checkbox") {
+      setFormData((prev) => ({
+        ...prev,
         acceptedTerms: checked,
-        acceptedPrivacy: checked  // Link both fields to the same checkbox
+        acceptedPrivacy: checked, // Link both fields to the same checkbox
       }));
       if (errors.acceptedTerms || errors.acceptedPrivacy) {
-        setErrors(prev => ({ 
-          ...prev, 
-          acceptedTerms: '', 
-          acceptedPrivacy: '' 
+        setErrors((prev) => ({
+          ...prev,
+          acceptedTerms: "",
+          acceptedPrivacy: "",
         }));
       }
     } else {
-      setFormData(prev => ({ ...prev, [name]: newValue }));
+      setFormData((prev) => ({ ...prev, [name]: newValue }));
       if (errors[name]) {
-        setErrors(prev => ({ ...prev, [name]: '' }));
+        setErrors((prev) => ({ ...prev, [name]: "" }));
       }
     }
   };
@@ -62,37 +63,37 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     const newErrors: Record<string, string> = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email required';
+      newErrors.email = "Email required";
     } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Invalid email';
+      newErrors.email = "Invalid email";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password required';
+      newErrors.password = "Password required";
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Min 8 characters';
+      newErrors.password = "Min 8 characters";
     }
 
     if (!isLogin) {
       if (!formData.username) {
-        newErrors.username = 'Username required';
+        newErrors.username = "Username required";
       } else if (formData.username.length < 3) {
-        newErrors.username = 'Min 3 characters';
+        newErrors.username = "Min 3 characters";
       }
 
       if (!formData.password2) {
-        newErrors.password2 = 'Confirm password';
+        newErrors.password2 = "Confirm password";
       } else if (formData.password !== formData.password2) {
-        newErrors.password2 = 'Passwords don\'t match';
+        newErrors.password2 = "Passwords don't match";
       }
 
       // Legal documents acceptance (REQUIRED)
       if (!formData.acceptedTerms) {
-        newErrors.acceptedTerms = 'You must accept the Terms & Conditions';
+        newErrors.acceptedTerms = "You must accept the Terms & Conditions";
       }
 
       if (!formData.acceptedPrivacy) {
-        newErrors.acceptedPrivacy = 'You must accept the Privacy Policy';
+        newErrors.acceptedPrivacy = "You must accept the Privacy Policy";
       }
     }
 
@@ -102,102 +103,128 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
     setErrors({});
 
     try {
-      let response;
-      
+      let response:
+        | { status: number; user?: unknown; message?: string; error?: string }
+        | {
+            status: number;
+            message?: string;
+            email?: string;
+            email_sent?: boolean;
+            consents_recorded?: boolean;
+            error?: string;
+            details?: unknown;
+          };
+
       if (isLogin) {
         response = await login(formData.email, formData.password);
-        
+
         if (response.status === 200) {
-          toast.success('Login successful!');
-          
-          if (response.user) {
-            setUser(response.user);
+          toast.success("Login successful!");
+
+          if ("user" in response && response.user) {
+            setUser(
+              response.user as {
+                id: number;
+                username: string;
+                email: string;
+                is_developer?: boolean;
+                name?: string;
+              },
+            );
           }
-          
+
           if (onSuccess) {
             onSuccess();
           } else {
-            const from = location.state?.from?.pathname || '/';
+            const from = location.state?.from?.pathname || "/";
             navigate(from, { replace: true });
           }
-        } else if (response.status === 403 && response.error?.includes('Email not verified')) {
-          toast.error('Please verify your email');
-          setErrors({ 
-            general: 'Check your email for verification link' 
+        } else if (response.status === 403 && response.error?.includes("Email not verified")) {
+          toast.error("Please verify your email");
+          setErrors({
+            general: "Check your email for verification link",
           });
         } else {
-          toast.error(response.error || 'Login failed');
-          setErrors({ general: response.error || 'Login failed' });
+          toast.error(response.error || "Login failed");
+          setErrors({ general: response.error || "Login failed" });
         }
       } else {
         // Pass legal document acceptances to backend
         response = await register(
-          formData.username, 
-          formData.email, 
+          formData.username,
+          formData.email,
           formData.password,
           formData.acceptedTerms,
           formData.acceptedPrivacy,
-          formData.marketingConsent
+          formData.marketingConsent,
         );
-        
+
         if (response.status === 201) {
-          toast.success('Account created! Check your email');
-          setErrors({ 
-            general: `Verification email sent to ${response.email || formData.email}` 
+          toast.success("Account created! Check your email");
+          setErrors({
+            general: `Verification email sent to ${("email" in response ? response.email : undefined) || formData.email}`,
           });
           setFormData({
-            email: '',
-            password: '',
-            username: '',
-            password2: '',
+            email: "",
+            password: "",
+            username: "",
+            password2: "",
             acceptedTerms: false,
             acceptedPrivacy: false,
-            marketingConsent: false
+            marketingConsent: false,
           });
         } else {
-          if (response.details) {
+          if ("details" in response && response.details) {
+            const details = response.details as Record<string, string | string[]>;
             const backendErrors: Record<string, string> = {};
-            if (response.details.email) {
-              backendErrors.email = Array.isArray(response.details.email) 
-                ? response.details.email[0] 
-                : response.details.email;
+            if (details.email) {
+              backendErrors.email = Array.isArray(details.email) ? details.email[0] : details.email;
             }
-            if (response.details.username) {
-              backendErrors.username = Array.isArray(response.details.username) 
-                ? response.details.username[0] 
-                : response.details.username;
+            if (details.username) {
+              backendErrors.username = Array.isArray(details.username)
+                ? details.username[0]
+                : details.username;
             }
-            if (response.details.password) {
-              backendErrors.password = Array.isArray(response.details.password) 
-                ? response.details.password[0] 
-                : response.details.password;
+            if (details.password) {
+              backendErrors.password = Array.isArray(details.password)
+                ? details.password[0]
+                : details.password;
             }
             setErrors(backendErrors);
           } else {
-            setErrors({ general: response.error || 'Registration failed' });
+            setErrors({ general: response.error || "Registration failed" });
           }
-          toast.error(response.error || 'Registration failed');
+          toast.error(response.error || "Registration failed");
         }
       }
-    } catch (error: any) {
-      console.error('Auth error:', error);
-      
-      if (error.response?.data?.detail) {
-        setErrors({ general: error.response.data.detail });
-        toast.error(error.response.data.detail);
-      } else if (error.response?.data?.error) {
-        setErrors({ general: error.response.data.error });
-        toast.error(error.response.data.error);
+    } catch (error: unknown) {
+      console.error("Auth error:", error);
+
+      const axiosError = error as {
+        response?: {
+          data?: {
+            detail?: string;
+            error?: string;
+          };
+        };
+      };
+
+      if (axiosError.response?.data?.detail) {
+        setErrors({ general: axiosError.response.data.detail });
+        toast.error(axiosError.response.data.detail);
+      } else if (axiosError.response?.data?.error) {
+        setErrors({ general: axiosError.response.data.error });
+        toast.error(axiosError.response.data.error);
       } else {
-        setErrors({ general: 'An error occurred' });
-        toast.error('An error occurred');
+        setErrors({ general: "An error occurred" });
+        toast.error("An error occurred");
       }
     } finally {
       setIsLoading(false);
@@ -206,14 +233,14 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
 
   const handleToggleMode = () => {
     setIsLogin(!isLogin);
-    setFormData({ 
-      email: '', 
-      password: '', 
-      username: '', 
-      password2: '',
+    setFormData({
+      email: "",
+      password: "",
+      username: "",
+      password2: "",
       acceptedTerms: false,
       acceptedPrivacy: false,
-      marketingConsent: false
+      marketingConsent: false,
     });
     setErrors({});
   };
@@ -222,7 +249,7 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     if (onCancel) {
       onCancel();
     } else {
-      navigate('/login');
+      navigate("/login");
     }
   };
 
@@ -230,10 +257,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
     <div className="bg-white rounded-lg shadow-lg p-4 w-full">
       <div className="text-center mb-4">
         <h2 className="text-xl font-bold text-gray-900">
-          {isLogin ? 'Sign In' : 'Create Account'}
+          {isLogin ? "Sign In" : "Create Account"}
         </h2>
         <p className="text-sm text-gray-600 mt-1">
-          {isLogin ? 'Welcome back!' : 'Join PropertPro'}
+          {isLogin ? "Welcome back!" : "Join PropertPro"}
         </p>
       </div>
 
@@ -251,14 +278,12 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
               value={formData.username}
               onChange={handleInputChange}
               className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                errors.username ? 'border-red-500' : 'border-gray-300'
+                errors.username ? "border-red-500" : "border-gray-300"
               }`}
               placeholder="Username"
               disabled={isLoading}
             />
-            {errors.username && (
-              <p className="text-red-500 text-xs mt-1">{errors.username}</p>
-            )}
+            {errors.username && <p className="text-red-500 text-xs mt-1">{errors.username}</p>}
           </div>
         )}
 
@@ -273,14 +298,12 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             value={formData.email}
             onChange={handleInputChange}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-              errors.email ? 'border-red-500' : 'border-gray-300'
+              errors.email ? "border-red-500" : "border-gray-300"
             }`}
             placeholder="Email"
             disabled={isLoading}
           />
-          {errors.email && (
-            <p className="text-red-500 text-xs mt-1">{errors.email}</p>
-          )}
+          {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
         </div>
 
         <div>
@@ -289,8 +312,8 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
               Password
             </label>
             {isLogin && (
-              <Link 
-                to="/forgot-password" 
+              <Link
+                to="/forgot-password"
                 className="text-xs text-blue-600 hover:text-blue-500 font-medium"
               >
                 Forgot password?
@@ -304,14 +327,12 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             value={formData.password}
             onChange={handleInputChange}
             className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-              errors.password ? 'border-red-500' : 'border-gray-300'
+              errors.password ? "border-red-500" : "border-gray-300"
             }`}
             placeholder="Password"
             disabled={isLoading}
           />
-          {errors.password && (
-            <p className="text-red-500 text-xs mt-1">{errors.password}</p>
-          )}
+          {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
         </div>
 
         {!isLogin && (
@@ -327,14 +348,12 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
                 value={formData.password2}
                 onChange={handleInputChange}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm ${
-                  errors.password2 ? 'border-red-500' : 'border-gray-300'
+                  errors.password2 ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Confirm password"
                 disabled={isLoading}
               />
-              {errors.password2 && (
-                <p className="text-red-500 text-xs mt-1">{errors.password2}</p>
-              )}
+              {errors.password2 && <p className="text-red-500 text-xs mt-1">{errors.password2}</p>}
             </div>
 
             {/* Legal Documents Acceptance - REQUIRED */}
@@ -348,28 +367,28 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
                   checked={formData.acceptedTerms}
                   onChange={handleInputChange}
                   className={`mt-1 h-4 w-4 text-blue-600 rounded ${
-                    errors.acceptedTerms ? 'border-red-500' : 'border-gray-300'
+                    errors.acceptedTerms ? "border-red-500" : "border-gray-300"
                   }`}
                   disabled={isLoading}
                 />
                 <label htmlFor="acceptedTerms" className="text-xs text-gray-700">
-                  I accept the{' '}
-                  <Link 
-                    to="/legal/terms-conditions/" 
-                    target="_blank" 
+                  I accept the{" "}
+                  <Link
+                    to="/legal/terms-conditions/"
+                    target="_blank"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     Terms & Conditions
-                  </Link>
-                  {' '}and{' '}
-                  <Link 
-                    to="/legal/privacy-policy/" 
-                    target="_blank" 
+                  </Link>{" "}
+                  and{" "}
+                  <Link
+                    to="/legal/privacy-policy/"
+                    target="_blank"
                     className="text-blue-600 hover:underline font-medium"
                   >
                     Privacy Policy
-                  </Link>
-                  {' '}<span className="text-red-500 font-bold">*</span>
+                  </Link>{" "}
+                  <span className="text-red-500 font-bold">*</span>
                 </label>
               </div>
               {(errors.acceptedTerms || errors.acceptedPrivacy) && (
@@ -390,7 +409,7 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
                   disabled={isLoading}
                 />
                 <label htmlFor="marketingConsent" className="text-xs text-gray-700">
-                  Send me property recommendations and marketing updates{' '}
+                  Send me property recommendations and marketing updates{" "}
                   <span className="text-gray-500">(optional)</span>
                 </label>
               </div>
@@ -399,11 +418,13 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
         )}
 
         {errors.general && (
-          <div className={`text-sm p-2 rounded-lg ${
-            errors.general.includes('Verification email sent') 
-              ? 'text-green-700 bg-green-50 border border-green-200' 
-              : 'text-red-500 bg-red-50 border border-red-200'
-          }`}>
+          <div
+            className={`text-sm p-2 rounded-lg ${
+              errors.general.includes("Verification email sent")
+                ? "text-green-700 bg-green-50 border border-green-200"
+                : "text-red-500 bg-red-50 border border-red-200"
+            }`}
+          >
             {errors.general}
           </div>
         )}
@@ -417,13 +438,15 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             {isLoading ? (
               <div className="flex items-center justify-center">
                 <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-2"></div>
-                {isLogin ? 'Signing in...' : 'Creating...'}
+                {isLogin ? "Signing in..." : "Creating..."}
               </div>
+            ) : isLogin ? (
+              "Sign In"
             ) : (
-              isLogin ? 'Sign In' : 'Create Account'
+              "Create Account"
             )}
           </button>
-          
+
           {onCancel && (
             <button
               type="button"
@@ -447,10 +470,10 @@ export const NativeLogin: React.FC<NativeLoginProps> = ({
             disabled={isLoading}
             className="text-blue-600 hover:text-blue-500 font-semibold disabled:opacity-50 text-base"
           >
-            {isLogin ? 'Sign up' : 'Sign in'}
+            {isLogin ? "Sign up" : "Sign in"}
           </button>
         </p>
       </div>
     </div>
   );
-}; 
+};

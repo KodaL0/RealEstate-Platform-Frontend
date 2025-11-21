@@ -1,5 +1,4 @@
-import { Developer } from "../types";
-import type { Project } from "../types";
+import type { Developer, Project } from "../types";
 
 /**
  * Generate a URL-friendly slug from a developer name
@@ -7,9 +6,9 @@ import type { Project } from "../types";
 export function generateDeveloperSlug(name: string): string {
   return name
     .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '') // Remove special characters except spaces and hyphens
-    .replace(/\s+/g, '-') // Replace spaces with hyphens
-    .replace(/-+/g, '-') // Replace multiple hyphens with single hyphen
+    .replace(/[^a-z0-9\s-]/g, "") // Remove special characters except spaces and hyphens
+    .replace(/\s+/g, "-") // Replace spaces with hyphens
+    .replace(/-+/g, "-") // Replace multiple hyphens with single hyphen
     .trim();
 }
 
@@ -23,7 +22,7 @@ export function generateProjectSlug(name: string): string {
  */
 export function getDeveloperUrl(developer: Developer): string {
   // Use slug from API if available, otherwise generate from name
-  const slug = (developer as any).slug || generateDeveloperSlug(developer.name);
+  const slug = developer.slug || generateDeveloperSlug(developer.name);
   return `/developers/${slug}`;
 }
 
@@ -39,7 +38,7 @@ export function getDeveloperUrlWithId(developer: Developer): string {
  * Generate project URL under developer
  */
 export function getProjectUrl(developer: Developer, project: Project): string {
-  const orgSlug = (developer as any).slug || generateDeveloperSlug(developer.name);
-  const projectSlug = (project as any).slug || generateProjectSlug(project.name);
+  const orgSlug = developer.slug || generateDeveloperSlug(developer.name);
+  const projectSlug = (project as { slug?: string }).slug || generateProjectSlug(project.name);
   return `/developers/${orgSlug}/${projectSlug}`;
 }

@@ -1,19 +1,19 @@
 // LoginWebViewWarning.tsx
+
+import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
-import { useEffect, useMemo, useState } from "react";
 
 const TARGET_URL = "https://www.propertpro.com";
 
 /* ---------- helpers ---------- */
 const isInWebView = (): boolean => {
   const ua = navigator.userAgent || navigator.vendor || "";
-  return /FBAN|FBAV|Instagram|LinkedInApp|Line|Twitter|Snapchat|WebView|TikTok|WeChat/i.test(
-    ua,
-  );
+  return /FBAN|FBAV|Instagram|LinkedInApp|Line|Twitter|Snapchat|WebView|TikTok|WeChat/i.test(ua);
 };
-const isAndroid = () => /Android/i.test(navigator.userAgent);
-const isIOS = () =>
-  /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _isAndroid = () => /Android/i.test(navigator.userAgent);
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const _isIOS = () => /iPad|iPhone|iPod/.test(navigator.userAgent) && !("MSStream" in window);
 
 /* ---------- component ---------- */
 const LoginWebViewWarning = () => {
@@ -88,10 +88,9 @@ const LoginWebViewWarning = () => {
             marginBottom: 20,
           }}
         >
-          <span style={{ marginRight: 10, fontSize: "1em", color: "#333" }}>
-            {TARGET_URL}
-          </span>
+          <span style={{ marginRight: 10, fontSize: "1em", color: "#333" }}>{TARGET_URL}</span>
           <button
+            type="button"
             onClick={copyToClipboard}
             style={{
               background: "#2563eb",
@@ -102,14 +101,25 @@ const LoginWebViewWarning = () => {
               fontSize: "1em",
               cursor: "pointer",
             }}
-            onMouseOver={(e) => (e.currentTarget.style.background = "#1e4bb8")}
-            onMouseOut={(e) => (e.currentTarget.style.background = "#2563eb")}
+            onMouseOver={(e) => {
+              e.currentTarget.style.background = "#1e4bb8";
+            }}
+            onMouseOut={(e) => {
+              e.currentTarget.style.background = "#2563eb";
+            }}
+            onFocus={(e) => {
+              e.currentTarget.style.background = "#1e4bb8";
+            }}
+            onBlur={(e) => {
+              e.currentTarget.style.background = "#2563eb";
+            }}
           >
             Copy URL
           </button>
         </div>
 
         <button
+          type="button"
           onClick={() => window.open(TARGET_URL, "_blank", "noopener,noreferrer")}
           style={{
             background: "#2563eb",
@@ -121,13 +131,24 @@ const LoginWebViewWarning = () => {
             cursor: "pointer",
             marginRight: 10,
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#1e4bb8")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#2563eb")}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#1e4bb8";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#2563eb";
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.background = "#1e4bb8";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.background = "#2563eb";
+          }}
         >
           Open in Browser
         </button>
 
         <button
+          type="button"
           onClick={() => window.history.back()}
           style={{
             background: "#9ca3af",
@@ -139,8 +160,18 @@ const LoginWebViewWarning = () => {
             cursor: "pointer",
             marginTop: 10,
           }}
-          onMouseOver={(e) => (e.currentTarget.style.background = "#6b7280")}
-          onMouseOut={(e) => (e.currentTarget.style.background = "#9ca3af")}
+          onMouseOver={(e) => {
+            e.currentTarget.style.background = "#6b7280";
+          }}
+          onMouseOut={(e) => {
+            e.currentTarget.style.background = "#9ca3af";
+          }}
+          onFocus={(e) => {
+            e.currentTarget.style.background = "#6b7280";
+          }}
+          onBlur={(e) => {
+            e.currentTarget.style.background = "#9ca3af";
+          }}
         >
           Continue Anyway
         </button>

@@ -10,7 +10,7 @@ interface CacheEntry<T> {
 }
 
 class APICache {
-  private cache: Map<string, CacheEntry<any>> = new Map();
+  private cache: Map<string, CacheEntry<unknown>> = new Map();
   private defaultTTL = 5 * 60 * 1000; // 5 minutes default
 
   /**
@@ -18,7 +18,7 @@ class APICache {
    */
   get<T>(key: string): T | null {
     const entry = this.cache.get(key);
-    
+
     if (!entry) {
       return null;
     }
@@ -39,11 +39,11 @@ class APICache {
   set<T>(key: string, data: T, ttlMs?: number): void {
     const now = Date.now();
     const ttl = ttlMs || this.defaultTTL;
-    
+
     this.cache.set(key, {
       data,
       timestamp: now,
-      expiresAt: now + ttl
+      expiresAt: now + ttl,
     });
   }
 
@@ -78,7 +78,7 @@ class APICache {
   stats(): { size: number; entries: string[] } {
     return {
       size: this.cache.size,
-      entries: Array.from(this.cache.keys())
+      entries: Array.from(this.cache.keys()),
     };
   }
 }
@@ -91,10 +91,8 @@ export const cacheKey = {
   gdprConsent: (userId: number) => `gdpr:consent:${userId}`,
   gdprRestriction: (userId: number) => `gdpr:restriction:${userId}`,
   legalAcceptance: (userId: number) => `legal:acceptance:${userId}`,
-  legalDocument: (type: string, version?: string) => 
+  legalDocument: (type: string, version?: string) =>
     version ? `legal:doc:${type}:${version}` : `legal:doc:${type}:current`,
 };
 
 export default apiCache;
-
-

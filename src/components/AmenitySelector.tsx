@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITY_CATEGORIES } from '../types';
+import { useState } from "react";
+import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITY_CATEGORIES } from "../types";
 
 interface AmenitySelectorProps {
   selectedAmenities: string[];
@@ -11,13 +11,13 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
 
   const toggle = (id: string) => {
     const newAmenities = selectedAmenities.includes(id)
-      ? selectedAmenities.filter(x => x !== id)
+      ? selectedAmenities.filter((x) => x !== id)
       : [...selectedAmenities, id];
     onChange(newAmenities);
   };
 
   const toggleCategory = (category: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       next.has(category) ? next.delete(category) : next.add(category);
       return next;
@@ -33,7 +33,7 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
       {/* Quick actions */}
       <div className="flex items-center justify-between pb-3 border-b border-gray-200">
         <span className="text-sm text-gray-600">
-          {selectedAmenities.length} amenit{selectedAmenities.length === 1 ? 'y' : 'ies'} selected
+          {selectedAmenities.length} amenit{selectedAmenities.length === 1 ? "y" : "ies"} selected
         </span>
         {selectedAmenities.length > 0 && (
           <button
@@ -48,12 +48,12 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
 
       {/* Amenities list */}
       <div className="space-y-2">
-        {PROPERTY_AMENITY_CATEGORIES.map(category => {
+        {PROPERTY_AMENITY_CATEGORIES.map((category) => {
           const amenitiesInCategory = AMENITIES_BY_CATEGORY[category];
-          const selectedCount = amenitiesInCategory.filter(a => 
-            selectedAmenities.includes(a.id)
+          const selectedCount = amenitiesInCategory.filter((a) =>
+            selectedAmenities.includes(a.id),
           ).length;
-          
+
           return (
             <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
               <button
@@ -70,22 +70,20 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
                   )}
                 </span>
                 <span className="text-gray-500 text-lg font-semibold">
-                  {expanded.has(category) ? '−' : '+'}
+                  {expanded.has(category) ? "−" : "+"}
                 </span>
               </button>
-              
+
               {expanded.has(category) && (
                 <div className="p-3 space-y-1.5 bg-white">
-                  {amenitiesInCategory.map(amenity => {
+                  {amenitiesInCategory.map((amenity) => {
                     const isSelected = selectedAmenities.includes(amenity.id);
-                    
+
                     return (
-                      <label 
-                        key={amenity.id} 
+                      <label
+                        key={amenity.id}
                         className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
-                          isSelected 
-                            ? 'bg-emerald-50 hover:bg-emerald-100' 
-                            : 'hover:bg-gray-50'
+                          isSelected ? "bg-emerald-50 hover:bg-emerald-100" : "hover:bg-gray-50"
                         }`}
                       >
                         <input
@@ -94,14 +92,14 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
                           onChange={() => toggle(amenity.id)}
                           className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                         />
-                        <span className={`text-sm flex-1 ${
-                          isSelected ? 'text-emerald-900 font-medium' : 'text-gray-700'
-                        }`}>
+                        <span
+                          className={`text-sm flex-1 ${
+                            isSelected ? "text-emerald-900 font-medium" : "text-gray-700"
+                          }`}
+                        >
                           {amenity.label}
                         </span>
-                        {isSelected && (
-                          <span className="text-emerald-600 text-sm">✓</span>
-                        )}
+                        {isSelected && <span className="text-emerald-600 text-sm">✓</span>}
                       </label>
                     );
                   })}
@@ -114,4 +112,3 @@ export default function AmenitySelector({ selectedAmenities, onChange }: Amenity
     </div>
   );
 }
-

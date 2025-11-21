@@ -1,27 +1,32 @@
-import { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  MapPin,
-  Calendar,
-  Building2,
   ArrowLeft,
+  Bath,
+  Bed,
+  Building2,
+  Calendar,
+  Check,
   ChevronLeft,
   ChevronRight,
-  Bed,
-  Bath,
-  Square,
   Euro,
-  Check,
-  Star,
-  Phone,
-  Mail,
   Home,
+  Mail,
+  MapPin,
+  Phone,
+  Square,
+  Star,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Project, Developer, PropertyImage } from "../types";
-import { PROJECT_STATUS_LABELS, PROJECT_STATUS_COLORS } from "../types";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
+import {
+  type Developer,
+  PROJECT_STATUS_COLORS,
+  PROJECT_STATUS_LABELS,
+  type Project,
+  type PropertyImage,
+} from "../types";
 import { generateProjectSlug } from "../utils/developerUtils";
 
 type UnitRow = {
@@ -41,8 +46,7 @@ type UnitRow = {
    Image + URL Helpers
    =========================== */
 // Base URL (works with axios baseURL or falls back to origin)
-const API_BASE =
-  (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
+const API_BASE = (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
 
 /** Resolve a possibly-relative URL to an absolute URL against API_BASE. */
 export function toAbsoluteUrl(u?: string | null): string | undefined {
@@ -87,9 +91,7 @@ export function extractProjectImageUrls(p: any): string[] {
     buckets.push(
       p.units
         .filter(Boolean)
-        .map(
-          (u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets
-        )
+        .map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets),
     );
   }
 
@@ -109,21 +111,26 @@ export function extractProjectImageUrls(p: any): string[] {
    Property/thumbnail helpers
    =========================== */
 
-/** Normalize mixed image inputs to a consistent { image: string } shape. */
+/** Normalize mixed image inputs to a consistent PropertyImage shape. */
 export function normaliseImages(imgs: any[] = []): PropertyImage[] {
   return imgs
-    .flatMap((i) =>
+    .flatMap((i, index) =>
       typeof i === "string"
-        ? [{ image: toAbsoluteUrl(i)! }]
-        : pickImageStrings(i).map((s) => ({ image: toAbsoluteUrl(s)! }))
+        ? [{ image: toAbsoluteUrl(i)!, is_primary: index === 0 }]
+        : pickImageStrings(i).map((s, subIndex) => ({
+            image: toAbsoluteUrl(s)!,
+            is_primary: index === 0 && subIndex === 0,
+          })),
     )
-    .filter((x) => !!x.image);
+    .filter((x) => !!x.image)
+    .map((img, idx) => ({
+      ...img,
+      display_order: idx,
+    }));
 }
 
 /** Accepts either a string or {image:string} and returns the absolute URL. */
-export function toImageUrl(
-  img: string | { image: string } | undefined | null
-): string {
+export function toImageUrl(img: string | { image: string } | undefined | null): string {
   if (!img) return "";
   if (typeof img === "string") return toAbsoluteUrl(img) || img;
   return toAbsoluteUrl(img.image) || img.image;
@@ -133,9 +140,7 @@ export function toImageUrl(
 export type ImgOrientation = "portrait" | "landscape" | "square";
 
 /** Infer image orientation by loading the image dimensions. */
-export function getImageOrientation(
-  imageUrl: string
-): Promise<ImgOrientation> {
+export function getImageOrientation(imageUrl: string): Promise<ImgOrientation> {
   return new Promise((resolve) => {
     const el = new Image();
     el.onload = () => {
@@ -157,7 +162,6 @@ export function imageOrientationClass(orientation: ImgOrientation): string {
       return `${base} max-h-[85vh] max-w-[70vw] md:min-w-[600px] lg:min-w-[700px] xl:min-w-[800px]`;
     case "landscape":
       return `${base} max-h-[85vh] max-w-[90vw] md:min-h-[400px] lg:min-h-[500px]`;
-    case "square":
     default:
       return `${base} max-h-[85vh] max-w-[90vw] md:min-w-[400px] md:min-h-[400px] lg:min-w-[500px] lg:min-h-[500px]`;
   }
@@ -192,8 +196,8 @@ export function formatOrdinal(n: string | number): string {
  */
 export function computeGridCols(viewportWidth: number): number {
   if (viewportWidth >= 1024) return 10; // lg
-  if (viewportWidth >= 768) return 8;   // md
-  return 5;                              // base
+  if (viewportWidth >= 768) return 8; // md
+  return 5; // base
 }
 
 /* ===========================
@@ -246,7 +250,11 @@ function computeAvailability(project: Project | null, units: UnitRow[]) {
    =========================== */
 
 const ProjectDetail = () => {
-  const { id, orgSlug, projectSlug } = useParams<{ id?: string; orgSlug?: string; projectSlug?: string }>();
+  const { id, orgSlug, projectSlug } = useParams<{
+    id?: string;
+    orgSlug?: string;
+    projectSlug?: string;
+  }>();
   const [project, setProject] = useState<Project | null>(null);
   const [developer, setDeveloper] = useState<Developer | null>(null);
   const [units, setUnits] = useState<UnitRow[]>([]);
@@ -268,13 +276,37 @@ const ProjectDetail = () => {
         let projectRaw: any;
         if (hasSlugRoute) {
           const org = await developersApi.organizations.getPublic(orgSlug!);
-          const projects = await developersApi.projects.listPublic({ organization: Number(org.id) });
-          const list = Array.isArray(projects) ? projects : (projects as any)?.results ?? [];
+          const projects = await developersApi.projects.listPublic({
+            organization: Number(org.id),
+          });
+          const list = Array.isArray(projects) ? projects : ((projects as any)?.results ?? []);
+
+          // Debug logging
+          console.log("🔍 Looking for project:", { orgSlug, projectSlug });
+          console.log(
+            "📋 Available projects:",
+            list.map((p: any) => ({
+              id: p.id,
+              name: p.name || p.title,
+              apiSlug: p.slug,
+              generatedSlug: generateProjectSlug(p.name || p.title || ""),
+            })),
+          );
+
           const match = list.find((p: any) => {
             const slug = (p as any).slug || generateProjectSlug(p.name || p.title || "");
-            return slug === projectSlug;
+            // Case-insensitive comparison and trim whitespace
+            return slug.toLowerCase().trim() === projectSlug?.toLowerCase().trim();
           });
-          if (!match) throw new Error("Project not found for slug");
+
+          if (!match) {
+            console.error("❌ No match found. Expected:", projectSlug);
+            console.error(
+              "Available slugs:",
+              list.map((p: any) => (p as any).slug || generateProjectSlug(p.name || p.title || "")),
+            );
+            throw new Error("Project not found for slug");
+          }
           projectRaw = match;
         } else {
           projectRaw = await developersApi.projects.getPublic(Number(id));
@@ -290,7 +322,7 @@ const ProjectDetail = () => {
 
         // 3) Units: embedded or fetch
         const embeddedUnits = Array.isArray(projectRaw.units) ? projectRaw.units : null;
-        if (embeddedUnits && embeddedUnits.length) {
+        if (embeddedUnits?.length) {
           setUnits(embeddedUnits.map(normalizeUnit));
         } else {
           const list = await developersApi.units.listPublic({ project: Number(proj.id) });
@@ -307,20 +339,14 @@ const ProjectDetail = () => {
       }
     };
     run();
-  }, [id]);
+  }, [id, orgSlug, projectSlug]);
 
   // Derived availability (no hooks)
-  const { total, available, reserved, sold, soldPct } = computeAvailability(
-    project,
-    units
-  );
+  const { total, available, reserved, sold, soldPct } = computeAvailability(project, units);
 
   // Images
-  const hasImages =
-    (project?.images && project.images.length > 0) || !!project?.mainImage;
-  const heroImg = hasImages
-    ? project!.images?.[currentImageIndex] || project!.mainImage!
-    : "";
+  const hasImages = (project?.images && project.images.length > 0) || !!project?.mainImage;
+  const heroImg = hasImages ? project?.images?.[currentImageIndex] || project?.mainImage! : "";
 
   const nextImage = () => {
     if (project?.images?.length) {
@@ -330,9 +356,7 @@ const ProjectDetail = () => {
 
   const prevImage = () => {
     if (project?.images?.length) {
-      setCurrentImageIndex(
-        (prev) => (prev - 1 + project.images.length) % project.images.length
-      );
+      setCurrentImageIndex((prev) => (prev - 1 + project.images.length) % project.images.length);
     }
   };
 
@@ -482,7 +506,9 @@ const ProjectDetail = () => {
               {project.priceRange?.min != null && (
                 <div className="flex items-center">
                   <Euro className="h-4 w-4 mr-2" />
-                  <span>From {formatPrice(project.priceRange.min, project.priceRange.currency)}</span>
+                  <span>
+                    From {formatPrice(project.priceRange.min, project.priceRange.currency)}
+                  </span>
                 </div>
               )}
             </div>
@@ -527,21 +553,15 @@ const ProjectDetail = () => {
                 {/* Main */}
                 <div className="lg:col-span-2">
                   <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
-                      About {project.name}
-                    </h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">About {project.name}</h2>
                     {project.description && (
-                      <p className="text-gray-600 leading-relaxed mb-6">
-                        {project.description}
-                      </p>
+                      <p className="text-gray-600 leading-relaxed mb-6">{project.description}</p>
                     )}
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                       {project.propertyTypes?.length > 0 && (
                         <div>
-                          <h3 className="font-semibold text-gray-900 mb-3">
-                            Property Types
-                          </h3>
+                          <h3 className="font-semibold text-gray-900 mb-3">Property Types</h3>
                           <div className="flex flex-wrap gap-2">
                             {project.propertyTypes.map((type, i) => (
                               <span
@@ -557,16 +577,12 @@ const ProjectDetail = () => {
 
                       {project.features?.length > 0 && (
                         <div>
-                          <h3 className="font-semibold text-gray-900 mb-3">
-                            Key Features
-                          </h3>
+                          <h3 className="font-semibold text-gray-900 mb-3">Key Features</h3>
                           <div className="space-y-2">
                             {project.features.slice(0, 4).map((feature, i) => (
                               <div key={i} className="flex items-center">
                                 <Check className="h-4 w-4 text-green-600 mr-2" />
-                                <span className="text-gray-600 text-sm">
-                                  {feature}
-                                </span>
+                                <span className="text-gray-600 text-sm">{feature}</span>
                               </div>
                             ))}
                           </div>
@@ -576,9 +592,7 @@ const ProjectDetail = () => {
 
                     {(project.startDate || project.completionDate) && (
                       <div>
-                        <h3 className="font-semibold text-gray-900 mb-3">
-                          Project Timeline
-                        </h3>
+                        <h3 className="font-semibold text-gray-900 mb-3">Project Timeline</h3>
                         <div className="flex items-center space-x-8">
                           {project.startDate && (
                             <div className="flex items-center">
@@ -661,9 +675,7 @@ const ProjectDetail = () => {
                           {developer.name}
                         </h4>
                         {developer.description && (
-                          <p className="text-sm text-gray-600 mb-3">
-                            {developer.description}
-                          </p>
+                          <p className="text-sm text-gray-600 mb-3">{developer.description}</p>
                         )}
                         <div className="flex items-center justify-between text-sm">
                           {developer.rating != null && (
@@ -683,9 +695,7 @@ const ProjectDetail = () => {
                   {/* Contact */}
                   {(developer?.phone || developer?.email) && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
-                      <h3 className="font-semibold text-gray-900 mb-4">
-                        Contact Developer
-                      </h3>
+                      <h3 className="font-semibold text-gray-900 mb-4">Contact Developer</h3>
                       <div className="space-y-3">
                         {developer?.phone && (
                           <a
@@ -804,10 +814,10 @@ const ProjectDetail = () => {
                                 u.status === "available"
                                   ? "bg-green-100 text-green-800"
                                   : u.status === "reserved"
-                                  ? "bg-yellow-100 text-yellow-800"
-                                  : u.status === "sold"
-                                  ? "bg-blue-100 text-blue-800"
-                                  : "bg-gray-200 text-gray-700"
+                                    ? "bg-yellow-100 text-yellow-800"
+                                    : u.status === "sold"
+                                      ? "bg-blue-100 text-blue-800"
+                                      : "bg-gray-200 text-gray-700"
                               }`}
                             >
                               {u.status ?? "—"}
@@ -832,9 +842,7 @@ const ProjectDetail = () => {
               transition={{ duration: 0.3 }}
             >
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                  Project Amenities
-                </h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">Project Amenities</h2>
                 <p className="text-gray-600">
                   Discover the premium amenities and facilities available at {project.name}
                 </p>
@@ -843,10 +851,7 @@ const ProjectDetail = () => {
               <div className="bg-white rounded-xl shadow-sm p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                   {(project.amenities ?? []).map((amenity, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center p-4 bg-gray-50 rounded-lg"
-                    >
+                    <div key={index} className="flex items-center p-4 bg-gray-50 rounded-lg">
                       <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center mr-3">
                         <Check className="h-5 w-5 text-blue-600" />
                       </div>
@@ -900,9 +905,7 @@ const ProjectDetail = () => {
                         </div>
                       )}
                       <div className="p-6">
-                        <h3 className="text-xl font-semibold text-gray-900 mb-4">
-                          {plan.name}
-                        </h3>
+                        <h3 className="text-xl font-semibold text-gray-900 mb-4">{plan.name}</h3>
 
                         <div className="grid grid-cols-3 gap-4 mb-4">
                           <div className="text-center">
@@ -947,7 +950,8 @@ const ProjectDetail = () => {
                     Floor Plans Coming Soon
                   </h3>
                   <p className="text-gray-600">
-                    Detailed floor plans will be available soon. Contact the developer for more information.
+                    Detailed floor plans will be available soon. Contact the developer for more
+                    information.
                   </p>
                 </div>
               )}
@@ -1030,8 +1034,7 @@ function normalizeProject(p: any): Project {
           .filter((u: any) => u)
           .map((u: any) => ({
             id: String(u.id ?? u.uuid ?? ""),
-            name:
-              u.name ?? u.code ?? `${u.bedrooms ?? "—"}BR ${u.unit_type ?? "Unit"}`,
+            name: u.name ?? u.code ?? `${u.bedrooms ?? "—"}BR ${u.unit_type ?? "Unit"}`,
             bedrooms: u.bedrooms ?? 0,
             bathrooms: u.bathrooms ?? 0,
             area: u.area_total ?? u.area_internal ?? 0,
@@ -1048,7 +1051,7 @@ function normalizeProject(p: any): Project {
                   u.url ||
                   u.src ||
                   u.file ||
-                  u.file_url
+                  u.file_url,
               ) || mainImage,
           }))
       : [];
@@ -1075,8 +1078,7 @@ function normalizeProject(p: any): Project {
     images: imageUrls,
     mainImage,
     features: p.features ?? [],
-    coordinates:
-      p.latitude && p.longitude ? { lat: p.latitude, lng: p.longitude } : undefined,
+    coordinates: p.latitude && p.longitude ? { lat: p.latitude, lng: p.longitude } : undefined,
     floorPlans,
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,
@@ -1096,8 +1098,7 @@ function normalizeDeveloper(d: any): Developer {
     phone: d.phone ?? undefined,
     totalProjects: d.total_projects ?? d.projects_total ?? 0,
     activeProjects: d.active_projects ?? d.projects_active ?? 0,
-    completedProjects:
-      d.completed_projects ?? d.projects_completed ?? undefined,
+    completedProjects: d.completed_projects ?? d.projects_completed ?? undefined,
     specialties: d.specialties ?? d.tags ?? [],
     rating: d.rating ?? d.avg_rating ?? undefined,
     reviewCount: d.review_count ?? d.reviews ?? 0,

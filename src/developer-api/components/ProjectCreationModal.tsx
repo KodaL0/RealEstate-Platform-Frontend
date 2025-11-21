@@ -1,71 +1,94 @@
-import { useState } from 'react';
-import { X } from 'lucide-react';
-import developersApi from '../../config/developers-api';
+import { X } from "lucide-react";
+import { useState } from "react";
+import developersApi, { type Project } from "../../config/developers-api";
 
 interface ProjectCreationModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onProjectCreated: (project: any) => void;
+  onProjectCreated: (project: Project) => void;
   organizationId: number;
 }
 
-export default function ProjectCreationModal({ 
-  isOpen, 
-  onClose, 
-  onProjectCreated, 
-  organizationId 
+export default function ProjectCreationModal({
+  isOpen,
+  onClose,
+  onProjectCreated,
+  organizationId,
 }: ProjectCreationModalProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    location: '',
-    country: '',
-    status: 'planning',
-    start_date: '',
-    completion_date: '',
-    price_min: '',
-    price_max: '',
-    currency: 'EUR',
+    name: "",
+    description: "",
+    location: "",
+    country: "",
+    status: "planning",
+    start_date: "",
+    completion_date: "",
+    price_min: "",
+    price_max: "",
+    currency: "EUR",
     property_types: [] as string[],
     amenities: [] as string[],
     features: [] as string[],
-    latitude: '',
-    longitude: ''
+    latitude: "",
+    longitude: "",
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const statusOptions = [
-    { value: 'planning', label: 'Planning' },
-    { value: 'construction', label: 'Construction' },
-    { value: 'completed', label: 'Completed' },
-    { value: 'available', label: 'Available' }
+    { value: "planning", label: "Planning" },
+    { value: "construction", label: "Construction" },
+    { value: "completed", label: "Completed" },
+    { value: "available", label: "Available" },
   ];
 
   const propertyTypeOptions = [
-    'Apartment', 'House', 'Villa', 'Townhouse', 'Studio', 'Penthouse', 'Duplex'
+    "Apartment",
+    "House",
+    "Villa",
+    "Townhouse",
+    "Studio",
+    "Penthouse",
+    "Duplex",
   ];
 
   const amenityOptions = [
-    'Swimming Pool', 'Gym', 'Parking', 'Garden', 'Balcony', 'Terrace', 
-    'Security', 'Elevator', 'Storage', 'Air Conditioning', 'Sea View', 'Mountain View'
+    "Swimming Pool",
+    "Gym",
+    "Parking",
+    "Garden",
+    "Balcony",
+    "Terrace",
+    "Security",
+    "Elevator",
+    "Storage",
+    "Air Conditioning",
+    "Sea View",
+    "Mountain View",
   ];
 
   const featureOptions = [
-    'New Build', 'Furnished', 'Renovated', 'Energy Efficient', 'Smart Home',
-    'Gated Community', 'Beach Access', 'City Center', 'Quiet Area'
+    "New Build",
+    "Furnished",
+    "Renovated",
+    "Energy Efficient",
+    "Smart Home",
+    "Gated Community",
+    "Beach Access",
+    "City Center",
+    "Quiet Area",
   ];
 
   const handleInputChange = (field: string, value: string | string[]) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleArrayToggle = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: prev[field as keyof typeof prev].includes(value)
-        ? (prev[field as keyof typeof prev] as string[]).filter(item => item !== value)
-        : [...(prev[field as keyof typeof prev] as string[]), value]
+        ? (prev[field as keyof typeof prev] as string[]).filter((item) => item !== value)
+        : [...(prev[field as keyof typeof prev] as string[]), value],
     }));
   };
 
@@ -78,20 +101,20 @@ export default function ProjectCreationModal({
       const payload = {
         ...formData,
         organization: organizationId,
-        status: formData.status as 'planning' | 'construction' | 'completed' | 'available',
+        status: formData.status as "planning" | "construction" | "completed" | "available",
         price_min: formData.price_min ? parseFloat(formData.price_min) : undefined,
         price_max: formData.price_max ? parseFloat(formData.price_max) : undefined,
         latitude: formData.latitude ? parseFloat(formData.latitude) : undefined,
         longitude: formData.longitude ? parseFloat(formData.longitude) : undefined,
         start_date: formData.start_date || undefined,
-        completion_date: formData.completion_date || undefined
+        completion_date: formData.completion_date || undefined,
       };
 
       const response = await developersApi.projects.create(payload);
       onProjectCreated(response);
       onClose();
-    } catch (error) {
-      setError('An error occurred while creating the project');
+    } catch (_error) {
+      setError("An error occurred while creating the project");
     } finally {
       setIsLoading(false);
     }
@@ -105,6 +128,7 @@ export default function ProjectCreationModal({
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Create New Project</h2>
           <button
+            type="button"
             onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
@@ -122,54 +146,70 @@ export default function ProjectCreationModal({
           {/* Basic Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Project Name *
               </label>
               <input
+                id="project-name"
                 type="text"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-location"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Location *
               </label>
               <input
+                id="project-location"
                 type="text"
                 value={formData.location}
-                onChange={(e) => handleInputChange('location', e.target.value)}
+                onChange={(e) => handleInputChange("location", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-country"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Country *
               </label>
               <input
+                id="project-country"
                 type="text"
                 value={formData.country}
-                onChange={(e) => handleInputChange('country', e.target.value)}
+                onChange={(e) => handleInputChange("country", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 required
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-status"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Status
               </label>
               <select
+                id="project-status"
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', e.target.value)}
+                onChange={(e) => handleInputChange("status", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                {statusOptions.map(option => (
+                {statusOptions.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -178,12 +218,16 @@ export default function ProjectCreationModal({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-currency"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Currency
               </label>
               <select
+                id="project-currency"
                 value={formData.currency}
-                onChange={(e) => handleInputChange('currency', e.target.value)}
+                onChange={(e) => handleInputChange("currency", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="EUR">EUR</option>
@@ -195,12 +239,16 @@ export default function ProjectCreationModal({
 
           {/* Description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label
+              htmlFor="project-description"
+              className="block text-sm font-medium text-gray-700 mb-1"
+            >
               Description
             </label>
             <textarea
+              id="project-description"
               value={formData.description}
-              onChange={(e) => handleInputChange('description', e.target.value)}
+              onChange={(e) => handleInputChange("description", e.target.value)}
               rows={3}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="Describe the project..."
@@ -210,50 +258,66 @@ export default function ProjectCreationModal({
           {/* Dates and Pricing */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-start-date"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Start Date
               </label>
               <input
+                id="project-start-date"
                 type="date"
                 value={formData.start_date}
-                onChange={(e) => handleInputChange('start_date', e.target.value)}
+                onChange={(e) => handleInputChange("start_date", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-completion-date"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Completion Date
               </label>
               <input
+                id="project-completion-date"
                 type="date"
                 value={formData.completion_date}
-                onChange={(e) => handleInputChange('completion_date', e.target.value)}
+                onChange={(e) => handleInputChange("completion_date", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-min-price"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Min Price
               </label>
               <input
+                id="project-min-price"
                 type="number"
                 value={formData.price_min}
-                onChange={(e) => handleInputChange('price_min', e.target.value)}
+                onChange={(e) => handleInputChange("price_min", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-max-price"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Max Price
               </label>
               <input
+                id="project-max-price"
                 type="number"
                 value={formData.price_max}
-                onChange={(e) => handleInputChange('price_max', e.target.value)}
+                onChange={(e) => handleInputChange("price_max", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="0"
               />
@@ -262,16 +326,14 @@ export default function ProjectCreationModal({
 
           {/* Property Types */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Property Types
-            </label>
+            <div className="block text-sm font-medium text-gray-700 mb-2">Property Types</div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {propertyTypeOptions.map(type => (
+              {propertyTypeOptions.map((type) => (
                 <label key={type} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.property_types.includes(type)}
-                    onChange={() => handleArrayToggle('property_types', type)}
+                    onChange={() => handleArrayToggle("property_types", type)}
                     className="rounded"
                   />
                   <span className="text-sm">{type}</span>
@@ -282,16 +344,14 @@ export default function ProjectCreationModal({
 
           {/* Amenities */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Amenities
-            </label>
+            <div className="block text-sm font-medium text-gray-700 mb-2">Amenities</div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {amenityOptions.map(amenity => (
+              {amenityOptions.map((amenity) => (
                 <label key={amenity} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.amenities.includes(amenity)}
-                    onChange={() => handleArrayToggle('amenities', amenity)}
+                    onChange={() => handleArrayToggle("amenities", amenity)}
                     className="rounded"
                   />
                   <span className="text-sm">{amenity}</span>
@@ -302,16 +362,14 @@ export default function ProjectCreationModal({
 
           {/* Features */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Features
-            </label>
+            <div className="block text-sm font-medium text-gray-700 mb-2">Features</div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-              {featureOptions.map(feature => (
+              {featureOptions.map((feature) => (
                 <label key={feature} className="flex items-center space-x-2">
                   <input
                     type="checkbox"
                     checked={formData.features.includes(feature)}
-                    onChange={() => handleArrayToggle('features', feature)}
+                    onChange={() => handleArrayToggle("features", feature)}
                     className="rounded"
                   />
                   <span className="text-sm">{feature}</span>
@@ -323,28 +381,36 @@ export default function ProjectCreationModal({
           {/* Location Coordinates */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-latitude"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Latitude
               </label>
               <input
+                id="project-latitude"
                 type="number"
                 step="any"
                 value={formData.latitude}
-                onChange={(e) => handleInputChange('latitude', e.target.value)}
+                onChange={(e) => handleInputChange("latitude", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. 34.7749"
               />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label
+                htmlFor="project-longitude"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
                 Longitude
               </label>
               <input
+                id="project-longitude"
                 type="number"
                 step="any"
                 value={formData.longitude}
-                onChange={(e) => handleInputChange('longitude', e.target.value)}
+                onChange={(e) => handleInputChange("longitude", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g. 32.4194"
               />
@@ -365,7 +431,7 @@ export default function ProjectCreationModal({
               disabled={isLoading}
               className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isLoading ? 'Creating...' : 'Create Project'}
+              {isLoading ? "Creating..." : "Create Project"}
             </button>
           </div>
         </form>
@@ -373,5 +439,3 @@ export default function ProjectCreationModal({
     </div>
   );
 }
-
-

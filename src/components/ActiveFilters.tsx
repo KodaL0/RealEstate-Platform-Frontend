@@ -1,6 +1,6 @@
-import { X } from 'lucide-react';
-import { PROPERTY_TYPES, COUNTRY_OPTIONS, AMENITIES } from '../types';
-import type { SearchFilterState } from '../utils/searchCanonical';
+import { X } from "lucide-react";
+import { AMENITIES, COUNTRY_OPTIONS, PROPERTY_TYPES } from "../types";
+import type { SearchFilterState } from "../utils/searchCanonical";
 
 interface ActiveFiltersProps {
   filters: SearchFilterState;
@@ -13,18 +13,19 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ filters, onRemoveFilter }
   // Location
   if (filters.location) {
     activeFilters.push({
-      key: 'location',
-      label: 'Location',
+      key: "location",
+      label: "Location",
       value: filters.location,
     });
   }
 
   // Country
-  if (filters.country && filters.country !== 'All') {
-    const countryLabel = COUNTRY_OPTIONS.find(c => c.value === filters.country)?.label || filters.country;
+  if (filters.country && filters.country !== "All") {
+    const countryLabel =
+      COUNTRY_OPTIONS.find((c) => c.value === filters.country)?.label || filters.country;
     activeFilters.push({
-      key: 'country',
-      label: 'Country',
+      key: "country",
+      label: "Country",
       value: countryLabel,
     });
   }
@@ -33,54 +34,55 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ filters, onRemoveFilter }
   if (filters.minPrice || filters.maxPrice) {
     const formatPrice = (price: string) => {
       const num = parseInt(price, 10);
-      return isNaN(num) ? price : `€${num.toLocaleString()}`;
+      return Number.isNaN(num) ? price : `€${num.toLocaleString()}`;
     };
-    const min = filters.minPrice ? formatPrice(filters.minPrice) : '';
-    const max = filters.maxPrice ? formatPrice(filters.maxPrice) : '';
+    const min = filters.minPrice ? formatPrice(filters.minPrice) : "";
+    const max = filters.maxPrice ? formatPrice(filters.maxPrice) : "";
     const priceRange = min && max ? `${min} - ${max}` : min || max;
     activeFilters.push({
-      key: 'minPrice',
-      label: 'Price',
+      key: "minPrice",
+      label: "Price",
       value: priceRange,
     });
   }
 
   // Property type
-  if (filters.propertyType && filters.propertyType !== 'Any') {
-    const typeLabel = PROPERTY_TYPES.find(t => t.value === filters.propertyType)?.label || filters.propertyType;
+  if (filters.propertyType && filters.propertyType !== "Any") {
+    const typeLabel =
+      PROPERTY_TYPES.find((t) => t.value === filters.propertyType)?.label || filters.propertyType;
     activeFilters.push({
-      key: 'propertyType',
-      label: 'Type',
+      key: "propertyType",
+      label: "Type",
       value: typeLabel,
     });
   }
 
   // Bedrooms
-  if (filters.bedrooms && filters.bedrooms !== 'Any') {
+  if (filters.bedrooms && filters.bedrooms !== "Any") {
     activeFilters.push({
-      key: 'bedrooms',
-      label: 'Bedrooms',
+      key: "bedrooms",
+      label: "Bedrooms",
       value: filters.bedrooms,
     });
   }
 
   // Bathrooms
-  if (filters.bathrooms && filters.bathrooms !== 'Any') {
+  if (filters.bathrooms && filters.bathrooms !== "Any") {
     activeFilters.push({
-      key: 'bathrooms',
-      label: 'Bathrooms',
+      key: "bathrooms",
+      label: "Bathrooms",
       value: filters.bathrooms,
     });
   }
 
   // Amenities (individual chips)
   if (filters.amenities && filters.amenities.length > 0) {
-    const amenityMap = new Map(AMENITIES.map(a => [a.id, a.label]));
-    filters.amenities.forEach(amenityId => {
+    const amenityMap = new Map(AMENITIES.map((a) => [a.id, a.label]));
+    filters.amenities.forEach((amenityId) => {
       const amenityLabel = amenityMap.get(amenityId) || amenityId;
       activeFilters.push({
-        key: 'amenities',
-        label: 'Amenity',
+        key: "amenities",
+        label: "Amenity",
         value: amenityLabel,
       });
     });
@@ -97,14 +99,14 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ filters, onRemoveFilter }
         {activeFilters.map((filter, index) => {
           // For amenities, we need to remove the specific amenity
           const handleRemove = () => {
-            if (filter.key === 'amenities') {
-              const amenityId = AMENITIES.find(a => a.label === filter.value)?.id || filter.value;
-              const updatedAmenities = (filters.amenities || []).filter(a => a !== amenityId);
-              onRemoveFilter('amenities', updatedAmenities.join(','));
-            } else if (filter.key === 'minPrice') {
+            if (filter.key === "amenities") {
+              const amenityId = AMENITIES.find((a) => a.label === filter.value)?.id || filter.value;
+              const updatedAmenities = (filters.amenities || []).filter((a) => a !== amenityId);
+              onRemoveFilter("amenities", updatedAmenities.join(","));
+            } else if (filter.key === "minPrice") {
               // Special handling for price range
-              onRemoveFilter('minPrice');
-              onRemoveFilter('maxPrice');
+              onRemoveFilter("minPrice");
+              onRemoveFilter("maxPrice");
             } else {
               onRemoveFilter(filter.key);
             }
@@ -129,4 +131,3 @@ const ActiveFilters: React.FC<ActiveFiltersProps> = ({ filters, onRemoveFilter }
 };
 
 export default ActiveFilters;
-

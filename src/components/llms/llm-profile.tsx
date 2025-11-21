@@ -1,11 +1,11 @@
 /**
  * LLM Profile Data Component
- * 
+ *
  * Adds Schema.org structured data to user profile pages for AI agents and search engines.
  * This component is invisible to users but helps AI assistants understand profile data.
  */
 
-import React from 'react';
+import type React from "react";
 
 interface ProfileUser {
   id: number;
@@ -26,7 +26,7 @@ interface LLMProfileDataProps {
 
 /**
  * Generates and injects Schema.org JSON-LD structured data for a user profile
- * 
+ *
  * @param user - User profile object to generate structured data for
  * @param propertiesCount - Number of properties the user has listed
  * @returns Script tag with JSON-LD structured data
@@ -37,51 +37,52 @@ export const LLMProfileData: React.FC<LLMProfileDataProps> = ({ user, properties
     const structuredData = {
       "@context": "https://schema.org",
       "@type": user.is_developer ? "RealEstateAgent" : "Person",
-      "name": user.name || user.username,
-      "url": `https://propertpro.com/${user.username}`,
-      
+      name: user.name || user.username,
+      url: `https://propertpro.com/${user.username}`,
+
       // Description from bio
-      ...(user.bio && { "description": user.bio }),
-      
+      ...(user.bio && { description: user.bio }),
+
       // Location
       ...(user.location && {
-        "address": {
+        address: {
           "@type": "PostalAddress",
-          "addressLocality": user.location,
-          "addressCountry": "CY"
-        }
+          addressLocality: user.location,
+          addressCountry: "CY",
+        },
       }),
-      
+
       // Website
-      ...(user.website && { "url": user.website }),
-      
+      ...(user.website && { url: user.website }),
+
       // Avatar image
-      ...(user.avatar && { "image": user.avatar }),
-      
+      ...(user.avatar && { image: user.avatar }),
+
       // Additional properties for RealEstateAgent
       ...(user.is_developer && {
-        "knowsAbout": "Real Estate",
-        "serviceArea": {
+        knowsAbout: "Real Estate",
+        serviceArea: {
           "@type": "Place",
-          "name": "Cyprus"
-        }
+          name: "Cyprus",
+        },
       }),
-      
+
       // Number of listings (as additional property)
-      ...(propertiesCount !== undefined && propertiesCount > 0 && {
-        "numberOfItems": propertiesCount,
-        "additionalProperty": {
-          "@type": "PropertyValue",
-          "name": "Active Listings",
-          "value": propertiesCount
-        }
-      }),
-      
+      ...(propertiesCount !== undefined &&
+        propertiesCount > 0 && {
+          numberOfItems: propertiesCount,
+          additionalProperty: {
+            "@type": "PropertyValue",
+            name: "Active Listings",
+            value: propertiesCount,
+          },
+        }),
+
       // Profile identifier
-      "identifier": user.username,
-      
+      identifier: user.username,
+
       // Join date
-      ...(user.date_joined && { "dateCreated": user.date_joined })
+      ...(user.date_joined && { dateCreated: user.date_joined }),
     };
 
     return structuredData;
@@ -92,13 +93,10 @@ export const LLMProfileData: React.FC<LLMProfileDataProps> = ({ user, properties
   return (
     <script
       type="application/ld+json"
+      // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON.stringify escapes content safely
       dangerouslySetInnerHTML={{ __html: JSON.stringify(structuredData, null, 2) }}
     />
   );
 };
 
 export default LLMProfileData;
-
-
-
-

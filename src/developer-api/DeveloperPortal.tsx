@@ -1,11 +1,11 @@
-import { useState, useEffect } from 'react';
-import { Routes, Route, Link, useLocation } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
-import { organizationsApi } from '../config/developers-api';
-import EnhancedLayout from './components/EnhancedLayout';
-import OrganizationPage from './OrganizationPage';
-import ProjectsPage from './ProjectsPage';
-import OrganizationCreationForm from './OrganizationCreationForm.tsx';
+import { useEffect, useState } from "react";
+import { Link, Route, Routes, useLocation } from "react-router-dom";
+import { organizationsApi } from "../config/developers-api";
+import { useUser } from "../context/UserContext";
+import EnhancedLayout from "./components/EnhancedLayout";
+import OrganizationCreationForm from "./OrganizationCreationForm.tsx";
+import OrganizationPage from "./OrganizationPage";
+import ProjectsPage from "./ProjectsPage";
 
 type Organization = {
   id: number;
@@ -40,7 +40,7 @@ export default function DeveloperPortal() {
     const fetchOrganization = async () => {
       try {
         const res = await organizationsApi.getMine();
-        const data = res as any;
+        const data = res as { organization?: Organization | null };
         const org = data?.organization || null;
         if (org) {
           setOrganization(org);
@@ -48,12 +48,13 @@ export default function DeveloperPortal() {
           // No organization found - show creation form
           setShowCreateForm(true);
         }
-      } catch (err: any) {
-        const status = err?.response?.status;
+      } catch (err: unknown) {
+        const axiosError = err as { response?: { status?: number } };
+        const status = axiosError.response?.status;
         if (status === 401) {
-          setError('Authentication required. Please log in again.');
+          setError("Authentication required. Please log in again.");
         } else {
-          setError('Failed to fetch organization data.');
+          setError("Failed to fetch organization data.");
         }
       } finally {
         setIsLoading(false);
@@ -70,9 +71,12 @@ export default function DeveloperPortal() {
       setOrganization(newOrg);
       setShowCreateForm(false);
       setError(null);
-    } catch (error: any) {
-      console.error('Error creating organization:', error);
-      setError(error.response?.data?.error || 'Failed to create organization. Please try again.');
+    } catch (error: unknown) {
+      console.error("Error creating organization:", error);
+      const apiError = error as { response?: { data?: { error?: string } } };
+      setError(
+        apiError.response?.data?.error || "Failed to create organization. Please try again.",
+      );
     } finally {
       setIsCreating(false);
     }
@@ -103,62 +107,93 @@ export default function DeveloperPortal() {
         <div className="max-w-md mx-auto">
           <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 p-8 text-center">
             <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
-              <span className="text-3xl">{!user ? '🔐' : '🚫'}</span>
+              <span className="text-3xl">{!user ? "🔐" : "🚫"}</span>
             </div>
-            
+
             <h3 className="text-xl font-bold text-slate-800 mb-3">
-              {!user ? 'Authentication Required' : 'Access Restricted'}
+              {!user ? "Authentication Required" : "Access Restricted"}
             </h3>
-            
+
             <p className="text-slate-600 mb-6 leading-relaxed">
-              {!user 
-                ? 'Please sign in to your PropertyPro developer account to access the API portal.' 
-                : 'Developer access is required to use this portal. Contact our team to request developer privileges.'
-              }
+              {!user
+                ? "Please sign in to your PropertyPro developer account to access the API portal."
+                : "Developer access is required to use this portal. Contact our team to request developer privileges."}
             </p>
 
             {/* Debug information */}
-            {window.location.hostname === 'localhost' && (
+            {window.location.hostname === "localhost" && (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 mb-6 text-left">
                 <p className="font-semibold text-slate-700 mb-2 text-sm">Debug Information</p>
                 <div className="space-y-1 text-xs text-slate-600">
-                  <p><span className="font-medium">User:</span> {user ? 'Authenticated' : 'Not logged in'}</p>
-                  <p><span className="font-medium">User ID:</span> {user?.id || 'N/A'}</p>
-                  <p><span className="font-medium">Email:</span> {user?.email || 'N/A'}</p>
-                  <p><span className="font-medium">Developer Status:</span> {user?.is_developer ? 'Active' : 'Inactive'}</p>
-                  <p><span className="font-medium">Auth Loading:</span> {authLoading ? 'Yes' : 'No'}</p>
-                  <p><span className="font-medium">Cookies:</span> {Object.keys(document.cookie.split(';').reduce((acc: Record<string, boolean>, cookie) => {
-                    const [name] = cookie.trim().split('=');
-                    acc[name] = true;
-                    return acc;
-                  }, {})).join(', ') || 'None'}</p>
+                  <p>
+                    <span className="font-medium">User:</span>{" "}
+                    {user ? "Authenticated" : "Not logged in"}
+                  </p>
+                  <p>
+                    <span className="font-medium">User ID:</span> {user?.id || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Email:</span> {user?.email || "N/A"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Developer Status:</span>{" "}
+                    {user?.is_developer ? "Active" : "Inactive"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Auth Loading:</span> {authLoading ? "Yes" : "No"}
+                  </p>
+                  <p>
+                    <span className="font-medium">Cookies:</span>{" "}
+                    {Object.keys(
+                      document.cookie.split(";").reduce((acc: Record<string, boolean>, cookie) => {
+                        const [name] = cookie.trim().split("=");
+                        acc[name] = true;
+                        return acc;
+                      }, {}),
+                    ).join(", ") || "None"}
+                  </p>
                 </div>
               </div>
             )}
-            
+
             <div className="space-y-3">
               {!user ? (
                 <>
-                  <button 
-                    onClick={() => window.location.href = '/login'} 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/login";
+                    }}
                     className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     Sign In to PropertyPro
                   </button>
                   <p className="text-sm text-slate-500">
-                    New to PropertyPro? <a href="/login" className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors">Create an account</a>
+                    New to PropertyPro?{" "}
+                    <a
+                      href="/login"
+                      className="text-blue-600 hover:text-blue-700 font-medium hover:underline transition-colors"
+                    >
+                      Create an account
+                    </a>
                   </p>
                 </>
               ) : (
                 <div className="space-y-3">
-                  <button 
-                    onClick={() => window.location.href = '/developers'} 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/developers";
+                    }}
                     className="w-full px-6 py-3 bg-gradient-to-r from-slate-600 to-slate-700 text-white font-semibold rounded-xl hover:from-slate-700 hover:to-slate-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     View Developer Resources
                   </button>
-                  <button 
-                    onClick={() => window.location.href = '/contact'} 
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/contact";
+                    }}
                     className="w-full px-6 py-3 bg-gradient-to-r from-emerald-600 to-emerald-700 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-emerald-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
                   >
                     Request API Access
@@ -204,12 +239,15 @@ export default function DeveloperPortal() {
             <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-red-100 to-orange-100 rounded-2xl flex items-center justify-center">
               <span className="text-3xl">⚠️</span>
             </div>
-            
+
             <h3 className="text-xl font-bold text-slate-800 mb-3">Unable to Load Portal</h3>
             <p className="text-slate-600 mb-6 leading-relaxed">{error}</p>
-            
-            <button 
-              onClick={() => window.location.reload()} 
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.reload();
+              }}
               className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Try Again
@@ -229,14 +267,18 @@ export default function DeveloperPortal() {
             <div className="w-16 h-16 mx-auto mb-6 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center">
               <span className="text-3xl">🏢</span>
             </div>
-            
+
             <h3 className="text-xl font-bold text-slate-800 mb-3">Organization Required</h3>
             <p className="text-slate-600 mb-6 leading-relaxed">
-              Create an organization profile to access PropertyPro's developer tools and API resources.
+              Create an organization profile to access PropertyPro's developer tools and API
+              resources.
             </p>
-            
-            <button 
-              onClick={() => setShowCreateForm(true)} 
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowCreateForm(true);
+              }}
               className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-semibold rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
               Create Organization
@@ -250,7 +292,15 @@ export default function DeveloperPortal() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 w-full">
       <EnhancedLayout
-        organization={organization}
+        organization={
+          organization
+            ? {
+                ...organization,
+                owner: user?.id || 0,
+                is_published: false,
+              }
+            : null
+        }
         showBackButton={false}
         mainDashboardPath="/"
       >
@@ -261,12 +311,12 @@ export default function DeveloperPortal() {
               <Link
                 to="/developer-api/organization"
                 className={`relative px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                  location.pathname.includes('/organization') 
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105' 
-                    : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50/80'
+                  location.pathname.includes("/organization")
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105"
+                    : "text-slate-700 hover:text-blue-600 hover:bg-blue-50/80"
                 }`}
               >
-                {location.pathname.includes('/organization') && (
+                {location.pathname.includes("/organization") && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
                 )}
                 <span className="relative">My Organization</span>
@@ -274,12 +324,16 @@ export default function DeveloperPortal() {
               <Link
                 to="/developer-api/projects"
                 className={`relative px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 ${
-                  location.pathname.includes('/projects') || location.pathname === '/developer-api/' || location.pathname === '/developer-api'
-                    ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105' 
-                    : 'text-slate-700 hover:text-blue-600 hover:bg-blue-50/80'
+                  location.pathname.includes("/projects") ||
+                  location.pathname === "/developer-api/" ||
+                  location.pathname === "/developer-api"
+                    ? "bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg transform scale-105"
+                    : "text-slate-700 hover:text-blue-600 hover:bg-blue-50/80"
                 }`}
               >
-                {(location.pathname.includes('/projects') || location.pathname === '/developer-api/' || location.pathname === '/developer-api') && (
+                {(location.pathname.includes("/projects") ||
+                  location.pathname === "/developer-api/" ||
+                  location.pathname === "/developer-api") && (
                   <div className="absolute inset-0 bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl opacity-10"></div>
                 )}
                 <span className="relative">My Projects</span>

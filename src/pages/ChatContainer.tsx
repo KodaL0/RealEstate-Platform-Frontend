@@ -1,9 +1,10 @@
 // src/pages/ChatContainer.tsx
-import { Routes, Route, useLocation, useNavigate } from "react-router-dom";
+
+import { ArrowLeft, Menu, MessageCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Route, Routes, useNavigate } from "react-router-dom";
 import ChatInbox from "./ChatInbox";
 import ChatThread from "./ChatThread";
-import { useState, useEffect } from "react";
-import { ArrowLeft, Menu, MessageCircle } from "lucide-react";
 
 // Empty state component for when no chat is selected on desktop
 function ChatEmptyState() {
@@ -13,9 +14,7 @@ function ChatEmptyState() {
         <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <MessageCircle size={32} className="text-blue-500" />
         </div>
-        <h2 className="text-xl font-semibold text-gray-900 mb-3">
-          Welcome to Messages
-        </h2>
+        <h2 className="text-xl font-semibold text-gray-900 mb-3">Welcome to Messages</h2>
         <p className="text-gray-600 mb-6">
           Select a conversation from the sidebar to start chatting, or create a new conversation.
         </p>
@@ -34,14 +33,14 @@ function MobileChatThread() {
   const navigate = useNavigate();
 
   const handleBackToInbox = () => {
-    navigate('/chat');
+    navigate("/chat");
   };
 
   return (
     <div className="w-full h-full bg-white flex flex-col">
       {/* Mobile Chat Header with Back Button */}
       <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0 shadow-sm">
-        <button 
+        <button
           onClick={handleBackToInbox}
           className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors -ml-2"
           aria-label="Back to messages"
@@ -50,7 +49,7 @@ function MobileChatThread() {
         </button>
         <h1 className="text-lg font-semibold text-gray-900">Chat</h1>
       </div>
-      
+
       {/* Mobile Thread Content */}
       <div className="flex-1 min-h-0">
         <ChatThread />
@@ -60,27 +59,21 @@ function MobileChatThread() {
 }
 
 export default function ChatContainer() {
-  const location = useLocation();
-  const navigate = useNavigate();
   const [showSidebar, setShowSidebar] = useState(true);
   // Initialize mobile state based on current window size
   const [isMobile, setIsMobile] = useState(() => {
-    if (typeof window !== 'undefined') {
+    if (typeof window !== "undefined") {
       return window.innerWidth < 1024;
     }
     return false;
   });
-  
-  // Better thread detection - check if we have a specific chat ID in the path
-  const pathParts = location.pathname.split('/').filter(Boolean);
-  const isInThread = pathParts.length >= 2 && pathParts[0] === 'chat' && pathParts[1] && pathParts[1] !== '';
 
   // Handle responsive behavior with proper state management
   useEffect(() => {
     const handleResize = () => {
       const currentIsMobile = window.innerWidth < 1024;
       setIsMobile(currentIsMobile);
-      
+
       if (!currentIsMobile) {
         // Desktop: always show sidebar
         setShowSidebar(true);
@@ -89,29 +82,24 @@ export default function ChatContainer() {
 
     // Set initial state
     handleResize();
-    
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
-  // Handle back navigation on mobile
-  const handleBackToInbox = () => {
-    navigate('/chat');
-  };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   // Toggle sidebar (desktop only)
   const toggleSidebar = () => {
     if (!isMobile) {
-      setShowSidebar(prev => !prev);
+      setShowSidebar((prev) => !prev);
     }
   };
 
   return (
-    <div 
+    <div
       className="absolute inset-x-0 bottom-0 flex flex-col bg-gray-50 chat-container"
-      style={{ 
-        top: 'var(--navbar-height)',
-        height: 'auto',
+      style={{
+        top: "var(--navbar-height)",
+        height: "auto",
       }}
     >
       <div className="flex flex-1 min-h-0 relative">
@@ -127,10 +115,12 @@ export default function ChatContainer() {
           /* Desktop Layout */
           <>
             {/* Desktop Sidebar - Inbox */}
-            <aside className={`
+            <aside
+              className={`
               w-80 border-r border-gray-200 bg-white flex-shrink-0 transition-all duration-300 chat-sidebar
-              ${showSidebar ? 'translate-x-0' : '-translate-x-full'}
-            `}>
+              ${showSidebar ? "translate-x-0" : "-translate-x-full"}
+            `}
+            >
               <div className="h-full flex flex-col overflow-hidden">
                 <ChatInbox />
               </div>
@@ -140,7 +130,7 @@ export default function ChatContainer() {
             <main className="flex-1 flex flex-col min-h-0 bg-white overflow-hidden chat-main">
               {/* Desktop header with menu button */}
               <div className="bg-white border-b border-gray-200 px-4 py-3 flex items-center gap-3 flex-shrink-0">
-                <button 
+                <button
                   onClick={toggleSidebar}
                   className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
                   aria-label="Toggle messages sidebar"

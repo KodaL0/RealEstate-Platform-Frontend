@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { Instagram, Loader2, CheckCircle2 } from 'lucide-react';
-import api from '../config/api';
+import { CheckCircle2, Instagram, Loader2 } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import api from "../config/api";
 
 interface InstagramPostButtonProps {
   propertyId: number | string;
@@ -15,7 +16,7 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   isPosted = false,
   postCount = 0,
   onPostSuccess,
-  className = ''
+  className = "",
 }) => {
   const [isPosting, setIsPosting] = useState(false);
   const [posted, setPosted] = useState(isPosted);
@@ -38,11 +39,16 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
       setTimeout(() => {
         setError(null);
       }, 3000);
-    } catch (err: any) {
-      console.error('Failed to post to Instagram:', err);
-      const errorMsg = err.response?.data?.error || err.response?.data?.details || 'Failed to post to Instagram';
+    } catch (err) {
+      console.error("Failed to post to Instagram:", err);
+      const errorMsg =
+        (err as { response?: { data?: { error?: string; details?: string } } })?.response?.data
+          ?.error ||
+        (err as { response?: { data?: { error?: string; details?: string } } })?.response?.data
+          ?.details ||
+        "Failed to post to Instagram";
       setError(errorMsg);
-      
+
       // Clear error after 5 seconds
       setTimeout(() => {
         setError(null);
@@ -57,6 +63,7 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
     return (
       <div className={`flex flex-col ${className}`}>
         <button
+          type="button"
           className="group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-red-50 to-red-50 text-red-700 border-2 border-red-200 rounded-xl font-semibold text-sm transition-all duration-300 cursor-not-allowed"
           disabled
         >
@@ -72,6 +79,7 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   if (isPosting) {
     return (
       <button
+        type="button"
         className={`group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700 border-2 border-purple-200 rounded-xl font-semibold text-sm transition-all duration-300 cursor-wait ${className}`}
         disabled
       >
@@ -85,13 +93,12 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   if (posted) {
     return (
       <button
+        type="button"
         onClick={handlePost}
         className={`group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 hover:from-emerald-100 hover:to-emerald-100 text-emerald-700 border-2 border-emerald-200 hover:border-emerald-300 rounded-xl font-semibold text-sm transition-all duration-300 ${className}`}
       >
         <CheckCircle2 className="h-4 w-4 mr-2" />
-        <span>
-          Posted {postCount > 1 && `(${postCount}x)`}
-        </span>
+        <span>Posted {postCount > 1 && `(${postCount}x)`}</span>
       </button>
     );
   }
@@ -99,6 +106,7 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   // Show default "Post to Instagram" state
   return (
     <button
+      type="button"
       onClick={handlePost}
       className={`group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold text-sm transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 border border-purple-500/20 ${className}`}
     >
@@ -109,4 +117,3 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
 };
 
 export default InstagramPostButton;
-

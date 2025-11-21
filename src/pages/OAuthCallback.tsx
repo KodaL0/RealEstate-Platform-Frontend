@@ -1,5 +1,6 @@
-import React, { useEffect } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import type React from "react";
+import { useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 /**
  * Simplified OAuth callback handler
@@ -13,20 +14,20 @@ const OAuthCallback: React.FC = () => {
     const handleCallback = () => {
       try {
         const queryParams = new URLSearchParams(location.search);
-        const authSuccess = queryParams.get('auth_success');
-        const error = queryParams.get('error');
+        const authSuccess = queryParams.get("auth_success");
+        const error = queryParams.get("error");
 
         if (error) {
           console.error(`OAuth error: ${error}`);
-          navigate('/login?error=' + error, { replace: true });
+          navigate(`/login?error=${error}`, { replace: true });
           return;
         }
 
-        if (authSuccess === 'true') {
-          console.log('OAuth success detected, cookies should be set by backend');
-          
+        if (authSuccess === "true") {
+          console.log("OAuth success detected, cookies should be set by backend");
+
           // Clean the URL and redirect to home
-          navigate('/', { replace: true });
+          navigate("/", { replace: true });
           return;
         }
 
@@ -35,10 +36,9 @@ const OAuthCallback: React.FC = () => {
         console.log("Forwarding OAuth callback to backend");
         const callbackUrl = `/accounts/google/login/callback${location.search}`;
         window.location.href = callbackUrl;
-        
       } catch (error) {
-        console.error('Error in OAuth callback:', error);
-        navigate('/login?error=callback_error', { replace: true });
+        console.error("Error in OAuth callback:", error);
+        navigate("/login?error=callback_error", { replace: true });
       }
     };
 
@@ -56,4 +56,4 @@ const OAuthCallback: React.FC = () => {
   );
 };
 
-export default OAuthCallback; 
+export default OAuthCallback;

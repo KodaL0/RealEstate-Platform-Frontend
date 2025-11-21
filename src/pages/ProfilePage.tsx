@@ -1,9 +1,19 @@
-import * as React from 'react';
-import { useEffect, useState } from 'react';
-import { useUser } from '../context/UserContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { User as UserIcon, Save, MapPin, Phone, Building, FileText, CheckCircle2, AlertCircle, Shield } from 'lucide-react';
-import api from '../config/api';
+import {
+  AlertCircle,
+  Building,
+  CheckCircle2,
+  FileText,
+  MapPin,
+  Phone,
+  Save,
+  Shield,
+  User as UserIcon,
+} from "lucide-react";
+import type * as React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../config/api";
+import { useUser } from "../context/UserContext";
 
 interface ProfileData {
   name: string;
@@ -34,88 +44,92 @@ interface UserResponse {
 const ProfilePage: React.FC = () => {
   const { user, updateUserData } = useUser();
   const navigate = useNavigate();
-  
+
   // Username state
-  const [newUsername, setNewUsername] = useState('');
-  const [usernameMessage, setUsernameMessage] = useState('');
-  const [usernameError, setUsernameError] = useState('');
-  const [validationError, setValidationError] = useState('');
-  
+  const [newUsername, setNewUsername] = useState("");
+  const [usernameMessage, setUsernameMessage] = useState("");
+  const [usernameError, setUsernameError] = useState("");
+  const [validationError, setValidationError] = useState("");
+
   // Profile form state
   const [profileData, setProfileData] = useState<ProfileData>({
-    name: '',
-    bio: '',
-    location: '',
-    phone: '',
-    office: '',
-    avatar: '',
-    website: ''
+    name: "",
+    bio: "",
+    location: "",
+    phone: "",
+    office: "",
+    avatar: "",
+    website: "",
   });
-  
-  const [profileMessage, setProfileMessage] = useState('');
-  const [profileError, setProfileError] = useState('');
+
+  const [profileMessage, setProfileMessage] = useState("");
+  const [profileError, setProfileError] = useState("");
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
 
-  useEffect(() => {
-    console.log('ProfilePage useEffect triggered:', { user: user?.username, hasUser: !!user });
-    if (!user) {
-      console.log('No user found, navigating to auth');
-      navigate('/auth');
-    } else {
-      console.log('Setting initial username:', user.username);
-      // Set initial username from UserContext, but it will be updated by loadProfile
-      setNewUsername(user.username ?? '');
-      loadProfile();
-    }
-  }, [user, navigate]);
-
-  const loadProfile = async () => {
-    console.log('Loading profile data...');
+  const loadProfile = useCallback(async () => {
+    console.log("Loading profile data...");
     setIsLoadingProfile(true);
     try {
       const response = await api.auth.getUser();
-      console.log('Profile API response:', response);
-      
+      console.log("Profile API response:", response);
+
       if (response.status === 200) {
         const data = response.data as UserResponse;
         const userData = data.user;
-        console.log('User data received:', userData);
-        
+        console.log("User data received:", userData);
+
         // Update username from API response (this is the key fix!)
         if (userData.username) {
-          console.log('Setting username from API:', userData.username);
+          console.log("Setting username from API:", userData.username);
           setNewUsername(userData.username);
         }
-        
+
         const profileDataToSet = {
-          name: userData.name || '',
-          bio: userData.bio || '',
-          location: userData.location || '',
-          phone: userData.phone || '',
-          office: userData.office || '',
-          avatar: userData.avatar || '',
-          website: userData.website || ''
+          name: userData.name || "",
+          bio: userData.bio || "",
+          location: userData.location || "",
+          phone: userData.phone || "",
+          office: userData.office || "",
+          avatar: userData.avatar || "",
+          website: userData.website || "",
         };
-        
-        console.log('Setting profile data:', profileDataToSet);
+
+        console.log("Setting profile data:", profileDataToSet);
         setProfileData(profileDataToSet);
       }
-    } catch (error: any) {
-      console.error('Failed to load profile:', error);
-      console.error('Error details:', {
-        message: error.message,
-        response: error.response?.data,
-        status: error.response?.status
+    } catch (error: unknown) {
+      console.error("Failed to load profile:", error);
+      const apiError = error as {
+        message?: string;
+        response?: { data?: unknown; status?: number };
+      };
+      console.error("Error details:", {
+        message: apiError.message,
+        response: apiError.response?.data,
+        status: apiError.response?.status,
       });
-      setProfileError('Failed to load profile data');
+      setProfileError("Failed to load profile data");
     } finally {
       setIsLoadingProfile(false);
-      console.log('Profile loading completed');
+      console.log("Profile loading completed");
     }
-  };
+  }, []);
 
-  console.log('ProfilePage render state:', {
+  useEffect(() => {
+    console.log("ProfilePage useEffect triggered:", { user: user?.username, hasUser: !!user });
+    if (!user) {
+      console.log("No user found, navigating to auth");
+      navigate("/auth");
+    } else {
+      console.log("Setting initial username:", user.username);
+      // Set initial username from UserContext, but it will be updated by loadProfile
+      setNewUsername(user.username ?? "");
+      loadProfile();
+    }
+  }, [user, navigate, loadProfile]);
+
+  console.log("ProfilePage render state:", {
     hasUser: !!user,
     username: user?.username,
     profileData,
@@ -124,185 +138,196 @@ const ProfilePage: React.FC = () => {
     newUsername,
     validationError,
     profileError,
-    profileMessage
+    profileMessage,
   });
 
   if (!user) return null;
 
   const validateUsername = (username: string): string | null => {
-    console.log('Validating username:', username);
-    
+    console.log("Validating username:", username);
+
     if (!username || username.length < 3) {
-      console.log('Username validation failed: too short');
-      return 'Username must be at least 3 characters long';
+      console.log("Username validation failed: too short");
+      return "Username must be at least 3 characters long";
     }
-    
+
     const regex = /^[a-z0-9_-]+$/;
     if (!regex.test(username)) {
-      console.log('Username validation failed: invalid characters');
-      return 'Username can only contain lowercase letters, numbers, underscores, and hyphens';
+      console.log("Username validation failed: invalid characters");
+      return "Username can only contain lowercase letters, numbers, underscores, and hyphens";
     }
-    
-    console.log('Username validation passed');
+
+    console.log("Username validation passed");
     return null;
   };
 
   const validatePhone = (phone: string): string | null => {
-    console.log('Validating phone:', phone);
-    
+    console.log("Validating phone:", phone);
+
     if (!phone) {
-      console.log('Phone validation passed: empty (optional field)');
+      console.log("Phone validation passed: empty (optional field)");
       return null; // Optional field
     }
-    
+
     const phoneRegex = /^\+?1?\d{9,15}$/;
-    const cleanedPhone = phone.replace(/\s+/g, '');
-    console.log('Cleaned phone for validation:', cleanedPhone);
-    
+    const cleanedPhone = phone.replace(/\s+/g, "");
+    console.log("Cleaned phone for validation:", cleanedPhone);
+
     if (!phoneRegex.test(cleanedPhone)) {
-      console.log('Phone validation failed: invalid format');
-      return 'Please enter a valid phone number (9-15 digits)';
+      console.log("Phone validation failed: invalid format");
+      return "Please enter a valid phone number (9-15 digits)";
     }
-    
-    console.log('Phone validation passed');
+
+    console.log("Phone validation passed");
     return null;
   };
 
   const validateWebsite = (website: string): string | null => {
-    console.log('Validating website:', website);
-    
+    console.log("Validating website:", website);
+
     if (!website) {
-      console.log('Website validation passed: empty (optional field)');
+      console.log("Website validation passed: empty (optional field)");
       return null; // Optional field
     }
-    
+
     try {
       new URL(website);
-      console.log('Website validation passed');
+      console.log("Website validation passed");
       return null;
     } catch (error) {
-      console.log('Website validation failed:', error);
-      return 'Please enter a valid website URL (e.g., https://example.com)';
+      console.log("Website validation failed:", error);
+      return "Please enter a valid website URL (e.g., https://example.com)";
     }
   };
 
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
-    console.log('Username input changed:', { 
-      originalValue: e.target.value, 
+    console.log("Username input changed:", {
+      originalValue: e.target.value,
       processedValue: value,
-      currentUsername: user?.username 
+      currentUsername: user?.username,
     });
-    
+
     setNewUsername(value);
-    
+
     const validationMsg = validateUsername(value);
-    console.log('Username validation result:', validationMsg);
-    setValidationError(validationMsg || '');
-    
-    if (usernameMessage) setUsernameMessage('');
-    if (usernameError) setUsernameError('');
+    console.log("Username validation result:", validationMsg);
+    setValidationError(validationMsg || "");
+
+    if (usernameMessage) setUsernameMessage("");
+    if (usernameError) setUsernameError("");
   };
 
   const handleProfileChange = (field: keyof ProfileData, value: string) => {
-    console.log('Profile field changed:', { field, value, currentProfileData: profileData });
-    
-    setProfileData(prev => {
+    console.log("Profile field changed:", { field, value, currentProfileData: profileData });
+
+    setProfileData((prev) => {
       const newData = { ...prev, [field]: value };
-      console.log('Updated profile data:', newData);
+      console.log("Updated profile data:", newData);
       return newData;
     });
-    
+
     // Clear messages when user starts editing
-    if (profileMessage) setProfileMessage('');
-    if (profileError) setProfileError('');
+    if (profileMessage) setProfileMessage("");
+    if (profileError) setProfileError("");
   };
 
   const handleUpdateUsername = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Username update form submitted:', { newUsername, currentUsername: user?.username });
-    
-    setUsernameError('');
-    setUsernameMessage('');
-    
+    console.log("Username update form submitted:", {
+      newUsername,
+      currentUsername: user?.username,
+    });
+
+    setUsernameError("");
+    setUsernameMessage("");
+
     const validationMsg = validateUsername(newUsername);
-    console.log('Username validation before submit:', validationMsg);
-    
+    console.log("Username validation before submit:", validationMsg);
+
     if (validationMsg) {
       setValidationError(validationMsg);
       return;
     }
-    
+
     try {
-      console.log('Sending username update request:', { username: newUsername });
-      const response = await api.auth.updateProfile({ 
-        username: newUsername
+      console.log("Sending username update request:", { username: newUsername });
+      const response = await api.auth.updateProfile({
+        username: newUsername,
       });
-      console.log('Username update response:', response);
-      
+      console.log("Username update response:", response);
+
       if (response.status === 200) {
-        console.log('Username updated successfully');
-        setUsernameMessage('Username updated successfully!');
-        
+        console.log("Username updated successfully");
+        setUsernameMessage("Username updated successfully!");
+
         // Update user context locally with new username
         updateUserData({ username: newUsername });
-        setValidationError('');
+        setValidationError("");
       }
-    } catch (err: any) {
-      console.error('Username update failed:', err);
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
+    } catch (err: unknown) {
+      console.error("Username update failed:", err);
+      const apiError = err as {
+        message?: string;
+        response?: { data?: { error?: string }; status?: number };
+      };
+      console.error("Error details:", {
+        message: apiError.message,
+        response: apiError.response?.data,
+        status: apiError.response?.status,
       });
-      setUsernameError(err.response?.data?.error || 'Failed to update username.');
+      setUsernameError(apiError.response?.data?.error || "Failed to update username.");
     }
   };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Profile update form submitted:', profileData);
-    
-    setProfileError('');
-    setProfileMessage('');
+    console.log("Profile update form submitted:", profileData);
+
+    setProfileError("");
+    setProfileMessage("");
     setIsSavingProfile(true);
 
     // Validate fields
     const phoneError = validatePhone(profileData.phone);
     const websiteError = validateWebsite(profileData.website);
-    
-    console.log('Profile validation results:', { phoneError, websiteError });
-    
+
+    console.log("Profile validation results:", { phoneError, websiteError });
+
     if (phoneError || websiteError) {
-      console.log('Profile validation failed:', phoneError || websiteError);
-      setProfileError(phoneError || websiteError || '');
+      console.log("Profile validation failed:", phoneError || websiteError);
+      setProfileError(phoneError || websiteError || "");
       setIsSavingProfile(false);
       return;
     }
 
     try {
-      console.log('Sending profile update request:', profileData);
+      console.log("Sending profile update request:", profileData);
       const response = await api.auth.updateProfile(profileData);
-      console.log('Profile update response:', response);
-      
+      console.log("Profile update response:", response);
+
       if (response.status === 200) {
-        console.log('Profile updated successfully');
-        setProfileMessage('Profile updated successfully!');
-        
+        console.log("Profile updated successfully");
+        setProfileMessage("Profile updated successfully!");
+
         // Update user context locally with new profile data
         updateUserData(profileData);
       }
-    } catch (err: any) {
-      console.error('Profile update failed:', err);
-      console.error('Error details:', {
-        message: err.message,
-        response: err.response?.data,
-        status: err.response?.status
+    } catch (err: unknown) {
+      console.error("Profile update failed:", err);
+      const apiError = err as {
+        message?: string;
+        response?: { data?: { error?: string }; status?: number };
+      };
+      console.error("Error details:", {
+        message: apiError.message,
+        response: apiError.response?.data,
+        status: apiError.response?.status,
       });
-      setProfileError(err.response?.data?.error || 'Failed to update profile.');
+      setProfileError(apiError.response?.data?.error || "Failed to update profile.");
     } finally {
       setIsSavingProfile(false);
-      console.log('Profile update process completed');
+      console.log("Profile update process completed");
     }
   };
 
@@ -343,7 +368,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Profile Information</h2>
             </div>
-            
+
             {/* Success/Error Messages */}
             {profileMessage && (
               <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
@@ -357,7 +382,7 @@ const ProfilePage: React.FC = () => {
                 <p className="text-red-800 font-medium">{profileError}</p>
               </div>
             )}
-            
+
             {isLoadingProfile ? (
               <div className="flex flex-col items-center justify-center py-16 space-y-4">
                 <div className="relative">
@@ -370,11 +395,13 @@ const ProfilePage: React.FC = () => {
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 {/* Single column layout for all fields */}
                 <div>
-                  <label className="block mb-2 text-sm font-semibold text-gray-700">Full Name</label>
-                  <input 
-                    type="text" 
+                  <label className="block mb-2 text-sm font-semibold text-gray-700">
+                    Full Name
+                  </label>
+                  <input
+                    type="text"
                     value={profileData.name}
-                    onChange={(e) => handleProfileChange('name', e.target.value)}
+                    onChange={(e) => handleProfileChange("name", e.target.value)}
                     className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="Enter your full name"
                   />
@@ -385,10 +412,10 @@ const ProfilePage: React.FC = () => {
                     <MapPin className="h-4 w-4 mr-1 text-gray-500" />
                     Location
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={profileData.location}
-                    onChange={(e) => handleProfileChange('location', e.target.value)}
+                    onChange={(e) => handleProfileChange("location", e.target.value)}
                     className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="City, Country"
                   />
@@ -399,10 +426,10 @@ const ProfilePage: React.FC = () => {
                     <Phone className="h-4 w-4 mr-1 text-gray-500" />
                     Phone Number
                   </label>
-                  <input 
-                    type="tel" 
+                  <input
+                    type="tel"
                     value={profileData.phone}
-                    onChange={(e) => handleProfileChange('phone', e.target.value)}
+                    onChange={(e) => handleProfileChange("phone", e.target.value)}
                     className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="+1234567890"
                   />
@@ -413,10 +440,10 @@ const ProfilePage: React.FC = () => {
                     <Building className="h-4 w-4 mr-1 text-gray-500" />
                     Office/Workplace
                   </label>
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={profileData.office}
-                    onChange={(e) => handleProfileChange('office', e.target.value)}
+                    onChange={(e) => handleProfileChange("office", e.target.value)}
                     className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200"
                     placeholder="Company or office name"
                   />
@@ -425,9 +452,9 @@ const ProfilePage: React.FC = () => {
                 <div>
                   <label className="block mb-2 text-sm font-semibold text-gray-700">Bio</label>
                   <div className="relative">
-                    <textarea 
+                    <textarea
                       value={profileData.bio}
-                      onChange={(e) => handleProfileChange('bio', e.target.value)}
+                      onChange={(e) => handleProfileChange("bio", e.target.value)}
                       className="w-full px-4 py-3 text-base border-2 border-gray-200 rounded-xl bg-white/50 backdrop-blur-sm focus:outline-none focus:ring-4 focus:ring-blue-100 focus:border-blue-500 hover:border-gray-300 transition-all duration-200 resize-none"
                       placeholder="Tell us about yourself..."
                       maxLength={500}
@@ -439,8 +466,8 @@ const ProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={isSavingProfile}
                   className="w-full py-4 px-6 text-lg font-semibold rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 disabled:from-gray-400 disabled:to-gray-500 text-white shadow-lg hover:shadow-xl transition-all duration-200 transform hover:scale-105 active:scale-95 disabled:scale-100 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
                 >
@@ -467,7 +494,7 @@ const ProfilePage: React.FC = () => {
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Username Settings</h2>
             </div>
-            
+
             {/* Success/Error Messages */}
             {usernameMessage && (
               <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center space-x-2">
@@ -481,7 +508,7 @@ const ProfilePage: React.FC = () => {
                 <p className="text-red-800 font-medium">{usernameError}</p>
               </div>
             )}
-            
+
             <form onSubmit={handleUpdateUsername} className="space-y-6">
               <div>
                 <label className="block mb-3 text-sm font-semibold text-gray-700">
@@ -491,20 +518,20 @@ const ProfilePage: React.FC = () => {
                   <span className="text-lg font-semibold text-blue-700">{user.username}</span>
                 </div>
               </div>
-              
+
               <div>
                 <label className="block mb-3 text-sm font-semibold text-gray-700">
                   New Username
                 </label>
                 <div className="relative">
-                  <input 
-                    type="text" 
-                    value={newUsername} 
+                  <input
+                    type="text"
+                    value={newUsername}
                     onChange={handleUsernameChange}
                     className={`w-full px-4 py-4 text-base sm:text-lg border-2 rounded-xl bg-white/50 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-4 ${
-                      validationError 
-                        ? 'border-red-300 focus:border-red-500 focus:ring-red-100' 
-                        : 'border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300'
+                      validationError
+                        ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                        : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
                     }`}
                     placeholder="Enter new username"
                   />
@@ -518,14 +545,14 @@ const ProfilePage: React.FC = () => {
                   Use lowercase letters, numbers, underscores, and hyphens only
                 </p>
               </div>
-              
-              <button 
-                type="submit" 
+
+              <button
+                type="submit"
                 disabled={!!validationError || !newUsername.trim()}
                 className={`w-full py-4 px-6 text-lg font-semibold rounded-xl transition-all duration-200 transform ${
                   validationError || !newUsername.trim()
-                    ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95'
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg hover:shadow-xl hover:scale-105 active:scale-95"
                 }`}
               >
                 Update Username

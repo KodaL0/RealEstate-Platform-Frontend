@@ -1,6 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { BarChart3, Eye, Users, Phone, Mail, MessageCircle, TrendingUp, X, Heart } from 'lucide-react';
-import api from '../../config/api';
+import {
+  BarChart3,
+  Eye,
+  Heart,
+  Mail,
+  MessageCircle,
+  Phone,
+  TrendingUp,
+  Users,
+  X,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import api from "../../config/api";
 
 interface PropertyAnalyticsProps {
   propertyId: number | string;
@@ -37,31 +48,36 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchAnalytics();
-  }, [propertyId]);
-
-  const fetchAnalytics = async () => {
+  const fetchAnalytics = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      
+
       // Fetch all-time analytics (no days parameter)
       const response = await api.get(`/analytics/property/${propertyId}/`);
-      setAnalytics(response.data);
-    } catch (err: any) {
-      console.error('Failed to fetch analytics:', err);
-      if (err.response?.status === 403) {
-        setError('You do not have permission to view analytics for this property.');
-      } else if (err.response?.status === 404) {
-        setError('Property not found.');
+      setAnalytics(response.data as AnalyticsData);
+    } catch (err: unknown) {
+      console.error("Failed to fetch analytics:", err);
+      if (err && typeof err === "object" && "response" in err) {
+        const axiosError = err as { response?: { status?: number } };
+        if (axiosError.response?.status === 403) {
+          setError("You do not have permission to view analytics for this property.");
+        } else if (axiosError.response?.status === 404) {
+          setError("Property not found.");
+        } else {
+          setError("Failed to load analytics. Please try again.");
+        }
       } else {
-        setError('Failed to load analytics. Please try again.');
+        setError("Failed to load analytics. Please try again.");
       }
     } finally {
       setLoading(false);
     }
-  };
+  }, [propertyId]);
+
+  useEffect(() => {
+    fetchAnalytics();
+  }, [fetchAnalytics]);
 
   if (loading) {
     return (
@@ -112,6 +128,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
           </div>
           {onClose && (
             <button
+              type="button"
               onClick={onClose}
               className="text-white hover:bg-white/20 rounded-lg p-2 transition-colors"
             >
@@ -121,14 +138,18 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
         </div>
         <div className="mt-3 flex items-center space-x-2 text-sm text-purple-100">
           <span className="px-2 py-1 bg-white/20 rounded-md">
-            {analytics.period_days === 'all_time' ? 'All Time' : `Last ${analytics.period_days} days`}
+            {analytics.period_days === "all_time"
+              ? "All Time"
+              : `Last ${analytics.period_days} days`}
           </span>
-          <span className={`px-2 py-1 rounded-md ${
-            analytics.is_published 
-              ? 'bg-emerald-500/20 text-emerald-100' 
-              : 'bg-red-500/20 text-red-100'
-          }`}>
-            {analytics.is_published ? 'Published' : 'Draft'}
+          <span
+            className={`px-2 py-1 rounded-md ${
+              analytics.is_published
+                ? "bg-emerald-500/20 text-emerald-100"
+                : "bg-red-500/20 text-red-100"
+            }`}
+          >
+            {analytics.is_published ? "Published" : "Draft"}
           </span>
         </div>
       </div>
@@ -159,9 +180,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
               <span className="text-2xl font-bold text-emerald-700">{data.unique_viewers}</span>
             </div>
             <h3 className="text-sm font-semibold text-emerald-900 mb-1">Unique Viewers</h3>
-            <p className="text-xs text-emerald-600">
-              Registered users who viewed
-            </p>
+            <p className="text-xs text-emerald-600">Registered users who viewed</p>
           </div>
 
           {/* Total Contacts */}
@@ -173,9 +192,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
               <span className="text-2xl font-bold text-orange-700">{data.total_contacts}</span>
             </div>
             <h3 className="text-sm font-semibold text-orange-900 mb-1">Total Contacts</h3>
-            <p className="text-xs text-orange-600">
-              People reached out
-            </p>
+            <p className="text-xs text-orange-600">People reached out</p>
           </div>
 
           {/* Conversion Rate */}
@@ -187,9 +204,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
               <span className="text-2xl font-bold text-purple-700">{data.conversion_rate}%</span>
             </div>
             <h3 className="text-sm font-semibold text-purple-900 mb-1">Conversion Rate</h3>
-            <p className="text-xs text-purple-600">
-              Views to contacts
-            </p>
+            <p className="text-xs text-purple-600">Views to contacts</p>
           </div>
 
           {/* Net Favorites */}
@@ -213,7 +228,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
             <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
             Contact Method Breakdown
           </h3>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Phone Clicks */}
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg border border-gray-100">
@@ -257,18 +272,21 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
             <div className="space-y-2 text-sm">
               {data.conversion_rate >= 5 ? (
                 <p className="text-green-700">
-                  ✨ Great! Your conversion rate of {data.conversion_rate}% is above average (typical is 2-5%).
+                  ✨ Great! Your conversion rate of {data.conversion_rate}% is above average
+                  (typical is 2-5%).
                 </p>
               ) : data.conversion_rate > 0 ? (
                 <p className="text-blue-700">
-                  Your conversion rate is {data.conversion_rate}%. Consider improving property photos or description to increase engagement.
+                  Your conversion rate is {data.conversion_rate}%. Consider improving property
+                  photos or description to increase engagement.
                 </p>
               ) : (
                 <p className="text-gray-700">
-                  No contacts yet. Make sure your contact information is clearly visible and property details are complete.
+                  No contacts yet. Make sure your contact information is clearly visible and
+                  property details are complete.
                 </p>
               )}
-              
+
               {data.anonymous_views > data.unique_viewers && (
                 <p className="text-gray-600">
                   💡 Most viewers are anonymous. Encourage sign-ups to track user journeys better.
@@ -281,7 +299,7 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
         {data.total_views === 0 && (
           <div className="mt-6 bg-amber-50 rounded-xl p-5 border border-amber-200">
             <p className="text-sm text-amber-800">
-              <strong>No views yet.</strong> Your property was just listed or needs more visibility. 
+              <strong>No views yet.</strong> Your property was just listed or needs more visibility.
               Consider promoting it or checking that it's published.
             </p>
           </div>
@@ -292,4 +310,3 @@ const PropertyAnalytics: React.FC<PropertyAnalyticsProps> = ({ propertyId, onClo
 };
 
 export default PropertyAnalytics;
-

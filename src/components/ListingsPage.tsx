@@ -1,30 +1,23 @@
-import {
-  useState,
-  useEffect,
-  useRef,
-  useLayoutEffect,
-  useCallback,
-  useMemo,
-} from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ChevronLeft, ChevronRight, MapPin, SlidersHorizontal } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate, useParams } from "react-router-dom";
-import { MapPin, ChevronLeft, ChevronRight, SlidersHorizontal } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import SearchFilters from "./SearchFilters";
-import ActiveFilters from "./ActiveFilters";
-import PropertyCard from "./cards/PropertyCard";
-import ProjectCard from "./cards/ProjectCard";
-import SEO from "./SEO";
-import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
+import { normalizePropertyData, type Property, type UnifiedListingItem } from "../types";
 import analytics from "../utils/analytics";
 import {
+  type CanonicalExtras,
   decodeCanonicalPath,
   decodeLegacyQuery,
   encodeCanonicalPath,
-  type SearchFilterState,
   type ListingType as RouteListingType,
-  type CanonicalExtras,
+  type SearchFilterState,
 } from "../utils/searchCanonical";
+import ActiveFilters from "./ActiveFilters";
+import ProjectCard from "./cards/ProjectCard";
+import PropertyCard from "./cards/PropertyCard";
+import SEO from "./SEO";
+import SearchFilters from "./SearchFilters";
 
 const PAGE_SIZE = 12;
 const SITE_URL = "https://www.propertpro.com";
@@ -49,8 +42,7 @@ const capitalizeWords = (value: string): string =>
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
     .join(" ");
 
-const formatPropertyType = (value: string): string =>
-  capitalizeWords(value.replace(/_/g, " "));
+const formatPropertyType = (value: string): string => capitalizeWords(value.replace(/_/g, " "));
 
 type FilterState = SearchFilterState;
 
@@ -196,25 +188,28 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     return decodeCanonicalPath(slugParam || "");
   }, [slugParam]);
 
-  const canonicalFilters = useMemo<FilterState>(() => ({
-    location: decodedCanonical.filters.location,
-    country: decodedCanonical.filters.country,
-    minPrice: decodedCanonical.filters.minPrice,
-    maxPrice: decodedCanonical.filters.maxPrice,
-    propertyType: decodedCanonical.filters.propertyType,
-    bedrooms: decodedCanonical.filters.bedrooms,
-    bathrooms: decodedCanonical.filters.bathrooms,
-    amenities: decodedCanonical.filters.amenities,
-  }), [
-    decodedCanonical.filters.location,
-    decodedCanonical.filters.country,
-    decodedCanonical.filters.minPrice,
-    decodedCanonical.filters.maxPrice,
-    decodedCanonical.filters.propertyType,
-    decodedCanonical.filters.bedrooms,
-    decodedCanonical.filters.bathrooms,
-    decodedCanonical.filters.amenities?.join(',') || '',
-  ]);
+  const canonicalFilters = useMemo<FilterState>(
+    () => ({
+      location: decodedCanonical.filters.location,
+      country: decodedCanonical.filters.country,
+      minPrice: decodedCanonical.filters.minPrice,
+      maxPrice: decodedCanonical.filters.maxPrice,
+      propertyType: decodedCanonical.filters.propertyType,
+      bedrooms: decodedCanonical.filters.bedrooms,
+      bathrooms: decodedCanonical.filters.bathrooms,
+      amenities: decodedCanonical.filters.amenities,
+    }),
+    [
+      decodedCanonical.filters.location,
+      decodedCanonical.filters.country,
+      decodedCanonical.filters.minPrice,
+      decodedCanonical.filters.maxPrice,
+      decodedCanonical.filters.propertyType,
+      decodedCanonical.filters.bedrooms,
+      decodedCanonical.filters.bathrooms,
+      decodedCanonical.filters.amenities,
+    ],
+  );
 
   useEffect(() => {
     if (!import.meta?.env?.DEV) return;
@@ -242,11 +237,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     }
   }, [decodedCanonical, listingRouteType, slugParam]);
 
-  // UnifiedListingItem can be Property or Project
-  type UnifiedListingItem = Property & { _type?: 'property' } | any & { _type: 'project' };
   const [properties, setProperties] = useState<UnifiedListingItem[]>([]);
   const [totalPages, setTotalPages] = useState(
-    Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE))
+    Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE)),
   );
   const [totalCount, setTotalCount] = useState(decodedCanonical.extras.results ?? 0);
   const [currentPage, setCurrentPage] = useState(decodedCanonical.extras.page);
@@ -278,36 +271,39 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     }, 500);
   }, []);
 
-  const handleRemoveFilter = useCallback((key: keyof FilterState, value?: string) => {
-    if (key === 'amenities') {
-      const updatedAmenities = value ? value.split(',').filter(Boolean) : [];
-      handleFiltersChange({
-        ...localFilters,
-        amenities: updatedAmenities,
-      });
-    } else if (key === 'minPrice' || key === 'maxPrice') {
-      handleFiltersChange({
-        ...localFilters,
-        minPrice: '',
-        maxPrice: '',
-      });
-    } else {
-      const defaults: Record<keyof FilterState, string | string[]> = {
-        location: '',
-        country: 'All',
-        minPrice: '',
-        maxPrice: '',
-        propertyType: 'Any',
-        bedrooms: 'Any',
-        bathrooms: 'Any',
-        amenities: [],
-      };
-      handleFiltersChange({
-        ...localFilters,
-        [key]: defaults[key],
-      });
-    }
-  }, [localFilters, handleFiltersChange]);
+  const handleRemoveFilter = useCallback(
+    (key: keyof FilterState, value?: string) => {
+      if (key === "amenities") {
+        const updatedAmenities = value ? value.split(",").filter(Boolean) : [];
+        handleFiltersChange({
+          ...localFilters,
+          amenities: updatedAmenities,
+        });
+      } else if (key === "minPrice" || key === "maxPrice") {
+        handleFiltersChange({
+          ...localFilters,
+          minPrice: "",
+          maxPrice: "",
+        });
+      } else {
+        const defaults: Record<keyof FilterState, string | string[]> = {
+          location: "",
+          country: "All",
+          minPrice: "",
+          maxPrice: "",
+          propertyType: "Any",
+          bedrooms: "Any",
+          bathrooms: "Any",
+          amenities: [],
+        };
+        handleFiltersChange({
+          ...localFilters,
+          [key]: defaults[key],
+        });
+      }
+    },
+    [localFilters, handleFiltersChange],
+  );
 
   useEffect(() => {
     return () => {
@@ -325,7 +321,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         isHydratingRef.current = false;
       }
     }, 400);
-    
+
     return () => clearTimeout(initTimer);
   }, []);
 
@@ -339,15 +335,16 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     if (window.scrollY > 400) {
       window.scrollTo({ top: 200, left: 0, behavior: "smooth" });
     }
-  }, [currentPage]);
+  }, []);
 
   // Stringify amenities for dependency to avoid unnecessary re-renders
-  const amenitiesKey = filters.amenities?.join(",") || "";
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _amenitiesKey = filters.amenities?.join(",") || "";
 
   // Hydrate filters from URL when slug changes (but prevent loops)
   useEffect(() => {
     const normalizedSlug = slugParam || "";
-    
+
     // Skip if slug hasn't changed
     if (lastSyncedSlugRef.current === normalizedSlug) {
       return;
@@ -359,7 +356,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     }
 
     // Compare current filters with canonical filters to avoid unnecessary updates
-    const filtersChanged = 
+    const filtersChanged =
       filters.location !== canonicalFilters.location ||
       filters.country !== canonicalFilters.country ||
       filters.minPrice !== canonicalFilters.minPrice ||
@@ -367,7 +364,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       filters.propertyType !== canonicalFilters.propertyType ||
       filters.bedrooms !== canonicalFilters.bedrooms ||
       filters.bathrooms !== canonicalFilters.bathrooms ||
-      (filters.amenities?.join(',') || '') !== (canonicalFilters.amenities?.join(',') || '');
+      (filters.amenities?.join(",") || "") !== (canonicalFilters.amenities?.join(",") || "");
 
     // Only update if filters actually changed or if this is a new slug
     if (!filtersChanged && lastSyncedSlugRef.current) {
@@ -386,9 +383,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     setSortOption(decodedCanonical.extras.sort);
     setCurrentPage(decodedCanonical.extras.page);
     setTotalCount(decodedCanonical.extras.results ?? 0);
-    setTotalPages(
-      Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE))
-    );
+    setTotalPages(Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE)));
     lastResultsSyncedRef.current = decodedCanonical.extras.results;
     lastSyncedSlugRef.current = normalizedSlug;
 
@@ -399,7 +394,21 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
     return () => window.clearTimeout(timeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [slugParam]);
+  }, [
+    slugParam,
+    canonicalFilters,
+    decodedCanonical.extras.page,
+    decodedCanonical.extras.results,
+    decodedCanonical.extras.sort,
+    filters.amenities?.join,
+    filters.bathrooms,
+    filters.bedrooms,
+    filters.country,
+    filters.location,
+    filters.maxPrice,
+    filters.minPrice,
+    filters.propertyType,
+  ]);
 
   // Unified canonical URL sync - only runs when user changes filters, not during hydration
   const syncCanonicalUrl = useCallback(
@@ -431,35 +440,25 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         lastSyncedSlugRef.current = slugOnly;
       }
     },
-    [filters, sortOption, currentPage, listingRouteType, navigate, location.pathname]
+    [filters, sortOption, currentPage, listingRouteType, navigate, location.pathname],
   );
 
   // Sync URL when filters/sort/page change (but not during hydration)
   useEffect(() => {
     if (isHydratingRef.current || isSyncingRef.current) return;
-    
+
     // Debounce sync to avoid rapid updates
     const syncTimer = setTimeout(() => {
       syncCanonicalUrl();
     }, 100);
-    
+
     return () => clearTimeout(syncTimer);
-  }, [filters, sortOption, currentPage, syncCanonicalUrl]);
+  }, [syncCanonicalUrl]);
 
   useEffect(() => {
     if (isHydratingRef.current) return;
     setCurrentPage(1);
-  }, [
-    filters.location,
-    filters.country,
-    filters.minPrice,
-    filters.maxPrice,
-    filters.bedrooms,
-    filters.bathrooms,
-    filters.propertyType,
-    amenitiesKey,
-    sortOption
-  ]);
+  }, []);
 
   useEffect(() => {
     const fetchProperties = async () => {
@@ -470,16 +469,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         page_size: PAGE_SIZE.toString(),
       };
       if (filters.location) qp.location = filters.location;
-      if (filters.country && filters.country !== 'All') qp.country = filters.country;
+      if (filters.country && filters.country !== "All") qp.country = filters.country;
       if (currentPage !== 1) qp.page = currentPage.toString();
       if (filters.minPrice) qp.price_min = filters.minPrice;
       if (filters.maxPrice) qp.price_max = filters.maxPrice;
-      if (filters.bedrooms && filters.bedrooms !== 'Any') qp.bedrooms = filters.bedrooms.replace('+', '');
-      if (filters.bathrooms && filters.bathrooms !== 'Any') qp.bathrooms = filters.bathrooms.replace('+', '');
-      if (filters.propertyType && filters.propertyType !== 'Any') qp.property_type = filters.propertyType;
+      if (filters.bedrooms && filters.bedrooms !== "Any")
+        qp.bedrooms = filters.bedrooms.replace("+", "");
+      if (filters.bathrooms && filters.bathrooms !== "Any")
+        qp.bathrooms = filters.bathrooms.replace("+", "");
+      if (filters.propertyType && filters.propertyType !== "Any")
+        qp.property_type = filters.propertyType;
       if (sortOption) qp.sort = sortOption;
       if (filters.amenities && filters.amenities.length > 0) {
-        qp.amenities = filters.amenities.join(',');
+        qp.amenities = filters.amenities.join(",");
       }
 
       console.log(`Fetching ${listingType.toUpperCase()} with query params:`, qp);
@@ -491,15 +493,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         console.log(`${listingType.toUpperCase()} pagination data:`, paginatedData);
 
         // Handle mixed results (Properties and Projects)
-        const normalized = (paginatedData.results || []).map((item: any) => {
-          if (item._type === 'property') {
-            return normalizePropertyData(item);
+        const normalized = (paginatedData.results || []).map((item: unknown) => {
+          const unifiedItem = item as UnifiedListingItem;
+          if (unifiedItem._type === "property") {
+            const normalizedProperty = normalizePropertyData(
+              unifiedItem as Partial<Property> & Record<string, unknown>,
+            );
+            return { ...normalizedProperty, _type: "property" as const } as UnifiedListingItem;
           }
           // For projects, return as-is (no normalization needed)
-          return item;
+          return unifiedItem;
         });
         const count = paginatedData.count ?? 0;
-        setProperties(normalized);
+        setProperties(normalized as UnifiedListingItem[]);
         setTotalCount(count);
         setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
 
@@ -515,11 +521,17 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
 
         analytics.trackPropertySearch({
           search_term: undefined,
-          property_type: filters.propertyType !== 'Any' ? filters.propertyType : undefined,
+          property_type: filters.propertyType !== "Any" ? filters.propertyType : undefined,
           min_price: filters.minPrice ? Number(filters.minPrice) : undefined,
           max_price: filters.maxPrice ? Number(filters.maxPrice) : undefined,
-          bedrooms: filters.bedrooms && filters.bedrooms !== 'Any' ? Number(filters.bedrooms.replace('+', '')) : undefined,
-          bathrooms: filters.bathrooms && filters.bathrooms !== 'Any' ? Number(filters.bathrooms.replace('+', '')) : undefined,
+          bedrooms:
+            filters.bedrooms && filters.bedrooms !== "Any"
+              ? Number(filters.bedrooms.replace("+", ""))
+              : undefined,
+          bathrooms:
+            filters.bathrooms && filters.bathrooms !== "Any"
+              ? Number(filters.bathrooms.replace("+", ""))
+              : undefined,
           location: filters.location,
           property_status: listingType,
           sort_by: sortOption,
@@ -544,17 +556,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     filters.bedrooms,
     filters.bathrooms,
     filters.propertyType,
-    amenitiesKey,
     currentPage,
     listingType,
+    filters.amenities,
+    syncCanonicalUrl,
   ]);
 
-
   const canonicalPath = location.pathname || `/${listingRouteType}`;
-  const locationLabel = filters.location || (filters.country && filters.country !== "All" ? filters.country : "");
-  const propertyLabel = filters.propertyType && filters.propertyType !== "Any"
-    ? formatPropertyType(filters.propertyType)
-    : "Properties";
+  const locationLabel =
+    filters.location || (filters.country && filters.country !== "All" ? filters.country : "");
+  const propertyLabel =
+    filters.propertyType && filters.propertyType !== "Any"
+      ? formatPropertyType(filters.propertyType)
+      : "Properties";
   const actionLabel = listingType === "sale" ? "for Sale" : "for Rent";
   const metaTitle = `${propertyLabel} ${actionLabel}${locationLabel ? ` in ${locationLabel}` : ""} | PropertPro`;
   const resultsDescriptor = totalCount > 0 ? `${totalCount.toLocaleString()} ` : "the latest ";
@@ -583,18 +597,29 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     const basePosition = (currentPage - 1) * PAGE_SIZE;
 
     const elements = properties.map((item, index) => {
-      const url = item.url || (item._type === 'project' ? `/project/${item.id}` : `/property/${item.id}`);
+      const url =
+        (item._type === "property" ? item.url : undefined) ||
+        (item._type === "project" ? `/project/${item.id}` : `/property/${item.id}`);
       const absoluteUrl = url.startsWith("http") ? url : `${SITE_URL}${url}`;
-      const primaryImage = item.images?.[0]?.image;
+      const primaryImage =
+        item._type === "property"
+          ? typeof item.images?.[0] === "object" && item.images[0] !== null
+            ? item.images[0].image
+            : undefined
+          : item._type === "project"
+            ? item.images?.[0]
+            : undefined;
       const imageUrl = primaryImage
-        ? (primaryImage.startsWith("http") ? primaryImage : `${SITE_URL}${primaryImage}`)
+        ? primaryImage.startsWith("http")
+          ? primaryImage
+          : `${SITE_URL}${primaryImage}`
         : undefined;
 
       const schemaItem: Record<string, unknown> = {
         "@type": "ListItem",
         position: basePosition + index + 1,
         url: absoluteUrl,
-        name: item._type === 'project' ? item.name : (item as Property).title,
+        name: item._type === "project" ? item.name : (item as Property).title,
       };
 
       if (imageUrl) {
@@ -621,8 +646,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   };
 
   const goToPage = (p: number) => setCurrentPage(p);
-  const prev = () => currentPage > 1 && setCurrentPage(p => p - 1);
-  const next = () => currentPage < totalPages && setCurrentPage(p => p + 1);
+  const prev = () => currentPage > 1 && setCurrentPage((p) => p - 1);
+  const next = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
 
   const sortOptions = [
     { value: "recommended", label: "Recommended" },
@@ -646,322 +671,345 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       {itemListSchema && (
         <script
           type="application/ld+json"
+          // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON.stringify escapes content safely
           dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListSchema) }}
         />
       )}
 
       <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      {/* Enhanced Hero Header */}
-      <div className={`relative bg-gradient-to-br ${theme.gradient} text-white overflow-hidden`}>
-        <div className={`absolute inset-0 ${theme.radialGradient1}`}></div>
-        <div className={`absolute inset-0 ${theme.radialGradient2}`}></div>
+        {/* Enhanced Hero Header */}
+        <div className={`relative bg-gradient-to-br ${theme.gradient} text-white overflow-hidden`}>
+          <div className={`absolute inset-0 ${theme.radialGradient1}`}></div>
+          <div className={`absolute inset-0 ${theme.radialGradient2}`}></div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-center"
-          >
-            <h1 className={`text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r ${theme.textGradient} bg-clip-text text-transparent`}>
-              {theme.title}
-            </h1>
-            <div className={`flex items-center justify-center mt-3 ${theme.iconColor}`}>
-              <MapPin className="h-5 w-5 mr-2 animate-pulse" />
-              <span className="text-lg">{theme.subtitle}</span>
-            </div>
-          </motion.div>
-        </div>
-
-        <div className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.borderColor} to-transparent`}></div>
-      </div>
-
-      {/* Search Filters - Static position (scrolls away naturally) */}
-      <div className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="max-w-6xl mx-auto">
-          <div className="px-4 sm:px-6 lg:px-8 pt-5">
-            <div className="flex items-center gap-2 mb-3">
-              <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
-              <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
-            </div>
-          </div>
-          <SearchFilters
-            filters={localFilters}
-            onFiltersChange={handleFiltersChange}
-          />
-          <ActiveFilters
-            filters={localFilters}
-            onRemoveFilter={handleRemoveFilter}
-          />
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Enhanced Results Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
-        >
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
-            <div className="flex-1">
-              {isLoading ? (
-                <div className="flex items-center">
-                  <div className="relative">
-                    <div className={`animate-spin rounded-full h-8 w-8 border-3 ${theme.spinnerColor} border-t-transparent`}></div>
-                    <div className={`absolute inset-0 rounded-full border-3 ${theme.spinnerBgColor}`}></div>
-                  </div>
-                  <span className="text-gray-600 text-sm ml-4 font-medium">Searching properties...</span>
-                </div>
-              ) : (
-                <div className="space-y-1">
-                  <div className="flex items-baseline gap-3">
-                    <p className="text-gray-900 font-bold text-2xl sm:text-3xl">
-                      {totalCount.toLocaleString()}
-                    </p>
-                    <p className="text-gray-600 font-medium text-lg">
-                      {totalCount === 1 ? 'Property' : 'Properties'} Available
-                    </p>
-                  </div>
-                  {filters.country && filters.country !== 'All' && (
-                    <p className="text-sm text-gray-500 flex items-center gap-1.5">
-                      <MapPin className="h-3.5 w-3.5" />
-                      <span>{filters.country}</span>
-                    </p>
-                  )}
-                </div>
-              )}
-            </div>
-
-            <div className="flex items-center gap-3">
-              <label htmlFor="sort" className="text-sm font-semibold text-gray-700 whitespace-nowrap">
-                Sort by:
-              </label>
-              <select
-                id="sort"
-                value={sortOption}
-                onChange={handleSortChange}
-                disabled={isLoading}
-                className={`px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 ${theme.focusRingColor} ${theme.focusBorderColor} bg-white text-sm font-medium text-gray-700 transition-all hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
-              >
-                {sortOptions.map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Enhanced Error State */}
-        {error && (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200 rounded-2xl p-8 mb-8 shadow-lg"
-          >
-            <div className="flex items-start">
-              <div className="flex-shrink-0">
-                <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-md">
-                  <span className="text-white font-bold text-xl">!</span>
-                </div>
-              </div>
-              <div className="ml-5 flex-1">
-                <h3 className="text-lg font-bold text-red-900 mb-1">Unable to Load Properties</h3>
-                <p className="text-sm text-red-700 leading-relaxed">{error}</p>
-                <button
-                  onClick={() => window.location.reload()}
-                  className="mt-4 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
-                >
-                  Reload Page
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        )}
-
-        {/* Enhanced Loading State */}
-        {isLoading ? (
-          <div className="flex justify-center py-24">
-            <div className="text-center">
-              <div className="relative inline-block">
-                <div className={`animate-spin rounded-full h-16 w-16 border-4 ${theme.spinnerColor} border-t-transparent`}></div>
-                <div className={`absolute inset-0 rounded-full border-4 ${theme.spinnerBgColor}`}></div>
-              </div>
-              <p className="text-gray-700 font-medium mt-6 text-lg">{theme.loadingText}</p>
-              <p className="text-gray-500 text-sm mt-2">This won't take long</p>
-            </div>
-          </div>
-        ) : displayed.length === 0 ? (
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="text-center py-24"
-          >
-            <div className="max-w-md mx-auto">
-              <div className={`w-24 h-24 bg-gradient-to-br ${theme.emptyStateGradient} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}>
-                <MapPin className={`h-12 w-12 ${theme.emptyStateIconColor}`} />
-              </div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-3">
-                No Properties Found
-              </h3>
-              <p className="text-gray-600 mb-8 leading-relaxed">
-                We couldn't find any {theme.emptyStateText} matching your search criteria. Try adjusting your filters or search in a different area.
-              </p>
-              <button
-                onClick={() => {
-                  // Clear debounce timer
-                  if (debounceTimerRef.current) {
-                    clearTimeout(debounceTimerRef.current);
-                  }
-                  
-                  const clearedFilters = {
-                    location: '',
-                    country: 'All',
-                    minPrice: '',
-                    maxPrice: '',
-                    propertyType: 'Any',
-                    bedrooms: 'Any',
-                    bathrooms: 'Any',
-                    amenities: [],
-                  };
-                  
-                  // Update both local and actual filters immediately
-                  setLocalFilters(clearedFilters);
-                  setFilters(clearedFilters);
-                  setSortOption("recommended");
-                }}
-                className={`px-8 py-3.5 bg-gradient-to-r ${theme.buttonGradient} ${theme.buttonHoverGradient} text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
-              >
-                Clear All Filters
-              </button>
-            </div>
-          </motion.div>
-        ) : (
-          <AnimatePresence mode="wait">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
             <motion.div
-              key={currentPage}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              transition={{ duration: 0.4, ease: "easeOut" }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              transition={{ duration: 0.6 }}
+              className="text-center"
             >
-              {displayed.map((item, index) => (
-                <motion.div
-                  key={item.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.4 }}
-                  onClick={() => {
-                    try {
-                      if (navigator.sendBeacon) {
-                        const data = JSON.stringify({
-                          property_id: item.id,
-                          position: index + 1,
-                          item_type: item._type || 'property'
-                        });
-                        const blob = new Blob([data], { type: 'application/json' });
-                        navigator.sendBeacon('/api/analytics/search/click/', blob);
-                      }
-                    } catch (err) {
-                      console.error('Failed to track search click:', err);
-                    }
-                  }}
-                  className="group"
-                >
-                  {item._type === 'project' ? (
-                    <ProjectCard project={item} listingType={listingType} />
-                  ) : (
-                    <PropertyCard property={item as Property} />
-                  )}
-                </motion.div>
-              ))}
-            </motion.div>
-          </AnimatePresence>
-        )}
-
-        {/* Enhanced Pagination */}
-        {totalPages > 1 && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="mt-16 flex justify-center"
-          >
-            <nav className="inline-flex items-center gap-2 bg-white rounded-2xl shadow-lg border border-gray-200 p-2">
-              <button
-                onClick={prev}
-                disabled={currentPage === 1}
-                className={`p-3 rounded-xl transition-all ${
-                  currentPage === 1
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
-                }`}
+              <h1
+                className={`text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r ${theme.textGradient} bg-clip-text text-transparent`}
               >
-                <ChevronLeft className="h-5 w-5" />
-              </button>
+                {theme.title}
+              </h1>
+              <div className={`flex items-center justify-center mt-3 ${theme.iconColor}`}>
+                <MapPin className="h-5 w-5 mr-2 animate-pulse" />
+                <span className="text-lg">{theme.subtitle}</span>
+              </div>
+            </motion.div>
+          </div>
 
-              <div className="flex items-center gap-1 px-2">
-                {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                  let pageNumber;
-                  if (totalPages <= 7) {
-                    pageNumber = i + 1;
-                  } else if (currentPage <= 4) {
-                    pageNumber = i + 1;
-                  } else if (currentPage >= totalPages - 3) {
-                    pageNumber = totalPages - 6 + i;
-                  } else {
-                    pageNumber = currentPage - 3 + i;
-                  }
+          <div
+            className={`absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent ${theme.borderColor} to-transparent`}
+          ></div>
+        </div>
 
-                  return (
-                    <button
-                      key={pageNumber}
-                      onClick={() => goToPage(pageNumber)}
-                      className={`min-w-[44px] px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
-                        currentPage === pageNumber
-                          ? `bg-gradient-to-br ${theme.paginationActiveGradient} text-white shadow-md ${theme.paginationActiveShadow} scale-105`
-                          : 'text-gray-700 hover:bg-gray-100 active:scale-95'
-                      }`}
-                    >
-                      {pageNumber}
-                    </button>
-                  );
-                })}
+        {/* Search Filters - Static position (scrolls away naturally) */}
+        <div className="bg-white border-b border-gray-200 shadow-sm">
+          <div className="max-w-6xl mx-auto">
+            <div className="px-4 sm:px-6 lg:px-8 pt-5">
+              <div className="flex items-center gap-2 mb-3">
+                <SlidersHorizontal className={`h-4 w-4 ${theme.filterIconColor}`} />
+                <span className="text-sm font-semibold text-gray-700">Refine Your Search</span>
+              </div>
+            </div>
+            <SearchFilters filters={localFilters} onFiltersChange={handleFiltersChange} />
+            <ActiveFilters filters={localFilters} onRemoveFilter={handleRemoveFilter} />
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          {/* Enhanced Results Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
+          >
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+              <div className="flex-1">
+                {isLoading ? (
+                  <div className="flex items-center">
+                    <div className="relative">
+                      <div
+                        className={`animate-spin rounded-full h-8 w-8 border-3 ${theme.spinnerColor} border-t-transparent`}
+                      ></div>
+                      <div
+                        className={`absolute inset-0 rounded-full border-3 ${theme.spinnerBgColor}`}
+                      ></div>
+                    </div>
+                    <span className="text-gray-600 text-sm ml-4 font-medium">
+                      Searching properties...
+                    </span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    <div className="flex items-baseline gap-3">
+                      <p className="text-gray-900 font-bold text-2xl sm:text-3xl">
+                        {totalCount.toLocaleString()}
+                      </p>
+                      <p className="text-gray-600 font-medium text-lg">
+                        {totalCount === 1 ? "Property" : "Properties"} Available
+                      </p>
+                    </div>
+                    {filters.country && filters.country !== "All" && (
+                      <p className="text-sm text-gray-500 flex items-center gap-1.5">
+                        <MapPin className="h-3.5 w-3.5" />
+                        <span>{filters.country}</span>
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
 
-              <button
-                onClick={next}
-                disabled={currentPage === totalPages}
-                className={`p-3 rounded-xl transition-all ${
-                  currentPage === totalPages
-                    ? 'text-gray-300 cursor-not-allowed'
-                    : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
-                }`}
-              >
-                <ChevronRight className="h-5 w-5" />
-              </button>
-            </nav>
+              <div className="flex items-center gap-3">
+                <label
+                  htmlFor="sort"
+                  className="text-sm font-semibold text-gray-700 whitespace-nowrap"
+                >
+                  Sort by:
+                </label>
+                <select
+                  id="sort"
+                  value={sortOption}
+                  onChange={handleSortChange}
+                  disabled={isLoading}
+                  className={`px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 ${theme.focusRingColor} ${theme.focusBorderColor} bg-white text-sm font-medium text-gray-700 transition-all hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
+                >
+                  {sortOptions.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
           </motion.div>
-        )}
 
-        {/* Subtle page indicator text */}
-        {totalPages > 1 && (
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            className="text-center mt-6 text-sm text-gray-500"
-          >
-            Page {currentPage} of {totalPages}
-          </motion.p>
-        )}
-      </div>
+          {/* Enhanced Error State */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-gradient-to-br from-red-50 to-red-100/50 border-2 border-red-200 rounded-2xl p-8 mb-8 shadow-lg"
+            >
+              <div className="flex items-start">
+                <div className="flex-shrink-0">
+                  <div className="w-12 h-12 bg-red-500 rounded-xl flex items-center justify-center shadow-md">
+                    <span className="text-white font-bold text-xl">!</span>
+                  </div>
+                </div>
+                <div className="ml-5 flex-1">
+                  <h3 className="text-lg font-bold text-red-900 mb-1">Unable to Load Properties</h3>
+                  <p className="text-sm text-red-700 leading-relaxed">{error}</p>
+                  <button
+                    type="button"
+                    onClick={() => window.location.reload()}
+                    className="mt-4 px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-sm font-semibold transition-all shadow-md hover:shadow-lg transform hover:-translate-y-0.5"
+                  >
+                    Reload Page
+                  </button>
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Enhanced Loading State */}
+          {isLoading ? (
+            <div className="flex justify-center py-24">
+              <div className="text-center">
+                <div className="relative inline-block">
+                  <div
+                    className={`animate-spin rounded-full h-16 w-16 border-4 ${theme.spinnerColor} border-t-transparent`}
+                  ></div>
+                  <div
+                    className={`absolute inset-0 rounded-full border-4 ${theme.spinnerBgColor}`}
+                  ></div>
+                </div>
+                <p className="text-gray-700 font-medium mt-6 text-lg">{theme.loadingText}</p>
+                <p className="text-gray-500 text-sm mt-2">This won't take long</p>
+              </div>
+            </div>
+          ) : displayed.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center py-24"
+            >
+              <div className="max-w-md mx-auto">
+                <div
+                  className={`w-24 h-24 bg-gradient-to-br ${theme.emptyStateGradient} rounded-3xl flex items-center justify-center mx-auto mb-6 shadow-lg`}
+                >
+                  <MapPin className={`h-12 w-12 ${theme.emptyStateIconColor}`} />
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-3">No Properties Found</h3>
+                <p className="text-gray-600 mb-8 leading-relaxed">
+                  We couldn't find any {theme.emptyStateText} matching your search criteria. Try
+                  adjusting your filters or search in a different area.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => {
+                    // Clear debounce timer
+                    if (debounceTimerRef.current) {
+                      clearTimeout(debounceTimerRef.current);
+                    }
+
+                    const clearedFilters = {
+                      location: "",
+                      country: "All",
+                      minPrice: "",
+                      maxPrice: "",
+                      propertyType: "Any",
+                      bedrooms: "Any",
+                      bathrooms: "Any",
+                      amenities: [],
+                    };
+
+                    // Update both local and actual filters immediately
+                    setLocalFilters(clearedFilters);
+                    setFilters(clearedFilters);
+                    setSortOption("recommended");
+                  }}
+                  className={`px-8 py-3.5 bg-gradient-to-r ${theme.buttonGradient} ${theme.buttonHoverGradient} text-white rounded-xl font-semibold transition-all shadow-lg hover:shadow-xl transform hover:-translate-y-0.5`}
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentPage}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                transition={{ duration: 0.4, ease: "easeOut" }}
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              >
+                {displayed.map((item, index) => (
+                  <motion.div
+                    key={item.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05, duration: 0.4 }}
+                    onClick={() => {
+                      try {
+                        if (navigator.sendBeacon) {
+                          const data = JSON.stringify({
+                            property_id: item.id,
+                            position: index + 1,
+                            item_type: item._type || "property",
+                          });
+                          const blob = new Blob([data], { type: "application/json" });
+                          navigator.sendBeacon("/api/analytics/search/click/", blob);
+                        }
+                      } catch (err) {
+                        console.error("Failed to track search click:", err);
+                      }
+                    }}
+                    className="group"
+                  >
+                    {item._type === "project" ? (
+                      <ProjectCard
+                        project={{
+                          ...item,
+                          id: typeof item.id === "string" ? parseInt(item.id, 10) : item.id,
+                        }}
+                        listingType={listingType}
+                      />
+                    ) : (
+                      <PropertyCard property={item as Property} />
+                    )}
+                  </motion.div>
+                ))}
+              </motion.div>
+            </AnimatePresence>
+          )}
+
+          {/* Enhanced Pagination */}
+          {totalPages > 1 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="mt-16 flex justify-center"
+            >
+              <nav className="inline-flex items-center gap-2 bg-white rounded-2xl shadow-lg border border-gray-200 p-2">
+                <button
+                  type="button"
+                  onClick={prev}
+                  disabled={currentPage === 1}
+                  className={`p-3 rounded-xl transition-all ${
+                    currentPage === 1
+                      ? "text-gray-300 cursor-not-allowed"
+                      : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
+                  }`}
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+
+                <div className="flex items-center gap-1 px-2">
+                  {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                    let pageNumber: number;
+                    if (totalPages <= 7) {
+                      pageNumber = i + 1;
+                    } else if (currentPage <= 4) {
+                      pageNumber = i + 1;
+                    } else if (currentPage >= totalPages - 3) {
+                      pageNumber = totalPages - 6 + i;
+                    } else {
+                      pageNumber = currentPage - 3 + i;
+                    }
+
+                    return (
+                      <button
+                        type="button"
+                        key={pageNumber}
+                        onClick={() => goToPage(pageNumber)}
+                        className={`min-w-[44px] px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                          currentPage === pageNumber
+                            ? `bg-gradient-to-br ${theme.paginationActiveGradient} text-white shadow-md ${theme.paginationActiveShadow} scale-105`
+                            : "text-gray-700 hover:bg-gray-100 active:scale-95"
+                        }`}
+                      >
+                        {pageNumber}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={next}
+                  disabled={currentPage === totalPages}
+                  className={`p-3 rounded-xl transition-all ${
+                    currentPage === totalPages
+                      ? "text-gray-300 cursor-not-allowed"
+                      : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
+                  }`}
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+              </nav>
+            </motion.div>
+          )}
+
+          {/* Subtle page indicator text */}
+          {totalPages > 1 && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-center mt-6 text-sm text-gray-500"
+            >
+              Page {currentPage} of {totalPages}
+            </motion.p>
+          )}
+        </div>
       </div>
     </>
   );
 };
 
 export default ListingsPage;
-

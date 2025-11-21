@@ -1,5 +1,5 @@
-import { Download, Eye, Globe, Star, Trash2 } from 'lucide-react';
-import React from 'react';
+import { Download, Eye, Globe, Star, Trash2 } from "lucide-react";
+import type React from "react";
 
 export type Asset = {
   id: number;
@@ -49,7 +49,7 @@ export default function AssetCard({
   return (
     <div className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden hover:shadow-xl transition-all duration-300 group">
       <div className="h-40 bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center relative overflow-hidden">
-        {asset.asset_type === 'image' ? (
+        {asset.asset_type === "image" ? (
           <img
             src={asset.file}
             alt={asset.title || asset.original_filename}
@@ -79,6 +79,7 @@ export default function AssetCard({
 
         <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden sm:flex items-center justify-center">
           <button
+            type="button"
             onClick={() => onView(asset.file)}
             className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium hover:bg-gray-100 transition-colors"
             aria-label="View asset"
@@ -102,15 +103,16 @@ export default function AssetCard({
         </div>
 
         {asset.description && (
-          <p className="text-sm text-gray-600 mb-3 line-clamp-2">
-            {asset.description}
-          </p>
+          <p className="text-sm text-gray-600 mb-3 line-clamp-2">{asset.description}</p>
         )}
 
         {asset.tags && asset.tags.length > 0 && (
           <div className="flex flex-wrap gap-1 mb-4">
-            {asset.tags.slice(0, 2).map(tag => (
-              <span key={tag} className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium">
+            {asset.tags.slice(0, 2).map((tag) => (
+              <span
+                key={tag}
+                className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-full font-medium"
+              >
                 {tag}
               </span>
             ))}
@@ -125,22 +127,25 @@ export default function AssetCard({
         <div className="flex items-center justify-between pt-3 border-t border-gray-100">
           <div className="flex space-x-1">
             <button
+              type="button"
               onClick={() => onToggleFeatured(asset.id)}
-              className={`p-2 rounded-lg transition-all duration-200 ${asset.is_featured ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`}
+              className={`p-2 rounded-lg transition-all duration-200 ${asset.is_featured ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"}`}
               title="Toggle Featured"
               aria-label="Toggle featured"
             >
               <Star className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => onTogglePublic(asset.id)}
-              className={`p-2 rounded-lg transition-all duration-200 ${asset.is_public ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`}
+              className={`p-2 rounded-lg transition-all duration-200 ${asset.is_public ? "text-green-600 bg-green-50 hover:bg-green-100" : "text-gray-400 hover:text-green-600 hover:bg-green-50"}`}
               title="Toggle Public"
               aria-label="Toggle public"
             >
               <Globe className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => onView(asset.file)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 sm:hidden"
               title="View"
@@ -149,6 +154,7 @@ export default function AssetCard({
               <Eye className="h-4 w-4" />
             </button>
             <button
+              type="button"
               onClick={() => onView(asset.file)}
               className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
               title="Download"
@@ -158,6 +164,7 @@ export default function AssetCard({
             </button>
           </div>
           <button
+            type="button"
             onClick={() => onDelete(asset.id)}
             className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all duration-200"
             title="Delete"
@@ -170,5 +177,3 @@ export default function AssetCard({
     </div>
   );
 }
-
-

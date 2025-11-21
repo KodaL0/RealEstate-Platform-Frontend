@@ -1,8 +1,8 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useState } from "react";
 import api from "../config/api";
+import { clearAuthCookies } from "../middleware/auth";
 import analytics from "../utils/analytics";
 import { apiCache } from "../utils/apiCache";
-import { clearAuthCookies } from "../middleware/auth";
 
 // Define the User type (using number since TypeScript doesn't have "integer")
 type User = {
@@ -35,7 +35,7 @@ interface UserContextType {
   user: User | null;
   setUser: React.Dispatch<React.SetStateAction<User | null>>;
   isLoading: boolean;
-  refreshUser: () => Promise<void>;
+  refreshUser: (forceCheck?: boolean) => Promise<void>;
   updateUserData: (userData: Partial<User>) => void;
   // GDPR-specific methods
   refreshGDPRStatus: () => Promise<void>;
@@ -72,70 +72,79 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [isRefreshingGDPR, setIsRefreshingGDPR] = useState(false);
 
-  // Direct API call without auth.ts wrapper
-  const fetchUser = async (forceCheck = false) => {
-    setIsLoading(true);
-    try {
-      // Always attempt the API call - HttpOnly cookies won't be visible in document.cookie
-      // but will still be sent automatically with requests via withCredentials: true
-      // The backend is the source of truth for authentication status
-      const response = await api.auth.getUser();
-      console.log("UserContext: Response from API:", response.data);
-      
-      // Extract user data from API response
-      const userData = response.data.user || response.data;
-      if (userData) {
-        console.log("Setting user from API response:", userData);
-        setUser(userData);
-
-        // Sync local consent to backend if user just logged in
-        await syncLocalConsentToBackend(userData.id);
-
-        // Only set Google Analytics user properties if analytics consent is given
-        if (userData.gdpr_consent_analytics) {
-          const accountAgeDays = userData.date_joined 
-            ? Math.floor((new Date().getTime() - new Date(userData.date_joined).getTime()) / (1000 * 60 * 60 * 24))
-            : undefined;
-
-          analytics.setUserProperties(userData.id, {
-            is_developer: userData.is_developer || false,
-            is_verified: userData.email_verified || false,
-            account_age_days: accountAgeDays,
-          });
-        }
-      } else {
-        console.log("No valid user data found in response");
-        setUser(null);
-      }
-    } catch (error: any) {
-      console.error("Failed to fetch user:", error);
-      // If 401, also clear cookies
-      if (error?.response?.status === 401) {
-        clearAuthCookies();
-      }
-      setUser(null);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   // Sync local consent preferences to backend when user logs in
-  const syncLocalConsentToBackend = async (userId: number) => {
+  const syncLocalConsentToBackend = useCallback(async (userId: number) => {
     try {
       // Check if user has local consents stored (from cookie banner)
-      const localConsents = localStorage.getItem('propertpro-cookie-preferences');
+      const localConsents = localStorage.getItem("propertpro-cookie-preferences");
       if (!localConsents) return;
 
       const consents = JSON.parse(localConsents);
-      console.log('[UserContext] Syncing local consents to backend for user', userId, consents);
+      console.log("[UserContext] Syncing local consents to backend for user", userId, consents);
 
       // Send to backend
-      await api.post('users/gdpr/consent', consents);
-      console.log('[UserContext] Local consents synced to backend successfully');
+      await api.post("users/gdpr/consent", consents);
+      console.log("[UserContext] Local consents synced to backend successfully");
     } catch (error) {
-      console.error('[UserContext] Failed to sync local consents:', error);
+      console.error("[UserContext] Failed to sync local consents:", error);
     }
-  };
+  }, []);
+
+  // Direct API call without auth.ts wrapper
+  const fetchUser = useCallback(
+    async (_forceCheck = false) => {
+      setIsLoading(true);
+      try {
+        // Always attempt the API call - HttpOnly cookies won't be visible in document.cookie
+        // but will still be sent automatically with requests via withCredentials: true
+        // The backend is the source of truth for authentication status
+        const response = await api.auth.getUser();
+        console.log("UserContext: Response from API:", response.data);
+
+        // Extract user data from API response
+        const responseData = response.data as { user?: User } | User;
+        const userData = ("user" in responseData ? responseData.user : responseData) as
+          | User
+          | undefined;
+        if (userData) {
+          console.log("Setting user from API response:", userData);
+          setUser(userData);
+
+          // Sync local consent to backend if user just logged in
+          await syncLocalConsentToBackend(userData.id);
+
+          // Only set Google Analytics user properties if analytics consent is given
+          if (userData.gdpr_consent_analytics) {
+            const accountAgeDays = userData.date_joined
+              ? Math.floor(
+                  (Date.now() - new Date(userData.date_joined).getTime()) / (1000 * 60 * 60 * 24),
+                )
+              : undefined;
+
+            analytics.setUserProperties(userData.id, {
+              is_developer: userData.is_developer || false,
+              is_verified: userData.email_verified || false,
+              account_age_days: accountAgeDays,
+            });
+          }
+        } else {
+          console.log("No valid user data found in response");
+          setUser(null);
+        }
+      } catch (error: unknown) {
+        console.error("Failed to fetch user:", error);
+        // If 401, also clear cookies
+        const apiError = error as { response?: { status?: number } };
+        if (apiError.response?.status === 401) {
+          clearAuthCookies();
+        }
+        setUser(null);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [syncLocalConsentToBackend],
+  );
 
   // Expose refreshUser to let other parts of the app force a refresh
   const refreshUser = async (forceCheck = false) => {
@@ -152,51 +161,61 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   // GDPR-specific methods
   const refreshGDPRStatus = async () => {
     if (!user) return;
-    
+
     // Prevent concurrent calls
     if (isRefreshingGDPR) {
-      console.log('GDPR refresh already in progress, skipping...');
+      console.log("GDPR refresh already in progress, skipping...");
       return;
     }
 
     try {
       setIsRefreshingGDPR(true);
-      
+
       // Use Promise.allSettled to prevent one failure from blocking the other
       const [consentResult, restrictionResult] = await Promise.allSettled([
-        api.get('users/gdpr/consent'),
-        api.get('users/gdpr/restriction')
+        api.get("users/gdpr/consent"),
+        api.get("users/gdpr/restriction"),
       ]);
 
       const gdprData: Partial<User> = {};
 
       // Process consent data
-      if (consentResult.status === 'fulfilled') {
+      if (consentResult.status === "fulfilled") {
         const consentResponse = consentResult.value;
-        gdprData.gdpr_consent_analytics = consentResponse.data.consents?.analytics;
-        gdprData.gdpr_consent_marketing = consentResponse.data.consents?.marketing;
-        gdprData.gdpr_consent_given_at = consentResponse.data.consent_given_at;
-        gdprData.gdpr_consents_updated_at = consentResponse.data.last_updated;
+        const consentData = consentResponse.data as {
+          consents?: { analytics?: boolean; marketing?: boolean };
+          consent_given_at?: string;
+          last_updated?: string;
+        };
+        gdprData.gdpr_consent_analytics = consentData.consents?.analytics;
+        gdprData.gdpr_consent_marketing = consentData.consents?.marketing;
+        gdprData.gdpr_consent_given_at = consentData.consent_given_at;
+        gdprData.gdpr_consents_updated_at = consentData.last_updated;
       } else {
-        console.warn('Failed to fetch consent status:', consentResult.reason);
+        console.warn("Failed to fetch consent status:", consentResult.reason);
       }
 
       // Process restriction data
-      if (restrictionResult.status === 'fulfilled') {
+      if (restrictionResult.status === "fulfilled") {
         const restrictionResponse = restrictionResult.value;
-        gdprData.processing_restricted = restrictionResponse.data.is_restricted;
-        gdprData.restriction_reason = restrictionResponse.data.restriction_reason;
-        gdprData.restriction_requested_at = restrictionResponse.data.restriction_requested_at;
+        const restrictionData = restrictionResponse.data as {
+          is_restricted?: boolean;
+          restriction_reason?: string;
+          restriction_requested_at?: string;
+        };
+        gdprData.processing_restricted = restrictionData.is_restricted;
+        gdprData.restriction_reason = restrictionData.restriction_reason;
+        gdprData.restriction_requested_at = restrictionData.restriction_requested_at;
       } else {
-        console.warn('Failed to fetch restriction status:', restrictionResult.reason);
+        console.warn("Failed to fetch restriction status:", restrictionResult.reason);
       }
 
       // Only update if we got at least some data
       if (Object.keys(gdprData).length > 0) {
-        setUser(prev => prev ? { ...prev, ...gdprData } : null);
+        setUser((prev) => (prev ? { ...prev, ...gdprData } : null));
       }
     } catch (error) {
-      console.error('Failed to refresh GDPR status:', error);
+      console.error("Failed to refresh GDPR status:", error);
     } finally {
       setIsRefreshingGDPR(false);
     }
@@ -210,29 +229,33 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
       // Build the consent object to send to backend
       const consents = {
-        analytics: consentType === 'analytics' ? value : user.gdpr_consent_analytics,
-        marketing: consentType === 'marketing' ? value : user.gdpr_consent_marketing,
+        analytics: consentType === "analytics" ? value : user.gdpr_consent_analytics,
+        marketing: consentType === "marketing" ? value : user.gdpr_consent_marketing,
       };
 
       // Update backend first
-      await api.post('users/gdpr/consent', consents);
-      console.log('[UserContext] Backend consent updated successfully');
+      await api.post("users/gdpr/consent", consents);
+      console.log("[UserContext] Backend consent updated successfully");
 
       // Invalidate GDPR cache to force fresh fetch
       apiCache.invalidatePattern(/gdpr/);
-      console.log('[UserContext] GDPR cache invalidated');
+      console.log("[UserContext] GDPR cache invalidated");
 
       // Update local state
-      setUser(prev => prev ? {
-        ...prev,
-        [`gdpr_consent_${consentType}`]: value,
-        gdpr_consents_updated_at: new Date().toISOString(),
-        gdpr_consent_given_at: prev.gdpr_consent_given_at || new Date().toISOString()
-      } : null);
+      setUser((prev) =>
+        prev
+          ? {
+              ...prev,
+              [`gdpr_consent_${consentType}`]: value,
+              gdpr_consents_updated_at: new Date().toISOString(),
+              gdpr_consent_given_at: prev.gdpr_consent_given_at || new Date().toISOString(),
+            }
+          : null,
+      );
 
       return true;
     } catch (error) {
-      console.error('Failed to update GDPR consent:', error);
+      console.error("Failed to update GDPR consent:", error);
       return false;
     }
   };
@@ -243,35 +266,37 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     return {
       consents: {
         analytics: user.gdpr_consent_analytics || false,
-        marketing: user.gdpr_consent_marketing || false
+        marketing: user.gdpr_consent_marketing || false,
       },
       processingRestricted: user.processing_restricted || false,
-      consentGivenAt: user.gdpr_consent_given_at || null
+      consentGivenAt: user.gdpr_consent_given_at || null,
     };
   };
 
   useEffect(() => {
     // Clear all cache on fresh page load to prevent stale data
-    if (typeof window !== 'undefined' && !window.sessionStorage.getItem('cache_cleared')) {
-      console.log('[UserContext] Clearing stale cache on page load');
+    if (typeof window !== "undefined" && !window.sessionStorage.getItem("cache_cleared")) {
+      console.log("[UserContext] Clearing stale cache on page load");
       apiCache.clear();
-      window.sessionStorage.setItem('cache_cleared', 'true');
+      window.sessionStorage.setItem("cache_cleared", "true");
     }
-    
+
     fetchUser();
-  }, []);
+  }, [fetchUser]);
 
   return (
-    <UserContext.Provider value={{
-      user,
-      setUser,
-      isLoading,
-      refreshUser,
-      updateUserData,
-      refreshGDPRStatus,
-      updateGDPRConsent,
-      getGDPRStatus
-    }}>
+    <UserContext.Provider
+      value={{
+        user,
+        setUser,
+        isLoading,
+        refreshUser,
+        updateUserData,
+        refreshGDPRStatus,
+        updateGDPRConsent,
+        getGDPRStatus,
+      }}
+    >
       {children}
     </UserContext.Provider>
   );

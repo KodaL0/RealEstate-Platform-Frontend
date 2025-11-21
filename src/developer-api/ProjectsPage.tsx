@@ -1,37 +1,44 @@
-import { useState, useEffect } from 'react';
-import { Plus } from 'lucide-react';
-import { useNavigate, useMatch } from 'react-router-dom';
-import ProjectCard from './projects/components/ProjectCard';
-import ProjectManagement from './projects/components/ProjectManagement';
-import ProjectCreationModal from './components/ProjectCreationModal';
-import ProjectToolbar from './projects/components/ProjectToolbar';
-import developersApi, { Project } from '../config/developers-api';
-import developerPortalApi from './services/DeveloperPortalApi';
+import { Plus } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { useMatch, useNavigate } from "react-router-dom";
+import developersApi, { type Project } from "../config/developers-api";
+import ProjectCreationModal from "./components/ProjectCreationModal";
+import ProjectCard from "./projects/components/ProjectCard";
+import ProjectManagement from "./projects/components/ProjectManagement";
+import ProjectToolbar from "./projects/components/ProjectToolbar";
+import developerPortalApi from "./services/DeveloperPortalApi";
 
 function slugify(text: string): string {
   return text
     .toLowerCase()
     .trim()
-    .replace(/[^a-z0-9\s-()]/g, '')
-    .replace(/\s+/g, '-')
-    .replace(/-+/g, '-');
+    .replace(/[^a-z0-9\s-()]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
 }
 
 export default function ProjectsPage() {
   const navigate = useNavigate();
-  const projectMatch = useMatch('/developer-api/projects/:projectSlug/:tab?');
+  const projectMatch = useMatch("/developer-api/projects/:projectSlug/:tab?");
 
-  const [projectSection, setProjectSection] = useState<'overview' | 'preview' | 'units' | 'assets' | 'photos' | 'team'>('overview');
+  const [projectSection, setProjectSection] = useState<
+    "overview" | "preview" | "units" | "assets" | "photos" | "team"
+  >("overview");
   const [projects, setProjects] = useState<Project[]>([]);
   const [activeProject, setActiveProject] = useState<Project | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [organizationId, setOrganizationId] = useState<number | null>(null);
   const [slugById, setSlugById] = useState<Record<number, string>>({});
-  const [projectStats, setProjectStats] = useState<Record<number, { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }>>({});
+  const [projectStats, setProjectStats] = useState<
+    Record<
+      number,
+      { unitsCount: number; assetsCount: number; photosCount: number; firstPhotoUrl?: string }
+    >
+  >({});
 
   // Build unique slugs using project names. Duplicates become name(2), name(3), ...
-  const buildUniqueSlugs = (items: Project[]): Record<number, string> => {
+  const buildUniqueSlugs = useCallback((items: Project[]): Record<number, string> => {
     const used: Record<string, number> = {};
     const result: Record<number, string> = {};
     for (const p of items) {
@@ -42,7 +49,7 @@ export default function ProjectsPage() {
       result[p.id] = slug;
     }
     return result;
-  };
+  }, []);
 
   // Fetch projects and organization using centralized API service
   useEffect(() => {
@@ -50,31 +57,39 @@ export default function ProjectsPage() {
       try {
         // Use centralized portal API service
         const portalData = await developerPortalApi.initialize();
-        
+
         if (portalData.organization) {
           setOrganizationId(portalData.organization.id);
           setProjects(portalData.projects);
           setSlugById(buildUniqueSlugs(portalData.projects));
           setProjectStats(portalData.projectStats);
         }
-      } catch (error: any) {
-        console.error('Error fetching data:', error);
-        console.error('Error details:', error?.response);
-        console.error('Error message:', error?.message);
-        console.error('Error status:', error?.response?.status);
+      } catch (error: unknown) {
+        console.error("Error fetching data:", error);
+        console.error("Error details:", error?.response);
+        console.error("Error message:", error?.message);
+        console.error("Error status:", error?.response?.status);
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [buildUniqueSlugs]);
 
   // When the route has :projectSlug/:tab, set section and resolve project by slug
   useEffect(() => {
     const loadFromRoute = async () => {
       const routeSlug = projectMatch?.params.projectSlug;
-      const tab = (projectMatch?.params.tab as any) || 'overview';
+      const tab =
+        (projectMatch?.params.tab as
+          | "overview"
+          | "preview"
+          | "units"
+          | "assets"
+          | "photos"
+          | "team"
+          | undefined) || "overview";
       if (!routeSlug) {
         setActiveProject(null);
         return;
@@ -84,7 +99,7 @@ export default function ProjectsPage() {
       // Find id by slug
       const id = Object.entries(slugById).find(([, s]) => s === routeSlug)?.[0];
       if (id) {
-        const found = projects.find(p => String(p.id) === String(id));
+        const found = projects.find((p) => String(p.id) === String(id));
         if (found) {
           setActiveProject(found);
           return;
@@ -99,15 +114,15 @@ export default function ProjectsPage() {
           const map = buildUniqueSlugs(items);
           setProjects(items);
           setSlugById(map);
-          const resolved = items.find(p => map[p.id] === routeSlug) || null;
+          const resolved = items.find((p) => map[p.id] === routeSlug) || null;
           setActiveProject(resolved);
         } catch (e) {
-          console.error('Failed to resolve project by slug', e);
+          console.error("Failed to resolve project by slug", e);
         }
       }
     };
     loadFromRoute();
-  }, [projectMatch, projects, slugById]);
+  }, [projectMatch, projects, slugById, buildUniqueSlugs]);
 
   const navigateToProjectTab = (project: Project, view: string) => {
     const slug = slugById[project.id] || slugify(project.name);
@@ -115,35 +130,35 @@ export default function ProjectsPage() {
   };
 
   const handleProjectClick = (project: Project) => {
-    navigateToProjectTab(project, 'overview');
+    navigateToProjectTab(project, "overview");
   };
 
   const handleProjectViewChange = (view: string) => {
     if (activeProject) {
-      setProjectSection(view as any);
+      setProjectSection(view as "overview" | "preview" | "units" | "assets" | "photos" | "team");
       navigateToProjectTab(activeProject, view);
     }
   };
 
   const handleBackToProjects = () => {
-    navigate('/developer-api/projects');
+    navigate("/developer-api/projects");
   };
 
   const handleProjectCreated = async (newProject: Project) => {
     // Add to portal API cache
     await developerPortalApi.addProject(newProject);
-    
+
     // Update local state
-    setProjects(prev => {
+    setProjects((prev) => {
       const next = [...prev, newProject];
       setSlugById(buildUniqueSlugs(next));
       return next;
     });
-    
+
     // Update stats
     const stats = await developerPortalApi.getProjectStats(newProject.id);
     if (stats) {
-      setProjectStats(prev => ({
+      setProjectStats((prev) => ({
         ...prev,
         [newProject.id]: stats,
       }));
@@ -153,22 +168,22 @@ export default function ProjectsPage() {
   const handleProjectUpdate = async (updatedProject: Project) => {
     // Update portal API cache
     await developerPortalApi.updateProject(updatedProject);
-    
+
     // Update local state
-    setProjects(prev => {
-      const next = prev.map(p => p.id === updatedProject.id ? updatedProject : p);
+    setProjects((prev) => {
+      const next = prev.map((p) => (p.id === updatedProject.id ? updatedProject : p));
       return next;
     });
-    
+
     // Update stats
     const stats = await developerPortalApi.getProjectStats(updatedProject.id);
     if (stats) {
-      setProjectStats(prev => ({
+      setProjectStats((prev) => ({
         ...prev,
         [updatedProject.id]: stats,
       }));
     }
-    
+
     // Also update the active project if it's the one being updated
     if (activeProject && activeProject.id === updatedProject.id) {
       setActiveProject(updatedProject);
@@ -192,6 +207,7 @@ export default function ProjectsPage() {
       <div className="w-full max-w-none">
         <div className="mb-4">
           <button
+            type="button"
             onClick={handleBackToProjects}
             className="inline-flex items-center px-3 py-2 text-sm text-gray-600 hover:text-gray-900 transition-colors"
           >
@@ -217,9 +233,9 @@ export default function ProjectsPage() {
           />
         </div>
 
-        <ProjectManagement 
-          project={activeProject} 
-          activeSection={projectSection} 
+        <ProjectManagement
+          project={activeProject}
+          activeSection={projectSection}
           onProjectUpdate={handleProjectUpdate}
           onViewChange={handleProjectViewChange}
         />
@@ -237,6 +253,7 @@ export default function ProjectsPage() {
           <p className="text-gray-600 text-sm md:text-base">Manage your development projects</p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreateModal(true)}
           className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm font-medium"
         >
@@ -250,11 +267,14 @@ export default function ProjectsPage() {
         {projects.length === 0 ? (
           <div className="text-center py-16 md:py-24">
             <div className="text-6xl md:text-8xl mb-6">🏗️</div>
-            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900">No Projects Yet</h3>
+            <h3 className="text-xl md:text-2xl font-semibold mb-4 text-gray-900">
+              No Projects Yet
+            </h3>
             <p className="text-gray-600 mb-8 text-base md:text-lg max-w-md mx-auto">
               Create your first project to start managing your development portfolio
             </p>
             <button
+              type="button"
               onClick={() => setShowCreateModal(true)}
               className="inline-flex items-center px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-lg font-medium text-lg"
             >
@@ -264,10 +284,10 @@ export default function ProjectsPage() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
-            {projects.map(project => (
-              <ProjectCard 
-                key={project.id} 
-                project={project} 
+            {projects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
                 onClick={handleProjectClick}
                 onViewChange={() => {}}
                 onEdit={() => {}}

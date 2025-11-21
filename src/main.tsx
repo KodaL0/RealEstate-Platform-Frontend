@@ -1,13 +1,18 @@
-import { StrictMode } from 'react';
-import { createRoot } from 'react-dom/client';
-import { HelmetProvider } from 'react-helmet-async';
-import App from './App.tsx';
-import { ChatProvider } from './context/ChatContext';
-import { UserProvider } from './context/UserContext';
-import { ImageCacheProvider } from './context/ImageCacheContext';
-import './index.css';
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import { HelmetProvider } from "react-helmet-async";
+import App from "./App.tsx";
+import { ChatProvider } from "./context/ChatContext";
+import { ImageCacheProvider } from "./context/ImageCacheContext";
+import { UserProvider } from "./context/UserContext";
+import "./index.css";
 
-createRoot(document.getElementById('root')!).render(
+const rootElement = document.getElementById("root");
+if (!rootElement) {
+  throw new Error("Root element not found");
+}
+
+createRoot(rootElement).render(
   <StrictMode>
     <HelmetProvider>
       <ImageCacheProvider>
@@ -18,5 +23,5 @@ createRoot(document.getElementById('root')!).render(
         </UserProvider>
       </ImageCacheProvider>
     </HelmetProvider>
-  </StrictMode>
+  </StrictMode>,
 );

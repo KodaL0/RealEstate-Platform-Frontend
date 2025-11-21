@@ -1,11 +1,11 @@
 /* Hide scrollbar for mobile tab navigation */
 .scrollbar-hide {
-  -ms-overflow-style: none;  /* Internet Explorer 10+ */
-  scrollbar-width: none;  /* Firefox */
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
 }
 
 .scrollbar-hide::-webkit-scrollbar {
-  display: none;  /* Safari and Chrome */
+  display: none; /* Safari and Chrome */
 }
 
 /* Additional mobile optimizations */
@@ -14,4 +14,4 @@
     padding-left: 1rem;
     padding-right: 1rem;
   }
-} 
+}

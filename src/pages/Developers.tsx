@@ -1,15 +1,20 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  useState,
-  useEffect,
-  useRef,
-  useLayoutEffect,
-} from "react";
-import { useSearchParams, Link } from "react-router-dom";
-import { Building2, MapPin, Filter, Grid, List, ChevronLeft, ChevronRight, Star, Award, Calendar } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Developer } from "../types";
-import api from "../config/api";
+  Award,
+  Building2,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  Grid,
+  List,
+  MapPin,
+  Star,
+} from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
 import developersApi from "../config/developers-api";
+import type { Developer } from "../types";
 import { getDeveloperUrl } from "../utils/developerUtils";
 
 const PAGE_SIZE = 12;
@@ -22,13 +27,9 @@ interface SearchFiltersType {
   order?: string;
 }
 
-type ApiDevelopersResponse =
-  | { results: any[]; count: number }
-  | any[];
-
 const Developers = () => {
-  const [searchParams] = useSearchParams();
-  
+  const [_searchParams] = useSearchParams();
+
   const [developers, setDevelopers] = useState<Developer[]>([]);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -36,8 +37,8 @@ const Developers = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState("recommended");
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedCountry, setSelectedCountry] = useState<'Cyprus' | 'Greece' | 'all'>('all');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
+  const [selectedCountry, setSelectedCountry] = useState<"Cyprus" | "Greece" | "all">("all");
   const [showFilters, setShowFilters] = useState(false);
   const [searchFilters, setSearchFilters] = useState<SearchFiltersType>({});
 
@@ -49,7 +50,7 @@ const Developers = () => {
       return;
     }
     window.scrollTo({ top: 0, left: 0, behavior: "smooth" });
-  }, [currentPage]);
+  }, []);
 
   useEffect(() => {
     const fetchDevelopers = async () => {
@@ -67,13 +68,12 @@ const Developers = () => {
           "name-asc": "name",
           "name-desc": "-name",
           "projects-desc": "-total_projects", // only if the field exists
-          "rating-desc": "-rating",           // only if the field exists
+          "rating-desc": "-rating", // only if the field exists
           newest: "-created_at",
         };
 
         const ordering = orderingMap[sortOption];
         if (ordering) qp.ordering = ordering; // do not send qp.ordering if undefined
-
 
         if (searchFilters.search) qp.search = searchFilters.search;
         if (currentPage !== 1) qp.page = currentPage.toString();
@@ -85,9 +85,20 @@ const Developers = () => {
         const data = await developersApi.organizations.listPublic(qp);
 
         // Normalize response (supports DRF-style or plain array)
-        const results: any[] = Array.isArray(data) ? data : (data.results ?? []);
-        const count: number =
-          Array.isArray(data) ? results.length : (typeof data.count === "number" ? data.count : results.length);
+        const dataTyped = data as { results?: unknown[]; count?: number } | unknown[];
+        const results: unknown[] = Array.isArray(dataTyped)
+          ? dataTyped
+          : dataTyped && typeof dataTyped === "object" && "results" in dataTyped
+            ? ((dataTyped as { results?: unknown[] }).results ?? [])
+            : [];
+        const count: number = Array.isArray(dataTyped)
+          ? results.length
+          : dataTyped &&
+              typeof dataTyped === "object" &&
+              "count" in dataTyped &&
+              typeof (dataTyped as { count?: number }).count === "number"
+            ? (dataTyped as { count: number }).count
+            : results.length;
 
         // Map backend objects -> UI Developer shape
         const normalized: Developer[] = results.map((d) => normalizeDeveloper(d));
@@ -111,45 +122,31 @@ const Developers = () => {
 
   // Update search filters when country changes
   useEffect(() => {
-    const countryFilter = selectedCountry === 'all' ? undefined : selectedCountry;
-    setSearchFilters(prev => ({
+    const countryFilter = selectedCountry === "all" ? undefined : selectedCountry;
+    setSearchFilters((prev) => ({
       ...prev,
-      country: countryFilter
+      country: countryFilter,
     }));
     setCurrentPage(1);
   }, [selectedCountry]);
-
-  const handleSearch = (f: SearchFiltersType) => {
-    setSearchFilters(f);
-    setCurrentPage(1);
-  };
 
   const handleSortChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     setSortOption(e.target.value);
     setCurrentPage(1);
   };
 
-  const handleCountryChange = (country: 'Cyprus' | 'Greece' | 'all') => {
+  const handleCountryChange = (country: "Cyprus" | "Greece" | "all") => {
     setSelectedCountry(country);
   };
 
   const goToPage = (p: number) => setCurrentPage(p);
-  const prev = () => currentPage > 1 && setCurrentPage(p => p - 1);
-  const next = () => currentPage < totalPages && setCurrentPage(p => p + 1);
-
-  const sortOptions = [
-    { value: "recommended", label: "Recommended" },
-    { value: "name-asc", label: "Name: A to Z" },
-    { value: "name-desc", label: "Name: Z to A" },
-    { value: "projects-desc", label: "Most Projects" },
-    { value: "rating-desc", label: "Highest Rated" },
-    { value: "newest", label: "Newest First" },
-  ];
+  const prev = () => currentPage > 1 && setCurrentPage((p) => p - 1);
+  const next = () => currentPage < totalPages && setCurrentPage((p) => p + 1);
 
   const countryOptions = [
-    { value: 'all', label: 'All Countries', flag: '🌍' },
-    { value: 'Cyprus', label: '🇨🇾 Cyprus', flag: '🇨🇾' },
-    { value: 'Greece', label: '🇬🇷 Greece', flag: '🇬🇷' },
+    { value: "all", label: "All Countries", flag: "🌍" },
+    { value: "Cyprus", label: "🇨🇾 Cyprus", flag: "🇨🇾" },
+    { value: "Greece", label: "🇬🇷 Greece", flag: "🇬🇷" },
   ];
 
   return (
@@ -166,20 +163,24 @@ const Developers = () => {
                   <span>Discover trusted developers and their projects</span>
                 </div>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row sm:items-center space-y-4 sm:space-y-0 sm:space-x-4">
                 {/* Country Filter */}
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">Country:</span>
+                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">
+                    Country:
+                  </span>
                   <div className="flex items-center bg-gray-100 rounded-lg p-1">
                     {countryOptions.map((country) => (
                       <button
                         key={country.value}
-                        onClick={() => handleCountryChange(country.value as 'Cyprus' | 'Greece' | 'all')}
+                        onClick={() =>
+                          handleCountryChange(country.value as "Cyprus" | "Greece" | "all")
+                        }
                         className={`px-3 py-2 rounded-md transition-colors text-sm font-medium flex items-center space-x-2 ${
-                          selectedCountry === country.value 
-                            ? 'bg-white text-gray-900 shadow-sm' 
-                            : 'text-gray-600 hover:text-gray-900'
+                          selectedCountry === country.value
+                            ? "bg-white text-gray-900 shadow-sm"
+                            : "text-gray-600 hover:text-gray-900"
                         }`}
                       >
                         <span className="text-base">{country.flag}</span>
@@ -191,24 +192,26 @@ const Developers = () => {
 
                 {/* View Mode Toggle */}
                 <div className="flex items-center">
-                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">View:</span>
+                  <span className="text-sm font-medium text-gray-700 mr-3 hidden sm:block">
+                    View:
+                  </span>
                   <div className="flex items-center bg-gray-100 rounded-lg p-1">
                     <button
-                      onClick={() => setViewMode('grid')}
+                      onClick={() => setViewMode("grid")}
                       className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'grid' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
+                        viewMode === "grid"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
                       <Grid className="h-4 w-4" />
                     </button>
                     <button
-                      onClick={() => setViewMode('list')}
+                      onClick={() => setViewMode("list")}
                       className={`p-2 rounded-md transition-colors ${
-                        viewMode === 'list' 
-                          ? 'bg-white text-gray-900 shadow-sm' 
-                          : 'text-gray-600 hover:text-gray-900'
+                        viewMode === "list"
+                          ? "bg-white text-gray-900 shadow-sm"
+                          : "text-gray-600 hover:text-gray-900"
                       }`}
                     >
                       <List className="h-4 w-4" />
@@ -243,17 +246,19 @@ const Developers = () => {
             ) : (
               <div>
                 <p className="text-gray-600">
-                  <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span> developers found
+                  <span className="font-semibold text-gray-900">{totalCount.toLocaleString()}</span>{" "}
+                  developers found
                 </p>
-                {selectedCountry !== 'all' && (
+                {selectedCountry !== "all" && (
                   <p className="text-sm text-gray-500 mt-1">
-                    Showing developers in {countryOptions.find(c => c.value === selectedCountry)?.label}
+                    Showing developers in{" "}
+                    {countryOptions.find((c) => c.value === selectedCountry)?.label}
                   </p>
                 )}
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className="flex items-center">
               <label htmlFor="sort" className="text-sm font-medium text-gray-700 mr-3">
@@ -273,7 +278,7 @@ const Developers = () => {
                   { value: "projects-desc", label: "Most Projects" },
                   { value: "rating-desc", label: "Highest Rated" },
                   { value: "newest", label: "Newest First" },
-                ].map(option => (
+                ].map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
@@ -328,9 +333,7 @@ const Developers = () => {
               <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Building2 className="h-8 w-8 text-gray-400" />
               </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                No developers found
-              </h3>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">No developers found</h3>
               <p className="text-gray-600 mb-6">
                 We couldn't find any developers matching your search criteria.
               </p>
@@ -338,7 +341,7 @@ const Developers = () => {
                 onClick={() => {
                   setSearchFilters({});
                   setSortOption("recommended");
-                  setSelectedCountry('all');
+                  setSelectedCountry("all");
                   setShowFilters(false);
                 }}
                 className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
@@ -356,7 +359,7 @@ const Developers = () => {
               exit={{ opacity: 0, y: -20 }}
               transition={{ duration: 0.4, ease: "easeOut" }}
               className={
-                viewMode === 'grid'
+                viewMode === "grid"
                   ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
                   : "space-y-6"
               }
@@ -388,15 +391,15 @@ const Developers = () => {
                 disabled={currentPage === 1}
                 className={`p-2 rounded-lg border transition-colors ${
                   currentPage === 1
-                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <ChevronLeft className="h-5 w-5" />
               </button>
-              
+
               {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                let pageNumber;
+                let pageNumber: number;
                 if (totalPages <= 7) {
                   pageNumber = i + 1;
                 } else if (currentPage <= 4) {
@@ -413,22 +416,22 @@ const Developers = () => {
                     onClick={() => goToPage(pageNumber)}
                     className={`px-4 py-2 rounded-lg border transition-colors ${
                       currentPage === pageNumber
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "border-gray-300 text-gray-700 hover:bg-gray-50"
                     }`}
                   >
                     {pageNumber}
                   </button>
                 );
               })}
-              
+
               <button
                 onClick={next}
                 disabled={currentPage === totalPages}
                 className={`p-2 rounded-lg border transition-colors ${
                   currentPage === totalPages
-                    ? 'border-gray-200 text-gray-400 cursor-not-allowed'
-                    : 'border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <ChevronRight className="h-5 w-5" />
@@ -442,29 +445,39 @@ const Developers = () => {
 };
 
 // Developer Card Component
-const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode: 'grid' | 'list' }) => {
-  const cardClass = viewMode === 'grid' 
-    ? "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
-    : "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex";
+const DeveloperCard = ({
+  developer,
+  viewMode,
+}: {
+  developer: Developer;
+  viewMode: "grid" | "list";
+}) => {
+  const cardClass =
+    viewMode === "grid"
+      ? "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
+      : "bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group flex";
 
   return (
     <Link to={getDeveloperUrl(developer)} className={cardClass}>
-      <div className={viewMode === 'grid' ? "" : "w-1/3 flex-shrink-0"}>
+      <div className={viewMode === "grid" ? "" : "w-1/3 flex-shrink-0"}>
         <div className="relative h-48 overflow-hidden">
           <img
-            src={developer.image || "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800"}
+            src={
+              developer.image ||
+              "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=800"
+            }
             alt={developer.name}
             className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
           />
           <div className="absolute top-4 right-4">
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-              {developer.country === 'Cyprus' ? '🇨🇾' : '🇬🇷'} {developer.country}
+              {developer.country === "Cyprus" ? "🇨🇾" : "🇬🇷"} {developer.country}
             </span>
           </div>
         </div>
       </div>
-      
-      <div className={`p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
+
+      <div className={`p-6 ${viewMode === "list" ? "flex-1" : ""}`}>
         <div className="flex items-start justify-between mb-3">
           <h3 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
             {developer.name}
@@ -477,7 +490,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center text-gray-600 mb-3">
           <MapPin className="h-4 w-4 mr-1" />
           <span className="text-sm">{developer.location}</span>
@@ -488,11 +501,9 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
             </>
           )}
         </div>
-        
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {developer.description}
-        </p>
-        
+
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{developer.description}</p>
+
         <div className="flex flex-wrap gap-2 mb-4">
           {developer.specialties?.slice(0, 3).map((specialty, index) => (
             <span
@@ -508,7 +519,7 @@ const DeveloperCard = ({ developer, viewMode }: { developer: Developer; viewMode
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center justify-between text-sm text-gray-600">
           <div className="flex items-center">
             <Award className="h-4 w-4 mr-1" />

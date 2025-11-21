@@ -1,27 +1,25 @@
-import React, { useState, useEffect } from 'react';
-import { useLocation } from 'react-router-dom';
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 
 const MortgageCalculator: React.FC = () => {
   const location = useLocation();
   const searchParams = new URLSearchParams(location.search);
 
   // Keep these as strings so the user can type e.g. "", "150000", "150000.", etc.
-  const [propertyPrice, setPropertyPrice] = useState<string>(() => searchParams.get('price') ?? '');
-  const [downPaymentPercent, setDownPaymentPercent] = useState<string>(() => searchParams.get('down') ?? '');
-  const [loanTermYears, setLoanTermYears] = useState<string>(() => searchParams.get('term') ?? '1');
-  const [interestRate, setInterestRate] = useState<string>(() => searchParams.get('rate') ?? '');
-  
+  const [propertyPrice, setPropertyPrice] = useState<string>(() => searchParams.get("price") ?? "");
+  const [downPaymentPercent, setDownPaymentPercent] = useState<string>(
+    () => searchParams.get("down") ?? "",
+  );
+  const [loanTermYears, setLoanTermYears] = useState<string>(() => searchParams.get("term") ?? "1");
+  const [interestRate, setInterestRate] = useState<string>(() => searchParams.get("rate") ?? "");
+
   // Computed values are still numbers (or null if invalid)
   const [monthlyPayment, setMonthlyPayment] = useState<number | null>(null);
   const [totalPayment, setTotalPayment] = useState<number | null>(null);
   const [totalInterestPaid, setTotalInterestPaid] = useState<number | null>(null);
 
-  // Recompute whenever any input-string changes
-  useEffect(() => {
-    calculateMortgage();
-  }, [propertyPrice, downPaymentPercent, loanTermYears, interestRate]);
-
-  const calculateMortgage = () => {
+  const calculateMortgage = useCallback(() => {
     // Convert each input to a Number
     const priceNum = parseFloat(propertyPrice);
     const downPct = parseFloat(downPaymentPercent);
@@ -29,7 +27,7 @@ const MortgageCalculator: React.FC = () => {
     const ratePct = parseFloat(interestRate);
 
     // If property price isn't a valid positive number, bail out
-    if (isNaN(priceNum) || priceNum <= 0) {
+    if (Number.isNaN(priceNum) || priceNum <= 0) {
       setMonthlyPayment(null);
       setTotalPayment(null);
       setTotalInterestPaid(null);
@@ -37,12 +35,12 @@ const MortgageCalculator: React.FC = () => {
     }
 
     // Down payment in euros; if downPct is NaN or < 0, treat as 0; if > 100, cap at 100
-    const downPctClamped = isNaN(downPct) ? 0 : Math.min(Math.max(downPct, 0), 100);
+    const downPctClamped = Number.isNaN(downPct) ? 0 : Math.min(Math.max(downPct, 0), 100);
     const downPaymentAmount = priceNum * (downPctClamped / 100);
     const principal = priceNum - downPaymentAmount;
 
     // If loan term is invalid or ≤ 0, just show principal = loan amount
-    if (isNaN(termYears) || termYears <= 0) {
+    if (Number.isNaN(termYears) || termYears <= 0) {
       setMonthlyPayment(0);
       setTotalPayment(principal);
       setTotalInterestPaid(0);
@@ -52,7 +50,7 @@ const MortgageCalculator: React.FC = () => {
     const numberOfPayments = termYears * 12;
 
     // If interest is invalid or ≤ 0, do a zero-interest simple split
-    if (isNaN(ratePct) || ratePct <= 0) {
+    if (Number.isNaN(ratePct) || ratePct <= 0) {
       const payment = principal / numberOfPayments;
       setMonthlyPayment(payment);
       setTotalPayment(principal);
@@ -62,8 +60,8 @@ const MortgageCalculator: React.FC = () => {
 
     // Standard amortization formula
     const monthlyRate = ratePct / 100 / 12;
-    const numerator = monthlyRate * Math.pow(1 + monthlyRate, numberOfPayments);
-    const denominator = Math.pow(1 + monthlyRate, numberOfPayments) - 1;
+    const numerator = monthlyRate * (1 + monthlyRate) ** numberOfPayments;
+    const denominator = (1 + monthlyRate) ** numberOfPayments - 1;
 
     if (denominator <= 0) {
       setMonthlyPayment(null);
@@ -77,14 +75,19 @@ const MortgageCalculator: React.FC = () => {
     setMonthlyPayment(payment);
     setTotalPayment(totalPaid);
     setTotalInterestPaid(totalPaid - principal);
-  };
+  }, [propertyPrice, downPaymentPercent, loanTermYears, interestRate]);
+
+  // Recompute whenever any input-string changes
+  useEffect(() => {
+    calculateMortgage();
+  }, [calculateMortgage]);
 
   // Helper to format or show "--" if invalid
   const formatCurrency = (value: number | null) => {
-    if (value === null || isNaN(value)) return '--';
-    return value.toLocaleString('en-US', {
-      style: 'currency',
-      currency: 'EUR',
+    if (value === null || Number.isNaN(value)) return "--";
+    return value.toLocaleString("en-US", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -121,7 +124,7 @@ const MortgageCalculator: React.FC = () => {
                   onChange={(e) => {
                     const val = e.target.value;
                     // Only update if it matches numeric pattern
-                    if (val === '' || numericRegex.test(val)) {
+                    if (val === "" || numericRegex.test(val)) {
                       setPropertyPrice(val);
                     }
                   }}
@@ -146,14 +149,14 @@ const MortgageCalculator: React.FC = () => {
                   value={downPaymentPercent}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === '' || numericRegex.test(val)) {
+                    if (val === "" || numericRegex.test(val)) {
                       // Clamp to [0, 100] for display
-                      if (val !== '') {
+                      if (val !== "") {
                         const asNum = parseFloat(val);
-                        if (!isNaN(asNum)) {
+                        if (!Number.isNaN(asNum)) {
                           // if > 100, keep it at "100"
                           if (asNum > 100) {
-                            setDownPaymentPercent('100');
+                            setDownPaymentPercent("100");
                             return;
                           }
                         }
@@ -174,7 +177,7 @@ const MortgageCalculator: React.FC = () => {
                 max="100"
                 step="0.5"
                 value={
-                  downPaymentPercent === ''
+                  downPaymentPercent === ""
                     ? 0
                     : Math.min(Math.max(parseFloat(downPaymentPercent) || 0, 0), 100)
                 }
@@ -183,31 +186,29 @@ const MortgageCalculator: React.FC = () => {
               />
               <div className="mt-2 space-y-1 text-sm text-gray-500">
                 <p>
-                  Down Payment Amount:{' '}
+                  Down Payment Amount:{" "}
                   <span className="font-medium text-gray-700">
                     {formatCurrency(
-                      isNaN(parseFloat(propertyPrice))
+                      Number.isNaN(parseFloat(propertyPrice))
                         ? 0
                         : parseFloat(propertyPrice) *
-                            (isNaN(parseFloat(downPaymentPercent))
+                            (Number.isNaN(parseFloat(downPaymentPercent))
                               ? 0
-                              : Math.min(Math.max(parseFloat(downPaymentPercent), 0), 100) /
-                                100)
+                              : Math.min(Math.max(parseFloat(downPaymentPercent), 0), 100) / 100),
                     )}
                   </span>
                 </p>
                 <p>
-                  Loan Amount:{' '}
+                  Loan Amount:{" "}
                   <span className="font-medium text-gray-700">
                     {formatCurrency(
-                      isNaN(parseFloat(propertyPrice))
+                      Number.isNaN(parseFloat(propertyPrice))
                         ? 0
                         : parseFloat(propertyPrice) -
                             parseFloat(propertyPrice) *
-                              (isNaN(parseFloat(downPaymentPercent))
+                              (Number.isNaN(parseFloat(downPaymentPercent))
                                 ? 0
-                                : Math.min(Math.max(parseFloat(downPaymentPercent), 0), 100) /
-                                  100)
+                                : Math.min(Math.max(parseFloat(downPaymentPercent), 0), 100) / 100),
                     )}
                   </span>
                 </p>
@@ -228,7 +229,7 @@ const MortgageCalculator: React.FC = () => {
                 value={loanTermYears}
                 onChange={(e) => {
                   const val = e.target.value;
-                  if (val === '' || numericRegex.test(val)) {
+                  if (val === "" || numericRegex.test(val)) {
                     // We will clamp to a minimum of 1 in calculation
                     setLoanTermYears(val);
                   }
@@ -243,7 +244,7 @@ const MortgageCalculator: React.FC = () => {
                   max="40"
                   step="1"
                   value={
-                    loanTermYears === '' || isNaN(parseFloat(loanTermYears))
+                    loanTermYears === "" || Number.isNaN(parseFloat(loanTermYears))
                       ? 1
                       : Math.max(1, Math.min(40, parseInt(loanTermYears, 10)))
                   }
@@ -251,8 +252,8 @@ const MortgageCalculator: React.FC = () => {
                   className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
                 />
                 <span className="text-sm font-medium text-gray-600 w-12 text-right">
-                  {loanTermYears === '' || isNaN(parseFloat(loanTermYears))
-                    ? '1 yr'
+                  {loanTermYears === "" || Number.isNaN(parseFloat(loanTermYears))
+                    ? "1 yr"
                     : `${Math.max(1, parseInt(loanTermYears, 10))} yrs`}
                 </span>
               </div>
@@ -273,7 +274,7 @@ const MortgageCalculator: React.FC = () => {
                   value={interestRate}
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === '' || numericRegex.test(val)) {
+                    if (val === "" || numericRegex.test(val)) {
                       setInterestRate(val);
                     }
                   }}
@@ -295,24 +296,18 @@ const MortgageCalculator: React.FC = () => {
                 <p className="text-3xl md:text-4xl font-bold text-blue-600 text-center py-2 bg-blue-50 rounded-lg">
                   {formatCurrency(monthlyPayment)}
                 </p>
-                <p className="text-xs text-gray-500 text-center mt-1">
-                  (Principal &amp; Interest)
-                </p>
+                <p className="text-xs text-gray-500 text-center mt-1">(Principal &amp; Interest)</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Total Payment
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Payment</h3>
                   <p className="text-lg font-medium text-gray-700">
                     {formatCurrency(totalPayment)}
                   </p>
                 </div>
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-600 mb-1">
-                    Total Interest Paid
-                  </h3>
+                  <h3 className="text-sm font-semibold text-gray-600 mb-1">Total Interest Paid</h3>
                   <p className="text-lg font-medium text-gray-700">
                     {formatCurrency(totalInterestPaid)}
                   </p>
@@ -326,10 +321,10 @@ const MortgageCalculator: React.FC = () => {
               <button
                 onClick={() => {
                   // Clearing all fields
-                  setPropertyPrice('');
-                  setDownPaymentPercent('');
-                  setLoanTermYears('1');
-                  setInterestRate('');
+                  setPropertyPrice("");
+                  setDownPaymentPercent("");
+                  setLoanTermYears("1");
+                  setInterestRate("");
                 }}
                 className="mt-6 w-full bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-lg transition"
               >

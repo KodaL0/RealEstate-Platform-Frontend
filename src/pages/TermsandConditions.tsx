@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { FileText, Download, Loader2, AlertCircle } from 'lucide-react';
+import { AlertCircle, Download, FileText, Loader2 } from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 interface LegalDocument {
   title: string;
@@ -14,39 +15,61 @@ const TermsandConditions: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchDocument();
-  }, []);
-
   const fetchDocument = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch('/api/users/legal/terms_conditions/');
+      const response = await fetch("/api/users/legal/terms_conditions/");
       if (!response.ok) {
-        throw new Error('Failed to fetch terms and conditions');
+        throw new Error("Failed to fetch terms and conditions");
       }
       const data = await response.json();
       setDocument(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const apiError = err as { message?: string };
+      setError(apiError.message || "Failed to load document");
     } finally {
       setIsLoading(false);
     }
   };
 
+  useEffect(() => {
+    fetchDocument();
+  }, []);
+
   const formatContent = (htmlContent: string) => {
     // Simple HTML to JSX conversion for basic formatting
     return htmlContent
-      .replace(/<h1[^>]*>(.*?)<\/h1>/gi, '<h1 class="text-2xl font-bold text-gray-900 mb-4 mt-8">$1</h1>')
-      .replace(/<h2[^>]*>(.*?)<\/h2>/gi, '<h2 class="text-xl font-semibold text-gray-900 mb-3 mt-6">$1</h2>')
-      .replace(/<h3[^>]*>(.*?)<\/h3>/gi, '<h3 class="text-lg font-medium text-gray-900 mb-2 mt-4">$1</h3>')
+      .replace(
+        /<h1[^>]*>(.*?)<\/h1>/gi,
+        '<h1 class="text-2xl font-bold text-gray-900 mb-4 mt-8">$1</h1>',
+      )
+      .replace(
+        /<h2[^>]*>(.*?)<\/h2>/gi,
+        '<h2 class="text-xl font-semibold text-gray-900 mb-3 mt-6">$1</h2>',
+      )
+      .replace(
+        /<h3[^>]*>(.*?)<\/h3>/gi,
+        '<h3 class="text-lg font-medium text-gray-900 mb-2 mt-4">$1</h3>',
+      )
       .replace(/<p[^>]*>(.*?)<\/p>/gi, '<p class="text-gray-700 mb-4 leading-relaxed">$1</p>')
-      .replace(/<ul[^>]*>(.*?)<\/ul>/gi, '<ul class="list-disc list-inside mb-4 text-gray-700">$1</ul>')
-      .replace(/<ol[^>]*>(.*?)<\/ol>/gi, '<ol class="list-decimal list-inside mb-4 text-gray-700">$1</ol>')
+      .replace(
+        /<ul[^>]*>(.*?)<\/ul>/gi,
+        '<ul class="list-disc list-inside mb-4 text-gray-700">$1</ul>',
+      )
+      .replace(
+        /<ol[^>]*>(.*?)<\/ol>/gi,
+        '<ol class="list-decimal list-inside mb-4 text-gray-700">$1</ol>',
+      )
       .replace(/<li[^>]*>(.*?)<\/li>/gi, '<li class="mb-1">$1</li>')
-      .replace(/<strong[^>]*>(.*?)<\/strong>/gi, '<strong class="font-semibold text-gray-900">$1</strong>')
+      .replace(
+        /<strong[^>]*>(.*?)<\/strong>/gi,
+        '<strong class="font-semibold text-gray-900">$1</strong>',
+      )
       .replace(/<em[^>]*>(.*?)<\/em>/gi, '<em class="italic">$1</em>')
-      .replace(/<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi, '<a href="$1" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$2</a>');
+      .replace(
+        /<a[^>]*href="([^"]*)"[^>]*>(.*?)<\/a>/gi,
+        '<a href="$1" class="text-blue-600 hover:underline" target="_blank" rel="noopener noreferrer">$2</a>',
+      );
   };
 
   if (isLoading) {
@@ -81,17 +104,16 @@ const TermsandConditions: React.FC = () => {
             <FileText className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">{document.title}</h1>
           </div>
-          <p className="text-lg text-gray-600 mb-2">
-            Rules and guidelines for using our platform
-          </p>
+          <p className="text-lg text-gray-600 mb-2">Rules and guidelines for using our platform</p>
           <p className="text-sm text-gray-500">
-            Version {document.version} • Effective: {new Date(document.effective_date).toLocaleDateString()}
+            Version {document.version} • Effective:{" "}
+            {new Date(document.effective_date).toLocaleDateString()}
           </p>
-          
+
           {/* Download Button */}
           <div className="mt-6">
-            <a 
-              href="/api/users/legal/terms_conditions/pdf/" 
+            <a
+              href="/api/users/legal/terms_conditions/pdf/"
               download="PropertPro-Terms-Conditions.pdf"
               className="inline-flex items-center space-x-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
             >
@@ -103,8 +125,9 @@ const TermsandConditions: React.FC = () => {
 
         {/* Document Content */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8">
-          <div 
+          <div
             className="prose prose-gray max-w-none"
+            // biome-ignore lint/security/noDangerouslySetInnerHtml: Legal documents are sanitized on backend
             dangerouslySetInnerHTML={{ __html: formatContent(document.content) }}
           />
         </div>

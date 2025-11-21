@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import Profile from './components/Profile';
-import developersApi, { DeveloperOrganization } from '../config/developers-api';
+import { useEffect, useState } from "react";
+import developersApi, { type DeveloperOrganization } from "../config/developers-api";
+import Profile from "./components/Profile";
 
 export default function OrganizationPage() {
   const [organization, setOrganization] = useState<DeveloperOrganization | null>(null);
@@ -13,18 +13,19 @@ export default function OrganizationPage() {
         // Debug: Authentication method info
         console.log("🔐 Authentication method: Django session-based (working correctly)");
         console.log("🔍 Available cookies:", document.cookie);
-        
+
         const response = await developersApi.organizations.getMine();
-        console.log('Organization API response:', response); // Debug log
+        console.log("Organization API response:", response); // Debug log
         if (response.organization) {
           setOrganization(response.organization);
         } else {
-          setError('No organization found. Please create an organization first.');
+          setError("No organization found. Please create an organization first.");
         }
-      } catch (error) {
-        console.error('Error fetching organization:', error);
-        console.error('Error details:', error.response); // Debug log
-        setError('An error occurred while fetching organization data.');
+      } catch (error: unknown) {
+        console.error("Error fetching organization:", error);
+        const axiosError = error as { response?: unknown };
+        console.error("Error details:", axiosError.response); // Debug log
+        setError("An error occurred while fetching organization data.");
       } finally {
         setIsLoading(false);
       }
@@ -36,13 +37,14 @@ export default function OrganizationPage() {
   const handleOrganizationUpdate = async () => {
     try {
       const response = await developersApi.organizations.getMine();
-      console.log('Organization update response:', response); // Debug log
+      console.log("Organization update response:", response); // Debug log
       if (response.organization) {
         setOrganization(response.organization);
       }
-    } catch (error) {
-      console.error('Error refreshing organization:', error);
-      console.error('Error details:', error.response); // Debug log
+    } catch (error: unknown) {
+      console.error("Error refreshing organization:", error);
+      const axiosError = error as { response?: unknown };
+      console.error("Error details:", axiosError.response); // Debug log
     }
   };
 
@@ -63,8 +65,11 @@ export default function OrganizationPage() {
         <div className="text-4xl mb-4">⚠️</div>
         <h3 className="text-lg font-medium mb-2">Unable to Load Organization</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          type="button"
+          onClick={() => {
+            window.location.reload();
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           Try Again
@@ -78,9 +83,14 @@ export default function OrganizationPage() {
       <div className="text-center py-12">
         <div className="text-4xl mb-4">🏢</div>
         <h3 className="text-lg font-medium mb-2">No Organization Found</h3>
-        <p className="text-gray-600 mb-4">You need to create an organization to access the developer portal.</p>
-        <button 
-          onClick={() => window.location.href = '/developers'} 
+        <p className="text-gray-600 mb-4">
+          You need to create an organization to access the developer portal.
+        </p>
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/developers";
+          }}
           className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           Go to Developers Page
@@ -91,5 +101,3 @@ export default function OrganizationPage() {
 
   return <Profile organization={organization} onUpdate={handleOrganizationUpdate} />;
 }
-
-

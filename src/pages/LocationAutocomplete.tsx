@@ -1,5 +1,5 @@
 // LocationAutocomplete.tsx
-import { useState, useEffect, useRef, useCallback, useId } from 'react';
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 
 // Structured data type
 type Structured = {
@@ -9,40 +9,6 @@ type Structured = {
   postal_code?: string;
   street?: string;
 };
-
-// Mapbox API response types
-interface MapboxContext {
-  id: string;
-  text: string;
-  short_code?: string;
-  wikidata?: string;
-}
-
-interface MapboxProperties {
-  address?: string;
-  category?: string;
-  maki?: string;
-  [key: string]: unknown;
-}
-
-interface MapboxFeature {
-  id: string;
-  type: string;
-  place_type: string[];
-  relevance: number;
-  properties: MapboxProperties;
-  text: string; // street name for address types
-  place_name: string;
-  center: [number, number]; // [longitude, latitude]
-  context?: MapboxContext[];
-  address?: string; // house/building number for address types
-}
-
-interface MapboxResponse {
-  type: string;
-  query: string[];
-  features: MapboxFeature[];
-}
 
 interface Suggestion {
   display_name: string;
@@ -57,14 +23,7 @@ interface Props {
   onSelect: (address: string, lat: number, lng: number, structuredData?: Structured) => void;
   placeholder?: string;
   inputClassName?: string;
-  selectedCountry?: string;
-  proximity?: { lng: number; lat: number }; // optional proximity bias
 }
-
-const COUNTRY_CODE: Record<string, string> = {
-  Cyprus: 'cy',
-  Greece: 'gr'
-};
 
 // Debounce hook
 function useDebounced<T>(value: T, delay = 300): T {
@@ -83,46 +42,12 @@ function useDebounced<T>(value: T, delay = 300): T {
   return debouncedValue;
 }
 
-// Parse Mapbox feature into structured address data
-function parseFeature(feature: MapboxFeature, fallbackCountry: string): Structured {
-  // Build context map: type -> text (e.g., "country" -> "Cyprus")
-  const contextMap = new Map<string, string>();
-  (feature.context ?? []).forEach((ctx) => {
-    const type = ctx.id.split('.')[0];
-    if (!contextMap.has(type)) contextMap.set(type, ctx.text);
-  });
-
-  const isAddress = feature.place_type?.includes('address') ?? false;
-  const country = contextMap.get('country') || fallbackCountry;
-  const city = contextMap.get('place') || contextMap.get('locality');
-  
-  // Region: try region > district > province > state (first that's different from city)
-  const region = ['region', 'district', 'province', 'state']
-    .map(type => contextMap.get(type))
-    .find(val => val && val !== city);
-
-  // For address types: street name is feature.text, number is feature.address
-  const street = isAddress
-    ? [feature.text, feature.address].filter(Boolean).join(' ').trim() || undefined
-    : undefined;
-
-  return {
-    country,
-    region,
-    city,
-    postal_code: contextMap.get('postcode') || contextMap.get('postal_code'),
-    street
-  };
-}
-
 export default function LocationAutocomplete({
   value,
   onChange,
   onSelect,
-  placeholder = 'Type address…',
-  inputClassName = 'pl-3',
-  selectedCountry = 'Cyprus',
-  proximity
+  placeholder = "Type address…",
+  inputClassName = "pl-3",
 }: Props) {
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [open, setOpen] = useState(false);
@@ -134,9 +59,8 @@ export default function LocationAutocomplete({
   const suppressFetchRef = useRef(false);
   const inputId = useId();
   const listboxId = `${inputId}-listbox`;
-  
+
   const debounced = useDebounced(value.trim(), 250);
-  
 
   // Close on outside pointerdown (better than click for avoiding focus issues)
   useEffect(() => {
@@ -145,15 +69,15 @@ export default function LocationAutocomplete({
         setOpen(false);
       }
     };
-    document.addEventListener('pointerdown', handler, { capture: true });
-    return () => document.removeEventListener('pointerdown', handler, { capture: true } as any);
+    document.addEventListener("pointerdown", handler, { capture: true });
+    return () => document.removeEventListener("pointerdown", handler, { capture: true } as any);
   }, []);
 
   // Fetch suggestions with AbortController and caching
   const fetchSuggestions = useCallback(async (query: string) => {
     const apiKey = import.meta.env.VITE_GEOAPIFY_KEY;
     if (!apiKey) {
-      console.error('[LocationAutocomplete] Missing Geoapify key');
+      console.error("[LocationAutocomplete] Missing Geoapify key");
       setSuggestions([]);
       setOpen(false);
       return;
@@ -175,9 +99,9 @@ export default function LocationAutocomplete({
     try {
       const params = new URLSearchParams({
         text: query,
-        limit: '5',
-        lang: 'en',
-        countrycodes: 'gr,cy',
+        limit: "5",
+        lang: "en",
+        countrycodes: "gr,cy",
         apiKey,
       });
 
@@ -196,9 +120,8 @@ export default function LocationAutocomplete({
           region: f.properties.state,
           city: f.properties.city,
           postal_code: f.properties.postcode,
-          street: [f.properties.street, f.properties.housenumber]
-            .filter(Boolean)
-            .join(' ') || undefined,
+          street:
+            [f.properties.street, f.properties.housenumber].filter(Boolean).join(" ") || undefined,
         },
       }));
 
@@ -206,8 +129,9 @@ export default function LocationAutocomplete({
       setSuggestions(mapped);
       setOpen(mapped.length > 0);
     } catch (err) {
-      if ((err as any)?.name !== 'AbortError') {
-        console.error('[LocationAutocomplete] Geoapify fetch error:', err);
+      const error = err as { name?: string };
+      if (error.name !== "AbortError") {
+        console.error("[LocationAutocomplete] Geoapify fetch error:", err);
         setSuggestions([]);
         setOpen(false);
       }
@@ -215,7 +139,6 @@ export default function LocationAutocomplete({
       setLoading(false);
     }
   }, []);
-
 
   // Query flow
   useEffect(() => {
@@ -237,15 +160,16 @@ export default function LocationAutocomplete({
     fetchSuggestions(debounced);
   }, [debounced, fetchSuggestions]);
 
+  const handleSelect = useCallback(
+    (s: Suggestion) => {
+      // Prevent dropdown reopening and re-fetching after selection
+      suppressFetchRef.current = true;
 
-  const handleSelect = useCallback((s: Suggestion) => {
-    // Prevent dropdown reopening and re-fetching after selection
-    suppressFetchRef.current = true;
-    
-    onSelect(s.display_name, s.lat, s.lon, s.structured_data);
-    setOpen(false);
-  }, [onSelect]);
-
+      onSelect(s.display_name, s.lat, s.lon, s.structured_data);
+      setOpen(false);
+    },
+    [onSelect],
+  );
 
   return (
     <div ref={containerRef} className="relative">
@@ -263,23 +187,23 @@ export default function LocationAutocomplete({
         aria-autocomplete="list"
         aria-activedescendant={activeIndex >= 0 ? `${listboxId}-opt-${activeIndex}` : undefined}
         onKeyDown={(e) => {
-          if (!open && (e.key === 'ArrowDown' || e.key === 'ArrowUp')) {
+          if (!open && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
             setOpen(suggestions.length > 0);
             return;
           }
 
-          if (e.key === 'ArrowDown') {
+          if (e.key === "ArrowDown") {
             e.preventDefault();
-            setActiveIndex(i => Math.min(i + 1, suggestions.length - 1));
-          } else if (e.key === 'ArrowUp') {
+            setActiveIndex((i) => Math.min(i + 1, suggestions.length - 1));
+          } else if (e.key === "ArrowUp") {
             e.preventDefault();
-            setActiveIndex(i => Math.max(i - 1, 0));
-          } else if (e.key === 'Enter') {
+            setActiveIndex((i) => Math.max(i - 1, 0));
+          } else if (e.key === "Enter") {
             if (open && activeIndex >= 0) {
               e.preventDefault();
               handleSelect(suggestions[activeIndex]);
             }
-          } else if (e.key === 'Escape') {
+          } else if (e.key === "Escape") {
             setOpen(false);
           }
         }}
@@ -288,31 +212,28 @@ export default function LocationAutocomplete({
       {open && (
         <ul
           id={listboxId}
-          role="listbox"
           className="absolute z-10 bg-white border border-gray-200 rounded-lg w-full mt-1 max-h-60 overflow-auto shadow-lg"
         >
-          {loading && (
-            <li className="px-4 py-2 text-sm text-gray-500">Loading…</li>
-          )}
+          {loading && <li className="px-4 py-2 text-sm text-gray-500">Loading…</li>}
           {!loading && suggestions.length === 0 && (
             <li className="px-4 py-2 text-sm text-gray-500">No results</li>
           )}
-          {!loading && suggestions.map((s, i) => (
-            <li
-              id={`${listboxId}-opt-${i}`}
-              role="option"
-              aria-selected={i === activeIndex}
-              key={`${s.display_name}-${i}`}
-              className={`px-4 py-2 cursor-pointer ${i === activeIndex ? 'bg-gray-100' : 'hover:bg-gray-100'}`}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                handleSelect(s);
-              }}
-              onMouseEnter={() => setActiveIndex(i)}
-            >
-              {s.display_name}
-            </li>
-          ))}
+          {!loading &&
+            suggestions.map((s, i) => (
+              <li
+                id={`${listboxId}-opt-${i}`}
+                aria-selected={i === activeIndex}
+                key={`${s.display_name}-${i}`}
+                className={`px-4 py-2 cursor-pointer ${i === activeIndex ? "bg-gray-100" : "hover:bg-gray-100"}`}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  handleSelect(s);
+                }}
+                onMouseEnter={() => setActiveIndex(i)}
+              >
+                {s.display_name}
+              </li>
+            ))}
         </ul>
       )}
     </div>

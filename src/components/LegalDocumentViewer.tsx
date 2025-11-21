@@ -2,14 +2,16 @@
  * Reusable Legal Document Viewer Component
  * Displays versioned legal documents with loading states and acceptance tracking
  */
-import React, { useState, useEffect } from 'react';
-import { Building2, Download, CheckCircle, AlertCircle } from 'lucide-react';
-import { Link } from 'react-router-dom';
-import { useUser } from '../context/UserContext';
-import LegalDocumentsAPI, { LegalDocument } from '../services/legalApi';
+
+import { AlertCircle, Building2, CheckCircle, Download } from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import LegalDocumentsAPI, { type LegalDocument } from "../services/legalApi";
 
 interface LegalDocumentViewerProps {
-  documentType: 'privacy_policy' | 'terms_conditions' | 'cookie_policy';
+  documentType: "privacy_policy" | "terms_conditions" | "cookie_policy";
   showAcceptButton?: boolean;
   onAccept?: () => void;
 }
@@ -17,7 +19,7 @@ interface LegalDocumentViewerProps {
 const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
   documentType,
   showAcceptButton = false,
-  onAccept
+  onAccept,
 }) => {
   const { user } = useUser();
   const [document, setDocument] = useState<LegalDocument | null>(null);
@@ -25,23 +27,24 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
   const [error, setError] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
 
-  useEffect(() => {
-    loadDocument();
-  }, [documentType]);
-
-  const loadDocument = async () => {
+  const loadDocument = useCallback(async () => {
     try {
       setIsLoading(true);
       setError(null);
       const data = await LegalDocumentsAPI.getDocument(documentType);
       setDocument(data);
-    } catch (err: any) {
-      console.error('Failed to load legal document:', err);
-      setError(err.response?.data?.error || 'Failed to load document');
+    } catch (err: unknown) {
+      console.error("Failed to load legal document:", err);
+      const apiError = err as { response?: { data?: { error?: string } } };
+      setError(apiError.response?.data?.error || "Failed to load document");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [documentType]);
+
+  useEffect(() => {
+    loadDocument();
+  }, [loadDocument]);
 
   const handleAccept = async () => {
     if (!user || !document) return;
@@ -49,15 +52,15 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
     try {
       setIsAccepting(true);
       await LegalDocumentsAPI.acceptDocument(documentType);
-      
+
       // Refresh document to update acceptance status
       await loadDocument();
-      
+
       // Call parent callback
       onAccept?.();
-    } catch (err: any) {
-      console.error('Failed to accept document:', err);
-      alert('Failed to accept document. Please try again.');
+    } catch (err: unknown) {
+      console.error("Failed to accept document:", err);
+      alert("Failed to accept document. Please try again.");
     } finally {
       setIsAccepting(false);
     }
@@ -81,12 +84,13 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
         <div className="max-w-md mx-auto bg-white rounded-lg shadow-md p-8 text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-xl font-semibold text-gray-900 mb-2">
-            {error || 'Document Not Found'}
+            {error || "Document Not Found"}
           </h2>
           <p className="text-gray-600 mb-4">
             We couldn't load this document. Please try again later.
           </p>
           <button
+            type="button"
             onClick={loadDocument}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
           >
@@ -122,6 +126,7 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
                 </div>
               </div>
               <button
+                type="button"
                 onClick={handlePrint}
                 className="flex items-center text-blue-600 hover:text-blue-800 print:hidden"
               >
@@ -132,22 +137,27 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
 
             {/* Acceptance Status for Authenticated Users */}
             {user && document.requires_acceptance && (
-              <div className={`mt-4 p-3 rounded-lg ${
-                document.has_accepted
-                  ? 'bg-green-50 border border-green-200'
-                  : 'bg-yellow-50 border border-yellow-200'
-              }`}>
+              <div
+                className={`mt-4 p-3 rounded-lg ${
+                  document.has_accepted
+                    ? "bg-green-50 border border-green-200"
+                    : "bg-yellow-50 border border-yellow-200"
+                }`}
+              >
                 <div className="flex items-center space-x-2">
-                  <CheckCircle className={`h-5 w-5 ${
-                    document.has_accepted ? 'text-green-600' : 'text-yellow-600'
-                  }`} />
-                  <span className={`text-sm font-medium ${
-                    document.has_accepted ? 'text-green-800' : 'text-yellow-800'
-                  }`}>
+                  <CheckCircle
+                    className={`h-5 w-5 ${
+                      document.has_accepted ? "text-green-600" : "text-yellow-600"
+                    }`}
+                  />
+                  <span
+                    className={`text-sm font-medium ${
+                      document.has_accepted ? "text-green-800" : "text-yellow-800"
+                    }`}
+                  >
                     {document.has_accepted
                       ? `You accepted this version on ${new Date().toLocaleDateString()}`
-                      : 'You have not accepted this version yet'
-                    }
+                      : "You have not accepted this version yet"}
                   </span>
                 </div>
               </div>
@@ -158,28 +168,31 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
           <div className="bg-white rounded-lg shadow-md p-8 mb-6">
             <div
               className="prose prose-gray max-w-none"
+              // biome-ignore lint/security/noDangerouslySetInnerHtml: Legal documents are sanitized on backend
               dangerouslySetInnerHTML={{ __html: document.content }}
             />
           </div>
 
           {/* Privacy Policy Specific Sections */}
-          {document.document_type === 'privacy_policy' && document.processing_purposes && (
+          {document.document_type === "privacy_policy" && document.processing_purposes && (
             <div className="bg-white rounded-lg shadow-md p-8 mb-6">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">How We Process Your Data</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {Object.entries(document.processing_purposes).map(([key, purpose]) => (
                   <div key={key} className="border border-gray-200 rounded-lg p-4">
                     <h3 className="font-semibold text-gray-900 mb-2">
-                      {key.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      {key.replace("_", " ").replace(/\b\w/g, (l) => l.toUpperCase())}
                     </h3>
                     <p className="text-sm text-gray-600 mb-3">{purpose.description}</p>
                     <div className="flex items-center justify-between">
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        purpose.required
-                          ? 'bg-blue-100 text-blue-800'
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {purpose.required ? 'Required' : 'Optional'}
+                      <span
+                        className={`text-xs px-2 py-1 rounded-full ${
+                          purpose.required
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {purpose.required ? "Required" : "Optional"}
                       </span>
                       <span className="text-xs text-gray-500">
                         Legal basis: {purpose.legal_basis}
@@ -202,11 +215,12 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
                     Please review and accept this document to continue using PropertPro.
                   </p>
                   <button
+                    type="button"
                     onClick={handleAccept}
                     disabled={isAccepting}
                     className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {isAccepting ? 'Accepting...' : 'Accept Document'}
+                    {isAccepting ? "Accepting..." : "Accept Document"}
                   </button>
                 </div>
               </div>
@@ -245,5 +259,3 @@ const LegalDocumentViewer: React.FC<LegalDocumentViewerProps> = ({
 };
 
 export default LegalDocumentViewer;
-
-

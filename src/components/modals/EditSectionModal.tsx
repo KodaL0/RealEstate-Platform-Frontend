@@ -1,6 +1,6 @@
-import React from 'react';
-import { X, Home, FileText, Image, Phone, File } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from "framer-motion";
+import { File, FileText, Home, Image, Phone, X } from "lucide-react";
+import type React from "react";
 
 interface EditSectionModalProps {
   isOpen: boolean;
@@ -13,59 +13,59 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
   isOpen,
   onClose,
   onSelectSection,
-  propertyTitle
+  propertyTitle,
 }) => {
   const sections = [
     {
       id: 0,
-      title: 'Property Type',
-      description: 'Change property category and listing type',
+      title: "Property Type",
+      description: "Change property category and listing type",
       icon: Home,
-      color: 'from-blue-500 to-blue-600',
-      borderColor: 'border-blue-200',
-      hoverColor: 'hover:border-blue-400',
-      bgColor: 'bg-blue-50'
+      color: "from-blue-500 to-blue-600",
+      borderColor: "border-blue-200",
+      hoverColor: "hover:border-blue-400",
+      bgColor: "bg-blue-50",
     },
     {
       id: 1,
-      title: 'Property Details',
-      description: 'Edit specifications, location, and description',
+      title: "Property Details",
+      description: "Edit specifications, location, and description",
       icon: FileText,
-      color: 'from-emerald-500 to-emerald-600',
-      borderColor: 'border-emerald-200',
-      hoverColor: 'hover:border-emerald-400',
-      bgColor: 'bg-emerald-50'
+      color: "from-emerald-500 to-emerald-600",
+      borderColor: "border-emerald-200",
+      hoverColor: "hover:border-emerald-400",
+      bgColor: "bg-emerald-50",
     },
     {
       id: 2,
-      title: 'Images',
-      description: 'Upload, reorder, or remove property images',
+      title: "Images",
+      description: "Upload, reorder, or remove property images",
       icon: Image,
-      color: 'from-purple-500 to-purple-600',
-      borderColor: 'border-purple-200',
-      hoverColor: 'hover:border-purple-400',
-      bgColor: 'bg-purple-50'
+      color: "from-purple-500 to-purple-600",
+      borderColor: "border-purple-200",
+      hoverColor: "hover:border-purple-400",
+      bgColor: "bg-purple-50",
     },
     {
       id: 3,
-      title: 'Documents',
-      description: 'Upload property documents and certificates',
+      title: "Documents",
+      description: "Upload property documents and certificates",
       icon: File,
-      color: 'from-indigo-500 to-indigo-600',
-      borderColor: 'border-indigo-200',
-      hoverColor: 'hover:border-indigo-400',
-      bgColor: 'bg-indigo-50'
+      color: "from-indigo-500 to-indigo-600",
+      borderColor: "border-indigo-200",
+      hoverColor: "hover:border-indigo-400",
+      bgColor: "bg-indigo-50",
     },
     {
       id: 4,
-      title: 'Contact Information',
-      description: 'Update contact details and preferences',
+      title: "Contact Information",
+      description: "Update contact details and preferences",
       icon: Phone,
-      color: 'from-orange-500 to-orange-600',
-      borderColor: 'border-orange-200',
-      hoverColor: 'hover:border-orange-400',
-      bgColor: 'bg-orange-50'
-    }
+      color: "from-orange-500 to-orange-600",
+      borderColor: "border-orange-200",
+      hoverColor: "hover:border-orange-400",
+      bgColor: "bg-orange-50",
+    },
   ];
 
   if (!isOpen) return null;
@@ -96,16 +96,11 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
               <div className="absolute inset-0 opacity-30"></div>
               <div className="relative flex items-center justify-between">
                 <div>
-                  <h2 className="text-2xl font-bold text-white">
-                    Select Section to Edit
-                  </h2>
-                  {propertyTitle && (
-                    <p className="text-blue-100 text-sm mt-1">
-                      {propertyTitle}
-                    </p>
-                  )}
+                  <h2 className="text-2xl font-bold text-white">Select Section to Edit</h2>
+                  {propertyTitle && <p className="text-blue-100 text-sm mt-1">{propertyTitle}</p>}
                 </div>
                 <button
+                  type="button"
                   onClick={onClose}
                   className="p-2 hover:bg-white/20 rounded-full transition-colors"
                 >
@@ -144,16 +139,20 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                       `}
                     >
                       {/* Background gradient on hover */}
-                      <div className={`
+                      <div
+                        className={`
                         absolute inset-0 bg-gradient-to-r ${section.color}
                         opacity-0 group-hover:opacity-5 transition-opacity duration-300
-                      `} />
+                      `}
+                      />
 
                       {/* Icon */}
-                      <div className={`
+                      <div
+                        className={`
                         relative flex-shrink-0 p-3 rounded-xl ${section.bgColor}
                         group-hover:scale-110 transition-transform duration-300
-                      `}>
+                      `}
+                      >
                         <Icon
                           className={`w-6 h-6 bg-gradient-to-r ${section.color} bg-clip-text text-transparent`}
                         />
@@ -164,9 +163,7 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                         <h3 className="font-semibold text-gray-900 text-lg group-hover:text-gray-800 transition-colors">
                           {section.title}
                         </h3>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {section.description}
-                        </p>
+                        <p className="text-sm text-gray-600 mt-1">{section.description}</p>
                       </div>
 
                       {/* Arrow indicator */}
@@ -176,7 +173,10 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
+                          role="img"
+                          aria-label="Arrow icon"
                         >
+                          <title>Arrow icon</title>
                           <path
                             strokeLinecap="round"
                             strokeLinejoin="round"
@@ -197,7 +197,10 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                     className="w-4 h-4 text-blue-500 mr-2 mt-0.5 flex-shrink-0"
                     fill="currentColor"
                     viewBox="0 0 20 20"
+                    role="img"
+                    aria-label="Information icon"
                   >
+                    <title>Information icon</title>
                     <path
                       fillRule="evenodd"
                       d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -205,7 +208,8 @@ const EditSectionModal: React.FC<EditSectionModalProps> = ({
                     />
                   </svg>
                   <span>
-                    You can navigate between sections while editing using the progress bar at the top of the page.
+                    You can navigate between sections while editing using the progress bar at the
+                    top of the page.
                   </span>
                 </p>
               </div>

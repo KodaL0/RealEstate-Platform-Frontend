@@ -1,7 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { Building2, Map, FileText, Users, MapPin, Briefcase, ExternalLink, Loader2 } from 'lucide-react';
-import { SEO } from '../components/SEO';
+import {
+  Briefcase,
+  Building2,
+  ExternalLink,
+  FileText,
+  Loader2,
+  Map,
+  MapPin,
+  Users,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { SEO } from "../components/SEO";
 
 interface SitemapUrl {
   loc: string;
@@ -22,112 +32,33 @@ const SitemapViewer: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const loadSitemaps = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        // Load all sitemaps
-        const [staticMap, propertiesMap, profilesMap, locationsMap, developersMap] = await Promise.all([
-          fetchSitemap('/sitemap-static.xml'),
-          fetchSitemap('/sitemap-properties.xml').catch(() => null),
-          fetchSitemap('/sitemap-profiles.xml').catch(() => null),
-          fetchSitemap('/sitemap-locations.xml').catch(() => null),
-          fetchSitemap('/sitemap-developers.xml').catch(() => null),
-        ]);
-
-        const sectionsData: SitemapSection[] = [];
-
-        // Static Pages
-        if (staticMap.length > 0) {
-          sectionsData.push({
-            name: 'Static Pages',
-            icon: <FileText className="h-5 w-5" />,
-            urls: staticMap,
-            color: 'bg-blue-500',
-          });
-        }
-
-        // Location Pages
-        if (locationsMap && locationsMap.length > 0) {
-          sectionsData.push({
-            name: 'Location-Based Pages',
-            icon: <MapPin className="h-5 w-5" />,
-            urls: locationsMap.slice(0, 50), // Show first 50
-            color: 'bg-green-500',
-          });
-        }
-
-        // Developers & Projects
-        if (developersMap && developersMap.length > 0) {
-          sectionsData.push({
-            name: 'Developers & Projects',
-            icon: <Briefcase className="h-5 w-5" />,
-            urls: developersMap.slice(0, 50), // Show first 50
-            color: 'bg-purple-500',
-          });
-        }
-
-        // User Profiles (show sample)
-        if (profilesMap && profilesMap.length > 0) {
-          sectionsData.push({
-            name: 'User Profiles',
-            icon: <Users className="h-5 w-5" />,
-            urls: profilesMap.slice(0, 20), // Show first 20
-            color: 'bg-indigo-500',
-          });
-        }
-
-        // Properties (show sample)
-        if (propertiesMap && propertiesMap.length > 0) {
-          sectionsData.push({
-            name: 'Property Listings',
-            icon: <Map className="h-5 w-5" />,
-            urls: propertiesMap.slice(0, 20), // Show first 20
-            color: 'bg-red-500',
-          });
-        }
-
-        setSections(sectionsData);
-      } catch (err) {
-        console.error('Error loading sitemaps:', err);
-        setError('Failed to load sitemap. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadSitemaps();
-  }, []);
-
   const fetchSitemap = async (url: string): Promise<SitemapUrl[]> => {
     try {
       const response = await fetch(url);
       if (!response.ok) throw new Error(`Failed to fetch ${url}`);
-      
+
       const text = await response.text();
       const parser = new DOMParser();
-      const xml = parser.parseFromString(text, 'text/xml');
-      
+      const xml = parser.parseFromString(text, "text/xml");
+
       // Check for parsing errors
-      const parserError = xml.querySelector('parsererror');
+      const parserError = xml.querySelector("parsererror");
       if (parserError) {
-        throw new Error('XML parsing error');
+        throw new Error("XML parsing error");
       }
 
       const urls: SitemapUrl[] = [];
-      const urlElements = xml.querySelectorAll('url');
+      const urlElements = xml.querySelectorAll("url");
 
       urlElements.forEach((urlEl) => {
-        const loc = urlEl.querySelector('loc')?.textContent || '';
-        const lastmod = urlEl.querySelector('lastmod')?.textContent;
-        const changefreq = urlEl.querySelector('changefreq')?.textContent;
-        const priority = urlEl.querySelector('priority')?.textContent;
+        const loc = urlEl.querySelector("loc")?.textContent || "";
+        const lastmod = urlEl.querySelector("lastmod")?.textContent;
+        const changefreq = urlEl.querySelector("changefreq")?.textContent;
+        const priority = urlEl.querySelector("priority")?.textContent;
 
         if (loc) {
           urls.push({
-            loc: loc.replace('https://www.propertpro.com', ''),
+            loc: loc.replace("https://www.propertpro.com", ""),
             lastmod,
             changefreq,
             priority,
@@ -142,23 +73,103 @@ const SitemapViewer: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    const loadSitemaps = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        // Load all sitemaps
+        const [staticMap, propertiesMap, profilesMap, locationsMap, developersMap] =
+          await Promise.all([
+            fetchSitemap("/sitemap-static.xml"),
+            fetchSitemap("/sitemap-properties.xml").catch(() => null),
+            fetchSitemap("/sitemap-profiles.xml").catch(() => null),
+            fetchSitemap("/sitemap-locations.xml").catch(() => null),
+            fetchSitemap("/sitemap-developers.xml").catch(() => null),
+          ]);
+
+        const sectionsData: SitemapSection[] = [];
+
+        // Static Pages
+        if (staticMap.length > 0) {
+          sectionsData.push({
+            name: "Static Pages",
+            icon: <FileText className="h-5 w-5" />,
+            urls: staticMap,
+            color: "bg-blue-500",
+          });
+        }
+
+        // Location Pages
+        if (locationsMap && locationsMap.length > 0) {
+          sectionsData.push({
+            name: "Location-Based Pages",
+            icon: <MapPin className="h-5 w-5" />,
+            urls: locationsMap.slice(0, 50), // Show first 50
+            color: "bg-green-500",
+          });
+        }
+
+        // Developers & Projects
+        if (developersMap && developersMap.length > 0) {
+          sectionsData.push({
+            name: "Developers & Projects",
+            icon: <Briefcase className="h-5 w-5" />,
+            urls: developersMap.slice(0, 50), // Show first 50
+            color: "bg-purple-500",
+          });
+        }
+
+        // User Profiles (show sample)
+        if (profilesMap && profilesMap.length > 0) {
+          sectionsData.push({
+            name: "User Profiles",
+            icon: <Users className="h-5 w-5" />,
+            urls: profilesMap.slice(0, 20), // Show first 20
+            color: "bg-indigo-500",
+          });
+        }
+
+        // Properties (show sample)
+        if (propertiesMap && propertiesMap.length > 0) {
+          sectionsData.push({
+            name: "Property Listings",
+            icon: <Map className="h-5 w-5" />,
+            urls: propertiesMap.slice(0, 20), // Show first 20
+            color: "bg-red-500",
+          });
+        }
+
+        setSections(sectionsData);
+      } catch (err) {
+        console.error("Error loading sitemaps:", err);
+        setError("Failed to load sitemap. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSitemaps();
+  }, []);
+
   const formatDate = (dateString?: string) => {
-    if (!dateString) return 'N/A';
+    if (!dateString) return "N/A";
     try {
       const date = new Date(dateString);
-      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+      return date.toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" });
     } catch {
       return dateString;
     }
   };
 
   const getBadgeColor = (priority?: string) => {
-    if (!priority) return 'bg-gray-100 text-gray-700';
+    if (!priority) return "bg-gray-100 text-gray-700";
     const num = parseFloat(priority);
-    if (num >= 0.9) return 'bg-green-100 text-green-800';
-    if (num >= 0.7) return 'bg-blue-100 text-blue-800';
-    if (num >= 0.5) return 'bg-yellow-100 text-yellow-800';
-    return 'bg-gray-100 text-gray-700';
+    if (num >= 0.9) return "bg-green-100 text-green-800";
+    if (num >= 0.7) return "bg-blue-100 text-blue-800";
+    if (num >= 0.5) return "bg-yellow-100 text-yellow-800";
+    return "bg-gray-100 text-gray-700";
   };
 
   if (loading) {
@@ -194,7 +205,7 @@ const SitemapViewer: React.FC = () => {
         description="Browse all pages on PropertPro including properties, locations, developers, and user profiles."
         url="/sitemap-view"
       />
-      
+
       <div className="min-h-screen bg-gray-50 py-12">
         <div className="container mx-auto px-4 max-w-6xl">
           {/* Header */}
@@ -214,7 +225,8 @@ const SitemapViewer: React.FC = () => {
             </div>
 
             <p className="text-gray-600 mb-4">
-              Browse all pages available on PropertPro. This sitemap helps you discover properties, locations, developers, and more.
+              Browse all pages available on PropertPro. This sitemap helps you discover properties,
+              locations, developers, and more.
             </p>
 
             <div className="flex items-center space-x-4 text-sm text-gray-500">
@@ -262,7 +274,7 @@ const SitemapViewer: React.FC = () => {
                     {section.icon}
                     <h2 className="text-xl font-semibold">{section.name}</h2>
                     <span className="ml-auto text-sm bg-white bg-opacity-20 px-3 py-1 rounded-full">
-                      {section.urls.length} {section.urls.length === 1 ? 'page' : 'pages'}
+                      {section.urls.length} {section.urls.length === 1 ? "page" : "pages"}
                     </span>
                   </div>
                 </div>
@@ -280,12 +292,14 @@ const SitemapViewer: React.FC = () => {
                             to={url.loc}
                             className="text-blue-600 hover:text-blue-700 hover:underline flex-1 break-words text-sm font-medium"
                           >
-                            {url.loc || '/'}
+                            {url.loc || "/"}
                           </Link>
                         </div>
                         <div className="flex items-center space-x-2 mt-2 flex-wrap">
                           {url.priority && (
-                            <span className={`text-xs px-2 py-1 rounded ${getBadgeColor(url.priority)}`}>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${getBadgeColor(url.priority)}`}
+                            >
                               Priority: {url.priority}
                             </span>
                           )}
@@ -307,7 +321,7 @@ const SitemapViewer: React.FC = () => {
                   {/* Show more indicator if truncated */}
                   {section.urls.length >= 50 && (
                     <div className="mt-4 text-center text-sm text-gray-500">
-                      Showing first 50 pages. View the{' '}
+                      Showing first 50 pages. View the{" "}
                       <a
                         href="/sitemap.xml"
                         target="_blank"
@@ -315,7 +329,7 @@ const SitemapViewer: React.FC = () => {
                         className="text-blue-600 hover:underline"
                       >
                         XML sitemap
-                      </a>{' '}
+                      </a>{" "}
                       for complete list.
                     </div>
                   )}
@@ -329,15 +343,21 @@ const SitemapViewer: React.FC = () => {
             <h3 className="text-lg font-semibold text-gray-900 mb-4">About This Sitemap</h3>
             <div className="space-y-2 text-sm text-gray-600">
               <p>
-                This sitemap provides an overview of all pages available on PropertPro. For search engines,
-                the complete XML sitemap is available at{' '}
-                <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                This sitemap provides an overview of all pages available on PropertPro. For search
+                engines, the complete XML sitemap is available at{" "}
+                <a
+                  href="/sitemap.xml"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-blue-600 hover:underline"
+                >
                   /sitemap.xml
                 </a>
                 .
               </p>
               <p>
-                The sitemap is automatically updated as new properties, locations, and profiles are added to the platform.
+                The sitemap is automatically updated as new properties, locations, and profiles are
+                added to the platform.
               </p>
             </div>
           </div>
@@ -348,4 +368,3 @@ const SitemapViewer: React.FC = () => {
 };
 
 export default SitemapViewer;
-

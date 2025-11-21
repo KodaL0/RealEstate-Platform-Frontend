@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { X, Star, Send, AlertCircle, CheckCircle } from 'lucide-react';
-import { motion } from 'framer-motion';
-import api from '../config/api';
-import { UserBasic } from '../types';
+import { motion } from "framer-motion";
+import { AlertCircle, CheckCircle, Send, Star, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import api from "../config/api";
+import type { UserBasic } from "../types";
 
 interface ReviewFormProps {
   reviewee: UserBasic;
@@ -19,30 +20,30 @@ interface ReviewFormData {
 const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSuccess }) => {
   const [formData, setFormData] = useState<ReviewFormData>({
     overall_rating: 0,
-    content: ''
+    content: "",
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
   const handleOverallRatingChange = (rating: number) => {
-    setFormData(prev => ({ ...prev, overall_rating: rating }));
+    setFormData((prev) => ({ ...prev, overall_rating: rating }));
   };
 
   const handleInputChange = (field: keyof ReviewFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const validateForm = (): string | null => {
     if (formData.overall_rating === 0) {
-      return 'Please select an overall rating';
+      return "Please select an overall rating";
     }
     if (!formData.content.trim()) {
-      return 'Please write a review comment';
+      return "Please write a review comment";
     }
     if (formData.content.trim().length < 10) {
-      return 'Review comment must be at least 10 characters long';
+      return "Review comment must be at least 10 characters long";
     }
     return null;
   };
@@ -63,22 +64,22 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
       const submitData = {
         reviewee_id: reviewee.id,
         overall_rating: formData.overall_rating,
-        content: formData.content
+        content: formData.content,
       };
 
       await api.reviews.createReview(submitData);
       setSuccess(true);
-      
+
       // Show success message briefly then close
       setTimeout(() => {
         onSuccess();
         onClose();
         resetForm();
       }, 2000);
-
-    } catch (error: any) {
-      console.error('Error submitting review:', error);
-      setError(error.response?.data?.detail || 'Failed to submit review. Please try again.');
+    } catch (error: unknown) {
+      console.error("Error submitting review:", error);
+      const apiError = error as { response?: { data?: { detail?: string } } };
+      setError(apiError.response?.data?.detail || "Failed to submit review. Please try again.");
     } finally {
       setIsSubmitting(false);
     }
@@ -87,15 +88,19 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
   const resetForm = () => {
     setFormData({
       overall_rating: 0,
-      content: ''
+      content: "",
     });
     setError(null);
     setSuccess(false);
   };
 
-  const renderStarRating = (currentRating: number, onRatingChange: (rating: number) => void, size: 'sm' | 'md' = 'md') => {
-    const sizeClass = size === 'sm' ? 'h-5 w-5' : 'h-6 w-6';
-    
+  const renderStarRating = (
+    currentRating: number,
+    onRatingChange: (rating: number) => void,
+    size: "sm" | "md" = "md",
+  ) => {
+    const sizeClass = size === "sm" ? "h-5 w-5" : "h-6 w-6";
+
     return (
       <div className="flex items-center space-x-1">
         {[1, 2, 3, 4, 5].map((star) => (
@@ -105,8 +110,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
             onClick={() => onRatingChange(star)}
             className={`${sizeClass} transition-colors hover:scale-110 transform ${
               star <= currentRating
-                ? 'text-yellow-400 fill-current'
-                : 'text-gray-300 hover:text-yellow-300'
+                ? "text-yellow-400 fill-current"
+                : "text-gray-300 hover:text-yellow-300"
             }`}
           >
             <Star className={sizeClass} />
@@ -130,7 +135,9 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
           <div className="p-8 text-center">
             <CheckCircle className="h-16 w-16 text-green-500 mx-auto mb-4" />
             <h3 className="text-2xl font-bold text-gray-900 mb-2">Review Submitted!</h3>
-            <p className="text-gray-600">Thank you for your feedback. Your review has been published.</p>
+            <p className="text-gray-600">
+              Thank you for your feedback. Your review has been published.
+            </p>
           </div>
         ) : (
           <>
@@ -140,6 +147,7 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
                 Write a Review for {reviewee.username}
               </h2>
               <button
+                type="button"
                 onClick={onClose}
                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
               >
@@ -158,25 +166,37 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
 
               {/* Overall Rating */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-3">
+                <label
+                  htmlFor="overall-rating"
+                  className="block text-sm font-semibold text-gray-900 mb-3"
+                  id="overall-rating-label"
+                >
                   Overall Rating *
                 </label>
-                <div className="flex items-center space-x-3">
+                <fieldset
+                  id="overall-rating"
+                  className="flex items-center space-x-3"
+                  aria-labelledby="overall-rating-label"
+                >
                   {renderStarRating(formData.overall_rating, handleOverallRatingChange)}
                   <span className="text-sm text-gray-600">
-                    {formData.overall_rating > 0 ? `${formData.overall_rating}/5` : 'Select rating'}
+                    {formData.overall_rating > 0 ? `${formData.overall_rating}/5` : "Select rating"}
                   </span>
-                </div>
+                </fieldset>
               </div>
 
               {/* Review Content */}
               <div>
-                <label className="block text-sm font-semibold text-gray-900 mb-2">
+                <label
+                  htmlFor="review-content"
+                  className="block text-sm font-semibold text-gray-900 mb-2"
+                >
                   Your Review *
                 </label>
                 <textarea
+                  id="review-content"
                   value={formData.content}
-                  onChange={(e) => handleInputChange('content', e.target.value)}
+                  onChange={(e) => handleInputChange("content", e.target.value)}
                   placeholder="Share your experience working with this person. What made them stand out?"
                   rows={6}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
@@ -201,8 +221,8 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
                   disabled={isSubmitting || formData.overall_rating === 0}
                   className={`px-6 py-3 rounded-lg transition-colors flex items-center ${
                     isSubmitting || formData.overall_rating === 0
-                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-blue-600 text-white hover:bg-blue-700"
                   }`}
                 >
                   {isSubmitting ? (
@@ -226,4 +246,4 @@ const ReviewForm: React.FC<ReviewFormProps> = ({ reviewee, isOpen, onClose, onSu
   );
 };
 
-export default ReviewForm; 
+export default ReviewForm;

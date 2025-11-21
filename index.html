@@ -37,7 +37,7 @@
     <script>
       // Initialize dataLayer and gtag placeholder
       window.dataLayer = window.dataLayer || [];
-      function gtag() { dataLayer.push(arguments); }
+      function gtag(...args) { dataLayer.push(...args); }
       
       // Flag to track if GA has been initialized
       window.gaInitialized = false;
@@ -46,7 +46,7 @@
        * Initialize Google Analytics (only called after user consent)
        * This function is called by the React app after consent is obtained
        */
-      window.initializeGoogleAnalytics = function() {
+      window.initializeGoogleAnalytics = () => {
         // Prevent double initialization
         if (window.gaInitialized) {
           console.log('Google Analytics already initialized');
@@ -61,7 +61,7 @@
         script.src = 'https://www.googletagmanager.com/gtag/js?id=G-7S7FKWE6F7';
         document.head.appendChild(script);
         
-        script.onload = function() {
+        script.onload = () => {
           // Configure GA with privacy-friendly defaults
           gtag('js', new Date());
           gtag('config', 'G-7S7FKWE6F7', {
@@ -74,7 +74,7 @@
           console.log('Google Analytics initialized successfully');
         };
         
-        script.onerror = function() {
+        script.onerror = () => {
           console.error('Failed to load Google Analytics');
         };
       };
@@ -82,7 +82,7 @@
       /**
        * Disable Google Analytics (called when consent is withdrawn)
        */
-      window.disableGoogleAnalytics = function() {
+      window.disableGoogleAnalytics = () => {
         if (window.gaInitialized) {
           // Set opt-out property
           window['ga-disable-G-7S7FKWE6F7'] = true;

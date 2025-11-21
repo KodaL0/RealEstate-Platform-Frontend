@@ -2,8 +2,8 @@
  * Legal Documents API Service
  * Handles retrieval and acceptance of versioned legal documents
  */
-import api from '../config/api';
-import { apiCache, cacheKey } from '../utils/apiCache';
+import api from "../config/api";
+import { apiCache, cacheKey } from "../utils/apiCache";
 
 // TypeScript interfaces for Legal Document responses
 export interface LegalDocument {
@@ -17,18 +17,24 @@ export interface LegalDocument {
   requires_acceptance: boolean;
   has_accepted: boolean;
   // Privacy Policy specific fields
-  processing_purposes?: Record<string, {
-    legal_basis: string;
-    description: string;
-    required: boolean;
-    retention?: string;
-  }>;
+  processing_purposes?: Record<
+    string,
+    {
+      legal_basis: string;
+      description: string;
+      required: boolean;
+      retention?: string;
+    }
+  >;
   data_retention?: Record<string, string>;
-  user_rights?: Record<string, {
-    article: string;
-    description: string;
-    endpoint: string;
-  }>;
+  user_rights?: Record<
+    string,
+    {
+      article: string;
+      description: string;
+      endpoint: string;
+    }
+  >;
   controller_info?: {
     name: string;
     email: string;
@@ -52,12 +58,15 @@ export interface LegalDocumentList {
 }
 
 export interface AcceptanceStatus {
-  current_documents: Record<string, {
-    version: string;
-    requires_acceptance: boolean;
-    accepted: boolean;
-    accepted_at: string | null;
-  }>;
+  current_documents: Record<
+    string,
+    {
+      version: string;
+      requires_acceptance: boolean;
+      accepted: boolean;
+      accepted_at: string | null;
+    }
+  >;
   needs_acceptance: Array<{
     document_type: string;
     version: string;
@@ -88,13 +97,14 @@ export interface AcceptDocumentResponse {
   accepted_at: string;
 }
 
+// biome-ignore lint/complexity/noStaticOnlyClass: API service pattern - methods are logically grouped
 export class LegalDocumentsAPI {
   /**
    * List all available legal documents
    */
   static async listDocuments(): Promise<LegalDocumentList> {
-    const response = await api.get('users/legal');
-    return response.data;
+    const response = await api.get("users/legal");
+    return response.data as LegalDocumentList;
   }
 
   /**
@@ -102,13 +112,18 @@ export class LegalDocumentsAPI {
    * Cached for 5 minutes to reduce API calls
    */
   static async getDocument(
-    documentType: 'privacy_policy' | 'terms_conditions' | 'cookie_policy' | 'acceptable_use' | 'data_processing',
-    version?: string
+    documentType:
+      | "privacy_policy"
+      | "terms_conditions"
+      | "cookie_policy"
+      | "acceptable_use"
+      | "data_processing",
+    version?: string,
   ): Promise<LegalDocument> {
     // Check cache first
     const key = cacheKey.legalDocument(documentType, version);
     const cached = apiCache.get<LegalDocument>(key);
-    
+
     if (cached) {
       console.log(`[Cache Hit] Legal document: ${documentType}`);
       return cached;
@@ -117,32 +132,33 @@ export class LegalDocumentsAPI {
     // Fetch from API
     const params = version ? { version } : {};
     const response = await api.get(`users/legal/${documentType}`, { params });
-    
+
     // Cache for 5 minutes
-    apiCache.set(key, response.data, 5 * 60 * 1000);
-    
-    return response.data;
+    const documentData = response.data as LegalDocument;
+    apiCache.set(key, documentData, 5 * 60 * 1000);
+
+    return documentData;
   }
 
   /**
    * Get Privacy Policy
    */
   static async getPrivacyPolicy(version?: string): Promise<LegalDocument> {
-    return this.getDocument('privacy_policy', version);
+    return LegalDocumentsAPI.getDocument("privacy_policy", version);
   }
 
   /**
    * Get Terms & Conditions
    */
   static async getTermsAndConditions(version?: string): Promise<LegalDocument> {
-    return this.getDocument('terms_conditions', version);
+    return LegalDocumentsAPI.getDocument("terms_conditions", version);
   }
 
   /**
    * Get Cookie Policy
    */
   static async getCookiePolicy(version?: string): Promise<LegalDocument> {
-    return this.getDocument('cookie_policy', version);
+    return LegalDocumentsAPI.getDocument("cookie_policy", version);
   }
 
   /**
@@ -151,20 +167,20 @@ export class LegalDocumentsAPI {
   static async acceptDocument(
     documentType: string,
     version?: string,
-    userId?: number
+    userId?: number,
   ): Promise<AcceptDocumentResponse> {
     const data = version ? { version } : {};
     const response = await api.post(`users/legal/${documentType}/accept`, data);
-    
+
     // Invalidate acceptance status cache after accepting
     if (userId) {
       apiCache.invalidate(cacheKey.legalAcceptance(userId));
     }
-    
+
     // Also invalidate the specific document cache to refresh acceptance status
     apiCache.invalidate(cacheKey.legalDocument(documentType, version));
-    
-    return response.data;
+
+    return response.data as AcceptDocumentResponse;
   }
 
   /**
@@ -176,7 +192,7 @@ export class LegalDocumentsAPI {
     if (userId && !skipCache) {
       const key = cacheKey.legalAcceptance(userId);
       const cached = apiCache.get<AcceptanceStatus>(key);
-      
+
       if (cached) {
         console.log(`[Cache Hit] Legal acceptance status for user ${userId}`);
         return cached;
@@ -184,17 +200,18 @@ export class LegalDocumentsAPI {
     }
 
     // Fetch from API
-    console.log(`[API Call] Fetching legal acceptance status for user ${userId || 'current'}`);
-    const response = await api.get('users/legal/acceptance-status');
-    
-    console.log('[API Response] Acceptance status:', response.data);
-    
+    console.log(`[API Call] Fetching legal acceptance status for user ${userId || "current"}`);
+    const response = await api.get("users/legal/acceptance-status");
+
+    console.log("[API Response] Acceptance status:", response.data);
+
     // Cache for 1 minute (shorter TTL since acceptance status changes more frequently)
+    const acceptanceData = response.data as AcceptanceStatus;
     if (userId) {
-      apiCache.set(cacheKey.legalAcceptance(userId), response.data, 1 * 60 * 1000);
+      apiCache.set(cacheKey.legalAcceptance(userId), acceptanceData, 1 * 60 * 1000);
     }
-    
-    return response.data;
+
+    return acceptanceData;
   }
 
   /**
@@ -202,9 +219,9 @@ export class LegalDocumentsAPI {
    */
   static async needsAcceptance(): Promise<boolean> {
     try {
-      const status = await this.getAcceptanceStatus();
+      const status = await LegalDocumentsAPI.getAcceptanceStatus();
       return status.needs_acceptance.length > 0;
-    } catch (error) {
+    } catch (_error) {
       // If not authenticated or error, return false
       return false;
     }
@@ -212,4 +229,3 @@ export class LegalDocumentsAPI {
 }
 
 export default LegalDocumentsAPI;
-

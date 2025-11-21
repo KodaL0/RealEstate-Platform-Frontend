@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { Building2, MapPin, Search, Filter, ChevronRight, Image as ImageIcon } from "lucide-react";
 import { motion } from "framer-motion";
-import { Project } from "../types";
+import { Building2, ChevronRight, Filter, Image as ImageIcon, MapPin, Search } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../config/api";
+import type { Project } from "../types";
 
 const DeveloperProjects = () => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -20,7 +20,12 @@ const DeveloperProjects = () => {
         // Real API call (your api wrapper prefixes /api)
         const { data } = await api.get("dev/v1/projects");
         // DRF-style {results, count} OR plain array
-        const raw: any[] = Array.isArray(data) ? data : (data?.results ?? []);
+        const dataTyped = data as { results?: unknown[] } | unknown[];
+        const raw: unknown[] = Array.isArray(dataTyped)
+          ? dataTyped
+          : dataTyped && typeof dataTyped === "object" && "results" in dataTyped
+            ? ((dataTyped as { results?: unknown[] }).results ?? [])
+            : [];
         const normalized = raw.map(normalizeProject);
         setProjects(normalized);
         setFilteredProjects(normalized);
@@ -43,7 +48,7 @@ const DeveloperProjects = () => {
     if (searchTerm) {
       const q = searchTerm.toLowerCase();
       filtered = filtered.filter((p) =>
-        [p.name, p.location, p.description].some((t) => (t || "").toLowerCase().includes(q))
+        [p.name, p.location, p.description].some((t) => (t || "").toLowerCase().includes(q)),
       );
     }
 
@@ -96,7 +101,9 @@ const DeveloperProjects = () => {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Developer Projects</h1>
-          <p className="text-gray-600">Discover exceptional developments from Cyprus's leading property developers</p>
+          <p className="text-gray-600">
+            Discover exceptional developments from Cyprus's leading property developers
+          </p>
         </div>
 
         {/* Filters */}
@@ -165,7 +172,12 @@ const DeveloperProjects = () => {
         ) : (
           <div className="space-y-8">
             {filteredProjects.map((project, index) => (
-              <motion.div key={project.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }}>
+              <motion.div
+                key={project.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+              >
                 <ProjectCard project={project} />
               </motion.div>
             ))}
@@ -220,7 +232,7 @@ function extractProjectImageUrls(p: any): string[] {
     buckets.push(
       p.units
         .filter(Boolean)
-        .map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets)
+        .map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets),
     );
   }
   // Flatten → absolute → dedupe
@@ -252,14 +264,14 @@ const ProjectCard = ({ project }: { project: Project }) => {
     available: "Available",
   } as const;
 
-  const mainImg = project.mainImage || (project.images && project.images[0]) || "";
+  const mainImg = project.mainImage || project.images?.[0] || "";
 
   const countryChip = project.country
     ? project.country === "Cyprus"
       ? "🇨🇾 Cyprus"
       : project.country === "Greece"
-      ? "🇬🇷 Greece"
-      : `🌍 ${project.country}`
+        ? "🇬🇷 Greece"
+        : `🌍 ${project.country}`
     : null;
 
   return (
@@ -277,14 +289,16 @@ const ProjectCard = ({ project }: { project: Project }) => {
             onError={(e) => {
               // If the URL is broken, show the no-image panel instead of a mock stock photo
               (e.currentTarget as HTMLImageElement).style.display = "none";
-              const fallback = (e.currentTarget.nextSibling as HTMLElement);
+              const fallback = e.currentTarget.nextSibling as HTMLElement;
               if (fallback) fallback.classList.remove("hidden");
             }}
           />
         ) : null}
 
         {/* No Image Panel (hidden if image exists and loads) */}
-        <div className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}>
+        <div
+          className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}
+        >
           <div className="text-center text-white/90">
             <div className="mx-auto mb-3 w-14 h-14 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
               <ImageIcon className="w-7 h-7" />
@@ -375,13 +389,17 @@ const ProjectCard = ({ project }: { project: Project }) => {
             </div>
             <div>
               <span className="text-gray-500 text-sm block">Total Units</span>
-              <span className="font-semibold text-lg text-gray-900">{project.totalUnits ?? "—"}</span>
+              <span className="font-semibold text-lg text-gray-900">
+                {project.totalUnits ?? "—"}
+              </span>
             </div>
           </div>
           <div className="text-right">
             <div className="text-sm text-gray-500 mb-1">Available Units</div>
             <div className="flex items-center">
-              <span className="font-bold text-xl text-green-600 mr-2">{project.availableUnits ?? 0}</span>
+              <span className="font-bold text-xl text-green-600 mr-2">
+                {project.availableUnits ?? 0}
+              </span>
               <span className="text-gray-400">/ {project.totalUnits ?? 0}</span>
             </div>
             <div className="w-24 bg-gray-200 rounded-full h-2 mt-2">
@@ -430,8 +448,8 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images,        // ✅ absolute URLs collected from many shapes
-    mainImage,     // ✅ robust hero fallback
+    images, // ✅ absolute URLs collected from many shapes
+    mainImage, // ✅ robust hero fallback
     features: p.features ?? [],
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,

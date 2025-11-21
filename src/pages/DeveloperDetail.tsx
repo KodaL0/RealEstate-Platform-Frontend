@@ -1,27 +1,24 @@
+import { AnimatePresence, motion } from "framer-motion";
 import {
-  useState,
-  useEffect,
-} from "react";
-import { useParams, Link } from "react-router-dom";
-import {
-  Building2,
-  MapPin,
-  Calendar,
-  Star,
-  Award,
-  Phone,
-  Mail,
-  Globe,
   ArrowLeft,
+  Award,
+  Building2,
+  Calendar,
   ChevronRight,
-  Image as ImageIcon
+  Globe,
+  Image as ImageIcon,
+  Mail,
+  MapPin,
+  Phone,
+  Star,
 } from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Developer, Project } from "../types";
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { SEO } from "../components/SEO";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
+import type { Developer, Project } from "../types";
 import { getProjectUrl } from "../utils/developerUtils";
-import { SEO } from "../components/SEO";
 
 const DeveloperDetail = () => {
   const { id, identifier } = useParams<{ id?: string; identifier?: string }>();
@@ -29,7 +26,7 @@ const DeveloperDetail = () => {
   const [projects, setProjects] = useState<Project[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'projects' | 'contact'>('overview');
+  const [activeTab, setActiveTab] = useState<"overview" | "projects" | "contact">("overview");
 
   useEffect(() => {
     const fetchDeveloperData = async () => {
@@ -43,10 +40,17 @@ const DeveloperDetail = () => {
         // org detail - use public endpoint
         const orgData = await developersApi.organizations.getPublic(developerIdOrSlug);
         // org projects (filter by organization) - use public endpoint
-        const projData = await developersApi.projects.listPublic({ organization: Number(orgData.id) });
+        const projData = await developersApi.projects.listPublic({
+          organization: Number(orgData.id),
+        });
 
         const org = normalizeDeveloperOrg(orgData);
-        const projResults: any[] = Array.isArray(projData) ? projData : (projData.results ?? []);
+        const projDataTyped = projData as { results?: unknown[] } | unknown[];
+        const projResults: unknown[] = Array.isArray(projDataTyped)
+          ? projDataTyped
+          : projDataTyped && typeof projDataTyped === "object" && "results" in projDataTyped
+            ? ((projDataTyped as { results?: unknown[] }).results ?? [])
+            : [];
         const normalizedProjects = projResults.map(normalizeProject);
 
         setDeveloper(org);
@@ -104,23 +108,25 @@ const DeveloperDetail = () => {
   }
 
   const tabs = [
-    { id: 'overview', label: 'Overview' },
-    { id: 'projects', label: `Projects (${projects.length})` },
-    { id: 'contact', label: 'Contact' },
+    { id: "overview", label: "Overview" },
+    { id: "projects", label: `Projects (${projects.length})` },
+    { id: "contact", label: "Contact" },
   ];
 
   // Generate SEO data
   const developerTitle = developer.name;
-  const developerDescription = developer.description 
-    ? developer.description 
-    : `${developer.name} is a real estate developer in ${developer.location}${developer.country ? `, ${developer.country}` : ''} with ${developer.totalProjects || projects.length} projects. ${developer.rating ? `Rated ${developer.rating}/5 from ${developer.reviewCount || 0} reviews.` : ''}`;
-  
-  const developerUrl = developer.slug ? `/developers/${developer.slug}` : `/developer/${developer.id}`;
+  const developerDescription = developer.description
+    ? developer.description
+    : `${developer.name} is a real estate developer in ${developer.location}${developer.country ? `, ${developer.country}` : ""} with ${developer.totalProjects || projects.length} projects. ${developer.rating ? `Rated ${developer.rating}/5 from ${developer.reviewCount || 0} reviews.` : ""}`;
+
+  const developerUrl = developer.slug
+    ? `/developers/${developer.slug}`
+    : `/developer/${developer.id}`;
   const developerImage = developer.image || undefined;
-  
+
   // Build social links array
   const socialLinks = developer.website ? [developer.website] : undefined;
-  
+
   // Build founding date
   const foundingDate = developer.established ? `${developer.established}-01-01` : undefined;
 
@@ -143,28 +149,34 @@ const DeveloperDetail = () => {
           telephone: developer.phone,
           email: developer.email,
           url: developer.website,
-          address: `${developer.location}${developer.country ? `, ${developer.country}` : ''}`,
+          address: `${developer.location}${developer.country ? `, ${developer.country}` : ""}`,
           logo: developer.image,
           foundingDate: foundingDate,
           numberOfEmployees: undefined,
-          aggregateRating: developer.rating && developer.reviewCount ? {
-            ratingValue: developer.rating,
-            reviewCount: developer.reviewCount
-          } : undefined,
-          sameAs: socialLinks
+          aggregateRating:
+            developer.rating && developer.reviewCount
+              ? {
+                  ratingValue: developer.rating,
+                  reviewCount: developer.reviewCount,
+                }
+              : undefined,
+          sameAs: socialLinks,
         }}
         breadcrumbs={[
-          { name: 'Home', url: '/' },
-          { name: 'Developers', url: '/developers' },
-          { name: developer.name, url: developerUrl }
+          { name: "Home", url: "/" },
+          { name: "Developers", url: "/developers" },
+          { name: developer.name, url: developerUrl },
         ]}
       />
-      
+
       {/* Hero Section */}
       <div className="relative h-96 bg-gray-900 pt-20">
         <div className="absolute inset-0">
           <img
-            src={developer.image || "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200"}
+            src={
+              developer.image ||
+              "https://images.pexels.com/photos/323780/pexels-photo-323780.jpeg?auto=compress&cs=tinysrgb&w=1200"
+            }
             alt={developer.name}
             className="w-full h-full object-cover opacity-60"
           />
@@ -182,7 +194,10 @@ const DeveloperDetail = () => {
             <div className="flex items-center space-x-6 text-white/90">
               <div className="flex items-center">
                 <MapPin className="h-4 w-4 mr-2" />
-                <span>{developer.location}{developer.country ? `, ${developer.country}` : ""}</span>
+                <span>
+                  {developer.location}
+                  {developer.country ? `, ${developer.country}` : ""}
+                </span>
               </div>
               {developer.established && (
                 <div className="flex items-center">
@@ -193,7 +208,12 @@ const DeveloperDetail = () => {
               {typeof developer.rating === "number" && (
                 <div className="flex items-center">
                   <Star className="h-4 w-4 mr-2 text-yellow-400 fill-current" />
-                  <span>{developer.rating}{typeof developer.reviewCount === "number" ? ` (${developer.reviewCount} reviews)` : ""}</span>
+                  <span>
+                    {developer.rating}
+                    {typeof developer.reviewCount === "number"
+                      ? ` (${developer.reviewCount} reviews)`
+                      : ""}
+                  </span>
                 </div>
               )}
             </div>
@@ -211,8 +231,8 @@ const DeveloperDetail = () => {
                 onClick={() => setActiveTab(tab.id as any)}
                 className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
                   activeTab === tab.id
-                    ? 'border-blue-500 text-blue-600'
-                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                    ? "border-blue-500 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
                 }`}
               >
                 {tab.label}
@@ -225,7 +245,7 @@ const DeveloperDetail = () => {
       {/* Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <AnimatePresence mode="wait">
-          {activeTab === 'overview' && (
+          {activeTab === "overview" && (
             <motion.div
               key="overview"
               initial={{ opacity: 0, y: 20 }}
@@ -237,11 +257,11 @@ const DeveloperDetail = () => {
                 {/* Main Content */}
                 <div className="lg:col-span-2">
                   <div className="bg-white rounded-xl shadow-sm p-8 mb-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-4">About {developer.name}</h2>
+                    <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                      About {developer.name}
+                    </h2>
                     {developer.description && (
-                      <p className="text-gray-600 leading-relaxed mb-6">
-                        {developer.description}
-                      </p>
+                      <p className="text-gray-600 leading-relaxed mb-6">{developer.description}</p>
                     )}
 
                     <div className="grid grid-cols-2 gap-6">
@@ -284,21 +304,29 @@ const DeveloperDetail = () => {
                           <Award className="h-5 w-5 text-blue-600 mr-2" />
                           <span className="text-gray-600">Total Projects</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.totalProjects ?? projects.length}</span>
+                        <span className="font-semibold text-gray-900">
+                          {developer.totalProjects ?? projects.length}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <Building2 className="h-5 w-5 text-green-600 mr-2" />
                           <span className="text-gray-600">Active Projects</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.activeProjects ?? projects.filter(p => p.status !== "completed").length}</span>
+                        <span className="font-semibold text-gray-900">
+                          {developer.activeProjects ??
+                            projects.filter((p) => p.status !== "completed").length}
+                        </span>
                       </div>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center">
                           <Star className="h-5 w-5 text-yellow-500 mr-2" />
                           <span className="text-gray-600">Completed</span>
                         </div>
-                        <span className="font-semibold text-gray-900">{developer.completedProjects ?? projects.filter(p => p.status === "completed").length}</span>
+                        <span className="font-semibold text-gray-900">
+                          {developer.completedProjects ??
+                            projects.filter((p) => p.status === "completed").length}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -310,7 +338,10 @@ const DeveloperDetail = () => {
                       {developer.phone && (
                         <div className="flex items-center">
                           <Phone className="h-4 w-4 text-gray-400 mr-3" />
-                          <a href={`tel:${developer.phone}`} className="text-blue-600 hover:text-blue-700">
+                          <a
+                            href={`tel:${developer.phone}`}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
                             {developer.phone}
                           </a>
                         </div>
@@ -318,7 +349,10 @@ const DeveloperDetail = () => {
                       {developer.email && (
                         <div className="flex items-center">
                           <Mail className="h-4 w-4 text-gray-400 mr-3" />
-                          <a href={`mailto:${developer.email}`} className="text-blue-600 hover:text-blue-700">
+                          <a
+                            href={`mailto:${developer.email}`}
+                            className="text-blue-600 hover:text-blue-700"
+                          >
                             {developer.email}
                           </a>
                         </div>
@@ -343,7 +377,7 @@ const DeveloperDetail = () => {
             </motion.div>
           )}
 
-          {activeTab === 'projects' && (
+          {activeTab === "projects" && (
             <motion.div
               key="projects"
               initial={{ opacity: 0, y: 20 }}
@@ -352,14 +386,18 @@ const DeveloperDetail = () => {
               transition={{ duration: 0.3 }}
             >
               <div className="mb-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-2">Projects by {developer.name}</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-2">
+                  Projects by {developer.name}
+                </h2>
                 <p className="text-gray-600">Explore our portfolio of exceptional developments</p>
               </div>
 
               {projects.length === 0 ? (
                 <div className="text-center py-16">
                   <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No projects available</h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
+                    No projects available
+                  </h3>
                   <p className="text-gray-600">This developer hasn't published any projects yet.</p>
                 </div>
               ) : (
@@ -379,7 +417,7 @@ const DeveloperDetail = () => {
             </motion.div>
           )}
 
-          {activeTab === 'contact' && (
+          {activeTab === "contact" && (
             <motion.div
               key="contact"
               initial={{ opacity: 0, y: 20 }}
@@ -400,7 +438,10 @@ const DeveloperDetail = () => {
                             <Phone className="h-5 w-5 text-gray-400 mr-3" />
                             <div>
                               <p className="text-sm text-gray-500">Phone</p>
-                              <a href={`tel:${developer.phone}`} className="text-blue-600 hover:text-blue-700 font-medium">
+                              <a
+                                href={`tel:${developer.phone}`}
+                                className="text-blue-600 hover:text-blue-700 font-medium"
+                              >
                                 {developer.phone}
                               </a>
                             </div>
@@ -411,7 +452,10 @@ const DeveloperDetail = () => {
                             <Mail className="h-5 w-5 text-gray-400 mr-3" />
                             <div>
                               <p className="text-sm text-gray-500">Email</p>
-                              <a href={`mailto:${developer.email}`} className="text-blue-600 hover:text-blue-700 font-medium">
+                              <a
+                                href={`mailto:${developer.email}`}
+                                className="text-blue-600 hover:text-blue-700 font-medium"
+                              >
                                 {developer.email}
                               </a>
                             </div>
@@ -438,7 +482,8 @@ const DeveloperDetail = () => {
                           <div>
                             <p className="text-sm text-gray-500">Location</p>
                             <p className="font-medium text-gray-900">
-                              {developer.location}{developer.country ? `, ${developer.country}` : ""}
+                              {developer.location}
+                              {developer.country ? `, ${developer.country}` : ""}
                             </p>
                           </div>
                         </div>
@@ -450,11 +495,15 @@ const DeveloperDetail = () => {
                       <div className="space-y-3">
                         <div>
                           <p className="text-sm text-gray-500">Established</p>
-                          <p className="font-medium text-gray-900">{developer.established ?? "—"}</p>
+                          <p className="font-medium text-gray-900">
+                            {developer.established ?? "—"}
+                          </p>
                         </div>
                         <div>
                           <p className="text-sm text-gray-500">Total Projects</p>
-                          <p className="font-medium text-gray-900">{developer.totalProjects ?? projects.length}</p>
+                          <p className="font-medium text-gray-900">
+                            {developer.totalProjects ?? projects.length}
+                          </p>
                         </div>
                         {typeof developer.rating === "number" && (
                           <div>
@@ -463,7 +512,9 @@ const DeveloperDetail = () => {
                               <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
                               <span className="font-medium text-gray-900">{developer.rating}</span>
                               {typeof developer.reviewCount === "number" && (
-                                <span className="text-gray-500 ml-1">({developer.reviewCount} reviews)</span>
+                                <span className="text-gray-500 ml-1">
+                                  ({developer.reviewCount} reviews)
+                                </span>
                               )}
                             </div>
                           </div>
@@ -484,12 +535,15 @@ const DeveloperDetail = () => {
 /* -------------------------------------------
    Image + URL Helpers (for robust image fields)
 -------------------------------------------- */
-const API_BASE =
-  (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
+const API_BASE = (api as any)?.defaults?.baseURL?.replace(/\/$/, "") || window.location.origin;
 
 function toAbsoluteUrl(u?: string | null): string | undefined {
   if (!u) return undefined;
-  try { return new URL(u, API_BASE).href; } catch { return u || undefined; }
+  try {
+    return new URL(u, API_BASE).href;
+  } catch {
+    return u || undefined;
+  }
 }
 
 function pickImageStrings(input: any): string[] {
@@ -515,7 +569,9 @@ function extractProjectImageUrls(p: any): string[] {
   buckets.push(p.main_image, p.cover_image, p.hero_image, p.thumbnail);
   if (Array.isArray(p.units)) {
     buckets.push(
-      p.units.filter(Boolean).map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets)
+      p.units
+        .filter(Boolean)
+        .map((u: any) => u?.media || u?.images || u?.gallery || u?.photo || u?.assets),
     );
   }
   const seen = new Set<string>();
@@ -533,23 +589,26 @@ function extractProjectImageUrls(p: any): string[] {
 // Project Card Component (NO MOCK — uses actual API images)
 const ProjectCard = ({ project, developer }: { project: Project; developer: Developer }) => {
   const statusColors: Record<Project["status"], string> = {
-    planning: 'bg-yellow-100 text-yellow-800',
-    construction: 'bg-blue-100 text-blue-800',
-    completed: 'bg-green-100 text-green-800',
-    available: 'bg-purple-100 text-purple-800'
+    planning: "bg-yellow-100 text-yellow-800",
+    construction: "bg-blue-100 text-blue-800",
+    completed: "bg-green-100 text-green-800",
+    available: "bg-purple-100 text-purple-800",
   };
 
   const statusLabels: Record<Project["status"], string> = {
-    planning: 'Planning',
-    construction: 'Under Construction',
-    completed: 'Completed',
-    available: 'Available'
+    planning: "Planning",
+    construction: "Under Construction",
+    completed: "Completed",
+    available: "Available",
   };
 
-  const mainImg = project.mainImage || (project.images && project.images[0]) || "";
+  const mainImg = project.mainImage || project.images?.[0] || "";
 
   return (
-    <Link to={getProjectUrl(developer, project)} className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group">
+    <Link
+      to={getProjectUrl(developer, project)}
+      className="bg-white rounded-xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden group"
+    >
       <div className="relative h-64 overflow-hidden">
         {mainImg ? (
           <img
@@ -559,14 +618,16 @@ const ProjectCard = ({ project, developer }: { project: Project; developer: Deve
             loading="lazy"
             onError={(e) => {
               (e.currentTarget as HTMLImageElement).style.display = "none";
-              const fallback = (e.currentTarget.nextSibling as HTMLElement);
+              const fallback = e.currentTarget.nextSibling as HTMLElement;
               if (fallback) fallback.classList.remove("hidden");
             }}
           />
         ) : null}
 
         {/* Graceful no-image panel instead of mock */}
-        <div className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}>
+        <div
+          className={`${mainImg ? "hidden" : ""} absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-700 flex items-center justify-center`}
+        >
           <div className="text-center text-white/90">
             <div className="mx-auto mb-3 w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center">
               <ImageIcon className="w-6 h-6" />
@@ -576,14 +637,17 @@ const ProjectCard = ({ project, developer }: { project: Project; developer: Deve
         </div>
 
         <div className="absolute top-4 left-4">
-          <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status]}`}>
+          <span
+            className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusColors[project.status]}`}
+          >
             {statusLabels[project.status]}
           </span>
         </div>
         <div className="absolute top-4 right-4">
           {project.country && (
             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-white/90 text-gray-800">
-              {project.country === 'Cyprus' ? '🇨🇾' : project.country === 'Greece' ? '🇬🇷' : '🌍'} {project.country}
+              {project.country === "Cyprus" ? "🇨🇾" : project.country === "Greece" ? "🇬🇷" : "🌍"}{" "}
+              {project.country}
             </span>
           )}
         </div>
@@ -602,9 +666,7 @@ const ProjectCard = ({ project, developer }: { project: Project; developer: Deve
           <span className="text-sm">{project.location}</span>
         </div>
 
-        <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-          {project.description}
-        </p>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
 
         <div className="flex items-center justify-between text-sm">
           <div>
@@ -612,7 +674,8 @@ const ProjectCard = ({ project, developer }: { project: Project; developer: Deve
               <>
                 <span className="text-gray-500">From </span>
                 <span className="font-semibold text-gray-900">
-                  {project.priceRange.currency === "EUR" ? "€" : ""}{project.priceRange.min.toLocaleString()}
+                  {project.priceRange.currency === "EUR" ? "€" : ""}
+                  {project.priceRange.min.toLocaleString()}
                 </span>
               </>
             ) : (
@@ -681,8 +744,8 @@ function normalizeProject(p: any): Project {
     },
     propertyTypes: p.property_types ?? [],
     amenities: p.amenities ?? [],
-    images,       // ✅ absolute URLs from API (no mock)
-    mainImage,    // ✅ robust hero fallback
+    images, // ✅ absolute URLs from API (no mock)
+    mainImage, // ✅ robust hero fallback
     features: p.features ?? [],
     createdAt: p.created_at ?? p.createdAt ?? undefined,
     updatedAt: p.updated_at ?? p.updatedAt ?? undefined,

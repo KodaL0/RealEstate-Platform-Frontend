@@ -1,5 +1,5 @@
-import React from 'react';
-import { X } from 'lucide-react';
+import { X } from "lucide-react";
+import type React from "react";
 
 interface ModalContainerProps {
   isOpen: boolean;
@@ -19,27 +19,29 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
   title,
   description,
   children,
-  className = '',
+  className = "",
   showCloseButton = true,
-  overlayClassName = '',
-  contentClassName = ''
+  overlayClassName = "",
+  contentClassName = "",
 }) => {
   if (!isOpen) return null;
 
   return (
     <>
       {/* Overlay */}
-      <div 
+      <div
         className={`fixed left-0 right-0 bottom-0 z-[9998] bg-black/60 backdrop-blur-sm ${overlayClassName}`}
-        style={{ top: 'var(--navbar-height, 0px)' }}
+        style={{ top: "var(--navbar-height, 0px)" }}
       />
 
       {/* Modal Container */}
-      <div 
+      <div
         className={`fixed left-0 right-0 bottom-0 z-[9999] flex items-center justify-center p-3 sm:p-4 pointer-events-none ${className}`}
-        style={{ top: 'var(--navbar-height, 0px)' }}
+        style={{ top: "var(--navbar-height, 0px)" }}
       >
-        <div className={`pointer-events-auto w-full max-w-2xl bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[95vh] overflow-y-auto ${contentClassName}`}>
+        <div
+          className={`pointer-events-auto w-full max-w-2xl bg-white rounded-xl sm:rounded-2xl shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300 max-h-[95vh] overflow-y-auto ${contentClassName}`}
+        >
           {/* Header */}
           <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-4 py-4 sm:px-8 sm:py-6">
             <div className="flex items-center gap-2 sm:gap-3">
@@ -51,9 +53,7 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
               )}
 
               <div className="flex-1">
-                {title && (
-                  <h2 className="text-lg sm:text-2xl font-bold text-white">{title}</h2>
-                )}
+                {title && <h2 className="text-lg sm:text-2xl font-bold text-white">{title}</h2>}
                 {description && (
                   <p className="text-blue-100 text-xs sm:text-sm mt-0.5 sm:mt-1">{description}</p>
                 )}
@@ -61,6 +61,7 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
 
               {showCloseButton && (
                 <button
+                  type="button"
                   onClick={onClose}
                   className="text-white/80 hover:text-white transition-colors flex-shrink-0"
                   aria-label="Close modal"
@@ -72,9 +73,7 @@ const ModalContainer: React.FC<ModalContainerProps> = ({
           </div>
 
           {/* Content */}
-          <div className="px-4 py-4 sm:px-8 sm:py-6">
-            {children}
-          </div>
+          <div className="px-4 py-4 sm:px-8 sm:py-6">{children}</div>
         </div>
       </div>
     </>

@@ -1,6 +1,6 @@
-import React from 'react';
-import { Download, Eye, Globe, Star, Trash2 } from 'lucide-react';
-import type { Asset } from './AssetCard';
+import { Download, Eye, Globe, Star, Trash2 } from "lucide-react";
+import type React from "react";
+import type { Asset } from "./AssetCard";
 
 type AssetRowProps = {
   asset: Asset;
@@ -30,12 +30,14 @@ export default function AssetRow({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 p-4">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="w-14 h-14 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden shrink-0">
-            {asset.asset_type === 'image' ? (
-              <img src={asset.file} alt={asset.title || asset.original_filename} className="w-full h-full object-cover" />
+            {asset.asset_type === "image" ? (
+              <img
+                src={asset.file}
+                alt={asset.title || asset.original_filename}
+                className="w-full h-full object-cover"
+              />
             ) : (
-              <div className="flex flex-col items-center">
-                {renderIcon(asset)}
-              </div>
+              <div className="flex flex-col items-center">{renderIcon(asset)}</div>
             )}
           </div>
           <div className="min-w-0">
@@ -43,8 +45,16 @@ export default function AssetRow({
               <h4 className="font-semibold text-gray-900 truncate">
                 {asset.title || asset.original_filename}
               </h4>
-              {asset.is_featured && <Star className="w-4 h-4 text-yellow-500" title="Featured" />}
-              {asset.is_public && <Globe className="w-4 h-4 text-green-600" title="Public" />}
+              {asset.is_featured && (
+                <span title="Featured">
+                  <Star className="w-4 h-4 text-yellow-500" aria-label="Featured" />
+                </span>
+              )}
+              {asset.is_public && (
+                <span title="Public">
+                  <Globe className="w-4 h-4 text-green-600" aria-label="Public" />
+                </span>
+              )}
             </div>
             <div className="text-xs text-gray-500 flex flex-wrap items-center gap-x-2 gap-y-1">
               <span className="capitalize">{categoryLabel || asset.asset_type}</span>
@@ -57,30 +67,51 @@ export default function AssetRow({
         </div>
 
         <div className="flex items-center gap-1">
-          <button onClick={() => onToggleFeatured(asset.id)} className={`p-2 rounded-lg transition-colors ${asset.is_featured ? 'text-yellow-600 bg-yellow-50 hover:bg-yellow-100' : 'text-gray-400 hover:text-yellow-600 hover:bg-yellow-50'}`} aria-label="Toggle featured">
+          <button
+            type="button"
+            onClick={() => onToggleFeatured(asset.id)}
+            className={`p-2 rounded-lg transition-colors ${asset.is_featured ? "text-yellow-600 bg-yellow-50 hover:bg-yellow-100" : "text-gray-400 hover:text-yellow-600 hover:bg-yellow-50"}`}
+            aria-label="Toggle featured"
+          >
             <Star className="w-4 h-4" />
           </button>
-          <button onClick={() => onTogglePublic(asset.id)} className={`p-2 rounded-lg transition-colors ${asset.is_public ? 'text-green-600 bg-green-50 hover:bg-green-100' : 'text-gray-400 hover:text-green-600 hover:bg-green-50'}`} aria-label="Toggle public">
+          <button
+            type="button"
+            onClick={() => onTogglePublic(asset.id)}
+            className={`p-2 rounded-lg transition-colors ${asset.is_public ? "text-green-600 bg-green-50 hover:bg-green-100" : "text-gray-400 hover:text-green-600 hover:bg-green-50"}`}
+            aria-label="Toggle public"
+          >
             <Globe className="w-4 h-4" />
           </button>
-          <button onClick={() => onView(asset.file)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" aria-label="View">
+          <button
+            type="button"
+            onClick={() => onView(asset.file)}
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+            aria-label="View"
+          >
             <Eye className="w-4 h-4" />
           </button>
-          <button onClick={() => onView(asset.file)} className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg" aria-label="Download">
+          <button
+            type="button"
+            onClick={() => onView(asset.file)}
+            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg"
+            aria-label="Download"
+          >
             <Download className="w-4 h-4" />
           </button>
-          <button onClick={() => onDelete(asset.id)} className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg" aria-label="Delete">
+          <button
+            type="button"
+            onClick={() => onDelete(asset.id)}
+            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+            aria-label="Delete"
+          >
             <Trash2 className="w-4 h-4" />
           </button>
         </div>
       </div>
       {asset.description && (
-        <div className="px-4 pb-4 -mt-2 text-sm text-gray-600">
-          {asset.description}
-        </div>
+        <div className="px-4 pb-4 -mt-2 text-sm text-gray-600">{asset.description}</div>
       )}
     </div>
   );
 }
-
-

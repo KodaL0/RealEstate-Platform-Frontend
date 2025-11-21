@@ -1,10 +1,21 @@
-import React, { useState, useEffect } from 'react';
-import { Calculator, Home, TrendingUp, Info, RefreshCw, ChevronDown, ChevronUp, DollarSign, PieChart } from 'lucide-react';
+import {
+  Calculator,
+  ChevronDown,
+  ChevronUp,
+  DollarSign,
+  Home,
+  Info,
+  PieChart,
+  RefreshCw,
+  TrendingUp,
+} from "lucide-react";
+import type React from "react";
+import { useEffect, useState } from "react";
 
 const sanitize = (val: number | string | null): number => {
   if (val === null) return 0;
-  if (typeof val === 'number') return val;
-  return parseFloat(val.toString().replace(/,/g, '')) || 0;
+  if (typeof val === "number") return val;
+  return parseFloat(val.toString().replace(/,/g, "")) || 0;
 };
 
 const RentVsBuyPage: React.FC = () => {
@@ -20,74 +31,93 @@ const RentVsBuyPage: React.FC = () => {
   // Investment assumptions
   const [investmentReturnRate, setInvestmentReturnRate] = useState<number>(6);
   const [reinvestMonthlyDiff, setReinvestMonthlyDiff] = useState<boolean>(true);
-  
+
   // Advanced settings (exposed magic numbers)
   const [showAdvanced, setShowAdvanced] = useState<boolean>(false);
   const [showBreakdown, setShowBreakdown] = useState<boolean>(false);
   const [maintenanceRate, setMaintenanceRate] = useState<number>(1); // 1% annually
-  const [propertyTaxRate, setPropertyTaxRate] = useState<number>(0.2); // 0.2% annually  
+  const [propertyTaxRate, setPropertyTaxRate] = useState<number>(0.2); // 0.2% annually
   const [appreciationRate, setAppreciationRate] = useState<number>(3); // 3% annually
   const [closingCostRate, setClosingCostRate] = useState<number>(3); // 3% closing costs
   const [sellingCostRate, setSellingCostRate] = useState<number>(2); // 2% selling costs
-  
+
   // Validation errors
   const [errors, setErrors] = useState<Record<string, string>>({});
-  
+
   // Results
   const [buyCost, setBuyCost] = useState<number | null>(null);
   const [rentCost, setRentCost] = useState<number | null>(null);
-  const [recommendation, setRecommendation] = useState<string>('');
+  const [recommendation, setRecommendation] = useState<string>("");
   const [isCalculating, setIsCalculating] = useState<boolean>(false);
-
-  // Initial calculation on mount
-  useEffect(() => {
-    calculateComparison();
-  }, []); // Empty dependency array - run once on mount
-
-  // Recompute whenever any input changes (debounced)
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      calculateComparison();
-    }, 300); // 300ms debounce
-    
-    return () => clearTimeout(timeoutId);
-  }, [propertyPrice, downPaymentPercent, interestRate, loanTermYears, monthlyRent, rentGrowthRate, stayDuration, investmentReturnRate, reinvestMonthlyDiff, maintenanceRate, propertyTaxRate, appreciationRate, closingCostRate, sellingCostRate]);
 
   const validateInputs = () => {
     const newErrors: Record<string, string> = {};
-    
-    // Basic validation
-    if (propertyPrice <= 0) newErrors.propertyPrice = 'Property price must be greater than 0';
-    if (monthlyRent <= 0) newErrors.monthlyRent = 'Monthly rent must be greater than 0';
-    if (stayDuration <= 0) newErrors.stayDuration = 'Stay duration must be greater than 0';
-    if (downPaymentPercent < 0 || downPaymentPercent > 100) newErrors.downPaymentPercent = 'Down payment must be 0-100%';
-    if (interestRate < 0 || interestRate > 50) newErrors.interestRate = 'Interest rate must be 0-50%';
-    if (loanTermYears <= 0 || loanTermYears > 50) newErrors.loanTermYears = 'Loan term must be 1-50 years';
-    if (investmentReturnRate < 0 || investmentReturnRate > 15) newErrors.investmentReturnRate = 'Investment return must be 0-15%';
-    
+
+    // Basic validation with null checks
+    if (propertyPrice === null || propertyPrice <= 0) {
+      newErrors.propertyPrice = "Property price must be greater than 0";
+    }
+    if (monthlyRent === null || monthlyRent <= 0) {
+      newErrors.monthlyRent = "Monthly rent must be greater than 0";
+    }
+    if (stayDuration === null || stayDuration <= 0) {
+      newErrors.stayDuration = "Stay duration must be greater than 0";
+    }
+    if (downPaymentPercent === null || downPaymentPercent < 0 || downPaymentPercent > 100) {
+      newErrors.downPaymentPercent = "Down payment must be 0-100%";
+    }
+    if (interestRate === null || interestRate < 0 || interestRate > 50) {
+      newErrors.interestRate = "Interest rate must be 0-50%";
+    }
+    if (loanTermYears === null || loanTermYears <= 0 || loanTermYears > 50) {
+      newErrors.loanTermYears = "Loan term must be 1-50 years";
+    }
+    if (investmentReturnRate < 0 || investmentReturnRate > 15) {
+      newErrors.investmentReturnRate = "Investment return must be 0-15%";
+    }
+
     // Sanity checks for realistic values
-    const annualRent = monthlyRent * 12;
-    const rentToValueRatio = (annualRent / propertyPrice) * 100;
-    
-    if (rentToValueRatio > 25) {
-      newErrors.monthlyRent = `Monthly rent seems too high (${rentToValueRatio.toFixed(1)}% of property value annually). Typical range: 4-8%`;
+    if (monthlyRent !== null && propertyPrice !== null && propertyPrice > 0) {
+      const annualRent = monthlyRent * 12;
+      const rentToValueRatio = (annualRent / propertyPrice) * 100;
+
+      if (rentToValueRatio > 25) {
+        newErrors.monthlyRent = `Monthly rent seems too high (${rentToValueRatio.toFixed(1)}% of property value annually). Typical range: 4-8%`;
+      }
+
+      if (rentToValueRatio < 1 && monthlyRent > 0 && propertyPrice > 0) {
+        newErrors.monthlyRent = `Monthly rent seems too low (${rentToValueRatio.toFixed(1)}% of property value annually). Typical range: 4-8%`;
+      }
     }
-    
-    if (rentToValueRatio < 1 && monthlyRent > 0 && propertyPrice > 0) {
-      newErrors.monthlyRent = `Monthly rent seems too low (${rentToValueRatio.toFixed(1)}% of property value annually). Typical range: 4-8%`;
-    }
-    
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const calculateComparison = () => {
     setIsCalculating(true);
-    
+
     if (!validateInputs()) {
       setBuyCost(null);
       setRentCost(null);
-      setRecommendation('Please fill the form to see results.');
+      setRecommendation("Please fill the form to see results.");
+      setIsCalculating(false);
+      return;
+    }
+
+    // Early return if required values are null
+    if (
+      propertyPrice === null ||
+      downPaymentPercent === null ||
+      interestRate === null ||
+      loanTermYears === null ||
+      monthlyRent === null ||
+      stayDuration === null ||
+      rentGrowthRate === null
+    ) {
+      setBuyCost(null);
+      setRentCost(null);
+      setRecommendation("Please fill the form to see results.");
       setIsCalculating(false);
       return;
     }
@@ -105,18 +135,19 @@ const RentVsBuyPage: React.FC = () => {
 
     if (monthlyInterestRate > 0 && loanTermYears > 0) {
       // Calculate monthly payment using standard amortization formula
-      monthlyPayment = loanAmount * monthlyInterestRate / (1 - Math.pow(1 + monthlyInterestRate, -totalLoanPayments));
-      
+      monthlyPayment =
+        (loanAmount * monthlyInterestRate) / (1 - (1 + monthlyInterestRate) ** -totalLoanPayments);
+
       // Calculate interest paid and remaining balance after stay period
       let balance = loanAmount;
-      
+
       for (let month = 1; month <= stayPayments; month++) {
         const interestPayment = balance * monthlyInterestRate;
         const principalPayment = monthlyPayment - interestPayment;
         totalInterestPaid += interestPayment;
         balance -= principalPayment;
       }
-      
+
       remainingBalance = Math.max(0, balance);
     } else {
       // Zero interest case - simple division
@@ -130,17 +161,17 @@ const RentVsBuyPage: React.FC = () => {
     const maintenance = propertyPrice * (maintenanceRate / 100) * stayDuration;
     const propertyTax = propertyPrice * (propertyTaxRate / 100) * stayDuration;
     const closingCosts = propertyPrice * (closingCostRate / 100);
-    
+
     // Property appreciation and sale
-    const futureValue = propertyPrice * Math.pow(1 + appreciationRate / 100, stayDuration);
+    const futureValue = propertyPrice * (1 + appreciationRate / 100) ** stayDuration;
     const sellingCosts = futureValue * (sellingCostRate / 100);
-    
+
     // Net proceeds from sale (what you actually receive)
     const netSaleProceeds = futureValue - sellingCosts - remainingBalance;
-    
+
     // Total cash outflows during ownership
     const totalCashOut = downPayment + totalInterestPaid + maintenance + propertyTax + closingCosts;
-    
+
     // Net position before opportunity cost (negative = you're ahead)
     const netGainBeforeOppCost = netSaleProceeds - totalCashOut;
 
@@ -148,10 +179,10 @@ const RentVsBuyPage: React.FC = () => {
     let rentTotal = 0;
     let currentRent = monthlyRent;
     const rentGrowthRateDecimal = rentGrowthRate / 100;
-    
+
     for (let year = 0; year < stayDuration; year++) {
       rentTotal += currentRent * 12;
-      currentRent *= (1 + rentGrowthRateDecimal);
+      currentRent *= 1 + rentGrowthRateDecimal;
     }
 
     // Investment opportunity cost calculations
@@ -159,19 +190,19 @@ const RentVsBuyPage: React.FC = () => {
     const monthlyR = r / 12;
 
     // 1. Opportunity cost for buyer (what down payment could have earned if invested)
-    const downPaymentOpportunityCost = downPayment * (Math.pow(1 + r, stayDuration) - 1);
+    const downPaymentOpportunityCost = downPayment * ((1 + r) ** stayDuration - 1);
 
     // 2. Potential gain for renter (investing monthly surplus)
     const surplus = Math.max(0, monthlyPayment - monthlyRent);
     let surplusInvestmentGain = 0;
-    
+
     if (surplus > 0 && reinvestMonthlyDiff) {
       if (r === 0) {
         // No investment return - just save the surplus
         surplusInvestmentGain = surplus * 12 * stayDuration;
       } else {
         // Future value of monthly annuity
-        surplusInvestmentGain = surplus * ((Math.pow(1 + monthlyR, stayDuration * 12) - 1) / monthlyR);
+        surplusInvestmentGain = surplus * (((1 + monthlyR) ** (stayDuration * 12) - 1) / monthlyR);
       }
     }
 
@@ -181,25 +212,78 @@ const RentVsBuyPage: React.FC = () => {
 
     setBuyCost(effectiveBuyCost);
     setRentCost(effectiveRentCost);
-    
+
     const savings = Math.abs(effectiveBuyCost - effectiveRentCost);
     if (effectiveBuyCost < effectiveRentCost) {
-      setRecommendation(`Buying (incl. opportunity cost) saves €${savings.toFixed(0)} over ${stayDuration} years`);
+      setRecommendation(
+        `Buying (incl. opportunity cost) saves €${savings.toFixed(0)} over ${stayDuration} years`,
+      );
     } else {
-      setRecommendation(`Renting (with invested surplus) saves €${savings.toFixed(0)} over ${stayDuration} years`);
+      setRecommendation(
+        `Renting (with invested surplus) saves €${savings.toFixed(0)} over ${stayDuration} years`,
+      );
     }
-    
+
     setIsCalculating(false);
   };
 
+  // Initial calculation on mount
+  useEffect(() => {
+    calculateComparison();
+  }, []); // Empty dependency array - run once on mount
+
+  // Recompute whenever any input changes (debounced)
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      calculateComparison();
+    }, 300); // 300ms debounce
+
+    return () => clearTimeout(timeoutId);
+  }, [
+    propertyPrice,
+    downPaymentPercent,
+    interestRate,
+    loanTermYears,
+    monthlyRent,
+    rentGrowthRate,
+    stayDuration,
+    investmentReturnRate,
+    reinvestMonthlyDiff,
+    maintenanceRate,
+    propertyTaxRate,
+    appreciationRate,
+    closingCostRate,
+    sellingCostRate,
+  ]);
+
   const formatCurrency = (value: number | null) => {
-    if (value === null || isNaN(value)) return '--';
-    return value.toLocaleString('el-CY', {
-      style: 'currency',
-      currency: 'EUR',
+    if (value === null || Number.isNaN(value)) return "--";
+    return value.toLocaleString("el-CY", {
+      style: "currency",
+      currency: "EUR",
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
     });
+  };
+
+  // Wrapper functions for non-nullable setters
+  const setInvestmentReturnRateWrapper = (val: number | null) => {
+    setInvestmentReturnRate(val ?? 6);
+  };
+  const setMaintenanceRateWrapper = (val: number | null) => {
+    setMaintenanceRate(val ?? 1);
+  };
+  const setPropertyTaxRateWrapper = (val: number | null) => {
+    setPropertyTaxRate(val ?? 0.2);
+  };
+  const setAppreciationRateWrapper = (val: number | null) => {
+    setAppreciationRate(val ?? 3);
+  };
+  const setClosingCostRateWrapper = (val: number | null) => {
+    setClosingCostRate(val ?? 3);
+  };
+  const setSellingCostRateWrapper = (val: number | null) => {
+    setSellingCostRate(val ?? 2);
   };
 
   const resetCalculator = () => {
@@ -220,12 +304,11 @@ const RentVsBuyPage: React.FC = () => {
     setSellingCostRate(2);
     setShowAdvanced(false);
     setShowBreakdown(false);
-  
+
     setErrors({});
-    setTouched({});  // clear touched so no errors show
     setBuyCost(null);
     setRentCost(null);
-    setRecommendation('Enter values to see comparison');
+    setRecommendation("Enter values to see comparison");
     // No need to call calculateComparison here; if called, it sees nulls and stays neutral.
   };
 
@@ -236,14 +319,14 @@ const RentVsBuyPage: React.FC = () => {
     setter: (val: number | null) => void,
     placeholder: string,
     unit?: string,
-    min = 0,
-    max = Infinity,
+    _min = 0,
+    _max = Infinity,
     step = "0.01",
-    tooltip?: string
+    tooltip?: string,
   ) => {
     // Compute whether to show error only after user has input something
     const showError = Boolean(errors[id] && value !== null);
-  
+
     return (
       <div className="space-y-2">
         <label htmlFor={id} className="text-sm font-medium text-gray-700 flex items-center gap-2">
@@ -263,17 +346,17 @@ const RentVsBuyPage: React.FC = () => {
             type="text"
             inputMode="decimal"
             step={step}
-            value={value === null ? '' : value.toString()}
+            value={value === null ? "" : value.toString()}
             onChange={(e) => {
               const val = e.target.value;
-              setter(val === '' ? null : sanitize(val));
+              setter(val === "" ? null : sanitize(val));
             }}
             placeholder={placeholder}
             className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
-              showError ? 'border-red-500' : 'border-gray-300'
+              showError ? "border-red-500" : "border-gray-300"
             }`}
             aria-describedby={unit ? `${id}-unit` : undefined}
-            aria-invalid={showError ? 'true' : 'false'}
+            aria-invalid={showError ? "true" : "false"}
           />
           {unit && (
             <span id={`${id}-unit`} className="absolute right-3 top-2.5 text-gray-500 text-sm">
@@ -282,24 +365,30 @@ const RentVsBuyPage: React.FC = () => {
           )}
         </div>
         {showError && (
-          <p className="text-red-500 text-sm" role="alert">{errors[id]}</p>
+          <p className="text-red-500 text-sm" role="alert">
+            {errors[id]}
+          </p>
         )}
       </div>
     );
   };
-
 
   const renderResultCard = (
     title: string,
     value: number | null,
     isWinner: boolean,
     subtitle?: string,
-    icon?: React.ReactNode
+    icon?: React.ReactNode,
   ) => (
-    <div className={`p-4 rounded-lg transition-all duration-200 ${
-      isCalculating ? 'bg-gray-50' : 
-      isWinner ? 'bg-green-50 border-2 border-green-200 shadow-md' : 'bg-red-50 border-2 border-red-200'
-    }`}>
+    <div
+      className={`p-4 rounded-lg transition-all duration-200 ${
+        isCalculating
+          ? "bg-gray-50"
+          : isWinner
+            ? "bg-green-50 border-2 border-green-200 shadow-md"
+            : "bg-red-50 border-2 border-red-200"
+      }`}
+    >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           {icon}
@@ -312,15 +401,14 @@ const RentVsBuyPage: React.FC = () => {
           </div>
         </div>
       </div>
-      <p className={`text-lg sm:text-xl md:text-2xl font-bold ${
-        isCalculating ? 'text-gray-600' :
-        isWinner ? 'text-green-600' : 'text-red-600'
-      }`}>
-        {isCalculating ? 'Calculating...' : formatCurrency(value)}
+      <p
+        className={`text-lg sm:text-xl md:text-2xl font-bold ${
+          isCalculating ? "text-gray-600" : isWinner ? "text-green-600" : "text-red-600"
+        }`}
+      >
+        {isCalculating ? "Calculating..." : formatCurrency(value)}
       </p>
-      {subtitle && !isCalculating && (
-        <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
-      )}
+      {subtitle && !isCalculating && <p className="text-xs text-gray-500 mt-1">{subtitle}</p>}
     </div>
   );
 
@@ -334,30 +422,70 @@ const RentVsBuyPage: React.FC = () => {
             <h1 className="text-2xl sm:text-4xl font-bold text-gray-900">Rent vs Buy Calculator</h1>
           </div>
           <p className="text-base sm:text-xl text-gray-600 max-w-3xl mx-auto">
-            Make informed housing decisions with accurate cost comparisons including opportunity costs
+            Make informed housing decisions with accurate cost comparisons including opportunity
+            costs
           </p>
         </div>
 
         {/* Main Content Grid - Responsive Layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 lg:gap-8 mb-8">
-          
           {/* Left Column: Input Forms */}
           <div className="lg:col-span-2 space-y-6">
-            
             {/* Property Details & Rental Info - Side by side on larger screens */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
               {/* Property Details */}
               <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
                 <div className="flex items-center mb-4 sm:mb-6">
                   <Home className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600 mr-2" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Property Details</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    Property Details
+                  </h2>
                 </div>
                 <div className="space-y-4">
-                  {renderInputField('propertyPrice', 'Property Price', propertyPrice, setPropertyPrice, '300,000', '€', 0, Infinity, '1000')}
-                  {renderInputField('downPaymentPercent', 'Down Payment', downPaymentPercent, setDownPaymentPercent, '20', '%', 0, 100, '0.1')}
-                  {renderInputField('interestRate', 'Interest Rate', interestRate, setInterestRate, '4.25', '%', 0, 50, '0.01')}
-                  {renderInputField('loanTermYears', 'Loan Term', loanTermYears, setLoanTermYears, '25', 'years', 1, 50, '1')}
+                  {renderInputField(
+                    "propertyPrice",
+                    "Property Price",
+                    propertyPrice,
+                    setPropertyPrice,
+                    "300,000",
+                    "€",
+                    0,
+                    Infinity,
+                    "1000",
+                  )}
+                  {renderInputField(
+                    "downPaymentPercent",
+                    "Down Payment",
+                    downPaymentPercent,
+                    setDownPaymentPercent,
+                    "20",
+                    "%",
+                    0,
+                    100,
+                    "0.1",
+                  )}
+                  {renderInputField(
+                    "interestRate",
+                    "Interest Rate",
+                    interestRate,
+                    setInterestRate,
+                    "4.25",
+                    "%",
+                    0,
+                    50,
+                    "0.01",
+                  )}
+                  {renderInputField(
+                    "loanTermYears",
+                    "Loan Term",
+                    loanTermYears,
+                    setLoanTermYears,
+                    "25",
+                    "years",
+                    1,
+                    50,
+                    "1",
+                  )}
                 </div>
               </div>
 
@@ -365,12 +493,41 @@ const RentVsBuyPage: React.FC = () => {
               <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
                 <div className="flex items-center mb-4 sm:mb-6">
                   <Home className="h-5 w-5 sm:h-6 sm:w-6 text-green-600 mr-2" />
-                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Rental Information</h2>
+                  <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                    Rental Information
+                  </h2>
                 </div>
                 <div className="space-y-4">
-                  {renderInputField('monthlyRent', 'Monthly Rent', monthlyRent, setMonthlyRent, '1,000', '€/month')}
-                  {renderInputField('rentGrowthRate', 'Rent Growth Rate', rentGrowthRate, setRentGrowthRate, '2.5', '%/year', 0, 20, '0.1')}
-                  {renderInputField('stayDuration', 'Stay Duration', stayDuration, setStayDuration, '10', 'years', 1, 50, '1')}
+                  {renderInputField(
+                    "monthlyRent",
+                    "Monthly Rent",
+                    monthlyRent,
+                    setMonthlyRent,
+                    "1,000",
+                    "€/month",
+                  )}
+                  {renderInputField(
+                    "rentGrowthRate",
+                    "Rent Growth Rate",
+                    rentGrowthRate,
+                    setRentGrowthRate,
+                    "2.5",
+                    "%/year",
+                    0,
+                    20,
+                    "0.1",
+                  )}
+                  {renderInputField(
+                    "stayDuration",
+                    "Stay Duration",
+                    stayDuration,
+                    setStayDuration,
+                    "10",
+                    "years",
+                    1,
+                    50,
+                    "1",
+                  )}
                 </div>
               </div>
             </div>
@@ -379,11 +536,24 @@ const RentVsBuyPage: React.FC = () => {
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
               <div className="flex items-center mb-4 sm:mb-6">
                 <TrendingUp className="h-5 w-5 sm:h-6 sm:w-6 text-purple-600 mr-2" />
-                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">Investment Assumptions</h2>
+                <h2 className="text-lg sm:text-xl font-semibold text-gray-900">
+                  Investment Assumptions
+                </h2>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                  {renderInputField('investmentReturnRate', 'Alt. Investment Return', investmentReturnRate, setInvestmentReturnRate, '6', '%', 0, 15, '0.1', 'Expected annual return if you invested the down payment and monthly surplus in alternative investments')}
+                  {renderInputField(
+                    "investmentReturnRate",
+                    "Alt. Investment Return",
+                    investmentReturnRate,
+                    setInvestmentReturnRateWrapper,
+                    "6",
+                    "%",
+                    0,
+                    15,
+                    "0.1",
+                    "Expected annual return if you invested the down payment and monthly surplus in alternative investments",
+                  )}
                 </div>
                 <div className="space-y-2">
                   <label className="flex items-center space-x-2">
@@ -393,9 +563,13 @@ const RentVsBuyPage: React.FC = () => {
                       onChange={(e) => setReinvestMonthlyDiff(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">Re-invest Monthly Surplus</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      Re-invest Monthly Surplus
+                    </span>
                   </label>
-                  <p className="text-xs text-gray-500">If mortgage payment &gt; rent, invest the difference monthly</p>
+                  <p className="text-xs text-gray-500">
+                    If mortgage payment &gt; rent, invest the difference monthly
+                  </p>
                 </div>
               </div>
             </div>
@@ -403,12 +577,11 @@ const RentVsBuyPage: React.FC = () => {
 
           {/* Right Column: Results */}
           <div className="space-y-6">
-            
             {/* Winner Announcement */}
             <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
               <div className="p-4 bg-yellow-50 rounded-lg border-2 border-yellow-200 mb-4">
                 <p className="text-base sm:text-lg font-bold text-yellow-800 text-center">
-                  {isCalculating ? 'Calculating...' : `🏆 ${recommendation}`}
+                  {isCalculating ? "Calculating..." : `🏆 ${recommendation}`}
                 </p>
               </div>
             </div>
@@ -416,19 +589,23 @@ const RentVsBuyPage: React.FC = () => {
             {/* Cost Comparison Cards */}
             <div className="space-y-4">
               {renderResultCard(
-                'Net Cost of Buying',
+                "Net Cost of Buying",
                 buyCost,
                 !isCalculating && buyCost !== null && rentCost !== null && buyCost < rentCost,
-                `Up-front: ${formatCurrency(propertyPrice * (downPaymentPercent / 100))}`,
-                <DollarSign className="h-4 w-4 text-blue-600" />
+                `Up-front: ${formatCurrency(
+                  propertyPrice !== null && downPaymentPercent !== null
+                    ? propertyPrice * (downPaymentPercent / 100)
+                    : null,
+                )}`,
+                <DollarSign className="h-4 w-4 text-blue-600" />,
               )}
-              
+
               {renderResultCard(
-                'Net Cost of Renting',
+                "Net Cost of Renting",
                 rentCost,
                 !isCalculating && buyCost !== null && rentCost !== null && rentCost < buyCost,
                 `Monthly start: ${formatCurrency(monthlyRent)}`,
-                <Home className="h-4 w-4 text-green-600" />
+                <Home className="h-4 w-4 text-green-600" />,
               )}
             </div>
 
@@ -444,7 +621,11 @@ const RentVsBuyPage: React.FC = () => {
                   <PieChart className="h-4 w-4" />
                   Detailed Cost Breakdown
                 </span>
-                {showBreakdown ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                {showBreakdown ? (
+                  <ChevronUp className="h-4 w-4" />
+                ) : (
+                  <ChevronDown className="h-4 w-4" />
+                )}
               </button>
             </div>
           </div>
@@ -463,13 +644,25 @@ const RentVsBuyPage: React.FC = () => {
                   {[
                     {
                       label: "Down Payment",
-                      value: propertyPrice * (downPaymentPercent / 100),
-                      tooltip: `${downPaymentPercent}% of property price`,
-                      type: "expense"
+                      value:
+                        propertyPrice !== null && downPaymentPercent !== null
+                          ? propertyPrice * (downPaymentPercent / 100)
+                          : 0,
+                      tooltip: `${downPaymentPercent ?? 0}% of property price`,
+                      type: "expense",
                     },
                     {
                       label: "Interest Paid",
                       value: (() => {
+                        if (
+                          propertyPrice === null ||
+                          downPaymentPercent === null ||
+                          interestRate === null ||
+                          loanTermYears === null ||
+                          stayDuration === null
+                        ) {
+                          return 0;
+                        }
                         const downPayment = propertyPrice * (downPaymentPercent / 100);
                         const loanAmount = propertyPrice - downPayment;
                         const monthlyInterestRate = interestRate / 100 / 12;
@@ -477,34 +670,50 @@ const RentVsBuyPage: React.FC = () => {
                         const stayPayments = Math.min(stayDuration * 12, totalLoanPayments);
                         let totalInterest = 0;
                         if (monthlyInterestRate > 0) {
-                          const monthlyPayment = loanAmount * monthlyInterestRate / (1 - Math.pow(1 + monthlyInterestRate, -totalLoanPayments));
+                          const monthlyPayment =
+                            (loanAmount * monthlyInterestRate) /
+                            (1 - (1 + monthlyInterestRate) ** -totalLoanPayments);
                           let balance = loanAmount;
                           for (let month = 1; month <= stayPayments; month++) {
                             totalInterest += balance * monthlyInterestRate;
-                            balance -= (monthlyPayment - balance * monthlyInterestRate);
+                            balance -= monthlyPayment - balance * monthlyInterestRate;
                           }
                         }
                         return totalInterest;
                       })(),
-                      tooltip: `${interestRate}% annual rate over ${stayDuration} years`,
-                      type: "expense"
+                      tooltip: `${interestRate ?? 0}% annual rate over ${stayDuration ?? 0} years`,
+                      type: "expense",
                     },
                     {
                       label: "Maintenance & Tax",
-                      value: propertyPrice * (maintenanceRate / 100) * stayDuration + propertyPrice * (propertyTaxRate / 100) * stayDuration,
+                      value:
+                        propertyPrice !== null && stayDuration !== null
+                          ? propertyPrice * (maintenanceRate / 100) * stayDuration +
+                            propertyPrice * (propertyTaxRate / 100) * stayDuration
+                          : 0,
                       tooltip: `${maintenanceRate}% + ${propertyTaxRate}% annually`,
-                      type: "expense"
+                      type: "expense",
                     },
                     {
                       label: "Closing Costs",
-                      value: propertyPrice * (closingCostRate / 100),
+                      value: propertyPrice !== null ? propertyPrice * (closingCostRate / 100) : 0,
                       tooltip: `${closingCostRate}% of purchase price`,
-                      type: "expense"
+                      type: "expense",
                     },
                     {
                       label: "Sale Proceeds",
                       value: (() => {
-                        const futureValue = propertyPrice * Math.pow(1 + appreciationRate / 100, stayDuration);
+                        if (
+                          propertyPrice === null ||
+                          downPaymentPercent === null ||
+                          interestRate === null ||
+                          loanTermYears === null ||
+                          stayDuration === null
+                        ) {
+                          return 0;
+                        }
+                        const futureValue =
+                          propertyPrice * (1 + appreciationRate / 100) ** stayDuration;
                         const downPayment = propertyPrice * (downPaymentPercent / 100);
                         const loanAmount = propertyPrice - downPayment;
                         const monthlyInterestRate = interestRate / 100 / 12;
@@ -512,10 +721,12 @@ const RentVsBuyPage: React.FC = () => {
                         const stayPayments = Math.min(stayDuration * 12, totalLoanPayments);
                         let remainingBalance = loanAmount;
                         if (monthlyInterestRate > 0) {
-                          const monthlyPayment = loanAmount * monthlyInterestRate / (1 - Math.pow(1 + monthlyInterestRate, -totalLoanPayments));
+                          const monthlyPayment =
+                            (loanAmount * monthlyInterestRate) /
+                            (1 - (1 + monthlyInterestRate) ** -totalLoanPayments);
                           let balance = loanAmount;
                           for (let month = 1; month <= stayPayments; month++) {
-                            balance -= (monthlyPayment - balance * monthlyInterestRate);
+                            balance -= monthlyPayment - balance * monthlyInterestRate;
                           }
                           remainingBalance = Math.max(0, balance);
                         }
@@ -523,16 +734,26 @@ const RentVsBuyPage: React.FC = () => {
                         return futureValue - sellingCosts - remainingBalance;
                       })(),
                       tooltip: `Future value minus remaining loan and ${sellingCostRate}% selling costs`,
-                      type: "income"
+                      type: "income",
                     },
                     {
                       label: "Opportunity Cost",
-                      value: propertyPrice * (downPaymentPercent / 100) * (Math.pow(1 + investmentReturnRate / 100, stayDuration) - 1),
+                      value:
+                        propertyPrice !== null &&
+                        downPaymentPercent !== null &&
+                        stayDuration !== null
+                          ? propertyPrice *
+                            (downPaymentPercent / 100) *
+                            ((1 + investmentReturnRate / 100) ** stayDuration - 1)
+                          : 0,
                       tooltip: `Lost ${investmentReturnRate}% return on down payment`,
-                      type: "expense"
-                    }
+                      type: "expense",
+                    },
                   ].map((item, index) => (
-                    <div key={index} className={`flex justify-between items-center py-2 px-2 sm:px-3 rounded text-xs sm:text-sm ${index === 4 ? 'border-t-2 border-blue-300 mt-3' : ''} ${index === 5 ? 'border-t-2 border-blue-300' : ''}`}>
+                    <div
+                      key={index}
+                      className={`flex justify-between items-center py-2 px-2 sm:px-3 rounded text-xs sm:text-sm ${index === 4 ? "border-t-2 border-blue-300 mt-3" : ""} ${index === 5 ? "border-t-2 border-blue-300" : ""}`}
+                    >
                       <span className="flex items-center gap-1 font-medium text-gray-700">
                         {item.label}
                         <div className="group relative">
@@ -542,22 +763,27 @@ const RentVsBuyPage: React.FC = () => {
                           </div>
                         </div>
                       </span>
-                      <span className={`font-bold min-w-[80px] sm:min-w-[100px] text-right ${
-                        item.type === 'expense' ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {item.type === 'expense' ? '+' : '-'}{formatCurrency(item.value)}
+                      <span
+                        className={`font-bold min-w-[80px] sm:min-w-[100px] text-right ${
+                          item.type === "expense" ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {item.type === "expense" ? "+" : "-"}
+                        {formatCurrency(item.value)}
                       </span>
                     </div>
                   ))}
                   <div className="border-t-2 border-blue-300 pt-3 mt-3">
                     <div className="flex justify-between items-center py-2 px-2 sm:px-3 bg-blue-200 rounded font-bold text-xs sm:text-sm">
                       <span className="text-blue-800">Net Cost</span>
-                      <span className="text-blue-800 min-w-[80px] sm:min-w-[100px] text-right">{formatCurrency(buyCost)}</span>
+                      <span className="text-blue-800 min-w-[80px] sm:min-w-[100px] text-right">
+                        {formatCurrency(buyCost)}
+                      </span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Renting Breakdown */}
               <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-lg p-4 sm:p-5 border border-green-200">
                 <h4 className="font-bold text-green-800 mb-4 text-center flex items-center justify-center gap-2 text-sm sm:text-base">
@@ -568,40 +794,64 @@ const RentVsBuyPage: React.FC = () => {
                     {
                       label: "Total Rent Payments",
                       value: (() => {
+                        if (
+                          monthlyRent === null ||
+                          stayDuration === null ||
+                          rentGrowthRate === null
+                        ) {
+                          return 0;
+                        }
                         let total = 0;
                         let currentRent = monthlyRent;
                         for (let year = 0; year < stayDuration; year++) {
                           total += currentRent * 12;
-                          currentRent *= (1 + rentGrowthRate / 100);
+                          currentRent *= 1 + rentGrowthRate / 100;
                         }
                         return total;
                       })(),
-                      tooltip: `Starting at ${formatCurrency(monthlyRent)}/month, growing ${rentGrowthRate}% annually`,
-                      type: "expense"
+                      tooltip: `Starting at ${formatCurrency(monthlyRent)}/month, growing ${rentGrowthRate ?? 0}% annually`,
+                      type: "expense",
                     },
                     {
                       label: "Investment Gains",
                       value: (() => {
-                        if (!reinvestMonthlyDiff) return 0;
+                        if (
+                          !reinvestMonthlyDiff ||
+                          propertyPrice === null ||
+                          downPaymentPercent === null ||
+                          interestRate === null ||
+                          loanTermYears === null ||
+                          monthlyRent === null ||
+                          stayDuration === null
+                        ) {
+                          return 0;
+                        }
                         const downPayment = propertyPrice * (downPaymentPercent / 100);
                         const loanAmount = propertyPrice - downPayment;
                         const monthlyInterestRate = interestRate / 100 / 12;
                         const totalLoanPayments = loanTermYears * 12;
-                        const monthlyPayment = monthlyInterestRate > 0 ? loanAmount * monthlyInterestRate / (1 - Math.pow(1 + monthlyInterestRate, -totalLoanPayments)) : loanAmount / totalLoanPayments;
+                        const monthlyPayment =
+                          monthlyInterestRate > 0
+                            ? (loanAmount * monthlyInterestRate) /
+                              (1 - (1 + monthlyInterestRate) ** -totalLoanPayments)
+                            : loanAmount / totalLoanPayments;
                         const surplus = Math.max(0, monthlyPayment - monthlyRent);
                         const r = investmentReturnRate / 100;
                         const monthlyR = r / 12;
                         if (surplus > 0) {
                           if (r === 0) return surplus * 12 * stayDuration;
-                          return surplus * ((Math.pow(1 + monthlyR, stayDuration * 12) - 1) / monthlyR);
+                          return surplus * (((1 + monthlyR) ** (stayDuration * 12) - 1) / monthlyR);
                         }
                         return 0;
                       })(),
-                      tooltip: `${investmentReturnRate}% return on monthly surplus ${reinvestMonthlyDiff ? '(enabled)' : '(disabled)'}`,
-                      type: "income"
-                    }
+                      tooltip: `${investmentReturnRate}% return on monthly surplus ${reinvestMonthlyDiff ? "(enabled)" : "(disabled)"}`,
+                      type: "income",
+                    },
                   ].map((item, index) => (
-                    <div key={index} className={`flex justify-between items-center py-2 px-2 sm:px-3 rounded text-xs sm:text-sm ${index === 1 ? 'border-t-2 border-green-300 mt-3' : ''}`}>
+                    <div
+                      key={index}
+                      className={`flex justify-between items-center py-2 px-2 sm:px-3 rounded text-xs sm:text-sm ${index === 1 ? "border-t-2 border-green-300 mt-3" : ""}`}
+                    >
                       <span className="flex items-center gap-1 font-medium text-gray-700">
                         {item.label}
                         <div className="group relative">
@@ -611,17 +861,22 @@ const RentVsBuyPage: React.FC = () => {
                           </div>
                         </div>
                       </span>
-                      <span className={`font-bold min-w-[80px] sm:min-w-[100px] text-right ${
-                        item.type === 'expense' ? 'text-red-600' : 'text-green-600'
-                      }`}>
-                        {item.type === 'expense' ? '+' : '-'}{formatCurrency(item.value)}
+                      <span
+                        className={`font-bold min-w-[80px] sm:min-w-[100px] text-right ${
+                          item.type === "expense" ? "text-red-600" : "text-green-600"
+                        }`}
+                      >
+                        {item.type === "expense" ? "+" : "-"}
+                        {formatCurrency(item.value)}
                       </span>
                     </div>
                   ))}
                   <div className="border-t-2 border-green-300 pt-3 mt-3">
                     <div className="flex justify-between items-center py-2 px-2 sm:px-3 bg-green-200 rounded font-bold text-xs sm:text-sm">
                       <span className="text-green-800">Net Cost</span>
-                      <span className="text-green-800 min-w-[80px] sm:min-w-[100px] text-right">{formatCurrency(rentCost)}</span>
+                      <span className="text-green-800 min-w-[80px] sm:min-w-[100px] text-right">
+                        {formatCurrency(rentCost)}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -641,14 +896,72 @@ const RentVsBuyPage: React.FC = () => {
             <span>Advanced Settings</span>
             {showAdvanced ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
           </button>
-          
+
           {showAdvanced && (
-            <div id="advanced-settings" className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-              {renderInputField('maintenanceRate', 'Maintenance Rate', maintenanceRate, setMaintenanceRate, '1', '%/year', 0, 10, '0.1', 'Annual maintenance costs as % of property value')}
-              {renderInputField('propertyTaxRate', 'Property Tax Rate', propertyTaxRate, setPropertyTaxRate, '0.2', '%/year', 0, 5, '0.01', 'Annual property tax as % of property value')}
-              {renderInputField('appreciationRate', 'Property Appreciation', appreciationRate, setAppreciationRate, '3', '%/year', -10, 20, '0.1', 'Expected annual property value growth')}
-              {renderInputField('closingCostRate', 'Closing Costs', closingCostRate, setClosingCostRate, '3', '% of price', 0, 10, '0.1', 'One-time costs when buying (legal, inspection, etc.)')}
-              {renderInputField('sellingCostRate', 'Selling Costs', sellingCostRate, setSellingCostRate, '2', '% of sale', 0, 10, '0.1', 'Costs when selling (realtor fees, legal, etc.)')}
+            <div
+              id="advanced-settings"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
+            >
+              {renderInputField(
+                "maintenanceRate",
+                "Maintenance Rate",
+                maintenanceRate,
+                setMaintenanceRateWrapper,
+                "1",
+                "%/year",
+                0,
+                10,
+                "0.1",
+                "Annual maintenance costs as % of property value",
+              )}
+              {renderInputField(
+                "propertyTaxRate",
+                "Property Tax Rate",
+                propertyTaxRate,
+                setPropertyTaxRateWrapper,
+                "0.2",
+                "%/year",
+                0,
+                5,
+                "0.01",
+                "Annual property tax as % of property value",
+              )}
+              {renderInputField(
+                "appreciationRate",
+                "Property Appreciation",
+                appreciationRate,
+                setAppreciationRateWrapper,
+                "3",
+                "%/year",
+                -10,
+                20,
+                "0.1",
+                "Expected annual property value growth",
+              )}
+              {renderInputField(
+                "closingCostRate",
+                "Closing Costs",
+                closingCostRate,
+                setClosingCostRateWrapper,
+                "3",
+                "% of price",
+                0,
+                10,
+                "0.1",
+                "One-time costs when buying (legal, inspection, etc.)",
+              )}
+              {renderInputField(
+                "sellingCostRate",
+                "Selling Costs",
+                sellingCostRate,
+                setSellingCostRateWrapper,
+                "2",
+                "% of sale",
+                0,
+                10,
+                "0.1",
+                "Costs when selling (realtor fees, legal, etc.)",
+              )}
             </div>
           )}
         </div>
@@ -668,10 +981,11 @@ const RentVsBuyPage: React.FC = () => {
         <div className="text-center text-xs sm:text-sm text-gray-600 max-w-4xl mx-auto">
           <p className="font-medium mb-2">Important Disclaimer</p>
           <p>
-            This calculator provides estimates for comparison purposes only and includes opportunity cost considerations. 
-            Actual costs may vary significantly based on market conditions, individual circumstances, tax implications, 
-            and other factors not included in this calculation. Please consult with qualified financial and real estate 
-            professionals before making housing decisions. This tool does not constitute financial advice.
+            This calculator provides estimates for comparison purposes only and includes opportunity
+            cost considerations. Actual costs may vary significantly based on market conditions,
+            individual circumstances, tax implications, and other factors not included in this
+            calculation. Please consult with qualified financial and real estate professionals
+            before making housing decisions. This tool does not constitute financial advice.
           </p>
         </div>
       </div>

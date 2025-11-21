@@ -1,98 +1,104 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { 
-  Users, UserPlus, Clock, Search, 
-  CheckCircle, XCircle, MessageCircle, Trash2,
-  Bell, User
-} from 'lucide-react';
-import { UserConnection, Connection } from '../types';
-import api from '../config/api';
-import { useChat } from '../context/ChatContext';
+import {
+  Bell,
+  CheckCircle,
+  MessageCircle,
+  Search,
+  Trash2,
+  User,
+  Users,
+  XCircle,
+} from "lucide-react";
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../config/api";
+import { useChat } from "../context/ChatContext";
+import type { Connection, UserConnection } from "../types";
 
 const Connections: React.FC = () => {
   const navigate = useNavigate();
   const { getOrCreateDmThread } = useChat();
-  const [activeTab, setActiveTab] = useState<'connections' | 'requests'>('connections');
+  const [activeTab, setActiveTab] = useState<"connections" | "requests">("connections");
   const [connections, setConnections] = useState<UserConnection[]>([]);
   const [pendingRequests, setPendingRequests] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
       const [connectionsRes, requestsRes] = await Promise.all([
         api.connections.getMyConnections(),
-        api.connections.getPendingRequests()
+        api.connections.getPendingRequests(),
       ]);
-      
-      setConnections(connectionsRes.data);
-      setPendingRequests(requestsRes.data);
+
+      setConnections(connectionsRes.data as UserConnection[]);
+      setPendingRequests(requestsRes.data as Connection[]);
     } catch (error) {
-      console.error('Error fetching connections:', error);
-      setError('Failed to load connections.');
+      console.error("Error fetching connections:", error);
+      setError("Failed to load connections.");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const handleAcceptRequest = async (connectionId: string) => {
     try {
       await api.connections.acceptRequest(connectionId);
-      const acceptedRequest = pendingRequests.find(req => req.id === connectionId);
+      const acceptedRequest = pendingRequests.find((req) => req.id === connectionId);
       if (acceptedRequest) {
         const newConnection: UserConnection = {
           connection_id: connectionId,
           user: {
-            id: parseInt(acceptedRequest.from_user.toString()),
+            id: parseInt(acceptedRequest.from_user.toString(), 10),
             username: acceptedRequest.from_user_username,
-            date_joined: acceptedRequest.created_at
+            date_joined: acceptedRequest.created_at,
           },
-          connected_since: new Date().toISOString()
+          connected_since: new Date().toISOString(),
         };
-        setConnections(prev => [...prev, newConnection]);
-        setPendingRequests(prev => prev.filter(req => req.id !== connectionId));
+        setConnections((prev) => [...prev, newConnection]);
+        setPendingRequests((prev) => prev.filter((req) => req.id !== connectionId));
       }
     } catch (error) {
-      console.error('Error accepting request:', error);
-      setError('Failed to accept request.');
+      console.error("Error accepting request:", error);
+      setError("Failed to accept request.");
     }
   };
 
   const handleRejectRequest = async (connectionId: string) => {
     try {
       await api.connections.rejectRequest(connectionId);
-      setPendingRequests(prev => prev.filter(req => req.id !== connectionId));
+      setPendingRequests((prev) => prev.filter((req) => req.id !== connectionId));
     } catch (error) {
-      console.error('Error rejecting request:', error);
-      setError('Failed to reject request.');
+      console.error("Error rejecting request:", error);
+      setError("Failed to reject request.");
     }
   };
 
   const handleDisconnect = async (connectionId: string) => {
-    if (!confirm('Remove this connection?')) return;
-    
+    if (!confirm("Remove this connection?")) return;
+
     try {
       await api.connections.disconnect(connectionId);
-      setConnections(prev => prev.filter(conn => conn.connection_id !== connectionId));
+      setConnections((prev) => prev.filter((conn) => conn.connection_id !== connectionId));
     } catch (error) {
-      console.error('Error disconnecting:', error);
-      setError('Failed to remove connection.');
+      console.error("Error disconnecting:", error);
+      setError("Failed to remove connection.");
     }
   };
 
-  const filteredConnections = connections.filter(conn =>
-    conn.user.username.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredConnections = connections.filter((conn) =>
+    conn.user.username.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  const filteredRequests = pendingRequests.filter(req =>
-    req.from_user_username.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredRequests = pendingRequests.filter((req) =>
+    req.from_user_username.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   if (isLoading) {
@@ -120,7 +126,9 @@ const Connections: React.FC = () => {
         {error && (
           <div className="mx-4 mt-3 p-3 bg-red-100 border border-red-400 text-red-700 rounded-lg text-sm flex-shrink-0">
             {error}
-            <button onClick={() => setError(null)} className="float-right">×</button>
+            <button type="button" onClick={() => setError(null)} className="float-right">
+              ×
+            </button>
           </div>
         )}
 
@@ -128,11 +136,11 @@ const Connections: React.FC = () => {
         <div className="bg-white border-b border-gray-200 flex-shrink-0">
           <div className="flex">
             <button
-              onClick={() => setActiveTab('connections')}
+              onClick={() => setActiveTab("connections")}
               className={`flex-1 py-3 text-sm font-medium border-b-2 ${
-                activeTab === 'connections'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500'
+                activeTab === "connections"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500"
               }`}
             >
               <div className="flex items-center justify-center space-x-1">
@@ -141,11 +149,11 @@ const Connections: React.FC = () => {
               </div>
             </button>
             <button
-              onClick={() => setActiveTab('requests')}
+              onClick={() => setActiveTab("requests")}
               className={`flex-1 py-3 text-sm font-medium border-b-2 relative ${
-                activeTab === 'requests'
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500'
+                activeTab === "requests"
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500"
               }`}
             >
               <div className="flex items-center justify-center space-x-1">
@@ -167,7 +175,7 @@ const Connections: React.FC = () => {
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
               type="text"
-              placeholder={`Search ${activeTab === 'connections' ? 'connections' : 'requests'}...`}
+              placeholder={`Search ${activeTab === "connections" ? "connections" : "requests"}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
@@ -177,17 +185,17 @@ const Connections: React.FC = () => {
 
         {/* Content */}
         <div className="flex-1 overflow-hidden">
-          {activeTab === 'connections' ? (
+          {activeTab === "connections" ? (
             <div className="h-full flex flex-col">
               {filteredConnections.length === 0 ? (
                 <div className="flex-1 flex items-center justify-center px-4">
                   <div className="text-center">
                     <Users className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {searchTerm ? 'No connections found' : 'No connections yet'}
+                      {searchTerm ? "No connections found" : "No connections yet"}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {searchTerm ? 'Try adjusting your search' : 'Start connecting with others'}
+                      {searchTerm ? "Try adjusting your search" : "Start connecting with others"}
                     </p>
                   </div>
                 </div>
@@ -196,10 +204,11 @@ const Connections: React.FC = () => {
                   {/* Results count */}
                   <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
                     <p className="text-sm text-gray-600">
-                      {filteredConnections.length} connection{filteredConnections.length !== 1 ? 's' : ''}
+                      {filteredConnections.length} connection
+                      {filteredConnections.length !== 1 ? "s" : ""}
                     </p>
                   </div>
-                  
+
                   {/* Scrollable list */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="px-4 py-2 space-y-2">
@@ -218,7 +227,8 @@ const Connections: React.FC = () => {
                                   {connection.user.username}
                                 </h4>
                                 <p className="text-xs text-gray-600 truncate">
-                                  Connected {new Date(connection.connected_since).toLocaleDateString()}
+                                  Connected{" "}
+                                  {new Date(connection.connected_since).toLocaleDateString()}
                                 </p>
                               </div>
                             </div>
@@ -229,7 +239,7 @@ const Connections: React.FC = () => {
                                     const threadId = await getOrCreateDmThread(connection.user.id);
                                     navigate(`/chat/${threadId}`);
                                   } catch (error) {
-                                    console.error('Error creating DM thread:', error);
+                                    console.error("Error creating DM thread:", error);
                                   }
                                 }}
                                 className="p-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors"
@@ -260,10 +270,10 @@ const Connections: React.FC = () => {
                   <div className="text-center">
                     <Bell className="h-12 w-12 text-gray-400 mx-auto mb-3" />
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      {searchTerm ? 'No requests found' : 'No pending requests'}
+                      {searchTerm ? "No requests found" : "No pending requests"}
                     </h3>
                     <p className="text-sm text-gray-600">
-                      {searchTerm ? 'Try adjusting your search' : 'All caught up!'}
+                      {searchTerm ? "Try adjusting your search" : "All caught up!"}
                     </p>
                   </div>
                 </div>
@@ -272,10 +282,11 @@ const Connections: React.FC = () => {
                   {/* Results count */}
                   <div className="px-4 py-2 bg-gray-50 border-b border-gray-200">
                     <p className="text-sm text-gray-600">
-                      {filteredRequests.length} pending request{filteredRequests.length !== 1 ? 's' : ''}
+                      {filteredRequests.length} pending request
+                      {filteredRequests.length !== 1 ? "s" : ""}
                     </p>
                   </div>
-                  
+
                   {/* Scrollable list */}
                   <div className="flex-1 overflow-y-auto">
                     <div className="px-4 py-2 space-y-2">
@@ -327,4 +338,4 @@ const Connections: React.FC = () => {
   );
 };
 
-export default Connections; 
+export default Connections;

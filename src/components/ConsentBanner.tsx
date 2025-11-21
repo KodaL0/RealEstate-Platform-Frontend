@@ -10,10 +10,11 @@
  * - GDPR compliant
  */
 
-import React, { useState } from 'react';
-import { Shield, Check, X, Cookie } from 'lucide-react';
-import { ConsentPreferences } from '../services/ConsentManager';
-import ModalContainer from './ui/ModalContainer';
+import { Check, Cookie, Shield, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import type { ConsentPreferences } from "../services/ConsentManager";
+import ModalContainer from "./ui/ModalContainer";
 
 interface ConsentBannerProps {
   onConsent: (consents: ConsentPreferences) => void;
@@ -23,36 +24,36 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const handleAccept = async () => {
-    console.log('✅ [ConsentBanner] User clicked: ACCEPT');
+    console.log("✅ [ConsentBanner] User clicked: ACCEPT");
     setIsProcessing(true);
     try {
       const consents = {
         analytics: true,
-        marketing: false
+        marketing: false,
       };
-      console.log('✅ [ConsentBanner] Sending consents:', JSON.stringify(consents));
+      console.log("✅ [ConsentBanner] Sending consents:", JSON.stringify(consents));
       await onConsent(consents);
-      console.log('✅ [ConsentBanner] Accept completed successfully');
+      console.log("✅ [ConsentBanner] Accept completed successfully");
     } catch (error) {
-      console.error('❌ [ConsentBanner] Accept failed:', error);
+      console.error("❌ [ConsentBanner] Accept failed:", error);
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleReject = async () => {
-    console.log('❌ [ConsentBanner] User clicked: REJECT');
+    console.log("❌ [ConsentBanner] User clicked: REJECT");
     setIsProcessing(true);
     try {
       const consents = {
         analytics: false,
-        marketing: false
+        marketing: false,
       };
-      console.log('❌ [ConsentBanner] Sending consents:', JSON.stringify(consents));
+      console.log("❌ [ConsentBanner] Sending consents:", JSON.stringify(consents));
       await onConsent(consents);
-      console.log('✅ [ConsentBanner] Reject completed successfully');
+      console.log("✅ [ConsentBanner] Reject completed successfully");
     } catch (error) {
-      console.error('❌ [ConsentBanner] Reject failed:', error);
+      console.error("❌ [ConsentBanner] Reject failed:", error);
     } finally {
       setIsProcessing(false);
     }
@@ -70,11 +71,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
       <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-4">
         <div className="flex items-center justify-center mb-6">
           {/* Logo */}
-          <img
-            src="/favicon.svg"
-            alt="PropertPro"
-            className="w-16 h-16 sm:w-20 sm:h-20"
-          />
+          <img src="/favicon.svg" alt="PropertPro" className="w-16 h-16 sm:w-20 sm:h-20" />
         </div>
 
         <div className="text-center mb-6">
@@ -126,7 +123,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
         {/* Privacy Policy Link */}
         <div className="pt-2">
           <p className="text-xs text-gray-500 text-center">
-            By clicking "Accept", you agree to the storing of cookies on your device.{' '}
+            By clicking "Accept", you agree to the storing of cookies on your device.{" "}
             <a
               href="/privacy-policy"
               className="text-blue-600 hover:text-blue-700 underline font-medium transition-colors"
@@ -144,6 +141,7 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
         <div className="flex flex-col sm:flex-row gap-3">
           {/* Accept - Primary Action */}
           <button
+            type="button"
             onClick={handleAccept}
             disabled={isProcessing}
             className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5
@@ -155,11 +153,12 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
                      disabled:cursor-not-allowed disabled:transform-none"
           >
             <Check className="w-5 h-5" />
-            <span>{isProcessing ? 'Processing...' : 'Accept All'}</span>
+            <span>{isProcessing ? "Processing..." : "Accept All"}</span>
           </button>
 
           {/* Reject - Secondary Action */}
           <button
+            type="button"
             onClick={handleReject}
             disabled={isProcessing}
             className="flex-1 flex items-center justify-center gap-2 px-6 py-3.5
@@ -170,12 +169,13 @@ const ConsentBanner: React.FC<ConsentBannerProps> = ({ onConsent }) => {
                      disabled:cursor-not-allowed"
           >
             <X className="w-4 h-4" />
-            <span>{isProcessing ? 'Processing...' : 'Reject All'}</span>
+            <span>{isProcessing ? "Processing..." : "Reject All"}</span>
           </button>
         </div>
 
         {/* Customize option */}
         <button
+          type="button"
           className="w-full mt-3 text-sm text-gray-500 hover:text-gray-700 font-medium transition-colors"
           disabled={isProcessing}
         >

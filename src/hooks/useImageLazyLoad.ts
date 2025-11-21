@@ -1,4 +1,4 @@
-import { useEffect, useState, RefObject } from 'react';
+import { type RefObject, useEffect, useState } from "react";
 
 interface LazyLoadOptions {
   rootMargin?: string;
@@ -18,31 +18,31 @@ interface LazyLoadResult {
  */
 export const useImageLazyLoad = (
   elementRef: RefObject<HTMLElement>,
-  options: LazyLoadOptions = {}
+  options: LazyLoadOptions = {},
 ): LazyLoadResult => {
   const [isVisible, setIsVisible] = useState(false);
   const [hasBeenVisible, setHasBeenVisible] = useState(false);
-  
-  const { rootMargin = '200px', threshold = 0.01 } = options;
-  
+
+  const { rootMargin = "200px", threshold = 0.01 } = options;
+
   useEffect(() => {
     const element = elementRef.current;
     if (!element) return;
-    
+
     // Check if IntersectionObserver is supported
-    if (!('IntersectionObserver' in window)) {
+    if (!("IntersectionObserver" in window)) {
       // Fallback: assume visible if no support
       setIsVisible(true);
       setHasBeenVisible(true);
       return;
     }
-    
+
     const observer = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
           const visible = entry.isIntersecting;
           setIsVisible(visible);
-          
+
           // Once visible, always mark as has been visible
           if (visible) {
             setHasBeenVisible(true);
@@ -51,18 +51,17 @@ export const useImageLazyLoad = (
       },
       {
         rootMargin,
-        threshold
-      }
+        threshold,
+      },
     );
-    
+
     observer.observe(element);
-    
+
     // Cleanup
     return () => {
       observer.disconnect();
     };
   }, [elementRef, rootMargin, threshold]);
-  
+
   return { isVisible, hasBeenVisible };
 };
-

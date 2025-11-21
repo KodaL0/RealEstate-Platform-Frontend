@@ -1,6 +1,6 @@
-import React from 'react';
-import { Link } from 'react-router-dom';
-import { Building2 } from 'lucide-react';
+import { Building2 } from "lucide-react";
+import type React from "react";
+import { Link } from "react-router-dom";
 
 const AboutUs: React.FC = () => {
   return (
@@ -21,28 +21,29 @@ const AboutUs: React.FC = () => {
 
           <div className="space-y-6 text-gray-600">
             <p>
-              PropertPro is your trusted partner in real estate, dedicated to helping you find the perfect
-              property. We’ve just launched PropertPro to help connect buyers, sellers, renters, and agents —
-              with a vision to build a platform that truly supports every step of the real estate journey.
+              PropertPro is your trusted partner in real estate, dedicated to helping you find the
+              perfect property. We’ve just launched PropertPro to help connect buyers, sellers,
+              renters, and agents — with a vision to build a platform that truly supports every step
+              of the real estate journey.
             </p>
 
             <p>
-              Our mission is to simplify property transactions and make them transparent, accessible, and user-
-              friendly. By using modern technologies, we’re building a seamless experience for every step of
-              your real estate journey.
+              Our mission is to simplify property transactions and make them transparent,
+              accessible, and user- friendly. By using modern technologies, we’re building a
+              seamless experience for every step of your real estate journey.
             </p>
 
             <p>
-              We’re a team of two passionate individuals who love what we do and believe in helping people
-              find their next home. We've focused our skills to create a platform that supports homeowners,
-              realtors, and anyone actively searching for property.
+              We’re a team of two passionate individuals who love what we do and believe in helping
+              people find their next home. We've focused our skills to create a platform that
+              supports homeowners, realtors, and anyone actively searching for property.
             </p>
 
             <p>
-              But we don’t want to stop there we want to improve continuously, and that’s where you come
-              in. Tell us what features would help you most. Share your ideas. Let us know what’s missing. Our
-              goal is direct communication and real collaboration with our users to build something truly useful
-              together.
+              But we don’t want to stop there we want to improve continuously, and that’s where you
+              come in. Tell us what features would help you most. Share your ideas. Let us know
+              what’s missing. Our goal is direct communication and real collaboration with our users
+              to build something truly useful together.
             </p>
 
             <p className="text-center font-medium text-gray-700">

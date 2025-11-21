@@ -1,5 +1,8 @@
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind base;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind components;
+/* biome-ignore lint/suspicious/noUnknownAtRules: Tailwind CSS directives */
 @tailwind utilities;
 
 html,
@@ -9,7 +12,6 @@ body,
   margin: 0;
   padding: 0;
 }
-
 
 @layer base {
   body {
@@ -21,11 +23,11 @@ body,
   .btn {
     @apply px-4 py-2 rounded-md font-medium transition-colors;
   }
-  
+
   .btn-primary {
     @apply bg-blue-600 text-white hover:bg-blue-700;
   }
-  
+
   .btn-secondary {
     @apply bg-gray-200 text-gray-800 hover:bg-gray-300;
   }
@@ -103,34 +105,34 @@ body,
     .xs\:inline {
       display: inline;
     }
-    
+
     .xs\:hidden {
       display: none;
     }
-    
+
     .xs\:block {
       display: block;
     }
-    
+
     .xs\:flex {
       display: flex;
     }
-    
+
     .xs\:text-sm {
       font-size: 0.875rem;
       line-height: 1.25rem;
     }
-    
+
     .xs\:text-xs {
       font-size: 0.75rem;
       line-height: 1rem;
     }
-    
+
     .xs\:px-2 {
       padding-left: 0.5rem;
       padding-right: 0.5rem;
     }
-    
+
     .xs\:px-3 {
       padding-left: 0.75rem;
       padding-right: 0.75rem;
@@ -143,12 +145,12 @@ body,
       font-size: 0.75rem;
       line-height: 1rem;
     }
-    
+
     .xxs\:px-1 {
       padding-left: 0.25rem;
       padding-right: 0.25rem;
     }
-    
+
     .xxs\:text-xxs {
       font-size: 10px;
     }
@@ -184,7 +186,6 @@ body,
   /* Smooth momentum scrolling on iOS */
   .momentum-scroll {
     -webkit-overflow-scrolling: touch;
-    overflow-scrolling: touch;
   }
 
   /* Mobile chat optimizations */
@@ -219,12 +220,10 @@ body,
 
   /* Viewport units that respect mobile keyboards */
   .h-screen-safe {
-    height: 100vh;
     height: 100dvh; /* Dynamic viewport height for mobile */
   }
 
   .min-h-screen-safe {
-    min-height: 100vh;
     min-height: 100dvh;
   }
 
@@ -344,7 +343,7 @@ body,
   }
 
   .message-active::before {
-    content: '';
+    content: "";
     position: absolute;
     inset: -8px;
     background: rgba(59, 130, 246, 0.05);

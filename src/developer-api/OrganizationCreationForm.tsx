@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState } from "react";
 
 interface OrganizationCreationFormProps {
   onSubmit: (formData: Partial<Organization>) => Promise<void>;
@@ -19,23 +19,26 @@ type Organization = {
   updated_at: string;
 };
 
-export default function OrganizationCreationForm({ onSubmit, isLoading }: OrganizationCreationFormProps) {
+export default function OrganizationCreationForm({
+  onSubmit,
+  isLoading,
+}: OrganizationCreationFormProps) {
   const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    country: 'Cyprus',
-    website: '',
-    email: '',
-    phone: '',
-    established: new Date().getFullYear()
+    name: "",
+    description: "",
+    country: "Cyprus",
+    website: "",
+    email: "",
+    phone: "",
+    established: new Date().getFullYear(),
   });
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   const handleInputChange = (field: string, value: string | number) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    setFormData((prev) => ({ ...prev, [field]: value }));
     if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -43,22 +46,22 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Organization name is required';
+      newErrors.name = "Organization name is required";
     }
 
     if (!formData.country.trim()) {
-      newErrors.country = 'Country is required';
+      newErrors.country = "Country is required";
     }
 
     if (formData.email && !/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (formData.website) {
       try {
         new URL(formData.website);
-      } catch (error) {
-        newErrors.website = 'Please enter a valid website URL';
+      } catch (_error) {
+        newErrors.website = "Please enter a valid website URL";
       }
     }
 
@@ -68,7 +71,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) {
       return;
     }
@@ -93,7 +96,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
           {/* Basic Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Basic Information</h3>
-            
+
             <div>
               <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
                 Organization Name <span className="text-red-500">*</span>
@@ -102,16 +105,14 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 type="text"
                 id="name"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.name ? 'border-red-500' : 'border-gray-300'
+                  errors.name ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter organization name"
                 disabled={isLoading}
               />
-              {errors.name && (
-                <p className="text-red-500 text-sm mt-1">{errors.name}</p>
-              )}
+              {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
             </div>
 
             <div>
@@ -121,7 +122,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
               <textarea
                 id="description"
                 value={formData.description}
-                onChange={(e) => handleInputChange('description', e.target.value)}
+                onChange={(e) => handleInputChange("description", e.target.value)}
                 rows={3}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Describe your organization and what you do"
@@ -136,9 +137,9 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
               <select
                 id="country"
                 value={formData.country}
-                onChange={(e) => handleInputChange('country', e.target.value)}
+                onChange={(e) => handleInputChange("country", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.country ? 'border-red-500' : 'border-gray-300'
+                  errors.country ? "border-red-500" : "border-gray-300"
                 }`}
                 disabled={isLoading}
               >
@@ -152,9 +153,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 <option value="Italy">Italy</option>
                 <option value="Other">Other</option>
               </select>
-              {errors.country && (
-                <p className="text-red-500 text-sm mt-1">{errors.country}</p>
-              )}
+              {errors.country && <p className="text-red-500 text-sm mt-1">{errors.country}</p>}
             </div>
 
             <div>
@@ -165,7 +164,12 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 type="number"
                 id="established"
                 value={formData.established}
-                onChange={(e) => handleInputChange('established', parseInt(e.target.value) || new Date().getFullYear())}
+                onChange={(e) =>
+                  handleInputChange(
+                    "established",
+                    parseInt(e.target.value, 10) || new Date().getFullYear(),
+                  )
+                }
                 min="1900"
                 max={new Date().getFullYear() + 1}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -177,7 +181,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
           {/* Contact Information */}
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-900">Contact Information</h3>
-            
+
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email Address
@@ -186,16 +190,14 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 type="email"
                 id="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
+                onChange={(e) => handleInputChange("email", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.email ? 'border-red-500' : 'border-gray-300'
+                  errors.email ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="contact@yourcompany.com"
                 disabled={isLoading}
               />
-              {errors.email && (
-                <p className="text-red-500 text-sm mt-1">{errors.email}</p>
-              )}
+              {errors.email && <p className="text-red-500 text-sm mt-1">{errors.email}</p>}
             </div>
 
             <div>
@@ -206,7 +208,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 type="tel"
                 id="phone"
                 value={formData.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
+                onChange={(e) => handleInputChange("phone", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="+357 99 123 456"
                 disabled={isLoading}
@@ -221,16 +223,14 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                 type="text"
                 id="website"
                 value={formData.website}
-                onChange={(e) => handleInputChange('website', e.target.value)}
+                onChange={(e) => handleInputChange("website", e.target.value)}
                 className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  errors.website ? 'border-red-500' : 'border-gray-300'
+                  errors.website ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="Enter website URL"
                 disabled={isLoading}
               />
-              {errors.website && (
-                <p className="text-red-500 text-sm mt-1">{errors.website}</p>
-              )}
+              {errors.website && <p className="text-red-500 text-sm mt-1">{errors.website}</p>}
             </div>
           </div>
 
@@ -247,7 +247,7 @@ export default function OrganizationCreationForm({ onSubmit, isLoading }: Organi
                   Creating...
                 </div>
               ) : (
-                'Create Organization'
+                "Create Organization"
               )}
             </button>
           </div>

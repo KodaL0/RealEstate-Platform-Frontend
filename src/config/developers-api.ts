@@ -1,6 +1,6 @@
 // src/config/developers-api.ts
-import axios from 'axios';
-import environment from './environment';
+import axios from "axios";
+import environment from "./environment";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Cache Management
@@ -12,10 +12,19 @@ interface CacheEntry<T> {
   ttl: number;
 }
 
+// Type for the API structure used by cache
+// Note: Unit, DeveloperAsset, and Project interfaces are defined later in this file
+interface DeveloperApiStructure {
+  units: { list: () => Promise<unknown[]> };
+  assets: { list: () => Promise<unknown[]> };
+  projects: { list: () => Promise<unknown[]> };
+}
+
 interface CacheStore {
-  units: CacheEntry<any[]> | null;
-  assets: CacheEntry<any[]> | null;
-  projects: CacheEntry<any[]> | null;
+  // Forward references - Unit, DeveloperAsset, Project interfaces defined later
+  units: CacheEntry<Unit[]> | null;
+  assets: CacheEntry<DeveloperAsset[]> | null;
+  projects: CacheEntry<Project[]> | null;
 }
 
 class DeveloperApiCache {
@@ -25,19 +34,19 @@ class DeveloperApiCache {
     projects: null,
   };
 
-  private pendingRequests: Map<string, Promise<any>> = new Map();
+  private pendingRequests: Map<string, Promise<unknown>> = new Map();
   private readonly TTL = 5 * 60 * 1000; // 5 minutes
-  private backgroundRefreshInterval: NodeJS.Timeout | null = null;
+  private backgroundRefreshInterval: ReturnType<typeof setInterval> | null = null;
 
-  private isCacheValid(entry: CacheEntry<any> | null): boolean {
+  private isCacheValid(entry: CacheEntry<unknown> | null): boolean {
     if (!entry) return false;
     const now = Date.now();
-    return (now - entry.timestamp) < entry.ttl;
+    return now - entry.timestamp < entry.ttl;
   }
 
   get<T>(key: keyof CacheStore): T | null {
     const entry = this.cache[key];
-    if (this.isCacheValid(entry)) {
+    if (entry && this.isCacheValid(entry)) {
       return entry.data as T;
     }
     return null;
@@ -45,7 +54,7 @@ class DeveloperApiCache {
 
   set<T>(key: keyof CacheStore, data: T): void {
     this.cache[key] = {
-      data,
+      data: data as Unit[] & DeveloperAsset[] & Project[],
       timestamp: Date.now(),
       ttl: this.TTL,
     };
@@ -54,9 +63,10 @@ class DeveloperApiCache {
   updateItem<T extends { id: number }>(key: keyof CacheStore, updatedItem: T): void {
     const entry = this.cache[key];
     if (entry && Array.isArray(entry.data)) {
-      const index = entry.data.findIndex((item: any) => item.id === updatedItem.id);
+      const dataArray = entry.data as Array<{ id: number }>;
+      const index = dataArray.findIndex((item) => item.id === updatedItem.id);
       if (index !== -1) {
-        entry.data[index] = updatedItem;
+        (dataArray as unknown[])[index] = updatedItem;
         entry.timestamp = Date.now();
       }
     }
@@ -65,7 +75,8 @@ class DeveloperApiCache {
   addItem<T>(key: keyof CacheStore, newItem: T): void {
     const entry = this.cache[key];
     if (entry && Array.isArray(entry.data)) {
-      entry.data.unshift(newItem);
+      const dataArray = entry.data as unknown[];
+      dataArray.unshift(newItem);
       entry.timestamp = Date.now();
     }
   }
@@ -73,7 +84,8 @@ class DeveloperApiCache {
   removeItem(key: keyof CacheStore, itemId: number): void {
     const entry = this.cache[key];
     if (entry && Array.isArray(entry.data)) {
-      entry.data = entry.data.filter((item: any) => item.id !== itemId);
+      const dataArray = entry.data as Array<{ id: number }>;
+      entry.data = dataArray.filter((item) => item.id !== itemId) as typeof entry.data;
       entry.timestamp = Date.now();
     }
   }
@@ -90,11 +102,11 @@ class DeveloperApiCache {
     };
   }
 
-  private getPendingRequest(key: string): Promise<any> | null {
+  private getPendingRequest(key: string): Promise<unknown> | null {
     return this.pendingRequests.get(key) || null;
   }
 
-  private setPendingRequest(key: string, promise: Promise<any>): void {
+  private setPendingRequest(key: string, promise: Promise<unknown>): void {
     this.pendingRequests.set(key, promise);
     promise.finally(() => {
       this.pendingRequests.delete(key);
@@ -104,7 +116,7 @@ class DeveloperApiCache {
   async getCachedData<T>(
     key: keyof CacheStore,
     apiCall: () => Promise<T>,
-    requestKey?: string
+    requestKey?: string,
   ): Promise<T> {
     const cachedData = this.get<T>(key);
     if (cachedData !== null) {
@@ -114,7 +126,7 @@ class DeveloperApiCache {
     const pendingKey = requestKey || key;
     const pendingRequest = this.getPendingRequest(pendingKey);
     if (pendingRequest) {
-      return pendingRequest;
+      return pendingRequest as Promise<T>;
     }
 
     const apiPromise = apiCall().then((data) => {
@@ -126,7 +138,7 @@ class DeveloperApiCache {
     return apiPromise;
   }
 
-  async bulkFetch(api: any): Promise<void> {
+  async bulkFetch(api: DeveloperApiStructure): Promise<void> {
     try {
       const [units, assets, projects] = await Promise.all([
         api.units.list(),
@@ -134,28 +146,31 @@ class DeveloperApiCache {
         api.projects.list(),
       ]);
 
-      this.set('units', units);
-      this.set('assets', assets);
-      this.set('projects', projects);
+      this.set("units", units as Unit[]);
+      this.set("assets", assets as DeveloperAsset[]);
+      this.set("projects", projects as Project[]);
 
-      console.log('Developer API: Bulk data cached successfully');
+      console.log("Developer API: Bulk data cached successfully");
     } catch (error) {
-      console.error('Developer API: Failed to bulk fetch data:', error);
+      console.error("Developer API: Failed to bulk fetch data:", error);
     }
   }
 
-  startBackgroundRefresh(api: any, intervalMinutes: number = 4): void {
+  startBackgroundRefresh(api: DeveloperApiStructure, intervalMinutes: number = 4): void {
     if (this.backgroundRefreshInterval) {
       clearInterval(this.backgroundRefreshInterval);
     }
 
-    this.backgroundRefreshInterval = setInterval(async () => {
-      try {
-        await this.bulkFetch(api);
-      } catch (error) {
-        console.error('Developer API: Background refresh failed:', error);
-      }
-    }, intervalMinutes * 60 * 1000);
+    this.backgroundRefreshInterval = setInterval(
+      async () => {
+        try {
+          await this.bulkFetch(api);
+        } catch (error) {
+          console.error("Developer API: Background refresh failed:", error);
+        }
+      },
+      intervalMinutes * 60 * 1000,
+    );
   }
 
   stopBackgroundRefresh(): void {
@@ -167,7 +182,7 @@ class DeveloperApiCache {
 
   getCacheStatus(): Record<string, { hasData: boolean; age: number; isValid: boolean }> {
     const now = Date.now();
-    const status: Record<string, any> = {};
+    const status: Record<string, { hasData: boolean; age: number; isValid: boolean }> = {};
 
     Object.entries(this.cache).forEach(([key, entry]) => {
       if (entry) {
@@ -203,59 +218,86 @@ const devApiClient = axios.create({
   baseURL: `${environment.baseUrl}/api`,
   withCredentials: true,
   headers: {
-    Accept: 'application/json',
-    'Content-Type': 'application/json',
-    'X-Requested-With': 'XMLHttpRequest',
+    Accept: "application/json",
+    "Content-Type": "application/json",
+    "X-Requested-With": "XMLHttpRequest",
   },
 });
 
 // Attach Authorization (from cookies) and CSRF headers centrally
 devApiClient.interceptors.request.use((cfg) => {
   const getCookieValue = (name: string): string | null => {
-    if (typeof document === 'undefined') return null;
-    const cookies = document.cookie.split(';');
-    for (let cookie of cookies) {
-      const [cookieName, ...cookieValueParts] = cookie.trim().split('=');
+    if (typeof document === "undefined") return null;
+    const cookies = document.cookie.split(";");
+    for (const cookie of cookies) {
+      const [cookieName, ...cookieValueParts] = cookie.trim().split("=");
       if (cookieName === name) {
-        return cookieValueParts.join('=');
+        return cookieValueParts.join("=");
       }
     }
     return null;
   };
 
-  let token = getCookieValue('access_token');
-  if (!token) token = getCookieValue('mobile_access_token');
+  let token = getCookieValue("access_token");
+  if (!token) token = getCookieValue("mobile_access_token");
   if (token) {
-    cfg.headers = { ...cfg.headers, Authorization: `Bearer ${token}` } as any;
+    cfg.headers = { ...cfg.headers, Authorization: `Bearer ${token}` } as typeof cfg.headers;
   }
 
-  const csrfToken = getCookieValue('csrftoken');
+  const csrfToken = getCookieValue("csrftoken");
   if (csrfToken) {
-    cfg.headers = { ...cfg.headers, 'X-CSRFToken': csrfToken } as any;
+    cfg.headers = { ...cfg.headers, "X-CSRFToken": csrfToken } as typeof cfg.headers;
   }
 
   return cfg;
 });
 
 // Helper wrappers bound to the devApiClient
-function toPromise<T>(p: any): Promise<T> {
+function toPromise<T>(
+  p:
+    | Promise<{ data?: T }>
+    | Promise<T>
+    | {
+        then: (onFulfilled: (value: unknown) => unknown) => unknown;
+        catch: (onRejected: (reason: unknown) => unknown) => unknown;
+      },
+): Promise<T> {
   return new Promise((resolve, reject) => {
-    (p as any).then((r: any) => resolve((r?.data ?? r) as T)).catch(reject);
+    const promise = p as Promise<{ data?: T } | T>;
+    promise
+      .then((r: { data?: T } | T) => {
+        const data =
+          (r && typeof r === "object" && "data" in r ? (r as { data?: T }).data : r) ?? (r as T);
+        resolve(data as T);
+      })
+      .catch(reject);
   });
 }
 
-const devApiGet = <T = any>(endpoint: string, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.get<T>(endpoint, config));
-const devApiPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.post<T>(endpoint, data, config));
-const devApiPut = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.put<T>(endpoint, data, config));
-const devApiDelete = <T = any>(endpoint: string, config?: any): Promise<void> =>
-  toPromise<T>(devApiClient.delete<void>(endpoint, config));
-const devApiFormPost = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.post<T>(endpoint, data, { ...(config || {}), headers: { ...(config?.headers || {}), 'Content-Type': 'multipart/form-data' } }));
-const devApiPatch = <T = any>(endpoint: string, data?: any, config?: any): Promise<T> =>
-  toPromise<T>(devApiClient.patch<T>(endpoint, data, config));
+const devApiGet = <T = unknown>(endpoint: string, config?: unknown): Promise<T> =>
+  toPromise<T>(devApiClient.get<T>(endpoint, config as never));
+const devApiPost = <T = unknown>(endpoint: string, data?: unknown, config?: unknown): Promise<T> =>
+  toPromise<T>(devApiClient.post<T>(endpoint, data, config as never));
+const devApiPut = <T = unknown>(endpoint: string, data?: unknown, config?: unknown): Promise<T> =>
+  toPromise<T>(devApiClient.put<T>(endpoint, data, config as never));
+const devApiDelete = (endpoint: string, config?: unknown): Promise<void> =>
+  toPromise<void>(devApiClient.delete<void>(endpoint, config as never));
+const devApiFormPost = <T = unknown>(
+  endpoint: string,
+  data?: unknown,
+  config?: unknown,
+): Promise<T> =>
+  toPromise<T>(
+    devApiClient.post<T>(endpoint, data, {
+      ...((config as { headers?: Record<string, string> }) || {}),
+      headers: {
+        ...((config as { headers?: Record<string, string> })?.headers || {}),
+        "Content-Type": "multipart/form-data",
+      },
+    } as never),
+  );
+const devApiPatch = <T = unknown>(endpoint: string, data?: unknown, config?: unknown): Promise<T> =>
+  toPromise<T>(devApiClient.patch<T>(endpoint, data, config as never));
 
 // ────────────────────────────────────────────────────────────────────────────
 // TypeScript Interfaces
@@ -281,7 +323,7 @@ export interface DeveloperMembership {
   id: number;
   user: number;
   organization: number;
-  role: 'admin' | 'editor' | 'viewer';
+  role: "admin" | "editor" | "viewer";
   created_at: string;
   updated_at: string;
 }
@@ -293,7 +335,7 @@ export interface Project {
   description?: string;
   location: string;
   country: string;
-  status: 'planning' | 'construction' | 'completed' | 'available';
+  status: "planning" | "construction" | "completed" | "available";
   start_date?: string;
   completion_date?: string;
   total_units: number;
@@ -306,7 +348,7 @@ export interface Project {
   property_types: string[];
   amenities: string[];
   features: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   main_image?: string;
   latitude?: number;
   longitude?: number;
@@ -323,10 +365,20 @@ export interface ProjectAsset {
   id: number;
   project: number;
   file: string;
-  category: 'floor_plans' | 'brochures' | 'legal_documents' | 'photos' | 'videos' | 'presentations' | 'specifications' | 'contracts' | 'permits' | 'other';
+  category:
+    | "floor_plans"
+    | "brochures"
+    | "legal_documents"
+    | "photos"
+    | "videos"
+    | "presentations"
+    | "specifications"
+    | "contracts"
+    | "permits"
+    | "other";
   title?: string;
   description?: string;
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   uploaded_at: string;
 }
 
@@ -335,7 +387,7 @@ export interface Unit {
   project: number;
   code: string;
   block?: string;
-  unit_type: 'studio' | 'apartment' | 'house';
+  unit_type: "studio" | "apartment" | "house";
   bedrooms: number;
   bathrooms?: number;
   area_internal?: number;
@@ -346,18 +398,18 @@ export interface Unit {
   price?: number;
   currency: string;
   vat_included: boolean;
-  status: 'available' | 'reserved' | 'sold';
+  status: "available" | "reserved" | "sold";
   pool_type?: string;
   delivery_months?: number;
   price_min_furniture_package?: number;
   price_max_furniture_package?: number;
   external_ref?: string;
   // New fields for plot, veranda, and pool
-  plot?: 'none' | 'communal' | 'private' | 'both';
+  plot?: "none" | "communal" | "private" | "both";
   plot_area?: number;
-  veranda?: 'none' | 'communal' | 'private' | 'both';
+  veranda?: "none" | "communal" | "private" | "both";
   veranda_area?: number;
-  pool?: 'none' | 'communal' | 'private' | 'both';
+  pool?: "none" | "communal" | "private" | "both";
   pool_area?: number;
   is_published: boolean;
   created_at: string;
@@ -376,7 +428,7 @@ export interface UnitMedia {
 export interface DeveloperAsset {
   id: number;
   project: number;
-  asset_type: 'document' | 'image' | 'video' | 'audio' | 'archive' | 'other';
+  asset_type: "document" | "image" | "video" | "audio" | "archive" | "other";
   file: string;
   file_url?: string;
   original_filename: string;
@@ -389,7 +441,7 @@ export interface DeveloperAsset {
   image_category?: string;
   video_category?: string;
   tags: string[];
-  metadata: Record<string, any>;
+  metadata: Record<string, unknown>;
   width?: number;
   height?: number;
   duration?: string;
@@ -449,7 +501,7 @@ export interface LogoUploadResponse {
 
 export interface BulkUploadResponse {
   created_assets: DeveloperAsset[];
-  errors: Array<{ filename: string; errors?: any; error?: string }>;
+  errors: Array<{ filename: string; errors?: unknown; error?: string }>;
   total_created: number;
   total_errors: number;
 }
@@ -458,11 +510,11 @@ export interface BulkUploadResponse {
 // Base API Configuration
 // ────────────────────────────────────────────────────────────────────────────
 
-const DEV_API_BASE = '/dev/v1';
+const DEV_API_BASE = "/dev/v1";
 
 const formatDevEndpoint = (endpoint: string): string => {
-  const cleanEndpoint = endpoint.replace(/^\/+/, '');
-  return `${DEV_API_BASE}/${cleanEndpoint}${cleanEndpoint.endsWith('/') ? '' : '/'}`;
+  const cleanEndpoint = endpoint.replace(/^\/+/, "");
+  return `${DEV_API_BASE}/${cleanEndpoint}${cleanEndpoint.endsWith("/") ? "" : "/"}`;
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -472,11 +524,11 @@ const formatDevEndpoint = (endpoint: string): string => {
 export const organizationsApi = {
   // Get user's organization
   getMine: (): Promise<OrganizationResponse> =>
-    devApiGet<OrganizationResponse>(formatDevEndpoint('orgs/mine')),
+    devApiGet<OrganizationResponse>(formatDevEndpoint("orgs/mine")),
 
   // List organizations user belongs to
   list: (): Promise<DeveloperOrganization[]> =>
-    devApiGet<DeveloperOrganization[]>(formatDevEndpoint('orgs')),
+    devApiGet<DeveloperOrganization[]>(formatDevEndpoint("orgs")),
 
   // Get specific organization
   get: (id: number): Promise<DeveloperOrganization> =>
@@ -484,7 +536,7 @@ export const organizationsApi = {
 
   // Create organization
   create: (data: Partial<DeveloperOrganization>): Promise<DeveloperOrganization> =>
-    devApiPost<DeveloperOrganization>(formatDevEndpoint('orgs'), data),
+    devApiPost<DeveloperOrganization>(formatDevEndpoint("orgs"), data),
 
   // Update organization
   update: (id: number, data: Partial<DeveloperOrganization>): Promise<DeveloperOrganization> =>
@@ -495,27 +547,29 @@ export const organizationsApi = {
     devApiPatch<DeveloperOrganization>(formatDevEndpoint(`orgs/${id}`), data),
 
   // Delete organization
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`orgs/${id}`)),
+  delete: (id: number): Promise<void> => devApiDelete(formatDevEndpoint(`orgs/${id}`)),
 
   // Upload organization logo
   uploadLogo: (id: number, logoFile: File) => {
     const formData = new FormData();
-    formData.append('logo', logoFile);
-    return devApiFormPost<LogoUploadResponse>(formatDevEndpoint(`orgs/${id}/upload_logo`), formData);
+    formData.append("logo", logoFile);
+    return devApiFormPost<LogoUploadResponse>(
+      formatDevEndpoint(`orgs/${id}/upload_logo`),
+      formData,
+    );
   },
 
   // Get organization file structure
   getFileStructure: (): Promise<FileStructure> =>
-    devApiGet<FileStructure>(formatDevEndpoint('orgs/file_structure')),
+    devApiGet<FileStructure>(formatDevEndpoint("orgs/file_structure")),
 
   // Get S3 logo folder structure
-  getLogoStructure: (): Promise<any> =>
-    devApiGet<any>(formatDevEndpoint('orgs/logo_structure')),
+  getLogoStructure: (): Promise<unknown> =>
+    devApiGet<unknown>(formatDevEndpoint("orgs/logo_structure")),
 
   // Clean up orphaned logos
-  cleanupLogos: (): Promise<any> =>
-    devApiPost<any>(formatDevEndpoint('orgs/cleanup_logos')),
+  cleanupLogos: (): Promise<unknown> =>
+    devApiPost<unknown>(formatDevEndpoint("orgs/cleanup_logos")),
 
   // Publish / Unpublish organization
   publish: (id: number): Promise<{ message: string }> =>
@@ -524,8 +578,8 @@ export const organizationsApi = {
     devApiPost<{ message: string }>(formatDevEndpoint(`orgs/${id}/unpublish`), {}),
 
   // Public
-  listPublic: (params?: Record<string, any>): Promise<any> =>
-    devApiGet<any>(formatDevEndpoint('orgs/public'), { params }),
+  listPublic: (params?: Record<string, unknown>): Promise<unknown> =>
+    devApiGet<unknown>(formatDevEndpoint("orgs/public"), { params }),
   getPublic: (idOrSlug: number | string): Promise<DeveloperOrganization> =>
     devApiGet<DeveloperOrganization>(formatDevEndpoint(`orgs/${idOrSlug}/public_detail`)),
 };
@@ -536,14 +590,12 @@ export const organizationsApi = {
 
 export const projectsApi = {
   // Raw API methods
-  list: (): Promise<Project[]> =>
-    devApiGet<Project[]>(formatDevEndpoint('projects')),
+  list: (): Promise<Project[]> => devApiGet<Project[]>(formatDevEndpoint("projects")),
 
-  get: (id: number): Promise<Project> =>
-    devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
+  get: (id: number): Promise<Project> => devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
 
   create: (data: Partial<Project>): Promise<Project> =>
-    devApiPost<Project>(formatDevEndpoint('projects'), data),
+    devApiPost<Project>(formatDevEndpoint("projects"), data),
 
   update: (id: number, data: Partial<Project>): Promise<Project> =>
     devApiPut<Project>(formatDevEndpoint(`projects/${id}`), data),
@@ -551,37 +603,38 @@ export const projectsApi = {
   patch: (id: number, data: Partial<Project>): Promise<Project> =>
     devApiPatch<Project>(formatDevEndpoint(`projects/${id}`), data),
 
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`projects/${id}`)),
+  delete: (id: number): Promise<void> => devApiDelete(formatDevEndpoint(`projects/${id}`)),
 
   // Cache-integrated methods
   listCached: (): Promise<Project[]> =>
-    developerApiCache.getCachedData('projects', () => devApiGet<Project[]>(formatDevEndpoint('projects'))),
+    developerApiCache.getCachedData("projects", () =>
+      devApiGet<Project[]>(formatDevEndpoint("projects")),
+    ),
 
   getCached: (id: number): Promise<Project> =>
     devApiGet<Project>(formatDevEndpoint(`projects/${id}`)),
 
   createAndCache: async (data: Partial<Project>): Promise<Project> => {
-    const result = await devApiPost<Project>(formatDevEndpoint('projects'), data);
-    developerApiCache.addItem('projects', result);
+    const result = await devApiPost<Project>(formatDevEndpoint("projects"), data);
+    developerApiCache.addItem("projects", result);
     return result;
   },
 
   updateAndCache: async (id: number, data: Partial<Project>): Promise<Project> => {
     const result = await devApiPut<Project>(formatDevEndpoint(`projects/${id}`), data);
-    developerApiCache.updateItem('projects', result);
+    developerApiCache.updateItem("projects", result);
     return result;
   },
 
   patchAndCache: async (id: number, data: Partial<Project>): Promise<Project> => {
     const result = await devApiPatch<Project>(formatDevEndpoint(`projects/${id}`), data);
-    developerApiCache.updateItem('projects', result);
+    developerApiCache.updateItem("projects", result);
     return result;
   },
 
   deleteAndCache: async (id: number): Promise<void> => {
-    await devApiDelete<void>(formatDevEndpoint(`projects/${id}`));
-    developerApiCache.removeItem('projects', id);
+    await devApiDelete(formatDevEndpoint(`projects/${id}`));
+    developerApiCache.removeItem("projects", id);
   },
 
   // Publish / Unpublish project
@@ -592,47 +645,63 @@ export const projectsApi = {
 
   // Public
   listPublic: (params?: { organization?: number }): Promise<Project[]> =>
-    devApiGet<Project[]>(formatDevEndpoint('projects/public'), { params }),
+    devApiGet<Project[]>(formatDevEndpoint("projects/public"), { params }),
   getPublic: (id: number): Promise<Project> =>
     devApiGet<Project>(formatDevEndpoint(`projects/${id}/public_detail`)),
 
   // Upload project asset (legacy endpoint - use assets.create instead)
-  uploadAsset: (projectId: number, data: {
-    file: File;
-    type?: string;
-    title?: string;
-    metadata?: Record<string, any>;
-    progress_date?: string;
-  }): Promise<DeveloperAsset> => {
+  uploadAsset: (
+    projectId: number,
+    data: {
+      file: File;
+      type?: string;
+      title?: string;
+      metadata?: Record<string, unknown>;
+      progress_date?: string;
+    },
+  ): Promise<DeveloperAsset> => {
     const formData = new FormData();
-    formData.append('file', data.file);
-    formData.append('project', String(projectId));
-    if (data.type) formData.append('asset_type', data.type);
-    if (data.title) formData.append('title', data.title);
-    if (data.metadata) formData.append('metadata', JSON.stringify(data.metadata));
-    if (data.progress_date) formData.append('progress_date', data.progress_date);
-    
+    formData.append("file", data.file);
+    formData.append("project", String(projectId));
+    if (data.type) formData.append("asset_type", data.type);
+    if (data.title) formData.append("title", data.title);
+    if (data.metadata) formData.append("metadata", JSON.stringify(data.metadata));
+    if (data.progress_date) formData.append("progress_date", data.progress_date);
+
     // Use the enhanced assets API instead of legacy project-assets endpoint
-    return devApiFormPost<DeveloperAsset>(formatDevEndpoint('assets'), formData);
+    return devApiFormPost<DeveloperAsset>(formatDevEndpoint("assets"), formData);
   },
 
   // Ingest pricelist from text
   ingestPricelist: (projectId: number, text: string): Promise<PricelistIngestionResult> =>
-    devApiPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist`), { text }),
+    devApiPost<PricelistIngestionResult>(
+      formatDevEndpoint(`projects/${projectId}/ingest_pricelist`),
+      { text },
+    ),
 
   // Ingest pricelist from PDF
   ingestPricelistPdf: (projectId: number, file: File): Promise<PricelistIngestionResult> => {
     const formData = new FormData();
-    formData.append('file', file);
-    return devApiFormPost<PricelistIngestionResult>(formatDevEndpoint(`projects/${projectId}/ingest_pricelist_pdf`), formData);
+    formData.append("file", file);
+    return devApiFormPost<PricelistIngestionResult>(
+      formatDevEndpoint(`projects/${projectId}/ingest_pricelist_pdf`),
+      formData,
+    );
   },
 
   // Ingest description from DOCX
-  ingestDescriptionDocx: (projectId: number, file: File, target: 'description' | 'location' = 'description'): Promise<{ ok: boolean }> => {
+  ingestDescriptionDocx: (
+    projectId: number,
+    file: File,
+    target: "description" | "location" = "description",
+  ): Promise<{ ok: boolean }> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('target', target);
-    return devApiFormPost<{ ok: boolean }>(formatDevEndpoint(`projects/${projectId}/ingest_description_docx`), formData);
+    formData.append("file", file);
+    formData.append("target", target);
+    return devApiFormPost<{ ok: boolean }>(
+      formatDevEndpoint(`projects/${projectId}/ingest_description_docx`),
+      formData,
+    );
   },
 };
 
@@ -642,14 +711,12 @@ export const projectsApi = {
 
 export const unitsApi = {
   // Raw API methods
-  list: (): Promise<Unit[]> =>
-    devApiGet<Unit[]>(formatDevEndpoint('units')),
+  list: (): Promise<Unit[]> => devApiGet<Unit[]>(formatDevEndpoint("units")),
 
-  get: (id: number): Promise<Unit> =>
-    devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
+  get: (id: number): Promise<Unit> => devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
 
   create: (data: Partial<Unit>): Promise<Unit> =>
-    devApiPost<Unit>(formatDevEndpoint('units'), data),
+    devApiPost<Unit>(formatDevEndpoint("units"), data),
 
   update: (id: number, data: Partial<Unit>): Promise<Unit> =>
     devApiPut<Unit>(formatDevEndpoint(`units/${id}`), data),
@@ -657,37 +724,35 @@ export const unitsApi = {
   patch: (id: number, data: Partial<Unit>): Promise<Unit> =>
     devApiPatch<Unit>(formatDevEndpoint(`units/${id}`), data),
 
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`units/${id}`)),
+  delete: (id: number): Promise<void> => devApiDelete(formatDevEndpoint(`units/${id}`)),
 
   // Cache-integrated methods
   listCached: (): Promise<Unit[]> =>
-    developerApiCache.getCachedData('units', () => devApiGet<Unit[]>(formatDevEndpoint('units'))),
+    developerApiCache.getCachedData("units", () => devApiGet<Unit[]>(formatDevEndpoint("units"))),
 
-  getCached: (id: number): Promise<Unit> =>
-    devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
+  getCached: (id: number): Promise<Unit> => devApiGet<Unit>(formatDevEndpoint(`units/${id}`)),
 
   createAndCache: async (data: Partial<Unit>): Promise<Unit> => {
-    const result = await devApiPost<Unit>(formatDevEndpoint('units'), data);
-    developerApiCache.addItem('units', result);
+    const result = await devApiPost<Unit>(formatDevEndpoint("units"), data);
+    developerApiCache.addItem("units", result);
     return result;
   },
 
   updateAndCache: async (id: number, data: Partial<Unit>): Promise<Unit> => {
     const result = await devApiPut<Unit>(formatDevEndpoint(`units/${id}`), data);
-    developerApiCache.updateItem('units', result);
+    developerApiCache.updateItem("units", result);
     return result;
   },
 
   patchAndCache: async (id: number, data: Partial<Unit>): Promise<Unit> => {
     const result = await devApiPatch<Unit>(formatDevEndpoint(`units/${id}`), data);
-    developerApiCache.updateItem('units', result);
+    developerApiCache.updateItem("units", result);
     return result;
   },
 
   deleteAndCache: async (id: number): Promise<void> => {
-    await devApiDelete<void>(formatDevEndpoint(`units/${id}`));
-    developerApiCache.removeItem('units', id);
+    await devApiDelete(formatDevEndpoint(`units/${id}`));
+    developerApiCache.removeItem("units", id);
   },
 
   // Publish / Unpublish unit
@@ -698,17 +763,20 @@ export const unitsApi = {
 
   // Public
   listPublic: (params?: { project?: number }): Promise<Unit[]> =>
-    devApiGet<Unit[]>(formatDevEndpoint('units/public'), { params }),
+    devApiGet<Unit[]>(formatDevEndpoint("units/public"), { params }),
 
   // Upload unit media
-  uploadMedia: (unitId: number, data: {
-    image: File;
-    is_primary?: boolean;
-  }): Promise<UnitMedia> => {
+  uploadMedia: (
+    unitId: number,
+    data: {
+      image: File;
+      is_primary?: boolean;
+    },
+  ): Promise<UnitMedia> => {
     const formData = new FormData();
-    formData.append('image', data.image);
-    if (data.is_primary !== undefined) formData.append('is_primary', String(data.is_primary));
-    
+    formData.append("image", data.image);
+    if (data.is_primary !== undefined) formData.append("is_primary", String(data.is_primary));
+
     return devApiFormPost<UnitMedia>(formatDevEndpoint(`units/${unitId}/upload_media`), formData);
   },
 };
@@ -720,28 +788,27 @@ export const unitsApi = {
 export const projectAssetsApi = {
   // Get project assets (photos) - these come from project.assets
   // Use projects.get(id) to get project with assets included
-  
+
   // Delete a photo (ProjectAsset)
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`project-assets/${id}`)),
-  
+  delete: (id: number): Promise<void> => devApiDelete(formatDevEndpoint(`project-assets/${id}`)),
+
   // Create a photo (ProjectAsset) - use projects.uploadAsset instead
   create: (data: Partial<ProjectAsset> & { file?: File }): Promise<ProjectAsset> => {
     if (data.file) {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
-        if (value !== undefined && key !== 'file') {
-          if (key === 'metadata' && typeof value === 'object') {
+        if (value !== undefined && key !== "file") {
+          if (key === "metadata" && typeof value === "object") {
             formData.append(key, JSON.stringify(value));
           } else {
             formData.append(key, value as string | Blob);
           }
         }
       });
-      formData.append('file', data.file);
-      return devApiFormPost<ProjectAsset>(formatDevEndpoint('project-assets'), formData);
+      formData.append("file", data.file);
+      return devApiFormPost<ProjectAsset>(formatDevEndpoint("project-assets"), formData);
     }
-    return devApiPost<ProjectAsset>(formatDevEndpoint('project-assets'), data);
+    return devApiPost<ProjectAsset>(formatDevEndpoint("project-assets"), data);
   },
 };
 
@@ -751,8 +818,7 @@ export const projectAssetsApi = {
 
 export const assetsApi = {
   // Raw API methods
-  list: (): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets')),
+  list: (): Promise<DeveloperAsset[]> => devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets")),
 
   get: (id: number): Promise<DeveloperAsset> =>
     devApiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
@@ -762,18 +828,18 @@ export const assetsApi = {
       const formData = new FormData();
       Object.entries(data).forEach(([key, value]) => {
         if (value !== undefined) {
-          if (key === 'metadata' && typeof value === 'object') {
+          if (key === "metadata" && typeof value === "object") {
             formData.append(key, JSON.stringify(value));
-          } else if (key === 'tags' && Array.isArray(value)) {
+          } else if (key === "tags" && Array.isArray(value)) {
             formData.append(key, JSON.stringify(value));
           } else {
             formData.append(key, value as string | Blob);
           }
         }
       });
-      return devApiFormPost<DeveloperAsset>(formatDevEndpoint('assets'), formData);
+      return devApiFormPost<DeveloperAsset>(formatDevEndpoint("assets"), formData);
     }
-    return devApiPost<DeveloperAsset>(formatDevEndpoint('assets'), data);
+    return devApiPost<DeveloperAsset>(formatDevEndpoint("assets"), data);
   },
 
   update: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
@@ -782,58 +848,65 @@ export const assetsApi = {
   patch: (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> =>
     devApiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data),
 
-  delete: (id: number): Promise<void> =>
-    devApiDelete<void>(formatDevEndpoint(`assets/${id}`)),
+  delete: (id: number): Promise<void> => devApiDelete(formatDevEndpoint(`assets/${id}`)),
 
   // Cache-integrated methods
   listCached: (): Promise<DeveloperAsset[]> =>
-    developerApiCache.getCachedData('assets', () => devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets'))),
+    developerApiCache.getCachedData("assets", () =>
+      devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets")),
+    ),
 
   getCached: (id: number): Promise<DeveloperAsset> =>
     devApiGet<DeveloperAsset>(formatDevEndpoint(`assets/${id}`)),
 
-  createAndCache: async (data: Partial<DeveloperAsset> & { file?: File }): Promise<DeveloperAsset> => {
+  createAndCache: async (
+    data: Partial<DeveloperAsset> & { file?: File },
+  ): Promise<DeveloperAsset> => {
     const result = await assetsApi.create(data);
-    developerApiCache.addItem('assets', result);
+    developerApiCache.addItem("assets", result);
     return result;
   },
 
   updateAndCache: async (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> => {
     const result = await devApiPut<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data);
-    developerApiCache.updateItem('assets', result);
+    developerApiCache.updateItem("assets", result);
     return result;
   },
 
   patchAndCache: async (id: number, data: Partial<DeveloperAsset>): Promise<DeveloperAsset> => {
     const result = await devApiPatch<DeveloperAsset>(formatDevEndpoint(`assets/${id}`), data);
-    developerApiCache.updateItem('assets', result);
+    developerApiCache.updateItem("assets", result);
     return result;
   },
 
   deleteAndCache: async (id: number): Promise<void> => {
-    await devApiDelete<void>(formatDevEndpoint(`assets/${id}`));
-    developerApiCache.removeItem('assets', id);
+    await devApiDelete(formatDevEndpoint(`assets/${id}`));
+    developerApiCache.removeItem("assets", id);
   },
 
   // Filter assets by type
   getByType: (type: string): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_type'), { params: { type } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/by_type"), { params: { type } }),
 
   // Filter assets by category
   getByCategory: (type: string, category: string): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_category'), { params: { type, category } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/by_category"), {
+      params: { type, category },
+    }),
 
   // Get assets for specific project
   getByProject: (projectId: number): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/by_project'), { params: { project: projectId } }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/by_project"), {
+      params: { project: projectId },
+    }),
 
   // Get featured assets
   getFeatured: (): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/featured')),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/featured")),
 
   // Get public assets
   getPublic: (): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/public')),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/public")),
 
   // Toggle featured status
   toggleFeatured: (id: number): Promise<DeveloperAsset> =>
@@ -858,29 +931,33 @@ export const assetsApi = {
     category?: string;
     project?: number;
   }): Promise<DeveloperAsset[]> =>
-    devApiGet<DeveloperAsset[]>(formatDevEndpoint('assets/search'), { params }),
+    devApiGet<DeveloperAsset[]>(formatDevEndpoint("assets/search"), { params }),
 
   // Get asset statistics for project
   getStatistics: (projectId: number): Promise<AssetStatistics> =>
-    devApiGet<AssetStatistics>(formatDevEndpoint('assets/statistics'), { params: { project: projectId } }),
+    devApiGet<AssetStatistics>(formatDevEndpoint("assets/statistics"), {
+      params: { project: projectId },
+    }),
 
   // Get project asset structure
-  getStructure: (projectId: number): Promise<any> =>
-    devApiGet<any>(formatDevEndpoint('assets/structure'), { params: { project: projectId } }),
+  getStructure: (projectId: number): Promise<unknown> =>
+    devApiGet<unknown>(formatDevEndpoint("assets/structure"), { params: { project: projectId } }),
 
   // Bulk upload assets
   bulkUpload: (projectId: number, files: File[]): Promise<BulkUploadResponse> => {
     const formData = new FormData();
-    formData.append('project', String(projectId));
-    files.forEach(file => {
-      formData.append('files', file);
+    formData.append("project", String(projectId));
+    files.forEach((file) => {
+      formData.append("files", file);
     });
-    return devApiFormPost<BulkUploadResponse>(formatDevEndpoint('assets/bulk_upload'), formData);
+    return devApiFormPost<BulkUploadResponse>(formatDevEndpoint("assets/bulk_upload"), formData);
   },
 
   // Get available categories
   getCategories: (type?: string): Promise<AssetCategories> =>
-    devApiGet<AssetCategories>(formatDevEndpoint('assets/categories'), { params: type ? { type } : {} }),
+    devApiGet<AssetCategories>(formatDevEndpoint("assets/categories"), {
+      params: type ? { type } : {},
+    }),
 };
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -893,22 +970,22 @@ export const developersApi = {
   units: unitsApi,
   projectAssets: projectAssetsApi, // Photos (ProjectAsset)
   assets: assetsApi, // Documents (DeveloperAsset)
-  
+
   // Cache management methods
   cache: developerApiCache,
-  
+
   // Initialize developer data (call when user is identified as developer)
   initializeDeveloperData: async (): Promise<void> => {
     await developerApiCache.bulkFetch(developersApi);
     developerApiCache.startBackgroundRefresh(developersApi);
   },
-  
+
   // Stop background refresh (call when user logs out)
   cleanup: (): void => {
     developerApiCache.stopBackgroundRefresh();
     developerApiCache.clear();
   },
-  
+
   // Get cache status for debugging
   getCacheStatus: (): Record<string, { hasData: boolean; age: number; isValid: boolean }> => {
     return developerApiCache.getCacheStatus();
@@ -922,34 +999,40 @@ export default developersApi;
 // ────────────────────────────────────────────────────────────────────────────
 
 export const getFileTypeFromMime = (mimeType: string): string => {
-  if (mimeType.startsWith('image/')) return 'image';
-  if (mimeType.startsWith('video/')) return 'video';
-  if (mimeType.startsWith('audio/')) return 'audio';
-  if (mimeType.includes('pdf') || mimeType.includes('document') || mimeType.includes('word') || 
-      mimeType.includes('excel') || mimeType.includes('powerpoint')) return 'document';
-  if (mimeType.includes('zip') || mimeType.includes('archive')) return 'archive';
-  return 'other';
+  if (mimeType.startsWith("image/")) return "image";
+  if (mimeType.startsWith("video/")) return "video";
+  if (mimeType.startsWith("audio/")) return "audio";
+  if (
+    mimeType.includes("pdf") ||
+    mimeType.includes("document") ||
+    mimeType.includes("word") ||
+    mimeType.includes("excel") ||
+    mimeType.includes("powerpoint")
+  )
+    return "document";
+  if (mimeType.includes("zip") || mimeType.includes("archive")) return "archive";
+  return "other";
 };
 
 export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 Bytes';
+  if (bytes === 0) return "0 Bytes";
   const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+  const sizes = ["Bytes", "KB", "MB", "GB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
-  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
 };
 
 export const getAssetCategoryDisplay = (asset: DeveloperAsset): string => {
   if (asset.category_display) return asset.category_display;
-  
+
   switch (asset.asset_type) {
-    case 'document':
-      return asset.document_category || 'Document';
-    case 'image':
-      return asset.image_category || 'Image';
-    case 'video':
-      return asset.video_category || 'Video';
+    case "document":
+      return asset.document_category || "Document";
+    case "image":
+      return asset.image_category || "Image";
+    case "video":
+      return asset.video_category || "Video";
     default:
-      return asset.asset_type || 'Other';
+      return asset.asset_type || "Other";
   }
 };

@@ -2,7 +2,7 @@
 
 declare global {
   interface Window {
-    gtag?: (...args: any[]) => void;
+    gtag?: (...args: unknown[]) => void;
   }
 }
 
@@ -12,8 +12,8 @@ declare global {
 export {};
 
 // Type declarations for modules without TypeScript support
-declare module 'lucide-react' {
-  import { ComponentType, SVGProps } from 'react';
+declare module "lucide-react" {
+  import { ComponentType, SVGProps } from "react";
   export const Building2: ComponentType<SVGProps<SVGSVGElement>>;
   export const Mail: ComponentType<SVGProps<SVGSVGElement>>;
   export const Lock: ComponentType<SVGProps<SVGSVGElement>>;
@@ -21,12 +21,12 @@ declare module 'lucide-react' {
   // Add other icons as needed
 }
 
-declare module 'react-icons/si' {
-  import { ComponentType, SVGProps } from 'react';
+declare module "react-icons/si" {
+  import { ComponentType, SVGProps } from "react";
   export const SiGoogle: ComponentType<SVGProps<SVGSVGElement>>;
   // Add other icons as needed
 }
 
-declare module 'react-router-dom' {
-  export * from 'react-router-dom';
+declare module "react-router-dom" {
+  export * from "react-router-dom";
 }

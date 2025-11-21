@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITY_CATEGORIES } from '../types';
-import ModalContainer from './ui/ModalContainer';
+import { useEffect, useState } from "react";
+import { AMENITIES_BY_CATEGORY, PROPERTY_AMENITY_CATEGORIES } from "../types";
+import ModalContainer from "./ui/ModalContainer";
 
 interface AmenityFilterProps {
   selectedAmenities: string[];
@@ -9,7 +9,12 @@ interface AmenityFilterProps {
   onClose: () => void;
 }
 
-export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onClose }: AmenityFilterProps) {
+export default function AmenityFilter({
+  selectedAmenities,
+  onChange,
+  isOpen,
+  onClose,
+}: AmenityFilterProps) {
   const [localSelection, setLocalSelection] = useState<string[]>(selectedAmenities);
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
@@ -21,15 +26,11 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
   }, [isOpen, selectedAmenities]);
 
   const toggle = (id: string) => {
-    setLocalSelection(prev =>
-      prev.includes(id)
-        ? prev.filter(x => x !== id)
-        : [...prev, id]
-    );
+    setLocalSelection((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
   };
 
   const toggleCategory = (category: string) => {
-    setExpanded(prev => {
+    setExpanded((prev) => {
       const next = new Set(prev);
       next.has(category) ? next.delete(category) : next.add(category);
       return next;
@@ -52,15 +53,13 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
       isOpen={isOpen}
       onClose={onClose}
       title="Select Amenities"
-      description={`${selectedCount} amenit${selectedCount === 1 ? 'y' : 'ies'} selected`}
+      description={`${selectedCount} amenit${selectedCount === 1 ? "y" : "ies"} selected`}
       contentClassName="max-h-[80vh]"
     >
       <div className="space-y-3">
         {/* Quick actions */}
         <div className="flex items-center justify-between pb-3 border-b border-gray-200">
-          <span className="text-sm text-gray-600">
-            {selectedCount} selected
-          </span>
+          <span className="text-sm text-gray-600">{selectedCount} selected</span>
           <button
             type="button"
             onClick={handleClear}
@@ -72,12 +71,12 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
 
         {/* Amenities list */}
         <div className="space-y-2 max-h-[50vh] overflow-y-auto overscroll-contain pr-2">
-          {PROPERTY_AMENITY_CATEGORIES.map(category => {
+          {PROPERTY_AMENITY_CATEGORIES.map((category) => {
             const amenitiesInCategory = AMENITIES_BY_CATEGORY[category];
-            const selectedCount = amenitiesInCategory.filter(a => 
-              localSelection.includes(a.id)
+            const selectedCount = amenitiesInCategory.filter((a) =>
+              localSelection.includes(a.id),
             ).length;
-            
+
             return (
               <div key={category} className="border border-gray-200 rounded-lg overflow-hidden">
                 <button
@@ -94,22 +93,20 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
                     )}
                   </span>
                   <span className="text-gray-500 text-lg font-semibold">
-                    {expanded.has(category) ? '−' : '+'}
+                    {expanded.has(category) ? "−" : "+"}
                   </span>
                 </button>
-                
+
                 {expanded.has(category) && (
                   <div className="p-2 sm:p-3 space-y-1.5 bg-white">
-                    {amenitiesInCategory.map(amenity => {
+                    {amenitiesInCategory.map((amenity) => {
                       const isSelected = localSelection.includes(amenity.id);
-                      
+
                       return (
-                        <label 
-                          key={amenity.id} 
+                        <label
+                          key={amenity.id}
                           className={`flex items-center gap-2 p-2 rounded cursor-pointer transition-colors ${
-                            isSelected 
-                              ? 'bg-emerald-50 hover:bg-emerald-100' 
-                              : 'hover:bg-gray-50'
+                            isSelected ? "bg-emerald-50 hover:bg-emerald-100" : "hover:bg-gray-50"
                           }`}
                         >
                           <input
@@ -118,14 +115,14 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
                             onChange={() => toggle(amenity.id)}
                             className="w-4 h-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"
                           />
-                          <span className={`text-xs sm:text-sm flex-1 ${
-                            isSelected ? 'text-emerald-900 font-medium' : 'text-gray-700'
-                          }`}>
+                          <span
+                            className={`text-xs sm:text-sm flex-1 ${
+                              isSelected ? "text-emerald-900 font-medium" : "text-gray-700"
+                            }`}
+                          >
                             {amenity.label}
                           </span>
-                          {isSelected && (
-                            <span className="text-emerald-600 text-sm">✓</span>
-                          )}
+                          {isSelected && <span className="text-emerald-600 text-sm">✓</span>}
                         </label>
                       );
                     })}
@@ -157,4 +154,3 @@ export default function AmenityFilter({ selectedAmenities, onChange, isOpen, onC
     </ModalContainer>
   );
 }
-

@@ -1,4 +1,4 @@
-import { Home, Mail, Phone, Instagram, Linkedin, Building2 } from 'lucide-react';
+import { Building2, Home, Instagram, Linkedin, Mail, Phone } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -13,7 +13,8 @@ const Footer = () => {
                 <span className="text-2xl font-bold text-white">PROPERTPRO</span>
               </div>
               <p className="text-gray-300 mb-6 leading-relaxed">
-                Providing exceptional real estate services with a focus on quality properties and personalized client experiences.
+                Providing exceptional real estate services with a focus on quality properties and
+                personalized client experiences.
               </p>
               <div className="flex space-x-4">
                 <a
@@ -45,31 +46,46 @@ const Footer = () => {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="/" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Home
                   </a>
                 </li>
                 <li>
-                  <a href="/buy" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/buy"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Buy
                   </a>
                 </li>
                 <li>
-                  <a href="/rent" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/rent"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Rent
                   </a>
                 </li>
                 <li>
-                  <a href="/about" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/about"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     About Us
                   </a>
                 </li>
                 <li>
-                  <a href="/sitemap" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/sitemap"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Sitemap
                   </a>
@@ -85,13 +101,19 @@ const Footer = () => {
               </h3>
               <ul className="space-y-3">
                 <li>
-                  <a href="/mortgage-calculator" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/mortgage-calculator"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Mortgage Calculator
                   </a>
                 </li>
                 <li>
-                  <a href="/rent-vs-buy" className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group">
+                  <a
+                    href="/rent-vs-buy"
+                    className="text-gray-300 hover:text-blue-400 transition-colors duration-200 flex items-center group"
+                  >
                     <span className="w-0 group-hover:w-2 h-0.5 bg-blue-400 transition-all duration-200 mr-0 group-hover:mr-2"></span>
                     Rent vs Buy
                   </a>
@@ -108,11 +130,18 @@ const Footer = () => {
               <ul className="space-y-4">
                 <li className="flex items-start group">
                   <Phone className="h-5 w-5 text-blue-400 mr-3 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                  <span className="text-gray-300 text-sm leading-relaxed">+357 94007875<br />+357 94046844</span>
+                  <span className="text-gray-300 text-sm leading-relaxed">
+                    +357 94007875
+                    <br />
+                    +357 94046844
+                  </span>
                 </li>
                 <li className="flex items-start group">
                   <Mail className="h-5 w-5 text-blue-400 mr-3 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                  <a href="mailto:support@propertpro.com" className="text-gray-300 text-sm hover:text-blue-400 transition-colors">
+                  <a
+                    href="mailto:support@propertpro.com"
+                    className="text-gray-300 text-sm hover:text-blue-400 transition-colors"
+                  >
                     support@propertpro.com
                   </a>
                 </li>

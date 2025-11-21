@@ -1,10 +1,11 @@
-import React from 'react';
-import { Edit, Trash2, Eye, EyeOff, Calendar, Clock, BarChart3 } from 'lucide-react';
-import PropertyCard from './PropertyCard';
-import InstagramPostButton from '../InstagramPostButton';
+import { BarChart3, Calendar, Clock, Edit, Eye, EyeOff, Trash2 } from "lucide-react";
+import type React from "react";
+import type { Property } from "../../types";
+import InstagramPostButton from "../InstagramPostButton";
+import PropertyCard from "./PropertyCard";
 
 interface MyPropertyCardProps {
-  property: any; // Flexible type to handle different property interfaces
+  property: Property; // Property type from types.ts
   onEdit: (id: string | number) => void;
   onRemove: (id: string | number) => void;
   onPublish: (id: string | number) => void;
@@ -22,7 +23,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onUnpublish,
   onNavigate,
   onViewAnalytics,
-  onInstagramPostSuccess
+  onInstagramPostSuccess,
 }) => {
   const {
     id,
@@ -31,7 +32,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
     created_at,
     instagram_posted,
     instagram_post_count,
-    last_instagram_post
+    last_instagram_post,
   } = property;
 
   // Normalize fields so PropertyCard's dynamic stats work for all types.
@@ -39,10 +40,10 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   const propertyCardData = {
     ...property,
     // make sure these exist in the shape PropertyCard reads:
-    property_type: property.property_type ?? property.propertyType ?? '',
-    country: property.country || 'Unknown',
+    property_type: property.property_type ?? "",
+    country: property.country || "Unknown",
     listing_type: property.property_status,
-    forSale: property.property_status === 'for_sale',
+    forSale: property.property_status === "for_sale",
     is_favourite: false, // not relevant for own listings
   };
 
@@ -54,18 +55,21 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
         className={`
           px-3 py-1.5 rounded-full text-xs font-bold shadow-lg backdrop-blur-sm
           flex items-center space-x-1.5 border-2
-          ${is_published 
-            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300/50' 
-            : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300/50'
+          ${
+            is_published
+              ? "bg-gradient-to-r from-emerald-500 to-emerald-600 text-white border-emerald-300/50"
+              : "bg-gradient-to-r from-red-500 to-red-600 text-white border-red-300/50"
           }
         `}
       >
-        <div className={`w-2 h-2 rounded-full ${is_published ? 'bg-emerald-200' : 'bg-red-200'}`}></div>
-        <span>{is_published ? 'Live' : 'Draft'}</span>
+        <div
+          className={`w-2 h-2 rounded-full ${is_published ? "bg-emerald-200" : "bg-red-200"}`}
+        ></div>
+        <span>{is_published ? "Live" : "Draft"}</span>
       </span>
-      
+
       {/* Property Status Badge */}
-      {property_status === 'draft' && (
+      {property_status === "draft" && (
         <span className="px-3 py-1.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-white shadow-lg backdrop-blur-sm border-2 border-amber-300/50 flex items-center space-x-1.5">
           <Clock className="w-3 h-3" />
           <span>In Progress</span>
@@ -89,14 +93,15 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
                 </span>
               </div>
             </div>
-            
+
             <div className="flex items-center space-x-2 text-xs text-gray-500">
               <Calendar className="w-4 h-4" />
               <span className="font-medium">
-                Listed {new Date(created_at).toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric', 
-                  year: 'numeric' 
+                Listed{" "}
+                {new Date(created_at).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
                 })}
               </span>
             </div>
@@ -109,6 +114,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
         {/* Primary Actions Row - Enhanced Design */}
         <div className="grid grid-cols-2 gap-3 mb-4">
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onEdit(id);
@@ -118,9 +124,10 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             <Edit className="h-4 w-4 mr-2.5 group-hover:scale-110 transition-transform duration-200" />
             <span>Edit Property</span>
           </button>
-          
+
           {is_published ? (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onUnpublish(id);
@@ -132,6 +139,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             </button>
           ) : (
             <button
+              type="button"
               onClick={(e) => {
                 e.stopPropagation();
                 onPublish(id);
@@ -143,10 +151,11 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             </button>
           )}
         </div>
-        
+
         {/* Analytics Button - Show if published and handler provided */}
         {is_published && onViewAnalytics && (
           <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
               onViewAnalytics(id);
@@ -157,23 +166,26 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             <span>Analytics</span>
           </button>
         )}
-        
+
         {/* Status Indicator */}
         <div className="flex items-center justify-center mb-4">
-          <div className={`
+          <div
+            className={`
             flex items-center space-x-2 px-4 py-2 rounded-full text-xs font-medium
-            ${is_published 
-              ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' 
-              : 'bg-amber-50 text-amber-700 border border-amber-200'
+            ${
+              is_published
+                ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                : "bg-amber-50 text-amber-700 border border-amber-200"
             }
-          `}>
-            <div className={`w-2 h-2 rounded-full ${is_published ? 'bg-emerald-500' : 'bg-amber-500'}`}></div>
-            <span>
-              {is_published ? 'Currently visible to buyers' : 'Hidden from public view'}
-            </span>
+          `}
+          >
+            <div
+              className={`w-2 h-2 rounded-full ${is_published ? "bg-emerald-500" : "bg-amber-500"}`}
+            ></div>
+            <span>{is_published ? "Currently visible to buyers" : "Hidden from public view"}</span>
           </div>
         </div>
-        
+
         {/* Instagram Post Button - Only show if published */}
         {is_published && (
           <div className="mb-4">
@@ -186,20 +198,22 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             />
             {last_instagram_post && (
               <p className="text-xs text-gray-500 mt-2 text-center">
-                Last posted: {new Date(last_instagram_post).toLocaleDateString('en-US', { 
-                  month: 'short', 
-                  day: 'numeric',
-                  year: 'numeric',
-                  hour: '2-digit',
-                  minute: '2-digit'
+                Last posted:{" "}
+                {new Date(last_instagram_post).toLocaleDateString("en-US", {
+                  month: "short",
+                  day: "numeric",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
                 })}
               </p>
             )}
           </div>
         )}
-        
+
         {/* Danger Action - Enhanced Design */}
         <button
+          type="button"
           onClick={(e) => {
             e.stopPropagation();
             onRemove(id);
@@ -216,23 +230,25 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   return (
     <div className="group flex flex-col h-full bg-white rounded-2xl overflow-hidden shadow-md hover:shadow-2xl transition-all duration-500 ease-out border border-gray-100 hover:border-gray-200 hover:-translate-y-1">
       {/* PropertyCard without favorite button */}
-      <div 
-        className="flex-1 cursor-pointer relative overflow-hidden"
+      <button
+        type="button"
+        className="flex-1 cursor-pointer relative overflow-hidden text-left"
         onClick={() => onNavigate(id)}
+        aria-label="View property details"
       >
-        <PropertyCard 
+        <PropertyCard
           property={propertyCardData}
           onUnlikeSuccess={() => {}} // Not needed for own listings
           showFavoriteButton={false} // Hide favorite button for own listings - badges will replace it
         />
-        
+
         {/* Overlay MyListings-specific badges */}
         {renderMyListingsBadges()}
-        
+
         {/* Subtle hover overlay */}
         <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300 pointer-events-none" />
-      </div>
-      
+      </button>
+
       {/* Enhanced Management Actions Section */}
       {renderActionsSection()}
     </div>

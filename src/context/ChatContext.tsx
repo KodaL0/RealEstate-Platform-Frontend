@@ -1,13 +1,7 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
-import { Thread, Message } from "../types";
+import type React from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { apiClient } from "../config/api";
+import type { Message, Thread } from "../types";
 import { useUser } from "./UserContext";
 
 /* -------------------------------------------------------------------------- */
@@ -23,7 +17,7 @@ interface ChatContextValue {
     propertyId: number | null,
     title?: string,
     projectId?: number | null,
-    organizationId?: number | null
+    organizationId?: number | null,
   ) => Promise<string>;
   getOrCreateDmThread: (userId: number) => Promise<string>;
   sendMessage: (
@@ -32,7 +26,7 @@ interface ChatContextValue {
     content: string,
     propertyId?: number,
     projectId?: number,
-    organizationId?: number
+    organizationId?: number,
   ) => void;
   markThreadRead: (threadId: string) => void;
   sendTypingStart: (threadId: string, recipientId: number) => void;
@@ -41,7 +35,7 @@ interface ChatContextValue {
   typingUsers: Record<string, boolean>;
   userStatuses: Record<number, "online" | "offline">;
   recalculateUnreadCounts: () => void;
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  connectionStatus: "disconnected" | "connecting" | "connected" | "error";
 }
 
 const ChatContext = createContext<ChatContextValue | undefined>(undefined);
@@ -71,14 +65,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [messages, setMessages] = useState<Record<string, Message[]>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const [userStatuses, setUserStatuses] = useState<Record<number, "online" | "offline">>({});
-  
+
   // In-flight thread creation guard to prevent duplicates
   const inFlightThreadCreation = useRef<Set<string>>(new Set());
-  
+
   // Exponential backoff for reconnection
   const reconnectAttempts = useRef(0);
   const maxReconnectDelay = 20000; // 20 seconds max
-  
+
   // Typing debounce timers
   const typingTimers = useRef<Record<string, number>>({});
 
@@ -94,7 +88,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     // console.log('New user:', user);
     // console.log('New user ID:', user?.id);
     // console.log('New user type:', typeof user?.id);
-  }, [user]);
+  }, []);
 
   // Track message count changes for debugging
   useEffect(() => {
@@ -105,7 +99,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     //   const lastMessages = messageList.slice(-3);
     //   console.log('Last 3 messages:', lastMessages.map(m => ({ id: m.id, content: m.content, isOptimistic: m.id.startsWith('temp_') })));
     // });
-  }, [messages]);
+  }, []);
 
   /* ---------------------------- WebSocket setup --------------------------- */
   const ws = useRef<WebSocket | null>(null);
@@ -113,8 +107,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isReconnectingRef = useRef(false);
   const currentUserIdRef = useRef<number | null>(null);
   // Connection status tracking - exposed in context for UI feedback
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
-  
+  const [connectionStatus, setConnectionStatus] = useState<
+    "disconnected" | "connecting" | "connected" | "error"
+  >("disconnected");
+
   // Ping interval ref for cleanup
   const pingIntervalRef = useRef<number | null>(null);
 
@@ -146,7 +142,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for valid token before attempting connection
     let token = getCookie("access_token") ?? getCookie("mobile_access_token");
-    
+
     // If no access token but we have a refresh token, attempt to refresh first
     if (!token) {
       const refreshToken = getCookie("refresh_token");
@@ -160,7 +156,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             },
             body: JSON.stringify({ refresh: refreshToken }),
           });
-          
+
           if (response.ok) {
             // console.log("Token refreshed successfully before WebSocket connection");
             // Retry getting the token after refresh
@@ -169,7 +165,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // console.log("Token refresh failed, cannot connect to WebSocket");
             return;
           }
-        } catch (error) {
+        } catch (_error) {
           // console.warn("Token refresh failed:", error);
           return;
         }
@@ -186,10 +182,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     isReconnectingRef.current = true;
-    setConnectionStatus('connecting');
+    setConnectionStatus("connecting");
 
     const baseWs =
-      (import.meta.env.VITE_API_WS as string | undefined) || window.location.origin.replace(/^http/, "ws");
+      (import.meta.env.VITE_API_WS as string | undefined) ||
+      window.location.origin.replace(/^http/, "ws");
 
     const url = `${baseWs}/ws/chat/?token=${encodeURIComponent(token)}`;
 
@@ -211,7 +208,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     ws.current.onmessage = (event) => {
       // console.log('=== WEBSOCKET MESSAGE RECEIVED ===');
       // console.log('Raw event data:', event.data);
-      
+
       const data = JSON.parse(event.data);
       // console.log('Parsed data:', data);
       // console.log('Message type:', data.type);
@@ -231,7 +228,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Handle our own messages (to replace optimistic messages)
           // Use the ref for reliable user ID comparison
           const isOwnMessage = msg.sender === currentUserIdRef.current;
-          
+
           // console.log('Is own message:', isOwnMessage);
 
           if (isOwnMessage) {
@@ -239,45 +236,50 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // console.log('Message ID:', msg.id);
             // console.log('Thread ID:', msg.thread_id);
             // console.log('Content:', msg.content);
-            
+
             // Replace any optimistic message with the real one
             setMessages((prev) => {
               const list = prev[msg.thread_id] ?? [];
               // console.log('Current messages in thread:', list.map(m => ({ id: m.id, content: m.content })));
-              
+
               // Check if we already have this exact message (prevent duplicates)
               if (list.some((m) => m.id === msg.id)) {
                 // console.log('❌ Message already exists, skipping duplicate');
                 return prev;
               }
-              
+
               // Also check for content duplicates to prevent double rendering
-              const contentDuplicates = list.filter((m) => m.content === msg.content && m.sender === msg.sender);
+              const contentDuplicates = list.filter(
+                (m) => m.content === msg.content && m.sender === msg.sender,
+              );
               if (contentDuplicates.length > 0) {
                 // console.log('❌ Content duplicate found, skipping:', contentDuplicates.map(m => ({ id: m.id, content: m.content })));
                 return prev;
               }
-              
+
               // Find and replace optimistic message, or add new message
-              const optimisticMessages = list.filter((m) => m.id.startsWith('temp_'));
+              const optimisticMessages = list.filter((m) => m.id.startsWith("temp_"));
               const hasOptimistic = optimisticMessages.length > 0;
-              
+
               // console.log('Optimistic messages found:', optimisticMessages.length);
               // console.log('Optimistic message IDs:', optimisticMessages.map(m => m.id));
-              
+
               if (hasOptimistic) {
                 // console.log('✅ Replacing optimistic message with real message');
                 // Replace only the optimistic message that matches the content
-                const newList = list.map((m) => {
-                  if (m.id.startsWith('temp_') && m.content === msg.content) {
-                    // console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
-                    return msg;
-                  }
-                  return m;
-                })
-                // Sort messages by created_at to prevent out-of-order rendering
-                .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                
+                const newList = list
+                  .map((m) => {
+                    if (m.id.startsWith("temp_") && m.content === msg.content) {
+                      // console.log(`Replacing optimistic message ${m.id} with real message ${msg.id}`);
+                      return msg;
+                    }
+                    return m;
+                  })
+                  // Sort messages by created_at to prevent out-of-order rendering
+                  .sort(
+                    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+                  );
+
                 // console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
@@ -288,8 +290,10 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 // No optimistic message to replace, just add the new message
                 const newList = [...list, msg]
                   // Sort messages by created_at to prevent out-of-order rendering
-                  .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-                
+                  .sort(
+                    (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+                  );
+
                 // console.log('New message list:', newList.map(m => ({ id: m.id, content: m.content })));
                 return {
                   ...prev,
@@ -297,7 +301,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 };
               }
             });
-            
+
             // Update thread timestamp but don't increment unread count for own messages
             setThreads((prev) => {
               const updated = prev.map((t) => {
@@ -311,7 +315,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return t;
               });
               return updated.sort(
-                (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+                (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
               );
             });
             return; // Exit early - don't process as "other user" message
@@ -320,16 +324,17 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           // Handle messages from other users
           // console.log('=== PROCESSING MESSAGE FROM OTHER USER ===');
           // console.log('Message is from another user, processing normally');
-          
+
           // Deduplicate by message ID
           setMessages((prev) => {
             const list = prev[msg.thread_id] ?? [];
             if (list.some((m) => m.id === msg.id)) return prev;
-            
+
             // Add new message and sort by created_at
-            const newList = [...list, msg]
-              .sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
-            
+            const newList = [...list, msg].sort(
+              (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime(),
+            );
+
             return {
               ...prev,
               [msg.thread_id]: newList,
@@ -349,7 +354,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               return t;
             });
             return updated.sort(
-              (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+              (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
             );
           });
           break;
@@ -362,7 +367,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return {
               ...prev,
               [thread_id]: prev[thread_id].map((m) =>
-                message_ids.includes(m.id) ? { ...m, read_at } : m
+                message_ids.includes(m.id) ? { ...m, read_at } : m,
               ),
             };
           });
@@ -390,7 +395,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             return {
               ...prev,
               [thread_id]: prev[thread_id].map((m) =>
-                m.id === message_id ? { ...m, content: "Message Unsent", is_unsent: true } : m
+                m.id === message_id ? { ...m, content: "Message Unsent", is_unsent: true } : m,
               ),
             };
           });
@@ -406,8 +411,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // console.log('=== WEBSOCKET ERROR ===');
       // console.warn("WebSocket error");
       isReconnectingRef.current = false;
-      setConnectionStatus('error');
-      
+      setConnectionStatus("error");
+
       // Clear ping interval on error
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
@@ -419,8 +424,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // console.log('=== WEBSOCKET CONNECTED ===');
       // console.log("WebSocket connected successfully");
       isReconnectingRef.current = false;
-      setConnectionStatus('connected');
-      
+      setConnectionStatus("connected");
+
       // Reset reconnect attempts on successful connection
       reconnectAttempts.current = 0;
     };
@@ -430,27 +435,27 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       // console.log('Close event:', event);
       // console.log('Close code:', event.code);
       // console.log('Close reason:', event.reason);
-      
+
       // Clear ping interval on close
       if (pingIntervalRef.current) {
         clearInterval(pingIntervalRef.current);
         pingIntervalRef.current = null;
       }
-      
+
       ws.current = null;
       isReconnectingRef.current = false;
-      setConnectionStatus('disconnected');
+      setConnectionStatus("disconnected");
 
       // Check if this might be a token expiration issue
       if (event.code === 4001 || event.code === 1008) {
         // console.log("WebSocket closed due to authentication issue, attempting token refresh...");
-        
+
         // Don't attempt token refresh if user is not logged in
         if (!currentUserIdRef.current) {
           // console.log("User not logged in, skipping reconnection");
           return;
         }
-        
+
         try {
           // Attempt to refresh the token
           const refreshToken = getCookie("refresh_token");
@@ -462,16 +467,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               },
               body: JSON.stringify({ refresh: refreshToken }),
             });
-            
+
             if (response.ok) {
               await response.json(); // Tokens are set as cookies by the backend
               // console.log("Token refreshed successfully, reconnecting...");
-              
+
               // Clear any existing reconnect timeout
               if (reconnectTimeoutRef.current) {
                 clearTimeout(reconnectTimeoutRef.current);
               }
-              
+
               // Reconnect immediately with new token
               reconnectTimeoutRef.current = window.setTimeout(() => {
                 // console.log("Reconnecting with refreshed token...");
@@ -488,7 +493,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             // console.log("No refresh token available, not attempting reconnection");
             return;
           }
-        } catch (error) {
+        } catch (_error) {
           // console.warn("Token refresh failed:", error);
           // Don't attempt reconnection after failed refresh
           return;
@@ -510,12 +515,12 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       reconnectAttempts.current += 1;
       const baseDelay = 1000; // 1 second
       const exponentialDelay = Math.min(
-        baseDelay * Math.pow(2, reconnectAttempts.current - 1),
-        maxReconnectDelay
+        baseDelay * 2 ** (reconnectAttempts.current - 1),
+        maxReconnectDelay,
       );
-      
+
       // console.log(`Reconnecting in ${exponentialDelay / 1000}s (attempt ${reconnectAttempts.current})`);
-      
+
       reconnectTimeoutRef.current = window.setTimeout(() => {
         // Double-check user is still logged in before reconnecting
         if (currentUserIdRef.current) {
@@ -552,11 +557,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       propertyId: number | null,
       title?: string,
       projectId?: number | null,
-      organizationId?: number | null
+      organizationId?: number | null,
     ) => {
       // Find existing thread based on context
       const existing = threads.find((t) => {
-        const sameParticipants = (t.user1 === sellerId || t.user2 === sellerId);
+        const sameParticipants = t.user1 === sellerId || t.user2 === sellerId;
         if (propertyId) return t.property === propertyId && sameParticipants;
         if (projectId) return t.project === projectId && sameParticipants;
         if (organizationId) return t.organization === organizationId && sameParticipants;
@@ -566,14 +571,14 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (existing) return existing.id;
 
       // Create a unique key for this thread creation request
-      const requestKey = `${sellerId}-${propertyId || 'null'}-${projectId || 'null'}-${organizationId || 'null'}`;
-      
+      const requestKey = `${sellerId}-${propertyId || "null"}-${projectId || "null"}-${organizationId || "null"}`;
+
       // Check if we're already creating this thread
       if (inFlightThreadCreation.current.has(requestKey)) {
         // Wait a bit and retry to get the thread once it's created
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         const retryExisting = threads.find((t) => {
-          const sameParticipants = (t.user1 === sellerId || t.user2 === sellerId);
+          const sameParticipants = t.user1 === sellerId || t.user2 === sellerId;
           if (propertyId) return t.property === propertyId && sameParticipants;
           if (projectId) return t.project === projectId && sameParticipants;
           if (organizationId) return t.organization === organizationId && sameParticipants;
@@ -581,20 +586,26 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
         if (retryExisting) return retryExisting.id;
       }
-      
+
       // Mark this thread creation as in-flight
       inFlightThreadCreation.current.add(requestKey);
-      
+
       try {
-        const payload: any = {
+        const payload: {
+          recipient_id: number;
+          title: string;
+          property_id?: number;
+          project_id?: number;
+          organization_id?: number;
+        } = {
           recipient_id: sellerId,
-          title,
+          title: title || "New Conversation",
         };
         // Only include non-null IDs
         if (propertyId) payload.property_id = propertyId;
         if (projectId) payload.project_id = projectId;
         if (organizationId) payload.organization_id = organizationId;
-        
+
         const res = await apiClient.post<Thread>("chat/", payload);
         setThreads((prev) => [res.data, ...prev]);
         return res.data.id;
@@ -603,7 +614,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         inFlightThreadCreation.current.delete(requestKey);
       }
     },
-    [threads]
+    [threads],
   );
 
   const getOrCreateDmThread = useCallback(
@@ -613,7 +624,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         (t) =>
           !t.property &&
           ((t.user1 === otherUserId && t.user2 === user?.id) ||
-            (t.user1 === user?.id && t.user2 === otherUserId))
+            (t.user1 === user?.id && t.user2 === otherUserId)),
       );
       if (existing) {
         // console.log('Found existing DM thread:', existing.id);
@@ -622,23 +633,23 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       // Create a unique key for DM thread (use 'dm' prefix to distinguish from property threads)
       const requestKey = `dm-${otherUserId}`;
-      
+
       // Check if we're already creating this DM thread
       if (inFlightThreadCreation.current.has(requestKey)) {
         // Wait a bit and retry to get the thread once it's created
-        await new Promise(resolve => setTimeout(resolve, 100));
+        await new Promise((resolve) => setTimeout(resolve, 100));
         const retryExisting = threads.find(
           (t) =>
             !t.property &&
             ((t.user1 === otherUserId && t.user2 === user?.id) ||
-              (t.user1 === user?.id && t.user2 === otherUserId))
+              (t.user1 === user?.id && t.user2 === otherUserId)),
         );
         if (retryExisting) return retryExisting.id;
       }
-      
+
       // Mark this DM thread creation as in-flight
       inFlightThreadCreation.current.add(requestKey);
-      
+
       try {
         // console.log('Creating new DM thread with user:', otherUserId);
         const res = await apiClient.post<Thread>("chat/", {
@@ -653,16 +664,11 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
         inFlightThreadCreation.current.delete(requestKey);
       }
     },
-    [threads, user?.id]
+    [threads, user?.id],
   );
 
   const sendMessage = useCallback(
-    (
-      threadId: string,
-      recipientId: number,
-      content: string,
-      propertyId?: number
-    ) => {
+    (threadId: string, recipientId: number, content: string, propertyId?: number) => {
       // Ensure the socket is (re)opened
       openSocket();
 
@@ -710,11 +716,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           return t;
         });
         return updated.sort(
-          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime()
+          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
         );
       });
 
-      const payload: any = {
+      const payload: {
+        type: "chat.message";
+        recipient_id: number;
+        content: string;
+        property_id?: number;
+      } = {
         type: "chat.message",
         recipient_id: recipientId,
         content,
@@ -733,15 +744,15 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
             property_id: propertyId,
             recipient_id: recipientId,
           });
-          
+
           // console.log('✅ REST API success. Response:', response.data);
-          
+
           // Replace optimistic message with real message from server
           setMessages((prev) => {
             const list = prev[threadId] ?? [];
             // console.log('Replacing optimistic message via REST. Current messages:', list.map(m => ({ id: m.id, content: m.content })));
-            const newList = list.map((msg) => 
-              msg.id === optimisticMessage.id ? response.data : msg
+            const newList = list.map((msg) =>
+              msg.id === optimisticMessage.id ? response.data : msg,
             );
             // console.log('New message list after REST replacement:', newList.map(m => ({ id: m.id, content: m.content })));
             return {
@@ -749,7 +760,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               [threadId]: newList,
             };
           });
-        } catch (error) {
+        } catch (_error) {
           // console.error('❌ REST API failed:', error);
           // Remove optimistic message on error
           setMessages((prev) => {
@@ -795,7 +806,7 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               // console.log('Sending payload:', json);
               ws.current?.send(json);
             },
-            { once: true }
+            { once: true },
           );
           break;
         default:
@@ -805,39 +816,42 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
           void sendViaRest();
       }
     },
-    [openSocket, user?.id]
+    [openSocket, user?.id],
   );
 
-  const markThreadRead = useCallback((threadId: string) => {
-    // Use functional state update to avoid stale closures
-    setMessages((prevMessages) => {
-      if (!prevMessages[threadId]) return prevMessages;
-      
-      const updatedMessages = prevMessages[threadId].map((m) =>
-        !m.read_at && m.sender !== user?.id ? { ...m, read_at: new Date().toISOString() } : m
-      );
-      
-      return {
-        ...prevMessages,
-        [threadId]: updatedMessages,
-      };
-    });
-    
-    // Update threads state with functional update - calculates unread count from current state
-    setThreads((prevThreads) => {
-      return prevThreads.map((thread) => {
-        if (thread.id === threadId) {
-          return {
-            ...thread,
-            unread_count: 0, // All messages marked as read
-          };
-        }
-        return thread;
+  const markThreadRead = useCallback(
+    (threadId: string) => {
+      // Use functional state update to avoid stale closures
+      setMessages((prevMessages) => {
+        if (!prevMessages[threadId]) return prevMessages;
+
+        const updatedMessages = prevMessages[threadId].map((m) =>
+          !m.read_at && m.sender !== user?.id ? { ...m, read_at: new Date().toISOString() } : m,
+        );
+
+        return {
+          ...prevMessages,
+          [threadId]: updatedMessages,
+        };
       });
-    });
-    
-    apiClient.post(`chat/${threadId}/mark_read/`).catch(() => {});
-  }, [user?.id]);
+
+      // Update threads state with functional update - calculates unread count from current state
+      setThreads((prevThreads) => {
+        return prevThreads.map((thread) => {
+          if (thread.id === threadId) {
+            return {
+              ...thread,
+              unread_count: 0, // All messages marked as read
+            };
+          }
+          return thread;
+        });
+      });
+
+      apiClient.post(`chat/${threadId}/mark_read/`).catch(() => {});
+    },
+    [user?.id],
+  );
 
   // Function to recalculate unread counts for all threads
   const recalculateUnreadCounts = useCallback(() => {
@@ -845,9 +859,9 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return prev.map((thread) => {
         const threadMessages = messages[thread.id] || [];
         const newUnreadCount = threadMessages.filter(
-          (msg) => msg.sender !== user?.id && !msg.read_at
+          (msg) => msg.sender !== user?.id && !msg.read_at,
         ).length;
-        
+
         return {
           ...thread,
           unread_count: newUnreadCount,
@@ -856,35 +870,13 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
   }, [messages, user?.id]);
 
-  const sendTypingStart = useCallback((threadId: string, recipientId: number) => {
-    if (ws.current?.readyState === WebSocket.OPEN) {
-      ws.current.send(
-        JSON.stringify({ type: "typing.start", thread_id: threadId, recipient_id: recipientId })
-      );
-      
-      // Auto-stop typing after 3 seconds of inactivity
-      const timerKey = `${threadId}-${recipientId}`;
-      
-      // Clear existing timer for this thread/recipient
-      if (typingTimers.current[timerKey]) {
-        clearTimeout(typingTimers.current[timerKey]);
-      }
-      
-      // Set new auto-stop timer
-      typingTimers.current[timerKey] = window.setTimeout(() => {
-        sendTypingStop(threadId, recipientId);
-        delete typingTimers.current[timerKey];
-      }, 3000); // 3 seconds
-    }
-  }, []);
-
   const sendTypingStop = useCallback((threadId: string, recipientId: number) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(
-        JSON.stringify({ type: "typing.stop", thread_id: threadId, recipient_id: recipientId })
+        JSON.stringify({ type: "typing.stop", thread_id: threadId, recipient_id: recipientId }),
       );
     }
-    
+
     // Clear any existing auto-stop timer
     const timerKey = `${threadId}-${recipientId}`;
     if (typingTimers.current[timerKey]) {
@@ -892,6 +884,31 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       delete typingTimers.current[timerKey];
     }
   }, []);
+
+  const sendTypingStart = useCallback(
+    (threadId: string, recipientId: number) => {
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        ws.current.send(
+          JSON.stringify({ type: "typing.start", thread_id: threadId, recipient_id: recipientId }),
+        );
+
+        // Auto-stop typing after 3 seconds of inactivity
+        const timerKey = `${threadId}-${recipientId}`;
+
+        // Clear existing timer for this thread/recipient
+        if (typingTimers.current[timerKey]) {
+          clearTimeout(typingTimers.current[timerKey]);
+        }
+
+        // Set new auto-stop timer
+        typingTimers.current[timerKey] = window.setTimeout(() => {
+          sendTypingStop(threadId, recipientId);
+          delete typingTimers.current[timerKey];
+        }, 3000); // 3 seconds
+      }
+    },
+    [sendTypingStop],
+  );
 
   const unsendMessage = useCallback(async (messageId: string) => {
     await apiClient.post(`chat/messages/${messageId}/unsend/`);
@@ -935,4 +952,3 @@ export const useChat = () => {
   }
   return ctx;
 };
-

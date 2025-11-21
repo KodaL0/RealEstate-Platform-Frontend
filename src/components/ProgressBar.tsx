@@ -1,15 +1,16 @@
 // src/components/ProgressBar.tsx
-import React from 'react';
-import { Check } from 'lucide-react';
-import { useWizardNavigation, useWizardProgress } from '../context/ListingWizardContext';
+
+import { Check } from "lucide-react";
+import type React from "react";
+import { useWizardNavigation, useWizardProgress } from "../context/ListingWizardContext";
 
 // Standard 5-step wizard for both create and edit modes
 const STEPS = [
-  { id: 0, name: 'Property Type' },
-  { id: 1, name: 'Details' },
-  { id: 2, name: 'Images' },
-  { id: 3, name: 'Documents' },
-  { id: 4, name: 'Contact' },
+  { id: 0, name: "Property Type" },
+  { id: 1, name: "Details" },
+  { id: 2, name: "Images" },
+  { id: 3, name: "Documents" },
+  { id: 4, name: "Contact" },
 ];
 
 interface ProgressBarProps {
@@ -27,9 +28,9 @@ const ProgressBar: React.FC<ProgressBarProps> = () => {
       <div className="hidden sm:block w-full py-4 bg-white border-b border-gray-100">
         <nav className="flex items-center justify-center" aria-label="Progress">
           <ol className="flex items-center space-x-16">
-            {STEPS.map(step => {
+            {STEPS.map((step) => {
               const isDone = step.id < currentStep;
-              const isNow  = step.id === currentStep;
+              const isNow = step.id === currentStep;
               return (
                 <li key={step.id}>
                   {isDone ? (
@@ -62,7 +63,9 @@ const ProgressBar: React.FC<ProgressBarProps> = () => {
                     >
                       <span
                         className={`h-8 w-8 rounded-full border-2 border-gray-300 bg-white text-gray-500 flex items-center justify-center ${
-                          step.id > currentStep ? 'cursor-not-allowed opacity-50' : 'group-hover:border-gray-400'
+                          step.id > currentStep
+                            ? "cursor-not-allowed opacity-50"
+                            : "group-hover:border-gray-400"
                         } transition-colors`}
                       >
                         <span className="text-sm">{step.id + 1}</span>
@@ -83,29 +86,33 @@ const ProgressBar: React.FC<ProgressBarProps> = () => {
           {STEPS.map((step, index) => {
             const isCompleted = index < currentStep;
             const isCurrent = index === currentStep;
-            
+
             return (
               <div key={step.id} className="flex items-center">
                 {/* Stage Circle */}
-                <div className={`w-3 h-3 rounded-full transition-all duration-300 ease-in-out ${
-                  isCompleted 
-                    ? 'bg-blue-600' 
-                    : isCurrent 
-                      ? 'bg-blue-600 ring-2 ring-blue-200' 
-                      : 'bg-gray-300'
-                }`}>
+                <div
+                  className={`w-3 h-3 rounded-full transition-all duration-300 ease-in-out ${
+                    isCompleted
+                      ? "bg-blue-600"
+                      : isCurrent
+                        ? "bg-blue-600 ring-2 ring-blue-200"
+                        : "bg-gray-300"
+                  }`}
+                >
                   {isCompleted && (
                     <div className="w-full h-full flex items-center justify-center">
                       <div className="w-1.5 h-1.5 bg-white rounded-full"></div>
                     </div>
                   )}
                 </div>
-                
+
                 {/* Connector Line (except for last item) */}
                 {index < STEPS.length - 1 && (
-                  <div className={`w-8 h-0.5 mx-1 transition-all duration-300 ease-in-out ${
-                    isCompleted ? 'bg-blue-600' : 'bg-gray-300'
-                  }`}></div>
+                  <div
+                    className={`w-8 h-0.5 mx-1 transition-all duration-300 ease-in-out ${
+                      isCompleted ? "bg-blue-600" : "bg-gray-300"
+                    }`}
+                  ></div>
                 )}
               </div>
             );

@@ -1,13 +1,14 @@
 // Centralized API service for Developer Portal
 // Handles all API calls, caching, and data management for the portal
 
-import developersApi, { 
-  DeveloperOrganization, 
-  Project, 
-  Unit, 
-  DeveloperAsset 
-} from '../../config/developers-api';
-import environment from '../../config/environment';
+import developersApi, {
+  type DeveloperAsset,
+  type DeveloperOrganization,
+  type Project,
+  type ProjectAsset,
+  type Unit,
+} from "../../config/developers-api";
+import environment from "../../config/environment";
 
 // ────────────────────────────────────────────────────────────────────────────
 // Types
@@ -72,7 +73,7 @@ class DeveloperPortalApiService {
       this.lastFetchTime = Date.now();
       return data;
     } catch (error) {
-      console.error('Failed to initialize portal data:', error);
+      console.error("Failed to initialize portal data:", error);
       throw error;
     } finally {
       this.isLoading = false;
@@ -97,13 +98,15 @@ class DeveloperPortalApiService {
 
       // Use denormalized count fields from API instead of calculating
       const projectStats: Record<number, ProjectStats> = {};
-      
-      projects.forEach(project => {
+
+      projects.forEach((project) => {
         // Use count fields from project object (denormalized, maintained by signals)
         // Fallback to calculating if fields not available (backward compatibility)
-        const projectUnits = units.filter(u => u.project === project.id);
-        const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
-        
+        const projectUnits = units.filter((u) => u.project === project.id);
+        const projectPhotos = (project.assets || []).filter(
+          (asset: ProjectAsset) => asset.category === "photos",
+        );
+
         // Sort photos by upload date (most recent first)
         const sortedPhotos = [...projectPhotos].sort((a, b) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
@@ -112,17 +115,18 @@ class DeveloperPortalApiService {
         // Resolve relative file URLs to absolute URLs
         const resolveFileUrl = (fileUrl: string | undefined): string | undefined => {
           if (!fileUrl) return undefined;
-          if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+          if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
             return fileUrl; // Already absolute
           }
           // If relative URL, prepend API base URL
           const apiBaseUrl = environment.baseUrl;
-          return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+          return fileUrl.startsWith("/") ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
         };
 
         projectStats[project.id] = {
           unitsCount: project.total_units || projectUnits.length, // Use denormalized field
-          assetsCount: project.assets_count ?? (assets.filter(a => a.project === project.id).length), // Use denormalized field with fallback
+          assetsCount:
+            project.assets_count ?? assets.filter((a) => a.project === project.id).length, // Use denormalized field with fallback
           photosCount: project.photos_count ?? projectPhotos.length, // Use denormalized field with fallback
           firstPhotoUrl: resolveFileUrl(sortedPhotos[0]?.file) || project.main_image,
         };
@@ -136,7 +140,7 @@ class DeveloperPortalApiService {
         projectStats,
       };
     } catch (error) {
-      console.error('Error loading portal data:', error);
+      console.error("Error loading portal data:", error);
       throw error;
     }
   }
@@ -162,7 +166,7 @@ class DeveloperPortalApiService {
    */
   async getProject(projectId: number): Promise<Project | null> {
     const data = await this.initialize();
-    return data.projects.find(p => p.id === projectId) || null;
+    return data.projects.find((p) => p.id === projectId) || null;
   }
 
   /**
@@ -170,7 +174,7 @@ class DeveloperPortalApiService {
    */
   async getProjectUnits(projectId: number): Promise<Unit[]> {
     const data = await this.initialize();
-    return data.units.filter(u => u.project === projectId);
+    return data.units.filter((u) => u.project === projectId);
   }
 
   /**
@@ -178,7 +182,7 @@ class DeveloperPortalApiService {
    */
   async getProjectAssets(projectId: number): Promise<DeveloperAsset[]> {
     const data = await this.initialize();
-    return data.assets.filter(a => a.project === projectId);
+    return data.assets.filter((a) => a.project === projectId);
   }
 
   /**
@@ -186,9 +190,7 @@ class DeveloperPortalApiService {
    */
   async getProjectPhotos(projectId: number): Promise<DeveloperAsset[]> {
     const assets = await this.getProjectAssets(projectId);
-    return assets.filter(a => 
-      a.asset_type === 'image' && a.image_category === 'photos'
-    );
+    return assets.filter((a) => a.asset_type === "image" && a.image_category === "photos");
   }
 
   /**
@@ -223,14 +225,14 @@ class DeveloperPortalApiService {
   async invalidateProject(projectId: number): Promise<void> {
     // Remove from cache
     if (this.dataCache) {
-      this.dataCache.projects = this.dataCache.projects.filter(p => p.id !== projectId);
+      this.dataCache.projects = this.dataCache.projects.filter((p) => p.id !== projectId);
       delete this.dataCache.projectStats[projectId];
     }
-    
+
     // Invalidate API cache
-    developersApi.cache.invalidate('projects');
-    developersApi.cache.invalidate('units');
-    developersApi.cache.invalidate('assets');
+    developersApi.cache.invalidate("projects");
+    developersApi.cache.invalidate("units");
+    developersApi.cache.invalidate("assets");
   }
 
   /**
@@ -238,15 +240,17 @@ class DeveloperPortalApiService {
    */
   async updateProject(project: Project): Promise<void> {
     if (this.dataCache) {
-      const index = this.dataCache.projects.findIndex(p => p.id === project.id);
+      const index = this.dataCache.projects.findIndex((p) => p.id === project.id);
       if (index !== -1) {
         this.dataCache.projects[index] = project;
       } else {
         this.dataCache.projects.push(project);
       }
-      
+
       // Use denormalized count fields from project object
-      const projectPhotos = (project.assets || []).filter((asset: any) => asset.category === 'photos');
+      const projectPhotos = (project.assets || []).filter(
+        (asset: ProjectAsset) => asset.category === "photos",
+      );
       const sortedPhotos = [...projectPhotos].sort((a, b) => {
         return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
       });
@@ -293,4 +297,3 @@ export const developerPortalApi = new DeveloperPortalApiService();
 
 // Export default
 export default developerPortalApi;
-

@@ -1,27 +1,28 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Building2, ArrowLeft, Mail, CheckCircle } from 'lucide-react';
-import toast from 'react-hot-toast';
-import api from '../config/api';
+import { ArrowLeft, Building2, CheckCircle, Mail } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
+import toast from "react-hot-toast";
+import { Link } from "react-router-dom";
+import api from "../config/api";
 
 export const ForgotPassword: React.FC = () => {
-  const [email, setEmail] = useState('');
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [emailSent, setEmailSent] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    
+    setError("");
+
     // Validate email
     if (!email) {
-      setError('Email is required');
+      setError("Email is required");
       return;
     }
-    
+
     if (!/\S+@\S+\.\S+/.test(email)) {
-      setError('Please enter a valid email address');
+      setError("Please enter a valid email address");
       return;
     }
 
@@ -29,17 +30,23 @@ export const ForgotPassword: React.FC = () => {
 
     try {
       const response = await api.auth.requestPasswordReset(email);
-      
-      if (response.status === 200 || response.data.status === 200) {
+      const responseData = response.data as { status?: number; message?: string };
+
+      if (response.status === 200 || responseData.status === 200) {
         setEmailSent(true);
-        toast.success('Password reset email sent!');
+        toast.success("Password reset email sent!");
       } else {
-        setError(response.data?.message || 'Failed to send reset email');
-        toast.error('Failed to send reset email');
+        setError(responseData?.message || "Failed to send reset email");
+        toast.error("Failed to send reset email");
       }
-    } catch (err: any) {
-      console.error('Password reset request error:', err);
-      const errorMessage = err.response?.data?.message || err.response?.data?.error || 'An error occurred';
+    } catch (err: unknown) {
+      console.error("Password reset request error:", err);
+      const apiError = err as {
+        response?: { data?: { error?: string; message?: string } };
+        message?: string;
+      };
+      const errorMessage =
+        apiError.response?.data?.message || apiError.response?.data?.error || "An error occurred";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -65,21 +72,15 @@ export const ForgotPassword: React.FC = () => {
               <div className="flex justify-center mb-4">
                 <CheckCircle className="h-16 w-16 text-green-500" />
               </div>
-              
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">
-                Check Your Email
-              </h2>
-              
+
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">Check Your Email</h2>
+
               <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
                 <Mail className="h-6 w-6 text-blue-600 mx-auto mb-2" />
-                <p className="text-sm text-gray-700">
-                  We've sent password reset instructions to
-                </p>
-                <p className="text-sm font-semibold text-gray-900 mt-1">
-                  {email}
-                </p>
+                <p className="text-sm text-gray-700">We've sent password reset instructions to</p>
+                <p className="text-sm font-semibold text-gray-900 mt-1">{email}</p>
               </div>
-              
+
               <div className="text-left space-y-3 mb-6 text-sm text-gray-600">
                 <p>
                   <strong>Next steps:</strong>
@@ -99,7 +100,7 @@ export const ForgotPassword: React.FC = () => {
                 >
                   Send Another Email
                 </button>
-                
+
                 <Link
                   to="/auth"
                   className="block w-full py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium text-center"
@@ -112,7 +113,7 @@ export const ForgotPassword: React.FC = () => {
 
           <div className="text-center mt-4">
             <p className="text-sm text-gray-600">
-              Didn't receive the email?{' '}
+              Didn't receive the email?{" "}
               <button
                 onClick={() => setEmailSent(false)}
                 className="text-blue-600 hover:text-blue-500 font-semibold"
@@ -149,9 +150,7 @@ export const ForgotPassword: React.FC = () => {
             </Link>
           </div>
 
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">
-            Forgot Password?
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Forgot Password?</h2>
           <p className="text-gray-600 mb-6">
             No worries! Enter your email and we'll send you reset instructions.
           </p>
@@ -167,18 +166,15 @@ export const ForgotPassword: React.FC = () => {
                 value={email}
                 onChange={(e) => {
                   setEmail(e.target.value);
-                  setError('');
+                  setError("");
                 }}
                 className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                  error ? 'border-red-500' : 'border-gray-300'
+                  error ? "border-red-500" : "border-gray-300"
                 }`}
                 placeholder="your.email@example.com"
                 disabled={isLoading}
-                autoFocus
               />
-              {error && (
-                <p className="text-red-500 text-sm mt-1">{error}</p>
-              )}
+              {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
             </div>
 
             <button
@@ -192,14 +188,14 @@ export const ForgotPassword: React.FC = () => {
                   Sending...
                 </div>
               ) : (
-                'Send Reset Link'
+                "Send Reset Link"
               )}
             </button>
           </form>
 
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600">
-              Remember your password?{' '}
+              Remember your password?{" "}
               <Link to="/auth" className="text-blue-600 hover:text-blue-500 font-semibold">
                 Sign in
               </Link>
@@ -210,8 +206,3 @@ export const ForgotPassword: React.FC = () => {
     </div>
   );
 };
-
-
-
-
-

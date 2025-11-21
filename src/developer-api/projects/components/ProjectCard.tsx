@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, memo } from 'react';
-import { Building } from 'lucide-react';
-import UnitPublishModal from './UnitPublishModal';
-import developersApi from '../../../config/developers-api';
-import { useImageLazyLoad } from '../../../hooks/useImageLazyLoad';
-import environment from '../../../config/environment';
+import { Building } from "lucide-react";
+import { memo, useEffect, useRef, useState } from "react";
+import developersApi, { type ProjectAsset, type Unit } from "../../../config/developers-api";
+import environment from "../../../config/environment";
+import { useImageLazyLoad } from "../../../hooks/useImageLazyLoad";
+import UnitPublishModal from "./UnitPublishModal";
 
 type Project = {
   id: number;
@@ -29,17 +29,24 @@ interface ProjectCardProps {
   };
 }
 
-function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _onEdit, onDelete: _onDelete, preloadedStats }: ProjectCardProps) {
-  const [units, setUnits] = useState<any[]>([]);
-  const [assets, setAssets] = useState<any[]>([]);
-  const [photos, setPhotos] = useState<any[]>([]);
+function ProjectCard({
+  project,
+  onClick,
+  onViewChange: _onViewChange,
+  onEdit: _onEdit,
+  onDelete: _onDelete,
+  preloadedStats,
+}: ProjectCardProps) {
+  const [units, setUnits] = useState<Unit[]>([]);
+  const [assets, setAssets] = useState<ProjectAsset[]>([]);
+  const [photos, setPhotos] = useState<ProjectAsset[]>([]);
   const [showPublishModal, setShowPublishModal] = useState(false);
-  const [isPublished, setIsPublished] = useState<boolean>(Boolean((project as any).is_published));
+  const [isPublished, setIsPublished] = useState<boolean>(Boolean(project.is_published));
   const [isBusy, setIsBusy] = useState(false);
   const [imageLoaded, setImageLoaded] = useState(false);
   const [imageError, setImageError] = useState(false);
   const imageRef = useRef<HTMLDivElement>(null);
-  const { hasBeenVisible } = useImageLazyLoad(imageRef, { rootMargin: '100px' });
+  const { hasBeenVisible } = useImageLazyLoad(imageRef, { rootMargin: "100px" });
 
   // Determine image source - prioritize main_image, then preloaded, then photos
   // Photos come from project.assets (ProjectAsset), not DeveloperAsset
@@ -49,13 +56,13 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
     if (photos[0]?.file) {
       // Resolve relative URLs to absolute URLs
       const fileUrl = photos[0].file;
-      if (fileUrl.startsWith('http://') || fileUrl.startsWith('https://')) {
+      if (fileUrl.startsWith("http://") || fileUrl.startsWith("https://")) {
         return fileUrl; // Already absolute
       }
       // If relative URL, prepend API base URL
       // fileUrl is like "/mediafiles/..." - need to make it absolute
       const apiBaseUrl = environment.baseUrl;
-      return fileUrl.startsWith('/') ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
+      return fileUrl.startsWith("/") ? `${apiBaseUrl}${fileUrl}` : `${apiBaseUrl}/${fileUrl}`;
     }
     return null;
   };
@@ -70,7 +77,21 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
       setAssets(Array(preloadedStats.assetsCount || 0).fill(null));
       // Set photos array for stats display, but image will use preloadedStats.firstPhotoUrl
       // ProjectAsset uses 'file' field, not 'file_url'
-      setPhotos(preloadedStats.firstPhotoUrl ? [{ file: preloadedStats.firstPhotoUrl, category: 'photos' }] : []);
+      // Create a minimal ProjectAsset-like object for display purposes
+      setPhotos(
+        preloadedStats.firstPhotoUrl
+          ? [
+              {
+                id: 0,
+                project: project.id,
+                file: preloadedStats.firstPhotoUrl,
+                category: "photos" as const,
+                metadata: {},
+                uploaded_at: new Date().toISOString(),
+              },
+            ]
+          : [],
+      );
       return;
     }
 
@@ -84,23 +105,24 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
           developersApi.units.listCached(),
           developersApi.projects.get(project.id), // Get full project with assets (photos)
         ]);
-        
-        const projectUnits = unitsData.filter(unit => unit.project === project.id);
+
+        const projectUnits = unitsData.filter((unit) => unit.project === project.id);
         setUnits(projectUnits);
-        
+
         // Photos come from project.assets (ProjectAsset with category='photos')
-        const projectPhotos = (projectData.assets || []).filter((asset: any) => asset.category === 'photos');
-        
+        const projectPhotos = (projectData.assets || []).filter(
+          (asset: ProjectAsset) => asset.category === "photos",
+        );
+
         // Sort by upload date (most recent first)
         const sortedPhotos = [...projectPhotos].sort((a, b) => {
           return new Date(b.uploaded_at).getTime() - new Date(a.uploaded_at).getTime();
         });
-        
+
         setPhotos(sortedPhotos);
         setAssets(projectData.assets || []); // Store all project assets
-        
       } catch (error) {
-        console.error('Failed to load project stats:', error);
+        console.error("Failed to load project stats:", error);
         setUnits([]);
         setAssets([]);
         setPhotos([]);
@@ -110,17 +132,21 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
     loadProjectStats();
   }, [project.id, preloadedStats, hasBeenVisible]);
 
-
-
   return (
-    <div 
-      className="bg-white border rounded-lg hover:border-gray-300 transition-colors overflow-hidden"
-    >
+    <div className="bg-white border rounded-lg hover:border-gray-300 transition-colors overflow-hidden">
       {/* Image with lazy loading */}
-      <div 
+      <div
         ref={imageRef}
-        className="h-36 bg-gray-100 relative cursor-pointer overflow-hidden" 
+        role="button"
+        tabIndex={0}
+        className="h-36 bg-gray-100 relative cursor-pointer overflow-hidden"
         onClick={() => onClick(project)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            onClick(project);
+          }
+        }}
       >
         {/* Placeholder while loading */}
         {!imageLoaded && !imageError && (
@@ -130,11 +156,13 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
         )}
 
         {/* Actual image - load immediately if we have preloaded stats or main_image, otherwise wait for visibility */}
-        {imageSource && !imageError && (preloadedStats?.firstPhotoUrl || project.main_image || hasBeenVisible) ? (
-          <img 
-            src={imageSource} 
+        {imageSource &&
+        !imageError &&
+        (preloadedStats?.firstPhotoUrl || project.main_image || hasBeenVisible) ? (
+          <img
+            src={imageSource}
             alt={project.name}
-            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? 'opacity-100' : 'opacity-0'}`}
+            className={`w-full h-full object-cover transition-opacity duration-300 ${imageLoaded ? "opacity-100" : "opacity-0"}`}
             loading={preloadedStats?.firstPhotoUrl || project.main_image ? "eager" : "lazy"}
             onLoad={() => setImageLoaded(true)}
             onError={() => {
@@ -145,30 +173,33 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
         ) : null}
 
         {/* Fallback icon when no image or error */}
-        <div className={`w-full h-full flex items-center justify-center ${(imageSource && !imageError) ? 'hidden' : ''}`}>
+        <div
+          className={`w-full h-full flex items-center justify-center ${imageSource && !imageError ? "hidden" : ""}`}
+        >
           <Building className="w-16 h-16 text-gray-400" />
         </div>
 
         {project.status && (
           <div className="absolute top-2 right-2">
-            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">{project.status}</span>
+            <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded">
+              {project.status}
+            </span>
           </div>
         )}
         <div className="absolute top-2 left-2">
-          <span className={`px-2 py-1 text-xs rounded border ${isPublished ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 'bg-yellow-50 text-yellow-700 border-yellow-200'}`}>
-            {isPublished ? 'Published' : 'Draft'}
+          <span
+            className={`px-2 py-1 text-xs rounded border ${isPublished ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-yellow-50 text-yellow-700 border-yellow-200"}`}
+          >
+            {isPublished ? "Published" : "Draft"}
           </span>
         </div>
       </div>
-
 
       {/* Info */}
       <div className="p-4">
         <div className="flex items-start justify-between">
           <div className="min-w-0">
-            <h3 className="text-base font-medium text-gray-900 mb-1 truncate">
-              {project.name}
-            </h3>
+            <h3 className="text-base font-medium text-gray-900 mb-1 truncate">{project.name}</h3>
             <div className="flex items-center text-sm text-gray-600 mb-3">
               <span className="mr-1">📍</span>
               <span className="truncate">{project.location}</span>
@@ -177,14 +208,16 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
           <div className="flex items-center space-x-2">
             {isPublished ? (
               <button
+                type="button"
                 onClick={async () => {
-                  if (!confirm('Unpublish this project? It will no longer be publicly visible.')) return;
+                  if (!confirm("Unpublish this project? It will no longer be publicly visible."))
+                    return;
                   setIsBusy(true);
                   try {
                     await developersApi.projects.unpublish(project.id);
                     setIsPublished(false);
-                  } catch (e) {
-                    alert('Failed to unpublish project.');
+                  } catch (_e) {
+                    alert("Failed to unpublish project.");
                   } finally {
                     setIsBusy(false);
                   }
@@ -193,10 +226,11 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
                 className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-red-700 bg-red-100 hover:bg-red-200 rounded-md transition-colors disabled:opacity-50"
                 title="Unpublish project"
               >
-                {isBusy ? 'Working…' : 'Unpublish'}
+                {isBusy ? "Working…" : "Unpublish"}
               </button>
             ) : (
               <button
+                type="button"
                 onClick={() => setShowPublishModal(true)}
                 className="inline-flex items-center px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
                 title="Publish project"
@@ -209,11 +243,12 @@ function ProjectCard({ project, onClick, onViewChange: _onViewChange, onEdit: _o
 
         {/* Quick Stats Summary */}
         <div className="flex items-center justify-between text-sm text-gray-600 mb-2">
-          <span>📊 {
-            preloadedStats 
+          <span>
+            📊{" "}
+            {preloadedStats
               ? `${preloadedStats.unitsCount || 0} units • ${preloadedStats.assetsCount || 0} assets • ${preloadedStats.photosCount || 0} photos`
-              : `${units.length} units • ${assets.length} assets • ${photos.length} photos`
-          }</span>
+              : `${units.length} units • ${assets.length} assets • ${photos.length} photos`}
+          </span>
           <span className="text-xs text-gray-400">ID: {project.id}</span>
         </div>
       </div>

@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
-import { useUser } from '../context/UserContext';
-import GDPRApiService, { ConsentPreferences } from '../services/gdprApi';
+import { useCallback, useEffect, useState } from "react";
+import { useUser } from "../context/UserContext";
+import GDPRApiService, { type ConsentPreferences } from "../services/gdprApi";
 
 export interface GDPRConsentState {
   hasConsented: boolean;
@@ -17,46 +17,46 @@ export const useGDPRConsent = () => {
     consents: { analytics: false, marketing: false },
     consentGivenAt: null,
     needsConsentCollection: false,
-    isLoading: true
+    isLoading: true,
   });
 
-  // Check if user needs consent collection
-  useEffect(() => {
-    checkConsentStatus();
-  }, [user]);
-
-  const checkConsentStatus = async () => {
+  const checkConsentStatus = useCallback(async () => {
     if (!user) {
-      setConsentState(prev => ({ ...prev, isLoading: false }));
+      setConsentState((prev) => ({ ...prev, isLoading: false }));
       return;
     }
 
     try {
-      setConsentState(prev => ({ ...prev, isLoading: true }));
+      setConsentState((prev) => ({ ...prev, isLoading: true }));
 
       // Get current consent status from API
       const consentResponse = await GDPRApiService.getConsentStatus();
-      const gdprStatus = getGDPRStatus();
+      const _gdprStatus = getGDPRStatus();
 
       // Determine if consent collection is needed
-      const hasAnyConsent = consentResponse.consents.analytics ||
-                           consentResponse.consents.marketing;
+      const hasAnyConsent =
+        consentResponse.consents.analytics || consentResponse.consents.marketing;
 
-      const needsCollection = !consentResponse.consent_given_at ||
-                             consentResponse.consent_given_at === null;
+      const needsCollection =
+        !consentResponse.consent_given_at || consentResponse.consent_given_at === null;
 
       setConsentState({
         hasConsented: hasAnyConsent,
         consents: consentResponse.consents,
         consentGivenAt: consentResponse.consent_given_at,
         needsConsentCollection: needsCollection,
-        isLoading: false
+        isLoading: false,
       });
     } catch (error) {
-      console.error('Failed to check consent status:', error);
-      setConsentState(prev => ({ ...prev, isLoading: false }));
+      console.error("Failed to check consent status:", error);
+      setConsentState((prev) => ({ ...prev, isLoading: false }));
     }
-  };
+  }, [user, getGDPRStatus]);
+
+  // Check if user needs consent collection
+  useEffect(() => {
+    checkConsentStatus();
+  }, [checkConsentStatus]);
 
   const collectConsent = async (consents: ConsentPreferences): Promise<boolean> => {
     try {
@@ -64,54 +64,57 @@ export const useGDPRConsent = () => {
       await GDPRApiService.updateConsent(consents);
 
       // Update local state
-      setConsentState(prev => ({
+      setConsentState((prev) => ({
         ...prev,
         hasConsented: consents.analytics || consents.marketing,
         consents,
         consentGivenAt: new Date().toISOString(),
-        needsConsentCollection: false
+        needsConsentCollection: false,
       }));
 
       return true;
     } catch (error) {
-      console.error('Failed to collect consent:', error);
+      console.error("Failed to collect consent:", error);
       return false;
     }
   };
 
-  const updateConsent = async (consentType: keyof ConsentPreferences, value: boolean): Promise<boolean> => {
+  const updateConsent = async (
+    consentType: keyof ConsentPreferences,
+    value: boolean,
+  ): Promise<boolean> => {
     try {
       const success = await updateGDPRConsent(consentType, value);
 
       if (success) {
         // Update local state
-        setConsentState(prev => ({
+        setConsentState((prev) => ({
           ...prev,
           consents: { ...prev.consents, [consentType]: value },
-          consentGivenAt: prev.consentGivenAt || new Date().toISOString()
+          consentGivenAt: prev.consentGivenAt || new Date().toISOString(),
         }));
       }
 
       return success;
     } catch (error) {
-      console.error('Failed to update consent:', error);
+      console.error("Failed to update consent:", error);
       return false;
     }
   };
 
-  const showConsentModal = (mode: 'initial' | 'update' | 'required' = 'initial') => {
+  const showConsentModal = (_mode: "initial" | "update" | "required" = "initial") => {
     // This would trigger the GDPRConsentModal component
     // For now, we'll implement a simple prompt-based approach
     return new Promise<ConsentPreferences>((resolve) => {
-      const defaultConsents = consentState.consents;
+      const _defaultConsents = consentState.consents;
 
       // Simple prompt for demo - in production, use a proper modal
-      const analytics = confirm('Allow analytics and performance tracking? (Optional)');
-      const marketing = confirm('Allow marketing and recommendations? (Optional)');
+      const analytics = confirm("Allow analytics and performance tracking? (Optional)");
+      const marketing = confirm("Allow marketing and recommendations? (Optional)");
 
       resolve({
         analytics,
-        marketing
+        marketing,
       });
     });
   };
@@ -121,7 +124,7 @@ export const useGDPRConsent = () => {
     collectConsent,
     updateConsent,
     showConsentModal,
-    refreshConsentStatus: checkConsentStatus
+    refreshConsentStatus: checkConsentStatus,
   };
 };
 

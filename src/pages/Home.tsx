@@ -1,20 +1,13 @@
-import { useState, useEffect, useRef, useLayoutEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowRight, ChevronRight, ExternalLink, Loader2, Search, TrendingUp } from "lucide-react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
-import {
-  Search,
-  ArrowRight,
-  ChevronRight,
-  Loader2,
-  ExternalLink,
-  TrendingUp,
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
 import PropertyCard from "../components/cards/PropertyCard";
-import { Property } from "../types";
 import api from "../config/api";
+import type { Property } from "../types";
 
-const PAGE_SIZE = 12;   // cards per page
-const NAV_HEIGHT = 80;  // px – adjust to your fixed-navbar height
+const PAGE_SIZE = 12; // cards per page
+const NAV_HEIGHT = 80; // px – adjust to your fixed-navbar height
 
 function Home() {
   /* ───────────── state ───────────── */
@@ -36,34 +29,36 @@ function Home() {
   /* ───────────── static mortgage offers ───────────── */
   const mortgages = [
     {
-      name: 'EuroBank',
-      description: 'Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years',
-      rate: '3.80%',
-      logoUrl: '/eurobank-logo.png',  // ensure this file is in public/
-      url: 'https://www.eurobank.cy/en/personal/housing',
-      color: 'from-blue-500 to-blue-600',
-      bgColor: 'bg-blue-50',
-      textColor: 'text-blue-700',
+      name: "EuroBank",
+      description:
+        "Budget your monthly expenses with a fixed monthly instalment for 3, 5 or 10 years",
+      rate: "3.80%",
+      logoUrl: "/eurobank-logo.png", // ensure this file is in public/
+      url: "https://www.eurobank.cy/en/personal/housing",
+      color: "from-blue-500 to-blue-600",
+      bgColor: "bg-blue-50",
+      textColor: "text-blue-700",
     },
     {
-      name: 'Bank of Cyprus',
-      description: 'Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.',
-      rate: '4.66%',
-      logoUrl: '/boc-logo-small.png',  // ensure this file is in public/
-      url: 'https://www.bankofcyprus.com/en-gb/Personal/loans/Housing/Your-first-home/',
-      color: 'from-green-500 to-green-600',
-      bgColor: 'bg-green-50',
-      textColor: 'text-green-700',
+      name: "Bank of Cyprus",
+      description:
+        "Option for a variable interest rate for the whole duration of the loan or a fixed rate for 3, 5 or 10 years.",
+      rate: "4.66%",
+      logoUrl: "/boc-logo-small.png", // ensure this file is in public/
+      url: "https://www.bankofcyprus.com/en-gb/Personal/loans/Housing/Your-first-home/",
+      color: "from-green-500 to-green-600",
+      bgColor: "bg-green-50",
+      textColor: "text-green-700",
     },
     {
-      name: 'Alpha Bank',
-      description: 'Buy, build or renovate your home without using up your own funds.',
-      rate: '5.80%',
-      logoUrl: '/alpha-bank-vector-logo-400x400.png',  // ensure this file is in public/
-      url: 'https://www.alphabank.com.cy/en/individuals/loans/housing-loans',
-      color: 'from-purple-500 to-purple-600',
-      bgColor: 'bg-purple-50',
-      textColor: 'text-purple-700',
+      name: "Alpha Bank",
+      description: "Buy, build or renovate your home without using up your own funds.",
+      rate: "5.80%",
+      logoUrl: "/alpha-bank-vector-logo-400x400.png", // ensure this file is in public/
+      url: "https://www.alphabank.com.cy/en/individuals/loans/housing-loans",
+      color: "from-purple-500 to-purple-600",
+      bgColor: "bg-purple-50",
+      textColor: "text-purple-700",
     },
   ];
 
@@ -79,7 +74,7 @@ function Home() {
       try {
         const res = await api.properties.featured({ page, page_size: PAGE_SIZE });
         if (canceled) return;
-        setFeatured(res.results || []);
+        setFeatured((res.results || []) as Property[]);
         setTotalCount(res.count || 0);
       } catch (err) {
         if (canceled) return;
@@ -111,9 +106,7 @@ function Home() {
     if (loading) return;
     if (featuredTopRef.current) {
       const offset =
-        featuredTopRef.current.getBoundingClientRect().top +
-        window.scrollY -
-        NAV_HEIGHT;
+        featuredTopRef.current.getBoundingClientRect().top + window.scrollY - NAV_HEIGHT;
       window.scrollTo({ top: offset, behavior: "smooth" });
     }
   }, [page, loading]);
@@ -178,7 +171,6 @@ function Home() {
                   </motion.p>
                 </div>
 
-
                 {/* Search Container */}
                 <motion.div
                   initial={{ opacity: 0, y: 40 }}
@@ -201,17 +193,17 @@ function Home() {
                           />
                         </div>
                       </div>
-                      
+
                       {/* Action Buttons */}
                       <div className="flex flex-col sm:flex-row gap-3 lg:gap-4 lg:flex-shrink-0">
                         <Link
-                          to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                          to={`/buy${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
                           className="flex-1 lg:flex-initial bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-3.5 lg:py-4 px-6 lg:px-8 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
                         >
                           Buy
                         </Link>
                         <Link
-                          to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ''}`}
+                          to={`/rent${searchTerm ? `?location=${encodeURIComponent(searchTerm)}` : ""}`}
                           className="flex-1 lg:flex-initial bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800 text-white py-3.5 lg:py-4 px-6 lg:px-8 rounded-xl lg:rounded-2xl font-semibold transition-all shadow-lg hover:shadow-xl active:scale-[0.98] text-center text-base lg:text-lg"
                         >
                           Rent
@@ -231,10 +223,13 @@ function Home() {
         <div ref={featuredTopRef} className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center mb-12">
             <div>
-              <span className="inline-block text-blue-600 font-medium mb-2">Exclusive Listings</span>
+              <span className="inline-block text-blue-600 font-medium mb-2">
+                Exclusive Listings
+              </span>
               <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Featured Properties</h2>
               <p className="text-gray-600 mt-2 max-w-2xl">
-                Explore our hand-picked selection of premium properties in the most desirable locations
+                Explore our hand-picked selection of premium properties in the most desirable
+                locations
               </p>
             </div>
             <Link
@@ -261,17 +256,13 @@ function Home() {
               transition={{ duration: 0.45, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {featured.length ? (
-                featured.map((prop) => (
-                  <PropertyCard key={prop.id} property={prop} />
-                ))
-              ) : (
-                !loading && (
-                  <p className="col-span-full text-center text-gray-500">
-                    No featured properties available at the moment.
-                  </p>
-                )
-              )}
+              {featured.length
+                ? featured.map((prop) => <PropertyCard key={prop.id} property={prop} />)
+                : !loading && (
+                    <p className="col-span-full text-center text-gray-500">
+                      No featured properties available at the moment.
+                    </p>
+                  )}
             </motion.div>
           </AnimatePresence>
 
@@ -305,8 +296,8 @@ function Home() {
           )}
         </div>
       </section>
-      
-     {/* ───────────── Available Mortgages in Cyprus ───────────── */}
+
+      {/* ───────────── Available Mortgages in Cyprus ───────────── */}
       <section className="pt-24 pb-20 bg-gradient-to-b from-gray-50 to-white relative">
         <div className="container mx-auto px-4">
           {/* Enhanced title area */}
@@ -321,11 +312,11 @@ function Home() {
               Available Mortgages in Cyprus
             </h2>
             <p className="text-lg text-gray-600 leading-relaxed">
-              Compare top bank offers and find the best rate for your home loan. 
-              Our trusted financial partners offer competitive rates and flexible terms.
+              Compare top bank offers and find the best rate for your home loan. Our trusted
+              financial partners offer competitive rates and flexible terms.
             </p>
           </div>
-      
+
           {/* Enhanced grid wrapper */}
           <div className="max-w-7xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -345,9 +336,11 @@ function Home() {
                   >
                     {/* Subtle background pattern */}
                     <div className="absolute top-0 right-0 w-32 h-32 opacity-10 transform translate-x-8 -translate-y-8">
-                      <div className={`w-full h-full bg-gradient-to-br ${m.color} rounded-full blur-2xl`} />
+                      <div
+                        className={`w-full h-full bg-gradient-to-br ${m.color} rounded-full blur-2xl`}
+                      />
                     </div>
-                    
+
                     {/* Header with logo and name */}
                     <div className="relative z-10 mb-6">
                       <div className="flex items-center justify-center mb-4 space-x-3">
@@ -362,20 +355,22 @@ function Home() {
                           </div>
                         )}
                       </div>
-                      
+
                       {/* Rate badge */}
                       {m.rate && (
-                        <div className={`inline-block bg-gradient-to-r ${m.color} text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg`}>
+                        <div
+                          className={`inline-block bg-gradient-to-r ${m.color} text-white px-6 py-2 rounded-full text-lg font-bold shadow-lg`}
+                        >
                           Starting at {m.rate}
                         </div>
                       )}
                     </div>
-                    
+
                     {/* Description */}
                     <p className="text-gray-700 text-base leading-relaxed flex-grow mb-6 relative z-10">
                       {m.description}
                     </p>
-                    
+
                     {/* CTA section */}
                     <div className="relative z-10 mt-auto">
                       <div className="flex items-center justify-center space-x-2 text-gray-600 group-hover:text-gray-800 transition-colors">
@@ -383,21 +378,24 @@ function Home() {
                         <ExternalLink className="h-4 w-4 group-hover:translate-x-1 transition-transform" />
                       </div>
                     </div>
-                    
+
                     {/* Hover gradient overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-br ${m.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`} />
+                    <div
+                      className={`absolute inset-0 bg-gradient-to-br ${m.color} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`}
+                    />
                   </a>
                 </motion.div>
               ))}
             </div>
           </div>
-          
+
           {/* Additional info section */}
           <div className="max-w-4xl mx-auto mt-16 text-center">
             <div className="bg-white/80 backdrop-blur-sm border border-gray-200 rounded-2xl p-8 shadow-lg">
               <p className="text-gray-600 text-sm leading-relaxed">
-                <strong className="text-gray-900">Disclaimer:</strong> Interest rates are subject to change and approval. 
-                Terms and conditions apply. Please contact the respective banks for the most current rates and requirements.
+                <strong className="text-gray-900">Disclaimer:</strong> Interest rates are subject to
+                change and approval. Terms and conditions apply. Please contact the respective banks
+                for the most current rates and requirements.
               </p>
             </div>
           </div>
@@ -410,13 +408,13 @@ function Home() {
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1560520031-3a4dc4e9de0c?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1073&q=80')] bg-cover bg-center opacity-5" />
           <div className="absolute inset-0 bg-gradient-to-br from-blue-600/20 via-indigo-600/10 to-purple-600/20" />
-          
+
           {/* Animated background shapes */}
           <div className="absolute top-10 left-10 w-72 h-72 bg-blue-500/10 rounded-full blur-3xl animate-pulse" />
           <div className="absolute bottom-10 right-10 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl animate-pulse delay-1000" />
           <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-purple-500/5 rounded-full blur-3xl animate-pulse delay-500" />
         </div>
-        
+
         <div className="container mx-auto px-4 text-center relative z-10">
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -430,7 +428,7 @@ function Home() {
                 Take The Next Step
               </span>
             </div>
-            
+
             {/* Enhanced heading */}
             <h2 className="text-4xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight">
               <span className="text-white">Ready to Find Your</span>
@@ -439,14 +437,13 @@ function Home() {
                 Perfect Property?
               </span>
             </h2>
-            
+
             {/* Enhanced description */}
             <p className="text-white/80 text-lg md:text-xl max-w-3xl mx-auto mb-10 leading-relaxed">
-              Whether you're looking to buy, rent, or invest, our comprehensive platform 
-              connects you with the finest properties across Cyprus and Greece. 
-              Start your journey today.
+              Whether you're looking to buy, rent, or invest, our comprehensive platform connects
+              you with the finest properties across Cyprus and Greece. Start your journey today.
             </p>
-            
+
             {/* Enhanced CTA buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
               <Link
@@ -459,7 +456,7 @@ function Home() {
                   <ChevronRight className="ml-2 h-5 w-5 transition-transform group-hover:translate-x-1" />
                 </span>
               </Link>
-              
+
               <Link
                 to="/rent"
                 className="group bg-white/10 backdrop-blur-xl border border-white/20 hover:bg-white/20 text-white px-8 py-4 rounded-2xl font-semibold transition-all duration-300 shadow-xl hover:shadow-2xl inline-flex items-center justify-center min-w-[200px]"

@@ -1,13 +1,12 @@
-import { useState, useEffect } from 'react';
-import { Connection } from '../types';
-import api from '../config/api';
+import { useCallback, useEffect, useState } from "react";
+import api from "../config/api";
 
 export const useConnections = (isAuthenticated: boolean = true) => {
   const [pendingRequestsCount, setPendingRequestsCount] = useState(0);
   const [totalConnectionsCount, setTotalConnectionsCount] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
 
-  const fetchCounts = async () => {
+  const fetchCounts = useCallback(async () => {
     if (!isAuthenticated) {
       setPendingRequestsCount(0);
       setTotalConnectionsCount(0);
@@ -21,17 +20,17 @@ export const useConnections = (isAuthenticated: boolean = true) => {
       ]);
       setPendingRequestsCount(pendingRes.data.length);
       setTotalConnectionsCount(connectionsRes.data.length);
-    } catch (error) {
+    } catch (_error) {
       setPendingRequestsCount(0);
       setTotalConnectionsCount(0);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isAuthenticated]);
 
   useEffect(() => {
     fetchCounts();
-  }, [isAuthenticated]);
+  }, [fetchCounts]);
 
   return {
     pendingRequestsCount,
@@ -39,4 +38,4 @@ export const useConnections = (isAuthenticated: boolean = true) => {
     isLoading,
     refreshCounts: fetchCounts,
   };
-}; 
+};

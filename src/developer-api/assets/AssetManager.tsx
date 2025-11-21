@@ -1,9 +1,23 @@
-import { useState, useEffect, useMemo } from 'react';
-import { Upload, Search, Filter, Download, Eye, Trash2, Star, Globe, FileText, Image, Video, Music, Archive, Paperclip, FolderOpen, LayoutGrid, ListTree, X } from 'lucide-react';
-import developersApi from '../../config/developers-api';
-import AssetUploadForm from './AssetUploadForm';
-import AssetCard from './components/AssetCard';
-import AssetRow from './components/AssetRow';
+import {
+  Archive,
+  FileText,
+  Filter,
+  FolderOpen,
+  Image,
+  LayoutGrid,
+  ListTree,
+  Music,
+  Paperclip,
+  Search,
+  Upload,
+  Video,
+  X,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import developersApi from "../../config/developers-api";
+import AssetUploadForm from "./AssetUploadForm";
+import AssetCard from "./components/AssetCard";
+import AssetRow from "./components/AssetRow";
 
 interface Asset {
   id: number;
@@ -36,88 +50,75 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
   const [assets, setAssets] = useState<Asset[]>([]);
   const [filteredAssets, setFilteredAssets] = useState<Asset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedType, setSelectedType] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedType, setSelectedType] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState("");
   const [showUploadModal, setShowUploadModal] = useState(false);
-  const [categories, setCategories] = useState<any>({});
+  const [categories, setCategories] = useState<{
+    document?: Array<[string, string]>;
+    image?: Array<[string, string]>;
+    video?: Array<[string, string]>;
+  }>({});
   const [organizedView, setOrganizedView] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [viewMode, setViewMode] = useState<"grid" | "list">("grid");
   const [openFilters, setOpenFilters] = useState(false);
 
   const assetTypes = [
-    { value: '', label: 'All Types', icon: FolderOpen, color: 'text-gray-600' },
-    { value: 'document', label: 'Documents', icon: FileText, color: 'text-blue-600' },
-    { value: 'image', label: 'Images', icon: Image, color: 'text-green-600' },
-    { value: 'video', label: 'Videos', icon: Video, color: 'text-red-600' },
-    { value: 'audio', label: 'Audio', icon: Music, color: 'text-purple-600' },
-    { value: 'archive', label: 'Archives', icon: Archive, color: 'text-orange-600' },
-    { value: 'other', label: 'Other', icon: Paperclip, color: 'text-gray-600' }
+    { value: "", label: "All Types", icon: FolderOpen, color: "text-gray-600" },
+    { value: "document", label: "Documents", icon: FileText, color: "text-blue-600" },
+    { value: "image", label: "Images", icon: Image, color: "text-green-600" },
+    { value: "video", label: "Videos", icon: Video, color: "text-red-600" },
+    { value: "audio", label: "Audio", icon: Music, color: "text-purple-600" },
+    { value: "archive", label: "Archives", icon: Archive, color: "text-orange-600" },
+    { value: "other", label: "Other", icon: Paperclip, color: "text-gray-600" },
   ];
 
-  // Emit totals whenever full assets list changes
-  useEffect(() => {
-    const assetsCount = assets.length;
-    const photosCount = assets.filter(
-      a => a.asset_type === 'image' || a.mime_type?.startsWith('image/')
-    ).length;
-    onStatsChange?.({ assets: assetsCount, photos: photosCount });
-  }, [assets, onStatsChange]);
-
-  useEffect(() => {
-    fetchAssets();
-    fetchCategories();
-  }, [projectId]);
-
-  useEffect(() => {
-    filterAssets();
-  }, [assets, searchQuery, selectedType, selectedCategory]);
-
-  const fetchAssets = async () => {
+  const fetchAssets = useCallback(async () => {
     try {
       const data = await developersApi.assets.getByProject(projectId);
       setAssets(data || []);
     } catch (error) {
-      console.error('Error fetching assets:', error);
+      console.error("Error fetching assets:", error);
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [projectId]);
 
-  const fetchCategories = async () => {
+  const fetchCategories = useCallback(async () => {
     try {
       const categoriesData = await developersApi.assets.getCategories();
       setCategories(categoriesData || {});
     } catch (error) {
-      console.error('Error fetching categories:', error);
+      console.error("Error fetching categories:", error);
       setCategories({});
     }
-  };
+  }, []);
 
-  const filterAssets = () => {
+  const filterAssets = useCallback(() => {
     let filtered = assets;
 
     if (searchQuery) {
-      filtered = filtered.filter(asset =>
-        asset.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        asset.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        asset.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        asset.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()))
+      filtered = filtered.filter(
+        (asset) =>
+          asset.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.original_filename.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          asset.tags?.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())),
       );
     }
 
     if (selectedType) {
-      filtered = filtered.filter(asset => asset.asset_type === selectedType);
+      filtered = filtered.filter((asset) => asset.asset_type === selectedType);
     }
 
     if (selectedCategory) {
-      filtered = filtered.filter(asset => {
+      filtered = filtered.filter((asset) => {
         switch (selectedType) {
-          case 'document':
+          case "document":
             return asset.document_category === selectedCategory;
-          case 'image':
+          case "image":
             return asset.image_category === selectedCategory;
-          case 'video':
+          case "video":
             return asset.video_category === selectedCategory;
           default:
             return true;
@@ -126,14 +127,32 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
     }
 
     setFilteredAssets(filtered);
-  };
+  }, [assets, searchQuery, selectedType, selectedCategory]);
+
+  // Emit totals whenever full assets list changes
+  useEffect(() => {
+    const assetsCount = assets.length;
+    const photosCount = assets.filter(
+      (a) => a.asset_type === "image" || a.mime_type?.startsWith("image/"),
+    ).length;
+    onStatsChange?.({ assets: assetsCount, photos: photosCount });
+  }, [assets, onStatsChange]);
+
+  useEffect(() => {
+    fetchAssets();
+    fetchCategories();
+  }, [fetchAssets, fetchCategories]);
+
+  useEffect(() => {
+    filterAssets();
+  }, [filterAssets]);
 
   const toggleFeatured = async (assetId: number) => {
     try {
       await developersApi.assets.toggleFeatured(assetId);
       fetchAssets(); // Refresh the list
     } catch (error) {
-      console.error('Error toggling featured status:', error);
+      console.error("Error toggling featured status:", error);
     }
   };
 
@@ -142,31 +161,31 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
       await developersApi.assets.togglePublic(assetId);
       fetchAssets(); // Refresh the list
     } catch (error) {
-      console.error('Error toggling public status:', error);
+      console.error("Error toggling public status:", error);
     }
   };
 
   const deleteAsset = async (assetId: number) => {
-    if (!confirm('Are you sure you want to delete this asset?')) return;
+    if (!confirm("Are you sure you want to delete this asset?")) return;
 
     try {
       await developersApi.assets.delete(assetId);
-      setAssets(assets.filter(asset => asset.id !== assetId));
+      setAssets(assets.filter((asset) => asset.id !== assetId));
     } catch (error) {
-      console.error('Error deleting asset:', error);
+      console.error("Error deleting asset:", error);
     }
   };
 
   const formatFileSize = (bytes: number) => {
-    if (bytes === 0) return '0 Bytes';
+    if (bytes === 0) return "0 Bytes";
     const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const sizes = ["Bytes", "KB", "MB", "GB"];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    return `${parseFloat((bytes / k ** i).toFixed(2))} ${sizes[i]}`;
   };
 
   const getAssetIcon = (asset: Asset) => {
-    const typeConfig = assetTypes.find(type => type.value === asset.asset_type);
+    const typeConfig = assetTypes.find((type) => type.value === asset.asset_type);
     if (typeConfig) {
       const IconComponent = typeConfig.icon;
       return <IconComponent className={`w-8 h-8 ${typeConfig.color}`} />;
@@ -175,28 +194,33 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
   };
 
   const getCategoryOptions = () => {
-    if (!selectedType || !categories[selectedType]) return [];
+    if (!selectedType) return [];
+    const categoryArray =
+      (selectedType === "document" && categories.document) ||
+      (selectedType === "image" && categories.image) ||
+      (selectedType === "video" && categories.video) ||
+      [];
     return [
-      { value: '', label: 'All Categories' },
-      ...categories[selectedType].map((cat: any) => ({
+      { value: "", label: "All Categories" },
+      ...categoryArray.map((cat: [string, string]) => ({
         value: cat[0],
-        label: cat[1]
-      }))
+        label: cat[1],
+      })),
     ];
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'short',
-      day: 'numeric'
+    return new Date(dateString).toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
     });
   };
 
   // Build a map from category code to label for documents
   const documentCategoryLabelMap = useMemo(() => {
     const map: Record<string, string> = {};
-    const docs = categories?.document || [];
+    const docs = categories.document || [];
     docs.forEach((pair: [string, string]) => {
       map[pair[0]] = pair[1];
     });
@@ -205,11 +229,11 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
 
   // Group documents by category when organized view is enabled
   const groupedDocuments = useMemo(() => {
-    if (!organizedView || selectedType !== 'document') return null;
+    if (!organizedView || selectedType !== "document") return null;
     const groups: Record<string, Asset[]> = {};
-    const docs = filteredAssets.filter(a => a.asset_type === 'document');
+    const docs = filteredAssets.filter((a) => a.asset_type === "document");
     for (const a of docs) {
-      const key = a.document_category || 'uncategorized';
+      const key = a.document_category || "uncategorized";
       if (!groups[key]) groups[key] = [] as Asset[];
       groups[key].push(a);
     }
@@ -238,41 +262,47 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Asset Manager</h2>
-              <p className="text-sm text-gray-500">Manage documents, images and files for this project</p>
+              <p className="text-sm text-gray-500">
+                Manage documents, images and files for this project
+              </p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <div className="rounded-xl p-1 flex items-center bg-gray-100">
               <button
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === 'grid' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                type="button"
+                onClick={() => setViewMode("grid")}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === "grid" ? "bg-white text-gray-900 shadow" : "text-gray-600 hover:text-gray-900"}`}
                 title="Grid View"
                 aria-label="Grid view"
               >
                 <LayoutGrid className="w-4 h-4 mr-1" /> Grid
               </button>
               <button
-                onClick={() => setViewMode('list')}
-                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === 'list' ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                type="button"
+                onClick={() => setViewMode("list")}
+                className={`flex items-center px-3 py-2 rounded-lg text-sm ${viewMode === "list" ? "bg-white text-gray-900 shadow" : "text-gray-600 hover:text-gray-900"}`}
                 title="List View"
                 aria-label="List view"
               >
                 <ListTree className="w-4 h-4 mr-1" /> List
               </button>
             </div>
-            {selectedType === 'document' && (
+            {selectedType === "document" && (
               <div className="rounded-xl p-1 flex items-center bg-gray-100">
                 <button
+                  type="button"
                   onClick={() => setOrganizedView(false)}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${!organizedView ? "bg-white text-gray-900 shadow" : "text-gray-600 hover:text-gray-900"}`}
                   title="Flat View"
                   aria-label="Flat view"
                 >
                   <LayoutGrid className="w-4 h-4 mr-1" /> Flat
                 </button>
                 <button
+                  type="button"
                   onClick={() => setOrganizedView(true)}
-                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? 'bg-white text-gray-900 shadow' : 'text-gray-600 hover:text-gray-900'}`}
+                  className={`flex items-center px-3 py-2 rounded-lg text-sm ${organizedView ? "bg-white text-gray-900 shadow" : "text-gray-600 hover:text-gray-900"}`}
                   title="Organized View"
                   aria-label="Organized view"
                 >
@@ -281,6 +311,7 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
               </div>
             )}
             <button
+              type="button"
               onClick={() => setShowUploadModal(true)}
               className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium shadow"
             >
@@ -297,11 +328,15 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             return (
               <button
                 key={t.value}
-                onClick={() => { setSelectedType(t.value); setSelectedCategory(''); }}
-                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition-all ${active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
+                type="button"
+                onClick={() => {
+                  setSelectedType(t.value);
+                  setSelectedCategory("");
+                }}
+                className={`inline-flex items-center px-3 py-1.5 rounded-full text-sm border transition-all ${active ? "bg-blue-600 text-white border-blue-600" : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"}`}
                 title={t.label}
               >
-                <Icon className={`w-4 h-4 mr-1 ${active ? 'text-white' : t.color}`} />
+                <Icon className={`w-4 h-4 mr-1 ${active ? "text-white" : t.color}`} />
                 {t.label}
               </button>
             );
@@ -316,16 +351,20 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
           <h3 className="font-semibold text-gray-900">Search & Filter</h3>
           <div className="flex-1 h-px bg-gray-200"></div>
           <button
+            type="button"
             className="sm:hidden text-sm text-blue-600 hover:text-blue-800 px-3 py-1 rounded-lg bg-blue-50"
-            onClick={() => setOpenFilters(v => !v)}
+            onClick={() => setOpenFilters((v) => !v)}
             aria-expanded={openFilters}
             aria-controls="asset-filters"
           >
-            {openFilters ? 'Hide' : 'Show'}
+            {openFilters ? "Hide" : "Show"}
           </button>
         </div>
 
-        <div id="asset-filters" className={`${openFilters ? 'grid grid-cols-1 md:grid-cols-3 gap-4' : 'hidden md:grid md:grid-cols-3 md:gap-4'}`}>
+        <div
+          id="asset-filters"
+          className={`${openFilters ? "grid grid-cols-1 md:grid-cols-3 gap-4" : "hidden md:grid md:grid-cols-3 md:gap-4"}`}
+        >
           <div className="relative">
             <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
             <input
@@ -336,16 +375,16 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
               className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200"
             />
           </div>
-          
+
           <select
             value={selectedType}
             onChange={(e) => {
               setSelectedType(e.target.value);
-              setSelectedCategory(''); // Reset category when type changes
+              setSelectedCategory(""); // Reset category when type changes
             }}
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white"
           >
-            {assetTypes.map(type => (
+            {assetTypes.map((type) => (
               <option key={type.value} value={type.value}>
                 {type.label}
               </option>
@@ -358,7 +397,7 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all duration-200 bg-white disabled:bg-gray-50 disabled:text-gray-500"
             disabled={!selectedType}
           >
-            {getCategoryOptions().map(cat => (
+            {getCategoryOptions().map((cat) => (
               <option key={cat.value} value={cat.value}>
                 {cat.label}
               </option>
@@ -374,7 +413,8 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
               <span className="inline-flex items-center px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
                 Search: "{searchQuery}"
                 <button
-                  onClick={() => setSearchQuery('')}
+                  type="button"
+                  onClick={() => setSearchQuery("")}
                   className="ml-2 text-blue-600 hover:text-blue-800"
                 >
                   <X className="w-3 h-3" />
@@ -383,9 +423,10 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             )}
             {selectedType && (
               <span className="inline-flex items-center px-3 py-1 bg-green-100 text-green-800 text-sm rounded-full">
-                Type: {assetTypes.find(t => t.value === selectedType)?.label}
+                Type: {assetTypes.find((t) => t.value === selectedType)?.label}
                 <button
-                  onClick={() => setSelectedType('')}
+                  type="button"
+                  onClick={() => setSelectedType("")}
                   className="ml-2 text-green-600 hover:text-green-800"
                 >
                   <X className="w-3 h-3" />
@@ -396,7 +437,8 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
               <span className="inline-flex items-center px-3 py-1 bg-purple-100 text-purple-800 text-sm rounded-full">
                 Category: {selectedCategory}
                 <button
-                  onClick={() => setSelectedCategory('')}
+                  type="button"
+                  onClick={() => setSelectedCategory("")}
                   className="ml-2 text-purple-600 hover:text-purple-800"
                 >
                   <X className="w-3 h-3" />
@@ -416,12 +458,12 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
           <h3 className="text-xl font-semibold text-gray-900 mb-2">No Assets Found</h3>
           <p className="text-gray-600 mb-6 max-w-md mx-auto">
             {searchQuery || selectedType || selectedCategory
-              ? 'Try adjusting your search criteria or filters to find what you\'re looking for.'
-              : 'Upload your first asset to get started with managing your project files.'
-            }
+              ? "Try adjusting your search criteria or filters to find what you're looking for."
+              : "Upload your first asset to get started with managing your project files."}
           </p>
           {!searchQuery && !selectedType && !selectedCategory && (
             <button
+              type="button"
               onClick={() => setShowUploadModal(true)}
               className="inline-flex items-center px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 font-medium"
             >
@@ -430,47 +472,51 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             </button>
           )}
         </div>
-      ) : organizedView && selectedType === 'document' && groupedDocuments ? (
+      ) : organizedView && selectedType === "document" && groupedDocuments ? (
         <div className="space-y-8">
           {Object.entries(groupedDocuments).map(([cat, items]) => (
             <div key={cat}>
               <div className="flex items-center justify-between mb-3">
                 <h4 className="text-lg font-semibold text-gray-900">
-                  {cat === 'uncategorized' ? 'Uncategorized' : (documentCategoryLabelMap[cat] || cat)}
+                  {cat === "uncategorized" ? "Uncategorized" : documentCategoryLabelMap[cat] || cat}
                   <span className="ml-2 text-xs text-gray-500">({items.length})</span>
                 </h4>
               </div>
-              {viewMode === 'list' ? (
+              {viewMode === "list" ? (
                 <div className="space-y-3">
-                  {items.map(asset => (
+                  {items.map((asset) => (
                     <AssetRow
                       key={asset.id}
                       asset={asset}
                       onToggleFeatured={toggleFeatured}
                       onTogglePublic={togglePublic}
                       onDelete={deleteAsset}
-                      onView={(file) => window.open(file, '_blank')}
+                      onView={(file) => window.open(file, "_blank")}
                       renderIcon={getAssetIcon}
                       formatFileSize={formatFileSize}
                       formatDate={formatDate}
-                      categoryLabel={documentCategoryLabelMap[asset.document_category || ''] || 'Document'}
+                      categoryLabel={
+                        documentCategoryLabelMap[asset.document_category || ""] || "Document"
+                      }
                     />
                   ))}
                 </div>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                  {items.map(asset => (
+                  {items.map((asset) => (
                     <AssetCard
                       key={asset.id}
                       asset={asset}
                       onToggleFeatured={toggleFeatured}
                       onTogglePublic={togglePublic}
                       onDelete={deleteAsset}
-                      onView={(file) => window.open(file, '_blank')}
+                      onView={(file) => window.open(file, "_blank")}
                       renderIcon={getAssetIcon}
                       formatFileSize={formatFileSize}
                       formatDate={formatDate}
-                      categoryLabel={documentCategoryLabelMap[asset.document_category || ''] || 'Document'}
+                      categoryLabel={
+                        documentCategoryLabelMap[asset.document_category || ""] || "Document"
+                      }
                     />
                   ))}
                 </div>
@@ -478,40 +524,38 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
             </div>
           ))}
         </div>
+      ) : viewMode === "list" ? (
+        <div className="space-y-3">
+          {filteredAssets.map((asset) => (
+            <AssetRow
+              key={asset.id}
+              asset={asset}
+              onToggleFeatured={toggleFeatured}
+              onTogglePublic={togglePublic}
+              onDelete={deleteAsset}
+              onView={(file) => window.open(file, "_blank")}
+              renderIcon={getAssetIcon}
+              formatFileSize={formatFileSize}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
       ) : (
-        viewMode === 'list' ? (
-          <div className="space-y-3">
-            {filteredAssets.map(asset => (
-              <AssetRow
-                key={asset.id}
-                asset={asset}
-                onToggleFeatured={toggleFeatured}
-                onTogglePublic={togglePublic}
-                onDelete={deleteAsset}
-                onView={(file) => window.open(file, '_blank')}
-                renderIcon={getAssetIcon}
-                formatFileSize={formatFileSize}
-                formatDate={formatDate}
-              />
-            ))}
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredAssets.map(asset => (
-              <AssetCard
-                key={asset.id}
-                asset={asset}
-                onToggleFeatured={toggleFeatured}
-                onTogglePublic={togglePublic}
-                onDelete={deleteAsset}
-                onView={(file) => window.open(file, '_blank')}
-                renderIcon={getAssetIcon}
-                formatFileSize={formatFileSize}
-                formatDate={formatDate}
-              />
-            ))}
-          </div>
-        )
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+          {filteredAssets.map((asset) => (
+            <AssetCard
+              key={asset.id}
+              asset={asset}
+              onToggleFeatured={toggleFeatured}
+              onTogglePublic={togglePublic}
+              onDelete={deleteAsset}
+              onView={(file) => window.open(file, "_blank")}
+              renderIcon={getAssetIcon}
+              formatFileSize={formatFileSize}
+              formatDate={formatDate}
+            />
+          ))}
+        </div>
       )}
 
       {/* Upload Modal - Only render once when showUploadModal is true */}
@@ -520,7 +564,7 @@ export default function AssetManager({ projectId, onStatsChange }: AssetManagerP
           projectId={projectId}
           onClose={() => setShowUploadModal(false)}
           onUpload={(newAsset) => {
-            setAssets(prev => [newAsset as unknown as Asset, ...prev]);
+            setAssets((prev) => [newAsset as unknown as Asset, ...prev]);
             setShowUploadModal(false);
             fetchAssets();
           }}

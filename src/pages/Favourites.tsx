@@ -1,11 +1,12 @@
 // src/pages/Favourites.tsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { useUser } from '../context/UserContext';
-import api from '../config/api'; // Use the main API client
-import { UnifiedListingItem } from '../types';
-import PropertyCard from '../components/cards/PropertyCard';
-import ProjectCard from '../components/cards/ProjectCard';
-import { Link } from 'react-router-dom'; // Import Link for login prompt
+import type React from "react";
+import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom"; // Import Link for login prompt
+import ProjectCard from "../components/cards/ProjectCard";
+import PropertyCard from "../components/cards/PropertyCard";
+import api from "../config/api"; // Use the main API client
+import { useUser } from "../context/UserContext";
+import type { UnifiedListingItem } from "../types";
 
 const Favourites: React.FC = () => {
   const { user, isLoading: userLoading } = useUser();
@@ -43,14 +44,11 @@ const Favourites: React.FC = () => {
     };
 
     fetchFavourites();
-
   }, [user, userLoading]); // Rerun effect if user or userLoading status changes
 
   // Callback function to remove an item from the local state
   const handleUnlikeSuccess = useCallback((itemId: number) => {
-    setFavourites(prevFavourites =>
-      prevFavourites.filter(fav => Number(fav.id) !== itemId)
-    );
+    setFavourites((prevFavourites) => prevFavourites.filter((fav) => Number(fav.id) !== itemId));
     console.log(`Removed item ${itemId} from local favourites list.`);
   }, []); // Empty dependency array as it doesn't depend on component state
 
@@ -62,7 +60,13 @@ const Favourites: React.FC = () => {
     if (!user) {
       return (
         <div className="text-center text-gray-500">
-          <p>Please <Link to="/login" className="text-blue-600 hover:underline">log in</Link> to view your favourites.</p>
+          <p>
+            Please{" "}
+            <Link to="/login" className="text-blue-600 hover:underline">
+              log in
+            </Link>{" "}
+            to view your favourites.
+          </p>
         </div>
       );
     }
@@ -79,7 +83,7 @@ const Favourites: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
         {favourites.map((item) => {
           // Render PropertyCard or ProjectCard based on _type
-          if (item._type === 'property') {
+          if (item._type === "property") {
             return (
               <PropertyCard
                 key={`property-${item.id}`}
@@ -87,14 +91,22 @@ const Favourites: React.FC = () => {
                 onUnlikeSuccess={handleUnlikeSuccess}
               />
             );
-          } else if (item._type === 'project') {
-            return (
-              <ProjectCard
-                key={`project-${item.id}`}
-                project={item}
-                onUnlikeSuccess={handleUnlikeSuccess}
-              />
-            );
+          } else if (item._type === "project") {
+            // Convert project to match ProjectCard's expected format
+            // ProjectCard expects id: number and images: ProjectImage[]
+            const projectImages = Array.isArray(item.images)
+              ? item.images.map((img: string, index: number) => ({
+                  image: img,
+                  is_primary: index === 0,
+                  display_order: index,
+                }))
+              : [];
+            const projectForCard = {
+              ...item,
+              id: Number(item.id),
+              images: projectImages,
+            };
+            return <ProjectCard key={`project-${item.id}`} project={projectForCard} />;
           }
           return null;
         })}
@@ -103,7 +115,9 @@ const Favourites: React.FC = () => {
   };
 
   return (
-    <div className="container mx-auto px-4 py-8 pt-20 min-h-screen"> {/* Added top padding and min height */}
+    <div className="container mx-auto px-4 py-8 pt-20 min-h-screen">
+      {" "}
+      {/* Added top padding and min height */}
       <h1 className="text-3xl font-bold mb-6 text-center md:text-left">Your Favourites</h1>
       {renderContent()}
     </div>

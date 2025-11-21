@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { ChevronDown, X } from 'lucide-react';
-import AmenityFilter from './AmenityFilter';
-import { PROPERTY_TYPES, COUNTRY_OPTIONS } from '../types';
-import type { SearchFilterState } from '../utils/searchCanonical';
+import { ChevronDown, X } from "lucide-react";
+import { useState } from "react";
+import { COUNTRY_OPTIONS, PROPERTY_TYPES } from "../types";
+import type { SearchFilterState } from "../utils/searchCanonical";
+import AmenityFilter from "./AmenityFilter";
 
 // Filter types
 type FilterState = SearchFilterState;
@@ -12,22 +12,19 @@ interface SearchFiltersProps {
   onFiltersChange: (filters: FilterState) => void;
 }
 
-const SearchFilters: React.FC<SearchFiltersProps> = ({
-  filters,
-  onFiltersChange,
-}) => {
+const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange }) => {
   const [amenitiesModalOpen, setAmenitiesModalOpen] = useState(false);
 
   // Clear filters
   const clearFilters = () => {
     onFiltersChange({
-      location: '',
-      country: 'All',
-      minPrice: '',
-      maxPrice: '',
-      propertyType: 'Any',
-      bedrooms: 'Any',
-      bathrooms: 'Any',
+      location: "",
+      country: "All",
+      minPrice: "",
+      maxPrice: "",
+      propertyType: "Any",
+      bedrooms: "Any",
+      bathrooms: "Any",
       amenities: [],
     });
   };
@@ -41,26 +38,39 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
             {/* Row 1 */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3">
               <div className="md:col-span-7">
-                <label htmlFor="location" className="block text-xs font-medium text-gray-700 mb-1">📍 Location</label>
+                <label htmlFor="location" className="block text-xs font-medium text-gray-700 mb-1">
+                  📍 Location
+                </label>
                 <input
                   type="text"
                   id="location"
                   placeholder="City, neighborhood..."
                   className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  value={filters.location || ''}
+                  value={filters.location || ""}
                   onChange={(e) => onFiltersChange({ ...filters, location: e.target.value })}
                 />
               </div>
               <div className="md:col-span-5">
-                <label className="block text-xs font-medium text-gray-700 mb-1">🌍 Country</label>
-                <div className="flex items-center gap-1">
+                <label
+                  htmlFor="country-filter"
+                  className="block text-xs font-medium text-gray-700 mb-1"
+                  id="country-filter-label"
+                >
+                  🌍 Country
+                </label>
+                <fieldset
+                  id="country-filter"
+                  className="flex items-center gap-1"
+                  aria-labelledby="country-filter-label"
+                >
                   <button
                     type="button"
-                    onClick={() => onFiltersChange({ ...filters, country: 'All' })}
-                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${(filters.country || 'All') === 'All'
-                      ? 'bg-blue-600 text-white'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      }`}
+                    onClick={() => onFiltersChange({ ...filters, country: "All" })}
+                    className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                      (filters.country || "All") === "All"
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
                   >
                     🌍
                   </button>
@@ -69,65 +79,76 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                       key={opt.value}
                       type="button"
                       onClick={() => onFiltersChange({ ...filters, country: opt.value })}
-                      className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${filters.country === opt.value
-                        ? 'bg-blue-600 text-white'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
+                      className={`flex-1 px-2 py-2 rounded-lg text-xs font-medium transition-all ${
+                        filters.country === opt.value
+                          ? "bg-blue-600 text-white"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                      }`}
                       title={opt.label}
                     >
                       {opt.label}
                     </button>
                   ))}
-                </div>
+                </fieldset>
               </div>
             </div>
 
             {/* Row 2 */}
             <div className="grid grid-cols-2 md:grid-cols-6 gap-2 sm:gap-3">
               <div>
-                <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700 mb-1">💰 Min</label>
+                <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700 mb-1">
+                  💰 Min
+                </label>
                 <input
                   type="number"
                   id="minPrice"
                   placeholder="Min price"
                   className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.minPrice || ''}
+                  value={filters.minPrice || ""}
                   onChange={(e) => onFiltersChange({ ...filters, minPrice: e.target.value })}
                   min="0"
                 />
               </div>
               <div>
-                <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700 mb-1">💰 Max</label>
+                <label htmlFor="maxPrice" className="block text-xs font-medium text-gray-700 mb-1">
+                  💰 Max
+                </label>
                 <input
                   type="number"
                   id="maxPrice"
                   placeholder="Max price"
                   className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
-                  value={filters.maxPrice || ''}
+                  value={filters.maxPrice || ""}
                   onChange={(e) => onFiltersChange({ ...filters, maxPrice: e.target.value })}
                   min="0"
                 />
               </div>
               <div className="md:col-span-2">
-                <label htmlFor="type" className="block text-xs font-medium text-gray-700 mb-1">🏠 Type</label>
+                <label htmlFor="type" className="block text-xs font-medium text-gray-700 mb-1">
+                  🏠 Type
+                </label>
                 <select
                   id="type"
                   className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  value={filters.propertyType || 'Any'}
+                  value={filters.propertyType || "Any"}
                   onChange={(e) => onFiltersChange({ ...filters, propertyType: e.target.value })}
                 >
                   <option value="Any">Any</option>
                   {PROPERTY_TYPES.map((type) => (
-                    <option key={type.value} value={type.value}>{type.label}</option>
+                    <option key={type.value} value={type.value}>
+                      {type.label}
+                    </option>
                   ))}
                 </select>
               </div>
               <div>
-                <label htmlFor="bedrooms" className="block text-xs font-medium text-gray-700 mb-1">🛏️ Beds</label>
+                <label htmlFor="bedrooms" className="block text-xs font-medium text-gray-700 mb-1">
+                  🛏️ Beds
+                </label>
                 <select
                   id="bedrooms"
                   className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  value={filters.bedrooms || 'Any'}
+                  value={filters.bedrooms || "Any"}
                   onChange={(e) => onFiltersChange({ ...filters, bedrooms: e.target.value })}
                 >
                   <option>Any</option>
@@ -139,11 +160,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({
                 </select>
               </div>
               <div>
-                <label htmlFor="bathrooms" className="block text-xs font-medium text-gray-700 mb-1">🚿 Baths</label>
+                <label htmlFor="bathrooms" className="block text-xs font-medium text-gray-700 mb-1">
+                  🚿 Baths
+                </label>
                 <select
                   id="bathrooms"
                   className="w-full px-2 py-2 text-xs sm:text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-                  value={filters.bathrooms || 'Any'}
+                  value={filters.bathrooms || "Any"}
                   onChange={(e) => onFiltersChange({ ...filters, bathrooms: e.target.value })}
                 >
                   <option>Any</option>

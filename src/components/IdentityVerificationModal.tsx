@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { X, Shield, AlertCircle, CheckCircle } from 'lucide-react';
+import { AlertCircle, CheckCircle, Shield, X } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 
 interface IdentityVerificationModalProps {
   isOpen: boolean;
@@ -16,9 +17,9 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
   onVerify,
   operation,
   title,
-  description
+  description,
 }) => {
-  const [password, setPassword] = useState('');
+  const [password, setPassword] = useState("");
   const [isVerifying, setIsVerifying] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,7 +29,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     e.preventDefault();
 
     if (!password.trim()) {
-      setError('Password is required');
+      setError("Password is required");
       return;
     }
 
@@ -38,14 +39,15 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
     try {
       await onVerify(password);
       // Success - modal will be closed by parent component
-    } catch (error: any) {
+    } catch (error: unknown) {
       // Handle specific error types
-      if (error.code === 'INVALID_PASSWORD') {
-        setError('Incorrect password. Please try again.');
-      } else if (error.code === 'PASSWORD_REQUIRED') {
-        setError('Password verification is required for this operation.');
+      const apiError = error as { code?: string; message?: string };
+      if (apiError.code === "INVALID_PASSWORD") {
+        setError("Incorrect password. Please try again.");
+      } else if (apiError.code === "PASSWORD_REQUIRED") {
+        setError("Password verification is required for this operation.");
       } else {
-        setError(error.message || 'Verification failed. Please try again.');
+        setError(apiError.message || "Verification failed. Please try again.");
       }
     } finally {
       setIsVerifying(false);
@@ -53,7 +55,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
   };
 
   const handleClose = () => {
-    setPassword('');
+    setPassword("");
     setError(null);
     onClose();
   };
@@ -71,15 +73,12 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
               <Shield className="h-6 w-6 text-blue-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900">
-                {title || defaultTitle}
-              </h3>
-              <p className="text-sm text-gray-600">
-                {description || defaultDescription}
-              </p>
+              <h3 className="text-lg font-semibold text-gray-900">{title || defaultTitle}</h3>
+              <p className="text-sm text-gray-600">{description || defaultDescription}</p>
             </div>
           </div>
           <button
+            type="button"
             onClick={handleClose}
             className="text-gray-400 hover:text-gray-600 transition-colors"
             disabled={isVerifying}
@@ -96,9 +95,12 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
               <div className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-blue-600 mt-0.5 mr-2 flex-shrink-0" />
                 <div className="text-sm">
-                  <p className="font-medium text-blue-900">GDPR Article 12.6 - Identity Verification</p>
+                  <p className="font-medium text-blue-900">
+                    GDPR Article 12.6 - Identity Verification
+                  </p>
                   <p className="text-blue-800 mt-1">
-                    This verification ensures only you can access sensitive personal data operations.
+                    This verification ensures only you can access sensitive personal data
+                    operations.
                   </p>
                 </div>
               </div>
@@ -116,10 +118,9 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 ${
-                  error ? 'border-red-300' : 'border-gray-300'
+                  error ? "border-red-300" : "border-gray-300"
                 }`}
                 disabled={isVerifying}
-                autoFocus
                 required
               />
               {error && (
@@ -133,8 +134,8 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
             {/* Help Text */}
             <div className="text-xs text-gray-500 bg-gray-50 rounded-md p-3">
               <p>
-                🔒 This verification is required by GDPR Article 12.6 to ensure the security of your personal data.
-                Your password is not stored and is only used for this verification.
+                🔒 This verification is required by GDPR Article 12.6 to ensure the security of your
+                personal data. Your password is not stored and is only used for this verification.
               </p>
             </div>
           </div>
@@ -154,7 +155,7 @@ const IdentityVerificationModal: React.FC<IdentityVerificationModalProps> = ({
               disabled={isVerifying || !password.trim()}
               className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {isVerifying ? 'Verifying...' : 'Verify & Continue'}
+              {isVerifying ? "Verifying..." : "Verify & Continue"}
             </button>
           </div>
         </form>

@@ -10,25 +10,23 @@
  */
 export async function geocodeAddress(
   address: string,
-  email?: string
+  email?: string,
 ): Promise<{ lat: number; lng: number }> {
   const params = new URLSearchParams({
-    format: 'json',
+    format: "json",
     q: address,
-    addressdetails: '1',
+    addressdetails: "1",
     ...(email ? { email } : {}),
   });
 
-  const res = await fetch(
-    `https://nominatim.openstreetmap.org/search?${params}`
-  );
+  const res = await fetch(`https://nominatim.openstreetmap.org/search?${params}`);
   if (!res.ok) {
     throw new Error(`Geocoding request failed: ${res.status}`);
   }
 
   const places: Array<{ lat: string; lon: string }> = await res.json();
   if (!places.length) {
-    throw new Error('No geocoding results');
+    throw new Error("No geocoding results");
   }
 
   return {
