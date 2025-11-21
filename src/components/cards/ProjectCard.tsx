@@ -30,6 +30,9 @@ interface Project {
   country: string;
   images?: ProjectImage[];
   url?: string;
+  // Unit counts
+  total_units?: number;
+  available_units?: number;
   // Range fields (for sale or rent depending on endpoint)
   sale_bedrooms_min?: number;
   sale_bedrooms_max?: number;
@@ -269,6 +272,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     }
   }
 
+  // Add available units if we have the data
+  if (project.available_units !== undefined && project.total_units !== undefined) {
+    stats.push({
+      key: "units",
+      label: "Available",
+      value: `${project.available_units.toLocaleString()} / ${project.total_units.toLocaleString()}`,
+      icon: <Building2 className="h-5 w-5 text-orange-600" />,
+      iconWrapClass: "p-2 rounded-lg bg-orange-100",
+    });
+  }
+
   const getCountryColor = (country: string) => {
     switch (country) {
       case "Greece":
@@ -452,17 +466,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
 
         <div className="flex-1" />
 
-        {/* Dynamic stats in grid layout (matching PropertyCard) */}
+        {/* Dynamic stats in single line layout */}
         {stats.length > 0 && (
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
-            <div className="grid grid-cols-3 gap-4">
-              {stats.slice(0, 3).map((s) => (
-                <div key={s.key} className="text-center">
-                  <div className="flex items-center justify-center mb-2">
+            <div className="flex items-center justify-between gap-4">
+              {stats.slice(0, 4).map((s, index) => (
+                <div key={s.key} className="flex-1 text-center">
+                  <div className="flex items-center justify-center mb-1">
                     <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
-                  <div className="text-lg font-bold text-gray-900">{s.value}</div>
-                  <div className="text-xs text-gray-600 font-medium">{s.label}</div>
+                  <div className="text-base font-bold text-gray-900 leading-tight">{s.value}</div>
+                  <div className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</div>
                 </div>
               ))}
             </div>
