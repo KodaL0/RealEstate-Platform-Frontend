@@ -505,22 +505,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           return unifiedItem;
         });
         
-        // Calculate total available count: properties (1 each) + project available units
-        const totalAvailableCount = normalized.reduce((sum, item) => {
-          if (item._type === "property") {
-            return sum + 1; // Each property counts as 1
-          } else if (item._type === "project") {
-            // For projects, add the available_units count
-            const project = item as any;
-            const availableUnits = project.available_units ?? 0;
-            return sum + availableUnits;
-          }
-          return sum;
-        }, 0);
-        
         const count = paginatedData.count ?? 0;
         setProperties(normalized as UnifiedListingItem[]);
-        setTotalCount(totalAvailableCount); // Use calculated total instead of API count
+        setTotalCount(count); // Use API total count (across all pages)
         setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
 
         // Update results count in URL after fetch completes
@@ -765,9 +752,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                     <div className="flex items-baseline gap-3">
                       <p className="text-gray-900 font-bold text-2xl sm:text-3xl">
                         {totalCount.toLocaleString()}
-                      </p>
-                      <p className="text-gray-600 font-medium text-lg">
-                        {totalCount === 1 ? "Item" : "Items"} Available
                       </p>
                     </div>
                     {filters.country && filters.country !== "All" && (
