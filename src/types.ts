@@ -111,6 +111,25 @@ export const normalizePropertyData = (property: any): Property => ({
   country: property.country || '',
 });
 
+/* ---------- Unified Listings ---------- */
+export type UnifiedListingItem = (Property & { _type: 'property' }) | (Project & { _type: 'project' });
+
+export type FavouriteItem = Property | Project;
+
+/* ---------- Analytics ---------- */
+export interface ProjectAnalytics {
+  project_id: number;
+  project_name: string;
+  analytics: {
+    total_views: number;
+    unique_viewers: number;
+    total_favorites: number;
+    total_contact_clicks: number;
+    avg_time_on_page?: number;
+    bounce_rate?: number;
+  };
+}
+
 /* ---------- Form model used by the wizard ---------- */
 export interface ListingForm {
   title: string;
@@ -199,12 +218,40 @@ export interface PublicProfileData {
 }
 
 /* Chat */
+export interface PropertyInfo {
+  id: number;
+  title: string;
+  address?: string;
+  image?: string;
+  slug?: string;
+}
+
+export interface ProjectInfo {
+  id: number;
+  name: string;
+  location?: string;
+  image?: string;
+  slug?: string;
+}
+
+export interface OrganizationInfo {
+  id: number;
+  name: string;
+  logo?: string;
+  slug?: string;
+}
+
 export interface Thread {
   id: string;
   user1: number;
   user2: number;
   property: number | null;
+  project: number | null;
+  organization: number | null;
   property_title: string;
+  property_info?: PropertyInfo;
+  project_info?: ProjectInfo;
+  organization_info?: OrganizationInfo;
   other_username: string;
   unread_count: number;
   updated_at: string;
@@ -223,6 +270,8 @@ export interface Message {
   id: string;
   thread_id: string;
   property_id: number | null;
+  project_id?: number | null;
+  organization_id?: number | null;
   sender: number;
   recipient: number;
   content: string;

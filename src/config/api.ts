@@ -219,6 +219,58 @@ const api = {
         .then(res => {
           const d = res.data;
           return {
+            results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
+            count: d.count || (Array.isArray(d) ? d.length : 0),
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+  },
+
+  listings: {
+    buy: (p?: any) =>
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('listings/buy', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
+            results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
+            count: d.count || (Array.isArray(d) ? d.length : 0),
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+
+    rent: (p?: any) =>
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('listings/rent', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
+            results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
+            count: d.count || (Array.isArray(d) ? d.length : 0),
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+
+    search: (p?: any) =>
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('listings/search', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
+            results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
+            count: d.count || (Array.isArray(d) ? d.length : 0),
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+  },
+
+  properties: {
+    featured: (p?: { page?: number, page_size?: number }) =>
+      apiGet<{ count: number, next: string | null, previous: string | null, results: any[] }>('properties/featured', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
             results: Array.isArray(d.results) ? d.results : [],
             count: d.count || 0,
             next: d.next,
@@ -284,6 +336,44 @@ const api = {
           return [];
         }),
     toggleFavorite: (pid: number) => apiPost(`properties/${pid}/favourite`),
+  },
+
+  favourites: {
+    list: (p?: any) =>
+      apiGet('properties/favourites', { params: p })
+        .then(res => {
+          const d = res.data;
+          return {
+            results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
+            count: d.count || (Array.isArray(d) ? d.length : 0),
+            next: d.next,
+            previous: d.previous
+          };
+        }),
+    toggle: (data: { property_id?: number; project_id?: number }) =>
+      apiPost('properties/favourites/toggle', data),
+  },
+
+  analytics: {
+    projectAnalytics: {
+      public: (projectId: number, p?: any) =>
+        apiGet(`analytics/project/${projectId}`, { params: p }),
+      myProjects: (projectId: number, p?: any) =>
+        apiGet(`analytics/my-projects/${projectId}`, { params: p }),
+    },
+  },
+
+  chat: {
+    createThread: (data: { recipient_id: number; property_id?: number; project_id?: number; organization_id?: number }) =>
+      apiPost('chat/threads', data),
+    getThreads: () =>
+      apiGet('chat/threads'),
+    getMessages: (threadId: number, p?: any) =>
+      apiGet(`chat/threads/${threadId}/messages`, { params: p }),
+    sendMessage: (threadId: number, data: { content: string }) =>
+      apiPost(`chat/threads/${threadId}/messages`, data),
+    markRead: (threadId: number) =>
+      apiPost(`chat/threads/${threadId}/mark_read`),
   },
 
   admin: {

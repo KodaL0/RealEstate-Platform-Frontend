@@ -2,13 +2,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useUser } from '../context/UserContext';
 import api from '../config/api'; // Use the main API client
-import { Property } from '../types';
+import { UnifiedListingItem } from '../types';
 import PropertyCard from '../components/cards/PropertyCard';
+import ProjectCard from '../components/cards/ProjectCard';
 import { Link } from 'react-router-dom'; // Import Link for login prompt
 
 const Favourites: React.FC = () => {
   const { user, isLoading: userLoading } = useUser();
-  const [favourites, setFavourites] = useState<Property[]>([]);
+  const [favourites, setFavourites] = useState<UnifiedListingItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,9 +30,9 @@ const Favourites: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        // Use the correct API client that includes the /api/ prefix
-        const data = await api.properties.myFavorites();
-        setFavourites(data || []);
+        // Use the new unified favourites API that returns both properties and projects
+        const response = await api.favourites.list();
+        setFavourites(response.results || []);
       } catch (err) {
         console.error("Failed to fetch favourites:", err);
         setError("Failed to load your favourites. Please try again later.");
@@ -46,11 +47,11 @@ const Favourites: React.FC = () => {
   }, [user, userLoading]); // Rerun effect if user or userLoading status changes
 
   // Callback function to remove an item from the local state
-  const handleUnlikeSuccess = useCallback((propertyId: number) => {
+  const handleUnlikeSuccess = useCallback((itemId: number) => {
     setFavourites(prevFavourites =>
-      prevFavourites.filter(fav => fav.id !== propertyId)
+      prevFavourites.filter(fav => Number(fav.id) !== itemId)
     );
-    console.log(`Removed property ${propertyId} from local favourites list.`);
+    console.log(`Removed item ${itemId} from local favourites list.`);
   }, []); // Empty dependency array as it doesn't depend on component state
 
   const renderContent = () => {
@@ -76,13 +77,27 @@ const Favourites: React.FC = () => {
 
     return (
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {favourites.map((property) => (
-          <PropertyCard
-            key={property.id}
-            property={property}
-            onUnlikeSuccess={handleUnlikeSuccess}
-          />
-        ))}
+        {favourites.map((item) => {
+          // Render PropertyCard or ProjectCard based on _type
+          if (item._type === 'property') {
+            return (
+              <PropertyCard
+                key={`property-${item.id}`}
+                property={item}
+                onUnlikeSuccess={handleUnlikeSuccess}
+              />
+            );
+          } else if (item._type === 'project') {
+            return (
+              <ProjectCard
+                key={`project-${item.id}`}
+                project={item}
+                onUnlikeSuccess={handleUnlikeSuccess}
+              />
+            );
+          }
+          return null;
+        })}
       </div>
     );
   };

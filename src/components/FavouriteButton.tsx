@@ -6,26 +6,35 @@ import { useUser } from '../context/UserContext'; // Import useUser
 import analytics from '../utils/analytics';
 
 interface FavouriteButtonProps {
-  propertyId: string | number; // Accept both string and number
+  itemId: string | number; // Accept both string and number
+  itemType: 'property' | 'project'; // Type discriminator
   defaultLiked?: boolean;
   onToggle?: (liked: boolean) => void; // Keep onToggle for immediate UI feedback if needed
-  onUnlikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful unlike
-  onLikeSuccess?: (propertyId: number) => void; // Optional: Callback on successful like
+  onUnlikeSuccess?: (itemId: number) => void; // Optional: Callback on successful unlike
+  onLikeSuccess?: (itemId: number) => void; // Optional: Callback on successful like
+  // Legacy support - will be deprecated
+  propertyId?: string | number;
 }
 
 const FavouriteButton: React.FC<FavouriteButtonProps> = ({
-  propertyId, // Destructure propertyId
+  itemId,
+  itemType = 'property', // Default to property for backward compatibility
   defaultLiked = false,
   onToggle,
-  onUnlikeSuccess, // Destructure the new prop
-  onLikeSuccess, // Destructure the new prop
+  onUnlikeSuccess,
+  onLikeSuccess,
+  propertyId, // Legacy support
 }) => {
   const [liked, setLiked] = useState(defaultLiked);
-  const [isLoading, setIsLoading] = useState(false); // Add loading state
-  const { user } = useUser(); // Get user context
+  const [isLoading, setIsLoading] = useState(false);
+  const { user } = useUser();
   
-  // Convert propertyId to number for API calls
-  const numericPropertyId = typeof propertyId === 'string' ? parseInt(propertyId, 10) : propertyId;
+  // Support legacy propertyId prop
+  const effectiveItemId = itemId ?? propertyId;
+  const effectiveItemType = propertyId && !itemId ? 'property' : itemType;
+  
+  // Convert itemId to number for API calls
+  const numericItemId = typeof effectiveItemId === 'string' ? parseInt(effectiveItemId, 10) : effectiveItemId;
 
   const handleClick = useCallback(async (e: MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation(); // Prevent parent onClick
@@ -43,8 +52,9 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
 
     // ---> Confirmation Step <----
     if (previousLikedState === true) { // Only ask for confirmation when unliking
+      const itemLabel = effectiveItemType === 'property' ? 'property' : 'project';
       const userConfirmed = window.confirm(
-        'Are you sure you want to remove this property from your favourites?'
+        `Are you sure you want to remove this ${itemLabel} from your favourites?`
       );
       if (!userConfirmed) {
         return; // Stop execution if user cancels
@@ -58,21 +68,25 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     onToggle?.(nextLikedState);
 
     try {
-      // Use the correct API client that includes the /api/ prefix
-      const response = await api.properties.toggleFavorite(numericPropertyId);
+      // Use the new unified favourites API
+      const payload = effectiveItemType === 'property' 
+        ? { property_id: numericItemId }
+        : { project_id: numericItemId };
+      
+      const response = await api.favourites.toggle(payload);
       console.log('Favourite toggled successfully:', response);
       const actualLikedState = response.data.is_favourite;
       setLiked(actualLikedState);
 
       // Call appropriate callback based on the action
       if (previousLikedState === false && actualLikedState === true) {
-        // Property was liked
-        analytics.trackPropertyFavorite(String(numericPropertyId), 'add');
-        onLikeSuccess?.(numericPropertyId);
+        // Item was liked
+        analytics.trackPropertyFavorite(String(numericItemId), 'add');
+        onLikeSuccess?.(numericItemId);
       } else if (previousLikedState === true && actualLikedState === false) {
-        // Property was unliked
-        analytics.trackPropertyFavorite(String(numericPropertyId), 'remove');
-        onUnlikeSuccess?.(numericPropertyId);
+        // Item was unliked
+        analytics.trackPropertyFavorite(String(numericItemId), 'remove');
+        onUnlikeSuccess?.(numericItemId);
       }
 
     } catch (error) {
@@ -84,7 +98,7 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
     } finally {
       setIsLoading(false);
     }
-  }, [liked, isLoading, numericPropertyId, onToggle, onUnlikeSuccess, onLikeSuccess, user]); // Add onLikeSuccess to dependencies
+  }, [liked, isLoading, numericItemId, effectiveItemType, onToggle, onUnlikeSuccess, onLikeSuccess, user]);
 
   // Update local state if defaultLiked prop changes (e.g., after initial data load)
   React.useEffect(() => {

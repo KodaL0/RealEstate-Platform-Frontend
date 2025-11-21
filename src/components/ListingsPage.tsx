@@ -12,6 +12,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import SearchFilters from "./SearchFilters";
 import ActiveFilters from "./ActiveFilters";
 import PropertyCard from "./cards/PropertyCard";
+import ProjectCard from "./cards/ProjectCard";
 import SEO from "./SEO";
 import { normalizePropertyData, Property } from "../types";
 import api from "../config/api";
@@ -241,7 +242,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     }
   }, [decodedCanonical, listingRouteType, slugParam]);
 
-  const [properties, setProperties] = useState<Property[]>([]);
+  // UnifiedListingItem can be Property or Project
+  type UnifiedListingItem = Property & { _type?: 'property' } | any & { _type: 'project' };
+  const [properties, setProperties] = useState<UnifiedListingItem[]>([]);
   const [totalPages, setTotalPages] = useState(
     Math.max(1, Math.ceil((decodedCanonical.extras.results ?? 0) / PAGE_SIZE))
   );
@@ -482,12 +485,19 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       console.log(`Fetching ${listingType.toUpperCase()} with query params:`, qp);
 
       try {
-        // Call the appropriate API endpoint based on listing type
-        const apiFn = listingType === "sale" ? api.properties.buy : api.properties.rent;
+        // Call the unified listings API endpoint
+        const apiFn = listingType === "sale" ? api.listings.buy : api.listings.rent;
         const paginatedData = await apiFn(qp);
         console.log(`${listingType.toUpperCase()} pagination data:`, paginatedData);
 
-        const normalized = (paginatedData.results || []).map(normalizePropertyData);
+        // Handle mixed results (Properties and Projects)
+        const normalized = (paginatedData.results || []).map((item: any) => {
+          if (item._type === 'property') {
+            return normalizePropertyData(item);
+          }
+          // For projects, return as-is (no normalization needed)
+          return item;
+        });
         const count = paginatedData.count ?? 0;
         setProperties(normalized);
         setTotalCount(count);
@@ -572,26 +582,26 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     if (!properties.length) return null;
     const basePosition = (currentPage - 1) * PAGE_SIZE;
 
-    const elements = properties.map((property, index) => {
-      const url = property.url || `/property/${property.id}`;
+    const elements = properties.map((item, index) => {
+      const url = item.url || (item._type === 'project' ? `/project/${item.id}` : `/property/${item.id}`);
       const absoluteUrl = url.startsWith("http") ? url : `${SITE_URL}${url}`;
-      const primaryImage = property.images?.[0]?.image;
+      const primaryImage = item.images?.[0]?.image;
       const imageUrl = primaryImage
         ? (primaryImage.startsWith("http") ? primaryImage : `${SITE_URL}${primaryImage}`)
         : undefined;
 
-      const item: Record<string, unknown> = {
+      const schemaItem: Record<string, unknown> = {
         "@type": "ListItem",
         position: basePosition + index + 1,
         url: absoluteUrl,
-        name: property.title,
+        name: item._type === 'project' ? item.name : (item as Property).title,
       };
 
       if (imageUrl) {
-        item.image = imageUrl;
+        schemaItem.image = imageUrl;
       }
 
-      return item;
+      return schemaItem;
     });
 
     return {
@@ -839,9 +849,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               transition={{ duration: 0.4, ease: "easeOut" }}
               className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
             >
-              {displayed.map((property, index) => (
+              {displayed.map((item, index) => (
                 <motion.div
-                  key={property.id}
+                  key={item.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: index * 0.05, duration: 0.4 }}
@@ -849,8 +859,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                     try {
                       if (navigator.sendBeacon) {
                         const data = JSON.stringify({
-                          property_id: property.id,
-                          position: index + 1
+                          property_id: item.id,
+                          position: index + 1,
+                          item_type: item._type || 'property'
                         });
                         const blob = new Blob([data], { type: 'application/json' });
                         navigator.sendBeacon('/api/analytics/search/click/', blob);
@@ -861,7 +872,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                   }}
                   className="group"
                 >
-                  <PropertyCard property={property} />
+                  {item._type === 'project' ? (
+                    <ProjectCard project={item} listingType={listingType} />
+                  ) : (
+                    <PropertyCard property={item as Property} />
+                  )}
                 </motion.div>
               ))}
             </motion.div>

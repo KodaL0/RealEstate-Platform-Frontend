@@ -25,10 +25,19 @@ export default function ThreadList() {
         thread.property_title
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
+        thread.project_info?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        thread.organization_info?.name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
         thread.other_username
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase()) ||
         thread.property_address
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase()) ||
+        thread.project_info?.location
           ?.toLowerCase()
           .includes(searchTerm.toLowerCase())
       );
@@ -196,11 +205,11 @@ export default function ThreadList() {
                   <div className="px-6 py-5 flex items-start gap-4">
                     {/* Avatar */}
                     <div className="relative flex-shrink-0">
-                      {thread.property_image ? (
+                      {(thread.property_image || thread.project_info?.image || thread.organization_info?.logo) ? (
                         <div className="relative">
                           <img
-                            src={thread.property_image}
-                            alt={thread.property_title || "Property"}
+                            src={thread.property_image || thread.project_info?.image || thread.organization_info?.logo || ''}
+                            alt={thread.property_title || thread.project_info?.name || thread.organization_info?.name || "Thread"}
                             className="w-14 h-14 rounded-xl object-cover border-2 border-white shadow-lg ring-2 ring-slate-100 group-hover:ring-slate-200 transition-all duration-200"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-xl" />
@@ -224,21 +233,58 @@ export default function ThreadList() {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex-1 min-w-0 mr-3">
-                          {/* ✨ MAKE THIS LINK A BLOCK for truncate to work */}
-                          <Link
-                            to={`/property/${thread.property}`}
-                            className="block hover:text-blue-600 transition-colors group/property"
-                            onClick={(e) => e.stopPropagation()}
-                          >
+                          {/* Context Title - Property, Project, Organization, or DM */}
+                          {thread.property && thread.property_title ? (
+                            <Link
+                              to={`/property/${thread.property}`}
+                              className="block hover:text-blue-600 transition-colors group/property"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h3
+                                className={`font-semibold text-slate-800 truncate transition-colors ${
+                                  hasUnread ? "text-slate-900" : ""
+                                }`}
+                              >
+                                {thread.property_title}
+                              </h3>
+                            </Link>
+                          ) : thread.project_info ? (
+                            <Link
+                              to={`/projects/${thread.project_info.slug || thread.project_info.id}`}
+                              className="block hover:text-blue-600 transition-colors group/project"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h3
+                                className={`font-semibold text-slate-800 truncate transition-colors ${
+                                  hasUnread ? "text-slate-900" : ""
+                                }`}
+                              >
+                                {thread.project_info.name}
+                              </h3>
+                            </Link>
+                          ) : thread.organization_info ? (
+                            <Link
+                              to={`/developers/${thread.organization_info.slug || thread.organization_info.id}`}
+                              className="block hover:text-blue-600 transition-colors group/org"
+                              onClick={(e) => e.stopPropagation()}
+                            >
+                              <h3
+                                className={`font-semibold text-slate-800 truncate transition-colors ${
+                                  hasUnread ? "text-slate-900" : ""
+                                }`}
+                              >
+                                {thread.organization_info.name}
+                              </h3>
+                            </Link>
+                          ) : (
                             <h3
-                              className={`font-semibold text-slate-800 truncate transition-colors ${
+                              className={`font-semibold text-slate-800 truncate ${
                                 hasUnread ? "text-slate-900" : ""
                               }`}
                             >
-                              {thread.property_title ||
-                                `Property #${thread.property}`}
+                              Direct Message
                             </h3>
-                          </Link>
+                          )}
                           {/* If you’d rather wrap long words, swap `truncate` for `break-words`: */}
                           {/*
                           <h3 className="font-semibold text-slate-800 break-words">
@@ -314,14 +360,14 @@ export default function ThreadList() {
                         )}
                       </div>
 
-                      {thread.property_address && (
+                      {(thread.property_address || thread.project_info?.location) && (
                         <div className="flex items-center text-xs text-slate-500 gap-1.5 mb-2">
                           <MapPin
                             size={12}
                             className="flex-shrink-0 text-slate-400"
                           />
                           <span className="truncate">
-                            {thread.property_address}
+                            {thread.property_address || thread.project_info?.location}
                           </span>
                         </div>
                       )}
@@ -374,10 +420,10 @@ export default function ThreadList() {
             </div>
             <div className="group">
               <div className="text-xl font-bold text-slate-800 group-hover:text-green-600 transition-colors">
-                {new Set(threads.map((t) => t.property)).size}
+                {threads.filter(t => t.property || t.project_info).length}
               </div>
               <div className="text-xs text-slate-500 font-medium">
-                Properties
+                Listings
               </div>
             </div>
             <div className="group">

@@ -21,14 +21,18 @@ interface ChatContextValue {
   getOrCreateThread: (
     sellerId: number,
     propertyId: number | null,
-    title?: string
+    title?: string,
+    projectId?: number | null,
+    organizationId?: number | null
   ) => Promise<string>;
   getOrCreateDmThread: (userId: number) => Promise<string>;
   sendMessage: (
     threadId: string,
     recipientId: number,
     content: string,
-    propertyId?: number
+    propertyId?: number,
+    projectId?: number,
+    organizationId?: number
   ) => void;
   markThreadRead: (threadId: string) => void;
   sendTypingStart: (threadId: string, recipientId: number) => void;
@@ -543,22 +547,38 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   /* --------------------------- Helper functions --------------------------- */
   const getOrCreateThread = useCallback(
-    async (sellerId: number, propertyId: number | null, title?: string) => {
-      const existing = threads.find(
-        (t) => t.property === propertyId && (t.user1 === sellerId || t.user2 === sellerId)
-      );
+    async (
+      sellerId: number,
+      propertyId: number | null,
+      title?: string,
+      projectId?: number | null,
+      organizationId?: number | null
+    ) => {
+      // Find existing thread based on context
+      const existing = threads.find((t) => {
+        const sameParticipants = (t.user1 === sellerId || t.user2 === sellerId);
+        if (propertyId) return t.property === propertyId && sameParticipants;
+        if (projectId) return t.project === projectId && sameParticipants;
+        if (organizationId) return t.organization === organizationId && sameParticipants;
+        // DM thread (no context)
+        return !t.property && !t.project && !t.organization && sameParticipants;
+      });
       if (existing) return existing.id;
 
       // Create a unique key for this thread creation request
-      const requestKey = `${sellerId}-${propertyId}`;
+      const requestKey = `${sellerId}-${propertyId || 'null'}-${projectId || 'null'}-${organizationId || 'null'}`;
       
       // Check if we're already creating this thread
       if (inFlightThreadCreation.current.has(requestKey)) {
         // Wait a bit and retry to get the thread once it's created
         await new Promise(resolve => setTimeout(resolve, 100));
-        const retryExisting = threads.find(
-          (t) => t.property === propertyId && (t.user1 === sellerId || t.user2 === sellerId)
-        );
+        const retryExisting = threads.find((t) => {
+          const sameParticipants = (t.user1 === sellerId || t.user2 === sellerId);
+          if (propertyId) return t.property === propertyId && sameParticipants;
+          if (projectId) return t.project === projectId && sameParticipants;
+          if (organizationId) return t.organization === organizationId && sameParticipants;
+          return !t.property && !t.project && !t.organization && sameParticipants;
+        });
         if (retryExisting) return retryExisting.id;
       }
       
@@ -566,11 +586,16 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
       inFlightThreadCreation.current.add(requestKey);
       
       try {
-        const res = await apiClient.post<Thread>("chat/", {
+        const payload: any = {
           recipient_id: sellerId,
-          property_id: propertyId,
           title,
-        });
+        };
+        // Only include non-null IDs
+        if (propertyId) payload.property_id = propertyId;
+        if (projectId) payload.project_id = projectId;
+        if (organizationId) payload.organization_id = organizationId;
+        
+        const res = await apiClient.post<Thread>("chat/", payload);
         setThreads((prev) => [res.data, ...prev]);
         return res.data.id;
       } finally {

@@ -6,14 +6,27 @@ import analytics from "../utils/analytics";
 
 interface Props {
   sellerId: number;
-  propertyId: number;
+  itemId: number;
+  itemType: 'property' | 'project' | 'organization';
   title: string;
+  // Legacy support - will be deprecated
+  propertyId?: number;
 }
 
-const ChatButton: React.FC<Props> = ({ sellerId, propertyId, title }) => {
+const ChatButton: React.FC<Props> = ({ 
+  sellerId, 
+  itemId, 
+  itemType = 'property', 
+  title,
+  propertyId // legacy support
+}) => {
   const { getOrCreateThread } = useChat();
   const { user } = useUser();
   const navigate = useNavigate();
+
+  // Support legacy propertyId prop
+  const effectiveItemId = propertyId ?? itemId;
+  const effectiveItemType = propertyId ? 'property' : itemType;
 
   const handleClick = async () => {
     if (!user) {
@@ -22,10 +35,19 @@ const ChatButton: React.FC<Props> = ({ sellerId, propertyId, title }) => {
     }
 
     // Track chat initiation
-    analytics.trackPropertyContact(String(propertyId), 'chat');
+    if (effectiveItemType === 'property') {
+      analytics.trackPropertyContact(String(effectiveItemId), 'chat');
+    }
     analytics.trackChatAction('initiate');
 
-    const threadId = await getOrCreateThread(sellerId, propertyId, title);
+    // Call getOrCreateThread with appropriate IDs based on type
+    const threadId = await getOrCreateThread(
+      sellerId,
+      effectiveItemType === 'property' ? effectiveItemId : null,
+      title,
+      effectiveItemType === 'project' ? effectiveItemId : null,
+      effectiveItemType === 'organization' ? effectiveItemId : null
+    );
     navigate(`/chat/${threadId}`);
   };
 
