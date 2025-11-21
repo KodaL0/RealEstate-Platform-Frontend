@@ -1,4 +1,12 @@
-import { ArrowLeft, ArrowRight, Bath, Bed, Building2, MapPin, Square } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Bath,
+  Bed,
+  Building2,
+  MapPin,
+  Square,
+} from "lucide-react";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
 import { Link } from "react-router-dom";
@@ -150,13 +158,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     }
   };
 
+  // Reset image error state when current image changes
+  useEffect(() => {
+    setImageError(false);
+  }, []);
+
   const currentImageData = imgCount > 0 ? images[currentImage] : null;
   const imageUrl = currentImageData?.image || "/placeholder-property.jpg";
   const currentImageState = getLoadingState(imageUrl);
   const isCurrentImageLoading = currentImageState.loading;
   const isCurrentImageLoaded = currentImageState.loaded;
+  const hasImageError = currentImageState.error;
+
+  // Handle image load errors by falling back to placeholder
   const [imageError, setImageError] = useState(false);
-  const effectiveImageUrl = imageError ? "/placeholder-property.jpg" : imageUrl;
+  const effectiveImageUrl = hasImageError || imageError ? "/placeholder-property.jpg" : imageUrl;
 
   const getCountryFlag = (country: string) => {
     switch (country) {
@@ -229,130 +245,199 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     }
   }
 
+  const getCountryColor = (country: string) => {
+    switch (country) {
+      case "Greece":
+        return "from-blue-600 to-blue-700";
+      case "Cyprus":
+        return "from-orange-500 to-orange-600";
+      default:
+        return "from-gray-600 to-gray-700";
+    }
+  };
+
   const priceRange = formatPriceRange(priceMin, priceMax);
 
   return (
     <div
       ref={cardRef}
-      className="group relative bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 border border-gray-200"
+      className={`
+        group bg-white rounded-2xl overflow-hidden
+        shadow-md hover:shadow-2xl transition-all duration-500 ease-out
+        flex flex-col h-full border border-gray-100
+        hover:-translate-y-1 hover:border-gray-200
+      `}
     >
-      <Link to={projectUrl} className="block">
-        {/* Image Container */}
-        <div
-          className="relative w-full h-64 bg-gray-200 overflow-hidden"
-          onTouchStart={onTouchStart}
-          onTouchMove={onTouchMove}
-          onTouchEnd={onTouchEnd}
-        >
-          {imgCount > 0 ? (
-            <>
-              <img
-                src={effectiveImageUrl}
-                alt={name}
-                className={`w-full h-full object-cover transition-opacity duration-300 ${
-                  isCurrentImageLoaded ? "opacity-100" : "opacity-0"
-                }`}
-                onError={() => setImageError(true)}
-                loading="lazy"
-              />
-              {isCurrentImageLoading && !isCurrentImageLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-gray-200">
-                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-
-              {/* Navigation Arrows */}
-              {imgCount > 1 && (
-                <>
-                  <button
-                    type="button"
-                    onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Previous image"
-                  >
-                    <ArrowLeft className="h-5 w-5" />
-                  </button>
-                  <button
-                    type="button"
-                    onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 hover:bg-black/70 text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
-                    aria-label="Next image"
-                  >
-                    <ArrowRight className="h-5 w-5" />
-                  </button>
-
-                  {/* Image Indicator */}
-                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                    {images.slice(0, 5).map((_, idx) => (
-                      <div
-                        key={idx}
-                        className={`h-1.5 rounded-full transition-all ${
-                          idx === currentImage ? "w-6 bg-white" : "w-1.5 bg-white/50"
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </>
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gray-200">
-              <Building2 className="h-16 w-16 text-gray-400" />
-            </div>
-          )}
-        </div>
-
-        {/* Content */}
-        <div className="p-4">
-          {/* Project Type Badge */}
-          <div className="flex items-center gap-2 mb-2">
-            <Building2 className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-semibold text-blue-600 uppercase tracking-wide">
+      {/* Enhanced Header Section */}
+      <div className="relative bg-gradient-to-r from-slate-50 to-gray-50 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3">
+          {/* Left: Project Type */}
+          <div className="flex items-center space-x-2">
+            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+            <span className="px-3 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 text-white text-xs font-semibold rounded-full tracking-wide uppercase">
               Project
             </span>
           </div>
 
-          {/* Title */}
-          <h3 className="text-lg font-bold text-gray-900 mb-2 line-clamp-2 min-h-[3.5rem]">
-            {name}
-          </h3>
-
-          {/* Location */}
-          <div className="flex items-center gap-1 text-gray-600 mb-3">
-            <MapPin className="h-4 w-4" />
-            <span className="text-sm">{location}</span>
-            {country && (
-              <>
-                <span className="mx-1">•</span>
-                <span className="text-sm">
-                  {getCountryFlag(country)} {country}
-                </span>
-              </>
-            )}
+          {/* Right: Country */}
+          <div className="flex items-center space-x-2">
+            <span
+              className={`
+              px-3 py-1.5 bg-gradient-to-r ${getCountryColor(country)} 
+              text-white text-xs font-medium rounded-full shadow-sm
+              flex items-center space-x-1
+            `}
+            >
+              <span>{getCountryFlag(country)}</span>
+              <span>{country}</span>
+            </span>
           </div>
+        </div>
+      </div>
 
-          {/* Price */}
-          {priceRange && <div className="text-xl font-bold text-blue-600 mb-3">{priceRange}</div>}
+      {/* Enhanced Image Section */}
+      <div className="relative overflow-hidden">
+        {/* Navigation Arrows - Always visible */}
+        {imgCount > 1 && (
+          <>
+            <button
+              type="button"
+              onClick={prevImage}
+              className="absolute top-1/2 left-2 sm:left-3 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white p-2 sm:p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110 active:scale-95"
+            >
+              <ArrowLeft className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
+            </button>
+            <button
+              type="button"
+              onClick={nextImage}
+              className="absolute top-1/2 right-2 sm:right-3 -translate-y-1/2 bg-white/95 backdrop-blur-sm hover:bg-white p-2 sm:p-2.5 rounded-full shadow-lg z-10 transition-all duration-300 hover:scale-110 active:scale-95"
+            >
+              <ArrowRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-700" />
+            </button>
+          </>
+        )}
 
-          {/* Stats */}
-          {stats.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-3">
-              {stats.map((stat) => (
-                <div
-                  key={stat.key}
-                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-50"
-                >
-                  <div className={stat.iconWrapClass}>{stat.icon}</div>
-                  <div className="flex flex-col">
-                    <span className="text-xs text-gray-500">{stat.label}</span>
-                    <span className="text-sm font-semibold text-gray-900">{stat.value}</span>
+        {/* Image Indicators - Always visible */}
+        {imgCount > 1 && (
+          <div className="absolute bottom-3 sm:bottom-4 left-1/2 -translate-x-1/2 flex space-x-1.5 z-10 bg-black/30 backdrop-blur-sm px-2 py-1 rounded-full">
+            {images.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  setCurrentImage(index);
+                }}
+                aria-label={`View image ${index + 1}`}
+                className={`
+                  w-2 h-2 rounded-full transition-all duration-300
+                  ${
+                    index === currentImage
+                      ? "bg-white shadow-lg w-6"
+                      : "bg-white/60 hover:bg-white/80"
+                  }
+                `}
+              />
+            ))}
+          </div>
+        )}
+
+        <Link to={projectUrl} className="block">
+          <div
+            className="relative overflow-hidden"
+            onTouchStart={onTouchStart}
+            onTouchMove={onTouchMove}
+            onTouchEnd={onTouchEnd}
+          >
+            {/* Loading overlay */}
+            {isCurrentImageLoading && (
+              <div className="absolute inset-0 bg-gray-200 animate-pulse flex items-center justify-center z-10">
+                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+
+            {imgCount > 0 ? (
+              <img
+                src={effectiveImageUrl}
+                alt={name}
+                onError={() => {
+                  // Fallback to placeholder on error
+                  setImageError(true);
+                }}
+                className={`
+                  w-full object-cover transition-all duration-300 ease-out
+                  group-hover:scale-105
+                  h-64
+                  ${isCurrentImageLoaded || imageError || hasImageError ? "opacity-100" : "opacity-0"}
+                  ${isCurrentImageLoading ? "opacity-50" : ""}
+                `}
+                style={{
+                  transition:
+                    isCurrentImageLoaded || imageError || hasImageError
+                      ? "opacity 0.3s ease-in-out"
+                      : "none",
+                }}
+              />
+            ) : (
+              <div className="w-full h-64 flex items-center justify-center bg-gray-200">
+                <Building2 className="h-16 w-16 text-gray-400" />
+              </div>
+            )}
+            {/* Subtle hover overlay */}
+            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/5 transition-all duration-300" />
+          </div>
+        </Link>
+      </div>
+
+      {/* Enhanced Content Section */}
+      <div className="p-6 flex flex-col flex-1">
+        {/* Title */}
+        <div className="mb-4">
+          <Link to={projectUrl}>
+            <h3 className="text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors duration-300 line-clamp-2 leading-tight">
+              {name}
+            </h3>
+          </Link>
+        </div>
+
+        {/* Location */}
+        <div className="flex items-center text-gray-600 mb-4">
+          <MapPin className="h-4 w-4 mr-2 text-blue-500" />
+          <span className="text-sm font-medium">{location}</span>
+        </div>
+
+        {/* Price */}
+        {priceRange && (
+          <div className="mb-6">
+            <div className="flex items-baseline space-x-1">
+              <span className="text-3xl font-bold text-gray-900">{priceRange}</span>
+            </div>
+            <p className="text-sm text-blue-600 font-medium mt-1">
+              {listingType === "sale" ? "Price Range" : "Rent Range"}
+            </p>
+          </div>
+        )}
+
+        <div className="flex-1" />
+
+        {/* Dynamic stats in grid layout (matching PropertyCard) */}
+        {stats.length > 0 && (
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
+            <div className="grid grid-cols-3 gap-4">
+              {stats.slice(0, 3).map((s) => (
+                <div key={s.key} className="text-center">
+                  <div className="flex items-center justify-center mb-2">
+                    <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
+                  <div className="text-lg font-bold text-gray-900">{s.value}</div>
+                  <div className="text-xs text-gray-600 font-medium">{s.label}</div>
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      </Link>
+          </div>
+        )}
+      </div>
     </div>
   );
 };
