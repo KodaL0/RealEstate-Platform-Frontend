@@ -203,19 +203,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
 
   const formatPriceRange = (min?: number, max?: number) => {
     if (min === undefined && max === undefined) return null;
-    if (min === max) return `€${min?.toLocaleString()}`;
-    if (min && max) return `€${min.toLocaleString()} - €${max.toLocaleString()}`;
-    if (min) return `From €${min.toLocaleString()}`;
-    if (max) return `Up to €${max.toLocaleString()}`;
+    if (min === max) return `€${Math.round(min).toLocaleString()}`;
+    if (min && max) return `€${Math.round(min).toLocaleString()} - €${Math.round(max).toLocaleString()}`;
+    if (min) return `From €${Math.round(min).toLocaleString()}`;
+    if (max) return `Up to €${Math.round(max).toLocaleString()}`;
     return null;
   };
 
-  const formatRange = (min?: number, max?: number, unit: string = "") => {
+  const formatRange = (min?: number, max?: number, unit: string = "", showDecimals: boolean = false) => {
     if (min === undefined && max === undefined) return null;
-    if (min === max) return `${min}${unit}`;
-    if (min && max) return `${min}${unit} - ${max}${unit}`;
-    if (min) return `From ${min}${unit}`;
-    if (max) return `Up to ${max}${unit}`;
+    const formatValue = (val: number) => {
+      if (showDecimals) {
+        const rounded = Math.round(val * 10) / 10;
+        return rounded % 1 === 0 ? rounded.toLocaleString() : rounded.toLocaleString(undefined, { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+      } else {
+        return Math.round(val).toLocaleString();
+      }
+    };
+    if (min === max) return `${formatValue(min)}${unit}`;
+    if (min && max) return `${formatValue(min)}${unit} - ${formatValue(max)}${unit}`;
+    if (min) return `From ${formatValue(min)}${unit}`;
+    if (max) return `Up to ${formatValue(max)}${unit}`;
     return null;
   };
 
@@ -223,7 +231,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   const stats = [];
 
   if (bedroomsMin !== undefined || bedroomsMax !== undefined) {
-    const bedsRange = formatRange(bedroomsMin, bedroomsMax);
+    const bedsRange = formatRange(bedroomsMin, bedroomsMax, "", false);
     if (bedsRange) {
       stats.push({
         key: "beds",
@@ -236,7 +244,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   }
 
   if (bathroomsMin !== undefined || bathroomsMax !== undefined) {
-    const bathsRange = formatRange(bathroomsMin, bathroomsMax);
+    const bathsRange = formatRange(bathroomsMin, bathroomsMax, "", true);
     if (bathsRange) {
       stats.push({
         key: "baths",
@@ -249,7 +257,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   }
 
   if (areaMin !== undefined || areaMax !== undefined) {
-    const areaRange = formatRange(areaMin, areaMax, " m²");
+    const areaRange = formatRange(areaMin, areaMax, " m²", false);
     if (areaRange) {
       stats.push({
         key: "area",
@@ -289,13 +297,12 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         <div className="flex items-center justify-between px-4 py-3">
           {/* Left: Project Type */}
           <div className="flex items-center space-x-2">
-            <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             <span className="px-3 py-1.5 bg-gradient-to-r from-blue-700 to-blue-800 text-white text-xs font-semibold rounded-full tracking-wide uppercase">
               Project
             </span>
           </div>
 
-          {/* Right: Country */}
+          {/* Right: Country & Status */}
           <div className="flex items-center space-x-2">
             <span
               className={`
@@ -306,6 +313,14 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
             >
               <span>{getCountryFlag(country)}</span>
               <span>{country}</span>
+            </span>
+            <span
+              className={`
+              px-3 py-1.5 text-white text-xs font-semibold rounded-full shadow-sm
+              bg-gradient-to-r from-emerald-500 to-emerald-600
+            `}
+            >
+              For Sale
             </span>
           </div>
         </div>
