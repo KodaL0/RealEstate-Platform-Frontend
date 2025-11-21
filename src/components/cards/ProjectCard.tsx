@@ -13,6 +13,7 @@ import { Link } from "react-router-dom";
 import { useImageCache } from "../../context/ImageCacheContext";
 import { useImageLazyLoad } from "../../hooks/useImageLazyLoad";
 import { useImagePreload } from "../../hooks/useImagePreload";
+import { generateProjectSlug } from "../../utils/developerUtils";
 
 interface ProjectImage {
   image: string;
@@ -71,8 +72,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   const priceMin = listingType === "sale" ? project.sale_price_min : project.rent_price_min;
   const priceMax = listingType === "sale" ? project.sale_price_max : project.rent_price_max;
 
-  // Use the URL from API if available
-  const projectUrl = url || `/project/${id}`;
+  // Construct project URL
+  // If URL is provided and valid, use it
+  // If URL ends with '/project', replace with actual project slug
+  // Otherwise fallback to /project/{id} (legacy route)
+  let projectUrl = url || `/project/${id}`;
+  
+  if (url && url.startsWith("/developers/")) {
+    // Check if URL ends with '/project' (incomplete slug)
+    if (url.endsWith("/project")) {
+      // Generate project slug from name and replace '/project' with the actual slug
+      const projectSlug = generateProjectSlug(name);
+      projectUrl = url.replace("/project", `/${projectSlug}`);
+    } else {
+      // URL is already complete
+      projectUrl = url;
+    }
+  }
 
   // Slideshow state
   const [currentImage, setCurrentImage] = useState(0);
