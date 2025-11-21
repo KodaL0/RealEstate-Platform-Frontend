@@ -213,8 +213,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     return null;
   };
 
-  const formatRange = (min?: number, max?: number, unit: string = "", showDecimals: boolean = false) => {
-    if (min === undefined && max === undefined) return null;
+  const formatRange = (min?: number | null, max?: number | null, unit: string = "", showDecimals: boolean = false) => {
+    if ((min === undefined || min === null) && (max === undefined || max === null)) return null;
     const formatValue = (val: number) => {
       if (showDecimals) {
         const rounded = Math.round(val * 10) / 10;
@@ -223,10 +223,18 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         return Math.round(val).toLocaleString();
       }
     };
-    if (min === max) return `${formatValue(min)}${unit}`;
-    if (min && max) return `${formatValue(min)}${unit} - ${formatValue(max)}${unit}`;
-    if (min) return `From ${formatValue(min)}${unit}`;
-    if (max) return `Up to ${formatValue(max)}${unit}`;
+    if (min !== undefined && min !== null && max !== undefined && max !== null && min === max) {
+      return `${formatValue(min)}${unit}`;
+    }
+    if (min !== undefined && min !== null && max !== undefined && max !== null) {
+      return `${formatValue(min)}${unit} - ${formatValue(max)}${unit}`;
+    }
+    if (min !== undefined && min !== null) {
+      return `From ${formatValue(min)}${unit}`;
+    }
+    if (max !== undefined && max !== null) {
+      return `Up to ${formatValue(max)}${unit}`;
+    }
     return null;
   };
 
@@ -259,7 +267,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     }
   }
 
-  if (areaMin !== undefined || areaMax !== undefined) {
+  if ((areaMin !== undefined && areaMin !== null) || (areaMax !== undefined && areaMax !== null)) {
     const areaRange = formatRange(areaMin, areaMax, " m²", false);
     if (areaRange) {
       stats.push({
