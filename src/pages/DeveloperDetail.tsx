@@ -351,12 +351,16 @@ const DeveloperDetail = () => {
                         <div className="flex items-center">
                           <Globe className="h-4 w-4 text-gray-400 mr-3" />
                           <a
-                            href={developer.website}
+                            href={
+                              developer.website.startsWith("http://") || developer.website.startsWith("https://")
+                                ? developer.website
+                                : `https://${developer.website}`
+                            }
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-blue-600 hover:text-blue-700"
+                            className="text-blue-600 hover:text-blue-700 break-all"
                           >
-                            Visit Website
+                            {developer.website}
                           </a>
                         </div>
                       )}
@@ -457,12 +461,16 @@ const DeveloperDetail = () => {
                             <div>
                               <p className="text-sm text-gray-500">Website</p>
                               <a
-                                href={developer.website}
+                                href={
+                                  developer.website.startsWith("http://") || developer.website.startsWith("https://")
+                                    ? developer.website
+                                    : `https://${developer.website}`
+                                }
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-blue-600 hover:text-blue-700 font-medium"
+                                className="text-blue-600 hover:text-blue-700 font-medium break-all"
                               >
-                                Visit Website
+                                {developer.website}
                               </a>
                             </div>
                           </div>

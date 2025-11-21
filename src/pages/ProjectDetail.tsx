@@ -30,7 +30,7 @@ import {
   type Project,
   type PropertyImage,
 } from "../types";
-import { generateProjectSlug } from "../utils/developerUtils";
+import { generateProjectSlug, getDeveloperUrl } from "../utils/developerUtils";
 
 type UnitRow = {
   id: string;
@@ -238,14 +238,12 @@ function computeAvailability(project: Project | null, units: UnitRow[]) {
       else if (s === "reserved") reserved++;
       else if (s === "sold") sold++;
     }
-    const soldPct = total ? Math.round((sold / total) * 100) : 0;
-    return { total, available, reserved, sold, soldPct };
+    return { total, available, reserved, sold };
   }
   const total = project?.totalUnits ?? 0;
   const available = project?.availableUnits ?? 0;
   const sold = Math.max(0, total - available);
-  const soldPct = total ? Math.round((sold / total) * 100) : 0;
-  return { total, available, reserved: 0, sold, soldPct };
+  return { total, available, reserved: 0, sold };
 }
 
 /* ===========================
@@ -349,7 +347,7 @@ const ProjectDetail = () => {
   }, [id, orgSlug, projectSlug]);
 
   // Derived availability (no hooks)
-  const { total, available, reserved, sold, soldPct } = computeAvailability(project, units);
+  const { total, available, reserved, sold } = computeAvailability(project, units);
 
   // Images
   const hasImages = (project?.images && project.images.length > 0) || !!project?.mainImage;
@@ -476,7 +474,7 @@ const ProjectDetail = () => {
         <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full flex items-end pb-8">
           <div className="text-white">
             <Link
-              to={developer ? `/developer/${developer.id}` : "/developers"}
+              to={developer ? getDeveloperUrl(developer) : "/developers"}
               className="inline-flex items-center text-white/80 hover:text-white mb-4 transition-colors"
             >
               <ArrowLeft className="h-4 w-4 mr-2" />
@@ -738,14 +736,6 @@ const ProjectDetail = () => {
                         </span>
                       </div>
 
-                      <div className="w-full bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-blue-600 h-2 rounded-full"
-                          style={{ width: `${soldPct}%` }}
-                        />
-                      </div>
-                      <p className="text-sm text-gray-500">{soldPct}% sold</p>
-
                       <p className="text-sm text-gray-500">
                         <span className="text-emerald-600 font-medium">{available} available</span>
                         {" · "}
@@ -760,7 +750,7 @@ const ProjectDetail = () => {
                   {developer && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Developer</h3>
-                      <Link to={`/developer/${developer.id}`} className="block group">
+                      <Link to={getDeveloperUrl(developer)} className="block group">
                         <h4 className="font-medium text-blue-600 group-hover:text-blue-700 mb-2">
                           {developer.name}
                         </h4>
