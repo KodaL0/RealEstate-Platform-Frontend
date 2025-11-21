@@ -8,6 +8,7 @@ import {
   Check,
   ChevronLeft,
   ChevronRight,
+  Copy,
   Euro,
   Home,
   Mail,
@@ -18,6 +19,7 @@ import {
 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import ChatButton from "../components/ChatButton";
 import api from "../config/api";
 import developersApi from "../config/developers-api";
 import {
@@ -696,24 +698,90 @@ const ProjectDetail = () => {
                   {(developer?.phone || developer?.email) && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Contact Developer</h3>
-                      <div className="space-y-3">
+                      <div className="space-y-4">
                         {developer?.phone && (
-                          <a
-                            href={`tel:${developer.phone}`}
-                            className="flex items-center justify-center w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                          >
-                            <Phone className="h-4 w-4 mr-2" />
-                            Call Now
-                          </a>
+                          <div className="flex items-center p-4 rounded-xl bg-blue-50 border border-blue-100">
+                            <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                              <Phone className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-500 text-sm uppercase font-medium">Phone</p>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`tel:${encodeURIComponent(developer.phone.trim())}`}
+                                  className="text-blue-600 font-semibold hover:text-blue-700"
+                                >
+                                  {developer.phone}
+                                </a>
+                                <span className="text-xs text-gray-500">for units</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!developer?.phone) return;
+                                try {
+                                  await navigator.clipboard.writeText(developer.phone);
+                                  // You could add a toast notification here
+                                } catch (err) {
+                                  console.error("Failed to copy phone number:", err);
+                                }
+                              }}
+                              className="ml-auto p-2 hover:bg-blue-100 rounded-lg flex-shrink-0 transition-colors"
+                              title="Copy phone number"
+                            >
+                              <Copy className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
                         )}
                         {developer?.email && (
-                          <a
-                            href={`mailto:${developer.email}?subject=Inquiry about ${project.name}`}
-                            className="flex items-center justify-center w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                          >
-                            <Mail className="h-4 w-4 mr-2" />
-                            Send Email
-                          </a>
+                          <div className="flex items-center p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
+                            <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                              <Mail className="w-5 h-5 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-500 text-sm uppercase font-medium">Email</p>
+                              <div className="flex items-center gap-2">
+                                <a
+                                  href={`mailto:${encodeURIComponent(developer.email.trim())}?subject=Inquiry about ${encodeURIComponent(project.name)}`}
+                                  className="text-blue-600 font-semibold hover:text-blue-700 break-all"
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  {developer.email}
+                                </a>
+                                <span className="text-xs text-gray-500 whitespace-nowrap">for units</span>
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!developer?.email) return;
+                                try {
+                                  await navigator.clipboard.writeText(developer.email);
+                                  // You could add a toast notification here
+                                } catch (err) {
+                                  console.error("Failed to copy email:", err);
+                                }
+                              }}
+                              className="ml-auto p-2 hover:bg-blue-100 rounded-lg flex-shrink-0 transition-colors"
+                              title="Copy email"
+                            >
+                              <Copy className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
+                        )}
+                        
+                        {/* Message button */}
+                        {developer?.id && (
+                          <div className="pt-4 border-t border-gray-100">
+                            <ChatButton
+                              sellerId={Number(developer.id)}
+                              itemId={Number(project.id)}
+                              itemType="project"
+                              title={project.name}
+                            />
+                          </div>
                         )}
                       </div>
                     </div>
