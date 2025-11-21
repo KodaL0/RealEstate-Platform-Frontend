@@ -318,16 +318,6 @@ const DeveloperDetail = () => {
                             projects.filter((p) => p.status !== "completed").length}
                         </span>
                       </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <Star className="h-5 w-5 text-yellow-500 mr-2" />
-                          <span className="text-gray-600">Completed</span>
-                        </div>
-                        <span className="font-semibold text-gray-900">
-                          {developer.completedProjects ??
-                            projects.filter((p) => p.status === "completed").length}
-                        </span>
-                      </div>
                     </div>
                   </div>
 

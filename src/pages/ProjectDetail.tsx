@@ -10,6 +10,7 @@ import {
   ChevronRight,
   Copy,
   Euro,
+  Globe,
   Home,
   Mail,
   MapPin,
@@ -266,6 +267,8 @@ const ProjectDetail = () => {
     "overview" | "units" | "amenities" | "floorplans" | "gallery"
   >("overview");
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Store raw project data to access sale/rent price ranges
+  const [rawProjectData, setRawProjectData] = useState<any>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -313,6 +316,8 @@ const ProjectDetail = () => {
         } else {
           projectRaw = await developersApi.projects.getPublic(Number(id));
         }
+        // Store raw data for price ranges
+        setRawProjectData(projectRaw);
         const proj = normalizeProject(projectRaw);
         setProject(proj);
 
@@ -505,14 +510,45 @@ const ProjectDetail = () => {
                   {available} of {total} available
                 </span>
               </div>
-              {project.priceRange?.min != null && (
-                <div className="flex items-center">
-                  <Euro className="h-4 w-4 mr-2" />
-                  <span>
-                    From {formatPrice(project.priceRange.min, project.priceRange.currency)}
-                  </span>
-                </div>
-              )}
+              {(() => {
+                const saleMin = rawProjectData?.sale_price_min;
+                const rentMin = rawProjectData?.rent_price_min;
+                const currency = rawProjectData?.currency || "EUR";
+                
+                // Show sale price first, then rent if available
+                if (saleMin != null) {
+                  return (
+                    <div className="flex items-center">
+                      <Euro className="h-4 w-4 mr-2" />
+                      <span>
+                        From {formatPrice(saleMin, currency)} (Sale)
+                      </span>
+                    </div>
+                  );
+                }
+                if (rentMin != null) {
+                  return (
+                    <div className="flex items-center">
+                      <Euro className="h-4 w-4 mr-2" />
+                      <span>
+                        From {formatPrice(rentMin, currency)} (Rent)
+                      </span>
+                    </div>
+                  );
+                }
+                // Fallback to legacy priceRange
+                if (project.priceRange?.min != null && project.priceRange.min > 0) {
+                  return (
+                    <div className="flex items-center">
+                      <Euro className="h-4 w-4 mr-2" />
+                      <span>
+                        From {formatPrice(project.priceRange.min, project.priceRange.currency)}
+                      </span>
+                    </div>
+                  );
+                }
+                return null;
+              })()}
             </div>
           </div>
         </div>
@@ -631,17 +667,69 @@ const ProjectDetail = () => {
                     <h3 className="font-semibold text-gray-900 mb-4">Price & Availability</h3>
 
                     <div className="space-y-4">
-                      {project.priceRange && (
-                        <div>
-                          <p className="text-sm text-gray-500">Price Range</p>
-                          <p className="text-2xl font-bold text-gray-900">
-                            {formatPrice(project.priceRange.min, project.priceRange.currency)}{" "}
-                            {project.priceRange.max
-                              ? `- ${formatPrice(project.priceRange.max, project.priceRange.currency)}`
-                              : ""}
-                          </p>
-                        </div>
-                      )}
+                      {/* Display price ranges - prefer sale, show rent if available */}
+                      {(() => {
+                        const saleMin = rawProjectData?.sale_price_min;
+                        const saleMax = rawProjectData?.sale_price_max;
+                        const rentMin = rawProjectData?.rent_price_min;
+                        const rentMax = rawProjectData?.rent_price_max;
+                        const currency = rawProjectData?.currency || "EUR";
+
+                        // Determine which price range to show
+                        const hasSale = saleMin != null || saleMax != null;
+                        const hasRent = rentMin != null || rentMax != null;
+
+                        if (!hasSale && !hasRent) {
+                          // Fallback to legacy priceRange
+                          if (project.priceRange && (project.priceRange.min > 0 || project.priceRange.max > 0)) {
+                            return (
+                              <div>
+                                <p className="text-sm text-gray-500">Price Range</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                  {formatPrice(project.priceRange.min, project.priceRange.currency)}{" "}
+                                  {project.priceRange.max && project.priceRange.max > project.priceRange.min
+                                    ? `- ${formatPrice(project.priceRange.max, project.priceRange.currency)}`
+                                    : ""}
+                                </p>
+                              </div>
+                            );
+                          }
+                          return null;
+                        }
+
+                        return (
+                          <div className="space-y-3">
+                            {hasSale && (
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">For Sale</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                  {saleMin && saleMax && saleMin !== saleMax
+                                    ? `${formatPrice(saleMin, currency)} - ${formatPrice(saleMax, currency)}`
+                                    : saleMin
+                                      ? `From ${formatPrice(saleMin, currency)}`
+                                      : saleMax
+                                        ? `Up to ${formatPrice(saleMax, currency)}`
+                                        : "—"}
+                                </p>
+                              </div>
+                            )}
+                            {hasRent && (
+                              <div>
+                                <p className="text-sm text-gray-500 mb-1">For Rent</p>
+                                <p className="text-2xl font-bold text-gray-900">
+                                  {rentMin && rentMax && rentMin !== rentMax
+                                    ? `${formatPrice(rentMin, currency)} - ${formatPrice(rentMax, currency)}`
+                                    : rentMin
+                                      ? `From ${formatPrice(rentMin, currency)}`
+                                      : rentMax
+                                        ? `Up to ${formatPrice(rentMax, currency)}`
+                                        : "—"}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        );
+                      })()}
 
                       <div className="flex items-center justify-between">
                         <span className="text-gray-600">Available Units</span>
@@ -695,7 +783,7 @@ const ProjectDetail = () => {
                   )}
 
                   {/* Contact */}
-                  {(developer?.phone || developer?.email) && (
+                  {(developer?.phone || developer?.email || developer?.website) && (
                     <div className="bg-white rounded-xl shadow-sm p-6">
                       <h3 className="font-semibold text-gray-900 mb-4">Contact Developer</h3>
                       <div className="space-y-4">
@@ -706,15 +794,12 @@ const ProjectDetail = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-gray-500 text-sm uppercase font-medium">Phone</p>
-                              <div className="flex items-center gap-2">
-                                <a
-                                  href={`tel:${encodeURIComponent(developer.phone.trim())}`}
-                                  className="text-blue-600 font-semibold hover:text-blue-700"
-                                >
-                                  {developer.phone}
-                                </a>
-                                <span className="text-xs text-gray-500">for units</span>
-                              </div>
+                              <a
+                                href={`tel:${encodeURIComponent(developer.phone.trim())}`}
+                                className="text-blue-600 font-semibold hover:text-blue-700 block"
+                              >
+                                {developer.phone}
+                              </a>
                             </div>
                             <button
                               type="button"
@@ -741,17 +826,14 @@ const ProjectDetail = () => {
                             </div>
                             <div className="flex-1 min-w-0">
                               <p className="text-gray-500 text-sm uppercase font-medium">Email</p>
-                              <div className="flex items-center gap-2">
-                                <a
-                                  href={`mailto:${encodeURIComponent(developer.email.trim())}?subject=Inquiry about ${encodeURIComponent(project.name)}`}
-                                  className="text-blue-600 font-semibold hover:text-blue-700 break-all"
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                >
-                                  {developer.email}
-                                </a>
-                                <span className="text-xs text-gray-500 whitespace-nowrap">for units</span>
-                              </div>
+                              <a
+                                href={`mailto:${encodeURIComponent(developer.email.trim())}?subject=Inquiry about ${encodeURIComponent(project.name)}`}
+                                className="text-blue-600 font-semibold hover:text-blue-700 break-all block"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {developer.email}
+                              </a>
                             </div>
                             <button
                               type="button"
@@ -766,6 +848,49 @@ const ProjectDetail = () => {
                               }}
                               className="ml-auto p-2 hover:bg-blue-100 rounded-lg flex-shrink-0 transition-colors"
                               title="Copy email"
+                            >
+                              <Copy className="h-4 w-4 text-gray-500" />
+                            </button>
+                          </div>
+                        )}
+                        {developer?.website && (
+                          <div className="flex items-center p-4 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                            <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                              <Globe className="w-5 h-5 text-green-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-gray-500 text-sm uppercase font-medium">Website</p>
+                              <a
+                                href={
+                                  developer.website.startsWith("http://") || developer.website.startsWith("https://")
+                                    ? developer.website
+                                    : `https://${developer.website}`
+                                }
+                                className="text-green-600 font-semibold hover:text-green-700 break-all block"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                {developer.website}
+                              </a>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={async () => {
+                                if (!developer?.website) return;
+                                const websiteUrl =
+                                  developer.website.startsWith("http://") ||
+                                  developer.website.startsWith("https://")
+                                    ? developer.website
+                                    : `https://${developer.website}`;
+                                try {
+                                  await navigator.clipboard.writeText(websiteUrl);
+                                  // You could add a toast notification here
+                                } catch (err) {
+                                  console.error("Failed to copy website:", err);
+                                }
+                              }}
+                              className="ml-auto p-2 hover:bg-green-100 rounded-lg flex-shrink-0 transition-colors"
+                              title="Copy website URL"
                             >
                               <Copy className="h-4 w-4 text-gray-500" />
                             </button>
