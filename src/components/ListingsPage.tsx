@@ -600,7 +600,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       const url =
         (item._type === "property" ? item.url : undefined) ||
         (item._type === "project" ? `/project/${item.id}` : `/property/${item.id}`);
-      const absoluteUrl = url.startsWith("http") ? url : `${SITE_URL}${url}`;
+      const urlString = typeof url === "string" ? url : "";
+      const absoluteUrl = urlString.startsWith("http") ? urlString : `${SITE_URL}${urlString}`;
       const primaryImage =
         item._type === "property"
           ? typeof item.images?.[0] === "object" && item.images[0] !== null
@@ -609,11 +610,12 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           : item._type === "project"
             ? item.images?.[0]
             : undefined;
-      const imageUrl = primaryImage
-        ? primaryImage.startsWith("http")
-          ? primaryImage
-          : `${SITE_URL}${primaryImage}`
-        : undefined;
+      const imageUrl =
+        primaryImage && typeof primaryImage === "string"
+          ? primaryImage.startsWith("http")
+            ? primaryImage
+            : `${SITE_URL}${primaryImage}`
+          : undefined;
 
       const schemaItem: Record<string, unknown> = {
         "@type": "ListItem",
