@@ -753,6 +753,9 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                       <p className="text-gray-900 font-bold text-2xl sm:text-3xl">
                         {totalCount.toLocaleString()}
                       </p>
+                      <span className="text-gray-600 text-lg sm:text-xl font-medium">
+                        available
+                      </span>
                     </div>
                     {filters.country && filters.country !== "All" && (
                       <p className="text-sm text-gray-500 flex items-center gap-1.5">
