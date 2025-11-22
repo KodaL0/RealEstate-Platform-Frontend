@@ -26,8 +26,10 @@ export default function ChatInbox() {
   const [activeTab, setActiveTab] = useState<"property" | "dm">("property");
 
   // Separate threads by type
-  const propertyThreads = threads.filter((thread) => thread.property);
-  const dmThreads = threads.filter((thread) => !thread.property);
+  // Property tab: includes both property threads and project threads (listings-related)
+  const propertyThreads = threads.filter((thread) => thread.property || thread.project);
+  // DM tab: only pure DM threads (no property, project, or organization context)
+  const dmThreads = threads.filter((thread) => !thread.property && !thread.project && !thread.organization);
   const currentThreads = activeTab === "property" ? propertyThreads : dmThreads;
 
   const getLastMessage = useCallback(
@@ -275,15 +277,15 @@ export default function ChatInbox() {
                   }`}
                   tabIndex={0}
                   role="button"
-                  aria-label={`Open chat with ${thread.other_username}${activeTab === "property" ? ` about ${thread.property_title}` : ""}`}
+                  aria-label={`Open chat with ${thread.other_username}${activeTab === "property" ? ` about ${thread.property_title || thread.project_info?.name || "Listing"}` : ""}`}
                 >
                   <div className="flex items-start gap-2 sm:gap-3">
                     <div className="flex-shrink-0 relative">
                       {activeTab === "property" ? (
-                        thread.property_image ? (
+                        (thread.property_image || thread.project_info?.image) ? (
                           <img
-                            src={thread.property_image}
-                            alt={thread.property_title || "Property"}
+                            src={thread.property_image || thread.project_info?.image}
+                            alt={thread.property_title || thread.project_info?.name || "Listing"}
                             className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl object-cover border-2 border-gray-100 group-hover:border-blue-200 transition-colors"
                           />
                         ) : (
@@ -309,14 +311,14 @@ export default function ChatInbox() {
                           {activeTab === "property" ? (
                             <div
                               className="group/title"
-                              title={thread.property_title || `Property #${thread.property}`}
+                              title={thread.property_title || thread.project_info?.name || (thread.property ? `Property #${thread.property}` : thread.project ? `Project #${thread.project}` : "Listing")}
                             >
                               <h3
                                 className={`font-semibold truncate group-hover:text-blue-600 transition-colors text-xs sm:text-sm ${
                                   hasUnread ? "text-gray-900" : "text-gray-900"
                                 }`}
                               >
-                                {thread.property_title || `Property #${thread.property}`}
+                                {thread.property_title || thread.project_info?.name || (thread.property ? `Property #${thread.property}` : thread.project ? `Project #${thread.project}` : "Listing")}
                               </h3>
                             </div>
                           ) : (
@@ -366,13 +368,13 @@ export default function ChatInbox() {
                         )}
                       </div>
 
-                      {activeTab === "property" && thread.property_address && (
+                      {activeTab === "property" && (thread.property_address || thread.project_info?.location) && (
                         <div
                           className="flex items-center text-[10px] sm:text-xs text-gray-400 gap-1"
-                          title={thread.property_address}
+                          title={thread.property_address || thread.project_info?.location}
                         >
                           <MapPin size={10} className="sm:w-3 sm:h-3 flex-shrink-0" />
-                          <span className="truncate">{thread.property_address}</span>
+                          <span className="truncate">{thread.property_address || thread.project_info?.location}</span>
                         </div>
                       )}
 
