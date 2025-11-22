@@ -330,6 +330,15 @@ const ProjectDetail = () => {
 
         // 2) Developer/org - store raw org data to access owner field
         setRawOrgData(orgRaw);
+        // Debug: Log organization data to verify owner field
+        if (orgRaw) {
+          console.log("🏢 Organization data:", { 
+            id: orgRaw.id, 
+            name: orgRaw.name,
+            owner: orgRaw.owner,
+            ownerType: typeof orgRaw.owner 
+          });
+        }
         setDeveloper(orgRaw ? normalizeDeveloper(orgRaw) : null);
 
         // 3) Units: embedded or fetch
@@ -896,16 +905,33 @@ const ProjectDetail = () => {
                         )}
                         
                         {/* Message button */}
-                        {rawOrgData?.owner?.id && (
-                          <div className="pt-4 border-t border-gray-100">
-                            <ChatButton
-                              sellerId={Number(rawOrgData.owner.id)}
-                              itemId={Number(project.id)}
-                              itemType="project"
-                              title={project.name}
-                            />
-                          </div>
-                        )}
+                        {(() => {
+                          // Owner can be serialized as an integer ID or as an object with an id field
+                          const ownerId = typeof rawOrgData?.owner === 'number' 
+                            ? rawOrgData.owner 
+                            : rawOrgData?.owner?.id;
+                          
+                          // Debug: Log if owner ID is missing
+                          if (rawOrgData && !ownerId) {
+                            console.warn("⚠️ Organization owner ID not available:", {
+                              orgId: rawOrgData.id,
+                              orgName: rawOrgData.name,
+                              owner: rawOrgData.owner,
+                              ownerType: typeof rawOrgData.owner
+                            });
+                          }
+                          
+                          return ownerId ? (
+                            <div className="pt-4 border-t border-gray-100">
+                              <ChatButton
+                                sellerId={Number(ownerId)}
+                                itemId={Number(project.id)}
+                                itemType="project"
+                                title={project.name}
+                              />
+                            </div>
+                          ) : null;
+                        })()}
                       </div>
                     </div>
                   )}
