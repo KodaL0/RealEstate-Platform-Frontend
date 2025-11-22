@@ -267,6 +267,8 @@ const ProjectDetail = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   // Store raw project data to access sale/rent price ranges
   const [rawProjectData, setRawProjectData] = useState<any>(null);
+  // Store raw organization data to access owner field
+  const [rawOrgData, setRawOrgData] = useState<any>(null);
 
   useEffect(() => {
     const run = async () => {
@@ -277,10 +279,13 @@ const ProjectDetail = () => {
       try {
         // 1) Project: prefer public by slug; fallback to id
         let projectRaw: any;
+        let orgRaw: any = null;
+        
         if (hasSlugRoute) {
-          const org = await developersApi.organizations.getPublic(orgSlug!);
+          // When using slug route, fetch org first (we'll reuse this data)
+          orgRaw = await developersApi.organizations.getPublic(orgSlug!);
           const projects = await developersApi.projects.listPublic({
-            organization: Number(org.id),
+            organization: Number(orgRaw.id),
           });
           const list = Array.isArray(projects) ? projects : ((projects as any)?.results ?? []);
 
@@ -313,16 +318,18 @@ const ProjectDetail = () => {
           projectRaw = match;
         } else {
           projectRaw = await developersApi.projects.getPublic(Number(id));
+          // Fetch organization separately when using ID route
+          const orgId = projectRaw.organization ?? projectRaw.developerId;
+          orgRaw = orgId ? await developersApi.organizations.getPublic(String(orgId)) : null;
         }
+        
         // Store raw data for price ranges
         setRawProjectData(projectRaw);
         const proj = normalizeProject(projectRaw);
         setProject(proj);
 
-        // 2) Developer/org
-        // 2) Developer/org (public)
-        const orgId = projectRaw.organization ?? projectRaw.developerId ?? proj.developerId;
-        const orgRaw = orgId ? await developersApi.organizations.getPublic(String(orgId)) : null;
+        // 2) Developer/org - store raw org data to access owner field
+        setRawOrgData(orgRaw);
         setDeveloper(orgRaw ? normalizeDeveloper(orgRaw) : null);
 
         // 3) Units: embedded or fetch
@@ -339,6 +346,7 @@ const ProjectDetail = () => {
         setProject(null);
         setDeveloper(null);
         setUnits([]);
+        setRawOrgData(null);
       } finally {
         setIsLoading(false);
       }
@@ -888,10 +896,10 @@ const ProjectDetail = () => {
                         )}
                         
                         {/* Message button */}
-                        {developer?.id && (
+                        {rawOrgData?.owner?.id && (
                           <div className="pt-4 border-t border-gray-100">
                             <ChatButton
-                              sellerId={Number(developer.id)}
+                              sellerId={Number(rawOrgData.owner.id)}
                               itemId={Number(project.id)}
                               itemType="project"
                               title={project.name}
