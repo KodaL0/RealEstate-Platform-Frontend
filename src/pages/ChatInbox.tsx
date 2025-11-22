@@ -28,8 +28,8 @@ export default function ChatInbox() {
   // Separate threads by type
   // Property tab: includes both property threads and project threads (listings-related)
   const propertyThreads = threads.filter((thread) => thread.property || thread.project);
-  // DM tab: only pure DM threads (no property, project, or organization context)
-  const dmThreads = threads.filter((thread) => !thread.property && !thread.project && !thread.organization);
+  // DM tab: includes organization threads and pure DM threads (no property/project = no listing context)
+  const dmThreads = threads.filter((thread) => !thread.property && !thread.project);
   const currentThreads = activeTab === "property" ? propertyThreads : dmThreads;
 
   const getLastMessage = useCallback(
