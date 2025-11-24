@@ -25,6 +25,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onViewAnalytics,
   onInstagramPostSuccess,
 }) => {
+  console.log("MyPropertyCard property data:", property);
   const {
     id,
     property_status,
