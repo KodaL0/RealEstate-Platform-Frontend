@@ -577,7 +577,13 @@ const PropertyDetails: React.FC = () => {
         type="property"
         price={property.price}
         currency="EUR"
-        location={`${property.city}, ${property.region}, Cyprus`}
+        location={(() => {
+          const parts = [];
+          if (property.city) parts.push(property.city);
+          if (property.region) parts.push(property.region);
+          if (property.country) parts.push(property.country);
+          return parts.length > 0 ? parts.join(', ') : (property.location || 'Unknown Location');
+        })()}
         propertyType={property.property_type}
         publishedTime={property.created_at}
         modifiedTime={property.updated_at}
