@@ -48,14 +48,8 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
 
     // ✅ fallback for land: use `area` if `lot_size` missing
     lot_size:
-    property.lot_size ??
-    (property.property_type === "land" ? property.area : undefined) ??
-    // ⬇️ fallback: try to extract from description if it contains e.g. "11,872 m²"
-    (() => {
-      const match = property.description?.match(/([\d,.]+)\s*(?:m²|sqm|sq\.? m)/i);
-      if (match) return parseFloat(match[1].replace(",", ""));
-      return undefined;
-    })(),
+      property.lot_size ??
+      (property.property_type === "land" ? property.area : undefined),
   };
 
 
