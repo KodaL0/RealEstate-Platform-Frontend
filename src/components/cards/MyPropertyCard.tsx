@@ -46,15 +46,10 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
     forSale: property.property_status === "for_sale",
     is_favourite: false,
 
-    // ✅ TypeScript-safe fallback for lot size
+    // ✅ fallback for land: use `area` if `lot_size` missing
     lot_size:
       property.lot_size ??
-      (property as any).lot ??
-      (property as any).plot_size ??
-      (property as any).land_area ??
-      (property as any).lotSize ??
-      (property as any).plotSize ??
-      undefined,
+      (property.property_type === "land" ? property.area : undefined),
   };
 
 
