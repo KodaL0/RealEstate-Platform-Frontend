@@ -680,7 +680,7 @@ const CreateListing: React.FC = () => {
 
       const res = isEditing
         ? await api.formPut(`properties/${username}/property/${id}/edit`, fd)
-        : await api.formPost("properties/create-property", fd);
+        : await api.formPost("properties/create_property", fd);
 
       if (res.status >= 200 && res.status < 300) {
         // Phase 2: If we uploaded new images in edit mode, reorder all images to match UI order
