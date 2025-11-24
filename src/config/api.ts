@@ -326,7 +326,7 @@ const api = {
 
   favourites: {
     list: (p?: Record<string, unknown>) =>
-      apiGet("properties/favourites", { params: p }).then((res) => {
+      apiGet("properties/my-favourites", { params: p }).then((res) => {
         const d = res.data as unknown;
         const data = d as {
           results?: unknown[];
@@ -341,8 +341,17 @@ const api = {
           previous: data.previous,
         };
       }),
-    toggle: (data: { property_id?: number; project_id?: number }) =>
-      apiPost("properties/favourites/toggle", data),
+    toggle: (data: { property_id?: number; project_id?: number }) => {
+      // Backend expects: properties/<id>/favourite/ for properties
+      // or properties/0/favourite/ with project_id in body for projects
+      if (data.property_id) {
+        return apiPost(`properties/${data.property_id}/favourite`, {});
+      } else if (data.project_id) {
+        return apiPost("properties/0/favourite", { project_id: data.project_id });
+      } else {
+        throw new Error("Must provide either property_id or project_id");
+      }
+    },
   },
 
   analytics: {
