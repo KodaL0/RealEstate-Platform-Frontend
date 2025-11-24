@@ -39,13 +39,24 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   // (PropertyCard already handles: land → only area centered, others → 3 best stats)
   const propertyCardData = {
     ...property,
-    // make sure these exist in the shape PropertyCard reads:
     property_type: property.property_type ?? "",
     country: property.country || "Unknown",
     listing_type: property.property_status,
     forSale: property.property_status === "for_sale",
-    is_favourite: false, // not relevant for own listings
+    is_favourite: false,
+
+    // ✅ TypeScript-safe fallback for lot size
+    lot_size:
+      property.lot_size ??
+      (property as any).lot ??
+      (property as any).plot_size ??
+      (property as any).land_area ??
+      (property as any).lotSize ??
+      (property as any).plotSize ??
+      undefined,
   };
+
+
 
   // Enhanced badges overlay for MyListings
   const renderMyListingsBadges = () => (
