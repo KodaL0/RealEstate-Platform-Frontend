@@ -15,6 +15,7 @@ interface MyListingsProperty {
   description: string;
   price: string | number;
   location: string;
+  country?: string;
   property_type: string;
   bedrooms: number;
   bathrooms: number;
@@ -246,7 +247,7 @@ function MyListings() {
                         ? property.price
                         : Number(property.price) || 0,
                     location: property.location,
-                    country: "Cyprus", // Default value
+                    country: property.country || "",
                     property_type: property.property_type,
                     bedrooms: property.bedrooms,
                     bathrooms: property.bathrooms,
