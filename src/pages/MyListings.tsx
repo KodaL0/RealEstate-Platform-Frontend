@@ -26,6 +26,9 @@ interface MyListingsProperty {
   updated_at: string;
   property_status: string;
   is_published: boolean;
+  instagram_posted?: boolean;
+  instagram_post_count?: number;
+  last_instagram_post?: string;
 }
 
 function MyListings() {
@@ -258,6 +261,9 @@ function MyListings() {
                     contact_phone: "", // Default value
                     contact_email: "", // Default value
                     amenities: property.amenities,
+                    instagram_posted: property.instagram_posted,
+                    instagram_post_count: property.instagram_post_count,
+                    last_instagram_post: property.last_instagram_post,
                     owner: {
                       username: username,
                       id: String(user?.id || ""),

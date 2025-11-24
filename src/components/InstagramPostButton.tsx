@@ -1,6 +1,6 @@
 import { CheckCircle2, Instagram, Loader2 } from "lucide-react";
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import api from "../config/api";
 
 interface InstagramPostButtonProps {
@@ -21,6 +21,11 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   const [isPosting, setIsPosting] = useState(false);
   const [posted, setPosted] = useState(isPosted);
   const [error, setError] = useState<string | null>(null);
+
+  // Update posted state when isPosted prop changes
+  useEffect(() => {
+    setPosted(isPosted);
+  }, [isPosted]);
 
   const handlePost = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -89,13 +94,13 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
     );
   }
 
-  // Show posted state
+  // Show posted state - disabled to prevent reposting
   if (posted) {
     return (
       <button
         type="button"
-        onClick={handlePost}
-        className={`group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 hover:from-emerald-100 hover:to-emerald-100 text-emerald-700 border-2 border-emerald-200 hover:border-emerald-300 rounded-xl font-semibold text-sm transition-all duration-300 ${className}`}
+        disabled
+        className={`group flex items-center justify-center px-4 py-2.5 bg-gradient-to-r from-emerald-50 to-emerald-50 text-emerald-700 border-2 border-emerald-200 rounded-xl font-semibold text-sm transition-all duration-300 cursor-not-allowed opacity-75 ${className}`}
       >
         <CheckCircle2 className="h-4 w-4 mr-2" />
         <span>Posted {postCount > 1 && `(${postCount}x)`}</span>
