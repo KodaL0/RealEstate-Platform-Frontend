@@ -19,12 +19,12 @@ const InstagramPostButton: React.FC<InstagramPostButtonProps> = ({
   className = "",
 }) => {
   const [isPosting, setIsPosting] = useState(false);
-  const [posted, setPosted] = useState(isPosted);
+  const [posted, setPosted] = useState(isPosted ?? false);
   const [error, setError] = useState<string | null>(null);
 
-  // Update posted state when isPosted prop changes
+  // Update posted state when isPosted prop changes (handles refresh/logout-login scenarios)
   useEffect(() => {
-    setPosted(isPosted);
+    setPosted(isPosted ?? false);
   }, [isPosted]);
 
   const handlePost = async (e: React.MouseEvent) => {
