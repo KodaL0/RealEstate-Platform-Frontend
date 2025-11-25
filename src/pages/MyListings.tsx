@@ -20,6 +20,7 @@ interface MyListingsProperty {
   bedrooms: number;
   bathrooms: number;
   area: number;
+  lot_size?: number | string | null;
   amenities: string[];
   images: { image: string }[];
   created_at: string;
@@ -255,6 +256,12 @@ function MyListings() {
                     bedrooms: property.bedrooms,
                     bathrooms: property.bathrooms,
                     area: property.area,
+                    lot_size:
+                      property.lot_size !== undefined && property.lot_size !== null
+                        ? typeof property.lot_size === "string"
+                          ? parseFloat(property.lot_size) || undefined
+                          : Number(property.lot_size) || undefined
+                        : undefined,
                     year_built: 0, // Default value
                     parking_spaces: 0, // Default value
                     property_status: property.property_status,
