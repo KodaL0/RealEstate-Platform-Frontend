@@ -25,6 +25,7 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onViewAnalytics,
   onInstagramPostSuccess,
 }) => {
+  console.log("MyPropertyCard property data:", property);
   const {
     id,
     property_status,
@@ -39,13 +40,19 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   // (PropertyCard already handles: land → only area centered, others → 3 best stats)
   const propertyCardData = {
     ...property,
-    // make sure these exist in the shape PropertyCard reads:
     property_type: property.property_type ?? "",
     country: property.country || "Unknown",
     listing_type: property.property_status,
     forSale: property.property_status === "for_sale",
-    is_favourite: false, // not relevant for own listings
+    is_favourite: false,
+
+    // ✅ fallback for land: use `area` if `lot_size` missing
+    lot_size:
+      property.lot_size ??
+      (property.property_type === "land" ? property.area : undefined),
   };
+
+
 
   // Enhanced badges overlay for MyListings
   const renderMyListingsBadges = () => (
