@@ -268,26 +268,27 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   }
 
   if ((areaMin !== undefined && areaMin !== null) || (areaMax !== undefined && areaMax !== null)) {
-    // Use compact format for area range to prevent wrapping
-    let areaRange: string | null = null;
+    // Format area with compact range format, unit shown inline to the right
+    let areaValue: string | null = null;
     if (areaMin !== undefined && areaMin !== null && areaMax !== undefined && areaMax !== null) {
       if (areaMin === areaMax) {
-        areaRange = `${Math.round(areaMin).toLocaleString()} m²`;
+        areaValue = `${Math.round(areaMin).toLocaleString()}`;
       } else {
-        // Compact format: "64-100 m²" instead of "64 m² - 100 m²"
-        areaRange = `${Math.round(areaMin).toLocaleString()}-${Math.round(areaMax).toLocaleString()} m²`;
+        // Compact format: "64-100" (unit "m²" will be shown inline to the right)
+        areaValue = `${Math.round(areaMin).toLocaleString()}-${Math.round(areaMax).toLocaleString()}`;
       }
     } else if (areaMin !== undefined && areaMin !== null) {
-      areaRange = `From ${Math.round(areaMin).toLocaleString()} m²`;
+      areaValue = `From ${Math.round(areaMin).toLocaleString()}`;
     } else if (areaMax !== undefined && areaMax !== null) {
-      areaRange = `Up to ${Math.round(areaMax).toLocaleString()} m²`;
+      areaValue = `Up to ${Math.round(areaMax).toLocaleString()}`;
     }
     
-    if (areaRange) {
+    if (areaValue) {
       stats.push({
         key: "area",
-        label: "Area",
-        value: areaRange,
+        label: "Area m²",
+        value: areaValue,
+        unit: "m²", // Unit shown inline to the right of the value
         icon: <Square className="h-5 w-5 text-purple-600" />,
         iconWrapClass: "p-2 rounded-lg bg-purple-100",
       });
@@ -497,7 +498,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
                   <div className="flex items-center justify-center mb-1">
                     <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
-                  <div className="text-base font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-1">{s.value}</div>
+                  <div className="text-base font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-1">
+                    {s.value}
+                    {s.unit && <span className="ml-1 text-xs font-normal">{s.unit}</span>}
+                  </div>
                   <div className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</div>
                 </div>
               ))}

@@ -225,7 +225,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
         _area !== undefined
           ? {
               key: "area",
-              label: "sq m",
+              label: "Area m²",
               value: _area.toLocaleString(),
               icon: <Square className="h-5 w-5 text-purple-600" />,
               iconWrapClass: "p-2 rounded-lg bg-purple-100",
