@@ -268,7 +268,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   }
 
   if ((areaMin !== undefined && areaMin !== null) || (areaMax !== undefined && areaMax !== null)) {
-    const areaRange = formatRange(areaMin, areaMax, " m²", false);
+    // Use compact format for area range to prevent wrapping
+    let areaRange: string | null = null;
+    if (areaMin !== undefined && areaMin !== null && areaMax !== undefined && areaMax !== null) {
+      if (areaMin === areaMax) {
+        areaRange = `${Math.round(areaMin).toLocaleString()} m²`;
+      } else {
+        // Compact format: "64-100 m²" instead of "64 m² - 100 m²"
+        areaRange = `${Math.round(areaMin).toLocaleString()}-${Math.round(areaMax).toLocaleString()} m²`;
+      }
+    } else if (areaMin !== undefined && areaMin !== null) {
+      areaRange = `From ${Math.round(areaMin).toLocaleString()} m²`;
+    } else if (areaMax !== undefined && areaMax !== null) {
+      areaRange = `Up to ${Math.round(areaMax).toLocaleString()} m²`;
+    }
+    
     if (areaRange) {
       stats.push({
         key: "area",
@@ -479,11 +493,11 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-4 border border-gray-100">
             <div className="flex items-center justify-between gap-4">
               {stats.slice(0, 4).map((s, index) => (
-                <div key={s.key} className="flex-1 text-center">
+                <div key={s.key} className="flex-1 text-center min-w-0">
                   <div className="flex items-center justify-center mb-1">
                     <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
-                  <div className="text-base font-bold text-gray-900 leading-tight">{s.value}</div>
+                  <div className="text-base font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-1">{s.value}</div>
                   <div className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</div>
                 </div>
               ))}
