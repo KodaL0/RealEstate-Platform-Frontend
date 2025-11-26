@@ -500,7 +500,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
                   </div>
                   <div className="text-base font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-1">
                     {s.value}
-                    {s.unit && <span className="ml-1 text-xs font-normal">{s.unit}</span>}
                   </div>
                   <div className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</div>
                 </div>
