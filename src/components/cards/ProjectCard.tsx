@@ -502,8 +502,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
 
         {/* Dynamic stats in single line layout */}
         {stats.length > 0 && (
-          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-3 sm:p-4 border border-gray-100">
-            <div className="flex items-center justify-between gap-2 sm:gap-4">
+          <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-2.5 sm:p-3 md:p-4 border border-gray-100">
+            <div className="flex items-start justify-between gap-1 sm:gap-1.5 md:gap-2 lg:gap-4">
               {stats.slice(0, 4).map((s, index) => (
                 <div 
                   key={s.key} 
@@ -513,13 +513,17 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
                     <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
                   <div 
-                    className="text-xs sm:text-sm font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-0.5 sm:px-1"
+                    className="text-xs sm:text-sm font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis mb-0.5"
                     style={{ maxWidth: '100%' }}
                     title={s.value}
                   >
                     {s.value}
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-0.5 truncate">{s.label}</div>
+                  <div className="text-[9px] sm:text-[10px] md:text-xs text-gray-600 font-medium leading-tight min-h-[2em] flex items-center justify-center">
+                    <span className="break-words text-center hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>
+                      {s.label}
+                    </span>
+                  </div>
                 </div>
               ))}
             </div>
