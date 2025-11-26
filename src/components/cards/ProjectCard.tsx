@@ -272,15 +272,25 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     let areaValue: string | null = null;
     if (areaMin !== undefined && areaMin !== null && areaMax !== undefined && areaMax !== null) {
       if (areaMin === areaMax) {
-        areaValue = `${Math.round(areaMin).toLocaleString()}`;
+        // For single values, use compact format (no thousand separators for numbers < 1000)
+        const val = Math.round(areaMin);
+        areaValue = val < 1000 ? String(val) : val.toLocaleString();
       } else {
-        // Compact format: "64-100" (unit "m²" will be shown inline to the right)
-        areaValue = `${Math.round(areaMin).toLocaleString()}-${Math.round(areaMax).toLocaleString()}`;
+        // Compact format: "64-100" or "1,000-2,000" (use compact format for smaller numbers)
+        const minVal = Math.round(areaMin);
+        const maxVal = Math.round(areaMax);
+        const minStr = minVal < 1000 ? String(minVal) : minVal.toLocaleString();
+        const maxStr = maxVal < 1000 ? String(maxVal) : maxVal.toLocaleString();
+        areaValue = `${minStr}-${maxStr}`;
       }
     } else if (areaMin !== undefined && areaMin !== null) {
-      areaValue = `From ${Math.round(areaMin).toLocaleString()}`;
+      const val = Math.round(areaMin);
+      const valStr = val < 1000 ? String(val) : val.toLocaleString();
+      areaValue = `From ${valStr}`;
     } else if (areaMax !== undefined && areaMax !== null) {
-      areaValue = `Up to ${Math.round(areaMax).toLocaleString()}`;
+      const val = Math.round(areaMax);
+      const valStr = val < 1000 ? String(val) : val.toLocaleString();
+      areaValue = `Up to ${valStr}`;
     }
     
     if (areaValue) {
@@ -494,14 +504,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-3 sm:p-4 border border-gray-100">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
               {stats.slice(0, 4).map((s, index) => (
-                <div key={s.key} className="flex-1 text-center min-w-0">
+                <div key={s.key} className="flex-1 text-center min-w-0 max-w-full">
                   <div className="flex items-center justify-center mb-1">
                     <div className={s.iconWrapClass}>{s.icon}</div>
                   </div>
-                  <div className="text-sm sm:text-base font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-0.5 sm:px-1" style={{ maxWidth: '100%' }}>
+                  <div 
+                    className={`font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-0.5 sm:px-1 ${
+                      s.key === "area" ? "text-xs sm:text-sm" : "text-sm sm:text-base"
+                    }`}
+                    style={{ maxWidth: '100%' }}
+                    title={s.value}
+                  >
                     {s.value}
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-0.5">{s.label}</div>
+                  <div className="text-xs text-gray-600 font-medium mt-0.5 truncate">{s.label}</div>
                 </div>
               ))}
             </div>
