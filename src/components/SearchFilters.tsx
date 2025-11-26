@@ -32,9 +32,9 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange 
   // Always show expanded filter form
   return (
     <>
-      <div className="px-4 sm:px-6 lg:px-8 pb-5 transition-all duration-300">
+      <div className="px-3 sm:px-4 lg:px-6 xl:px-8 pb-4 sm:pb-5 transition-all duration-300">
         <form onSubmit={(e) => e.preventDefault()}>
-          <div className="space-y-2">
+          <div className="space-y-2 sm:space-y-3">
             {/* Row 1 */}
             <div className="grid grid-cols-1 md:grid-cols-12 gap-2 sm:gap-3">
               <div className="md:col-span-7">
@@ -94,7 +94,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange 
             </div>
 
             {/* Row 2 */}
-            <div className="grid grid-cols-2 md:grid-cols-6 gap-2 sm:gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2 sm:gap-3">
               <div>
                 <label htmlFor="minPrice" className="block text-xs font-medium text-gray-700 mb-1">
                   💰 Min
@@ -180,13 +180,13 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange 
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-between mt-3">
+          <div className="flex items-center justify-between mt-3 sm:mt-4">
             <button
               type="button"
-              className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center"
+              className="text-blue-600 hover:text-blue-700 text-xs sm:text-sm font-medium flex items-center py-1"
               onClick={() => setAmenitiesModalOpen(true)}
             >
-              ✨ Amenities
+              ✨ <span className="hidden sm:inline">Amenities</span>
               {filters.amenities && filters.amenities.length > 0 && (
                 <span className="ml-1.5 px-1.5 py-0.5 bg-blue-100 text-blue-700 text-xs rounded-full font-semibold">
                   {filters.amenities.length}
@@ -196,7 +196,7 @@ const SearchFilters: React.FC<SearchFiltersProps> = ({ filters, onFiltersChange 
             </button>
             <button
               type="button"
-              className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center"
+              className="text-gray-500 hover:text-gray-700 text-xs sm:text-sm font-medium flex items-center py-1"
               onClick={clearFilters}
             >
               <X className="h-3 w-3 mr-1" />

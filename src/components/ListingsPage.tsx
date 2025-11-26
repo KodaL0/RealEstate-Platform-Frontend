@@ -685,7 +685,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           <div className={`absolute inset-0 ${theme.radialGradient1}`}></div>
           <div className={`absolute inset-0 ${theme.radialGradient2}`}></div>
 
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 lg:py-16">
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -693,13 +693,13 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               className="text-center"
             >
               <h1
-                className={`text-4xl sm:text-5xl lg:text-6xl font-bold mb-4 bg-gradient-to-r ${theme.textGradient} bg-clip-text text-transparent`}
+                className={`text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold mb-3 sm:mb-4 bg-gradient-to-r ${theme.textGradient} bg-clip-text text-transparent`}
               >
                 {theme.title}
               </h1>
-              <div className={`flex items-center justify-center mt-3 ${theme.iconColor}`}>
-                <MapPin className="h-5 w-5 mr-2 animate-pulse" />
-                <span className="text-lg">{theme.subtitle}</span>
+              <div className={`flex items-center justify-center mt-2 sm:mt-3 ${theme.iconColor}`}>
+                <MapPin className="h-4 w-4 sm:h-5 sm:w-5 mr-2 animate-pulse" />
+                <span className="text-base sm:text-lg">{theme.subtitle}</span>
               </div>
             </motion.div>
           </div>
@@ -724,42 +724,42 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         </div>
 
         {/* Main Content */}
-        <div className="container mx-auto px-4 py-8">
+        <div className="container mx-auto px-3 sm:px-4 lg:px-6 py-4 sm:py-6 lg:py-8">
           {/* Enhanced Results Header */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 mb-8"
+            className="bg-white rounded-xl sm:rounded-2xl shadow-sm border border-gray-100 p-4 sm:p-6 mb-4 sm:mb-6 lg:mb-8"
           >
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 sm:gap-6">
               <div className="flex-1">
                 {isLoading ? (
                   <div className="flex items-center">
                     <div className="relative">
                       <div
-                        className={`animate-spin rounded-full h-8 w-8 border-3 ${theme.spinnerColor} border-t-transparent`}
+                        className={`animate-spin rounded-full h-6 w-6 sm:h-8 sm:w-8 border-3 ${theme.spinnerColor} border-t-transparent`}
                       ></div>
                       <div
                         className={`absolute inset-0 rounded-full border-3 ${theme.spinnerBgColor}`}
                       ></div>
                     </div>
-                    <span className="text-gray-600 text-sm ml-4 font-medium">
+                    <span className="text-gray-600 text-xs sm:text-sm ml-3 sm:ml-4 font-medium">
                       Searching properties...
                     </span>
                   </div>
                 ) : (
                   <div className="space-y-1">
-                    <div className="flex items-baseline gap-3">
-                      <p className="text-gray-900 font-bold text-2xl sm:text-3xl">
+                    <div className="flex items-baseline gap-2 sm:gap-3">
+                      <p className="text-gray-900 font-bold text-xl sm:text-2xl lg:text-3xl">
                         {totalCount.toLocaleString()}
                       </p>
-                      <span className="text-gray-600 text-lg sm:text-xl font-medium">
+                      <span className="text-gray-600 text-base sm:text-lg lg:text-xl font-medium">
                         available
                       </span>
                     </div>
                     {filters.country && filters.country !== "All" && (
-                      <p className="text-sm text-gray-500 flex items-center gap-1.5">
-                        <MapPin className="h-3.5 w-3.5" />
+                      <p className="text-xs sm:text-sm text-gray-500 flex items-center gap-1.5">
+                        <MapPin className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                         <span>{filters.country}</span>
                       </p>
                     )}
@@ -767,10 +767,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                 )}
               </div>
 
-              <div className="flex items-center gap-3">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
                 <label
                   htmlFor="sort"
-                  className="text-sm font-semibold text-gray-700 whitespace-nowrap"
+                  className="text-xs sm:text-sm font-semibold text-gray-700 whitespace-nowrap"
                 >
                   Sort by:
                 </label>
@@ -779,7 +779,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                   value={sortOption}
                   onChange={handleSortChange}
                   disabled={isLoading}
-                  className={`px-4 py-2.5 border-2 border-gray-200 rounded-xl focus:ring-2 ${theme.focusRingColor} ${theme.focusBorderColor} bg-white text-sm font-medium text-gray-700 transition-all hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer`}
+                  className={`px-3 sm:px-4 py-2 sm:py-2.5 border-2 border-gray-200 rounded-lg sm:rounded-xl focus:ring-2 ${theme.focusRingColor} ${theme.focusBorderColor} bg-white text-xs sm:text-sm font-medium text-gray-700 transition-all hover:border-gray-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer w-full sm:w-auto`}
                 >
                   {sortOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -890,7 +890,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.4, ease: "easeOut" }}
-                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
               >
                 {displayed.map((item, index) => (
                   <motion.div
@@ -939,21 +939,21 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
               animate={{ opacity: 1 }}
               className="mt-16 flex justify-center"
             >
-              <nav className="inline-flex items-center gap-2 bg-white rounded-2xl shadow-lg border border-gray-200 p-2">
+              <nav className="inline-flex items-center gap-1 sm:gap-2 bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200 p-1.5 sm:p-2">
                 <button
                   type="button"
                   onClick={prev}
                   disabled={currentPage === 1}
-                  className={`p-3 rounded-xl transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all ${
                     currentPage === 1
                       ? "text-gray-300 cursor-not-allowed"
                       : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
                   }`}
                 >
-                  <ChevronLeft className="h-5 w-5" />
+                  <ChevronLeft className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
 
-                <div className="flex items-center gap-1 px-2">
+                <div className="flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2">
                   {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
                     let pageNumber: number;
                     if (totalPages <= 7) {
@@ -971,7 +971,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                         type="button"
                         key={pageNumber}
                         onClick={() => goToPage(pageNumber)}
-                        className={`min-w-[44px] px-4 py-2.5 rounded-xl font-semibold text-sm transition-all ${
+                        className={`min-w-[36px] sm:min-w-[44px] px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-lg sm:rounded-xl font-semibold text-xs sm:text-sm transition-all ${
                           currentPage === pageNumber
                             ? `bg-gradient-to-br ${theme.paginationActiveGradient} text-white shadow-md ${theme.paginationActiveShadow} scale-105`
                             : "text-gray-700 hover:bg-gray-100 active:scale-95"
@@ -987,13 +987,13 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                   type="button"
                   onClick={next}
                   disabled={currentPage === totalPages}
-                  className={`p-3 rounded-xl transition-all ${
+                  className={`p-2 sm:p-3 rounded-lg sm:rounded-xl transition-all ${
                     currentPage === totalPages
                       ? "text-gray-300 cursor-not-allowed"
                       : `text-gray-700 ${theme.paginationHoverBg} ${theme.paginationHoverText} active:scale-95`
                   }`}
                 >
-                  <ChevronRight className="h-5 w-5" />
+                  <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5" />
                 </button>
               </nav>
             </motion.div>
@@ -1004,7 +1004,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="text-center mt-6 text-sm text-gray-500"
+              className="text-center mt-4 sm:mt-6 text-xs sm:text-sm text-gray-500"
             >
               Page {currentPage} of {totalPages}
             </motion.p>
