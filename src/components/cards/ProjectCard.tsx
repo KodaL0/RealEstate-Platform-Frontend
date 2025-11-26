@@ -207,7 +207,10 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
   const formatPriceRange = (min?: number, max?: number) => {
     if (min === undefined && max === undefined) return null;
     if (min === max) return `€${Math.round(min).toLocaleString()}`;
-    if (min && max) return `€${Math.round(min).toLocaleString()} - €${Math.round(max).toLocaleString()}`;
+    if (min && max) {
+      // Compact format: remove spaces around dash and use shorter format for 2-card layout
+      return `€${Math.round(min).toLocaleString()}-€${Math.round(max).toLocaleString()}`;
+    }
     if (min) return `From €${Math.round(min).toLocaleString()}`;
     if (max) return `Up to €${Math.round(max).toLocaleString()}`;
     return null;
@@ -483,11 +486,13 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
 
         {/* Price */}
         {priceRange && (
-          <div className="mb-6">
-            <div className="flex items-baseline space-x-1">
-              <span className="text-3xl font-bold text-gray-900">{priceRange}</span>
+          <div className="mb-4 sm:mb-6">
+            <div className="flex items-baseline">
+              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '100%' }} title={priceRange}>
+                {priceRange}
+              </span>
             </div>
-            <p className="text-sm text-blue-600 font-medium mt-1">
+            <p className="text-xs sm:text-sm text-blue-600 font-medium mt-1">
               {listingType === "sale" ? "Price Range" : "Rent Range"}
             </p>
           </div>
