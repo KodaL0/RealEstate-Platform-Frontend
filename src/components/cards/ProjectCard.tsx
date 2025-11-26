@@ -272,25 +272,21 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
     let areaValue: string | null = null;
     if (areaMin !== undefined && areaMin !== null && areaMax !== undefined && areaMax !== null) {
       if (areaMin === areaMax) {
-        // For single values, use compact format (no thousand separators for numbers < 1000)
-        const val = Math.round(areaMin);
-        areaValue = val < 1000 ? String(val) : val.toLocaleString();
+        // For single values, no thousand separators for compactness
+        areaValue = String(Math.round(areaMin));
       } else {
-        // Compact format: "64-100" or "1,000-2,000" (use compact format for smaller numbers)
+        // Ultra-compact format: remove thousand separators for all ranges to save space
+        // Use regular hyphen (most compatible) and no separators
         const minVal = Math.round(areaMin);
         const maxVal = Math.round(areaMax);
-        const minStr = minVal < 1000 ? String(minVal) : minVal.toLocaleString();
-        const maxStr = maxVal < 1000 ? String(maxVal) : maxVal.toLocaleString();
-        areaValue = `${minStr}-${maxStr}`;
+        areaValue = `${minVal}-${maxVal}`;
       }
     } else if (areaMin !== undefined && areaMin !== null) {
-      const val = Math.round(areaMin);
-      const valStr = val < 1000 ? String(val) : val.toLocaleString();
-      areaValue = `From ${valStr}`;
+      // Compact format for "From" - no thousand separators
+      areaValue = `From ${Math.round(areaMin)}`;
     } else if (areaMax !== undefined && areaMax !== null) {
-      const val = Math.round(areaMax);
-      const valStr = val < 1000 ? String(val) : val.toLocaleString();
-      areaValue = `Up to ${valStr}`;
+      // Compact format for "Up to" - no thousand separators
+      areaValue = `Up to ${Math.round(areaMax)}`;
     }
     
     if (areaValue) {
@@ -503,23 +499,30 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         {stats.length > 0 && (
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-3 sm:p-4 border border-gray-100">
             <div className="flex items-center justify-between gap-2 sm:gap-4">
-              {stats.slice(0, 4).map((s, index) => (
-                <div key={s.key} className="flex-1 text-center min-w-0 max-w-full">
-                  <div className="flex items-center justify-center mb-1">
-                    <div className={s.iconWrapClass}>{s.icon}</div>
-                  </div>
+              {stats.slice(0, 4).map((s, index) => {
+                const isArea = s.key === "area";
+                return (
                   <div 
-                    className={`font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-0.5 sm:px-1 ${
-                      s.key === "area" ? "text-xs sm:text-sm" : "text-sm sm:text-base"
-                    }`}
-                    style={{ maxWidth: '100%' }}
-                    title={s.value}
+                    key={s.key} 
+                    className={`text-center min-w-0 ${isArea ? 'flex-[1.1]' : 'flex-1'}`}
+                    style={{ maxWidth: isArea ? '28%' : '25%' }}
                   >
-                    {s.value}
+                    <div className="flex items-center justify-center mb-1">
+                      <div className={s.iconWrapClass}>{s.icon}</div>
+                    </div>
+                    <div 
+                      className={`font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis px-0.5 sm:px-1 ${
+                        isArea ? "text-[10px] sm:text-xs" : "text-sm sm:text-base"
+                      }`}
+                      style={{ maxWidth: '100%' }}
+                      title={s.value}
+                    >
+                      {s.value}
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium mt-0.5 truncate">{s.label}</div>
                   </div>
-                  <div className="text-xs text-gray-600 font-medium mt-0.5 truncate">{s.label}</div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
