@@ -503,29 +503,36 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         {/* Dynamic stats in single line layout */}
         {stats.length > 0 && (
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-3 sm:p-4 border border-gray-100">
-            <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-4">
-              {stats.slice(0, 4).map((s, index) => (
-                <div 
-                  key={s.key} 
-                  className="flex-1 text-center min-w-0"
-                >
-                  <div className="flex items-center justify-center mb-2">
-                    <div className={s.iconWrapClass}>{s.icon}</div>
-                  </div>
+            <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-2 lg:gap-4">
+              {stats.slice(0, 4).map((s, index) => {
+                const isArea = s.key === "area";
+                return (
                   <div 
-                    className="text-base sm:text-lg font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis mb-1"
-                    style={{ maxWidth: '100%' }}
-                    title={s.value}
+                    key={s.key} 
+                    className="flex-1 text-center min-w-0"
                   >
-                    {s.value}
+                    <div className="flex items-center justify-center mb-2">
+                      <div className={s.iconWrapClass}>{s.icon}</div>
+                    </div>
+                    <div 
+                      className={`font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis mb-1 ${
+                        isArea 
+                          ? "text-sm md:text-xs lg:text-lg" // Smaller on 2-card (md), larger on 3-card (lg)
+                          : "text-base sm:text-lg" // Standard sizing for other stats
+                      }`}
+                      style={{ maxWidth: '100%' }}
+                      title={s.value}
+                    >
+                      {s.value}
+                    </div>
+                    <div className="text-xs text-gray-600 font-medium leading-tight min-h-[2em] flex items-center justify-center">
+                      <span className="break-words text-center hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>
+                        {s.label}
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-xs text-gray-600 font-medium leading-tight min-h-[2em] flex items-center justify-center">
-                    <span className="break-words text-center hyphens-auto" style={{ wordBreak: 'break-word', overflowWrap: 'break-word', lineHeight: '1.2' }}>
-                      {s.label}
-                    </span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
