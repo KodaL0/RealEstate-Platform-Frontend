@@ -1172,113 +1172,134 @@ const PublicProfile: React.FC = () => {
       />
 
       {/* Profile Header */}
-      <section className="py-6 sm:py-8 bg-gradient-to-r from-blue-600 to-indigo-600">
-        <div className="container mx-auto px-4">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="flex flex-col items-center space-y-6"
-          >
-            {/* Profile Info */}
-            <div className="flex flex-col items-center text-center">
-              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-white rounded-full flex items-center justify-center shadow-lg mb-4">
-                <User className="h-10 w-10 sm:h-12 sm:w-12 text-blue-600" />
-              </div>
-              <div className="space-y-2">
-                <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-2">
-                  <h1 className="text-2xl sm:text-3xl font-bold text-white">
-                    {profileData.name || profileData.username}
-                  </h1>
-                  {profileData.name && (
-                    <span className="text-white/70 text-base sm:text-lg">
-                      @{profileData.username}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center justify-center text-white/90 text-sm sm:text-base">
-                  <MapPin className="h-4 w-4 mr-1" />
-                  <span>{profileData?.location || "Location not specified"}</span>
-                </div>
-                <div className="flex flex-col sm:flex-row items-center space-y-1 sm:space-y-0 sm:space-x-4 text-white/90 text-sm sm:text-base">
-                  <div className="flex items-center">
-                    <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
-                    <span>
-                      {overallRating !== null ? overallRating.toFixed(1) : "N/A"} (
-                      {overallReviewsCount ?? "0"} reviews)
-                    </span>
-                  </div>
-                  <div className="flex items-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>Since {formatJoinDate(profileData.date_joined)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
+      <section className="bg-white border-b">
+      <div className="container mx-auto px-4">
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap justify-center gap-3 w-full max-w-md">
-              <button
-                onClick={async () => {
-                  try {
-                    const threadId = await getOrCreateDmThread(profileData.id);
-                    navigate(`/chat/${threadId}`);
-                  } catch (error) {
-                    console.error("Error creating DM thread:", error);
-                  }
-                }}
-                className="flex-1 min-w-[120px] px-4 py-3 bg-white text-blue-600 font-semibold rounded-lg hover:bg-blue-50 transition-colors flex items-center justify-center text-sm sm:text-base"
-              >
-                <Send className="h-4 w-4 mr-2" />
-                Message
-              </button>
+        <div className="h-32 sm:h-48 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-4"></div>
 
-              {/* Write Review Button - Only show if user can review */}
-              {canReview?.can_review && (
-                <button
-                  onClick={() => setShowReviewForm(true)}
-                  className="flex-1 min-w-[120px] px-4 py-3 bg-yellow-500 text-white font-semibold rounded-lg hover:bg-yellow-600 transition-colors flex items-center justify-center text-sm sm:text-base"
-                >
-                  <Star className="h-4 w-4 mr-2" />
-                  Write Review
-                </button>
+        <div className="-mt-16 sm:-mt-20 pb-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-end space-y-4 sm:space-y-0 sm:space-x-6">
+
+            {/* Avatar */}
+            <div className="w-28 h-28 sm:w-36 sm:h-36 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white">
+              {profileData?.avatar ? (
+                <img
+                  src={profileData.avatar}
+                  alt={profileData.username}
+                  className="w-full h-full rounded-full object-cover"
+                />
+              ) : (
+                <User className="h-14 w-14 sm:h-18 sm:w-18 text-blue-600" />
               )}
-
-              <button
-                onClick={handleConnectionAction}
-                disabled={
-                  isConnecting ||
-                  profileData?.connection_status === "connected" ||
-                  profileData?.connection_status === "pending_sent"
-                }
-                className={`flex-1 min-w-[120px] px-4 py-3 font-semibold rounded-lg transition-colors flex items-center justify-center text-sm sm:text-base ${
-                  profileData?.connection_status === "connected"
-                    ? "bg-green-500 text-white cursor-default"
-                    : profileData?.connection_status === "pending_sent"
-                      ? "bg-gray-400 text-white cursor-default"
-                      : profileData?.connection_status === "pending_received"
-                        ? "bg-blue-600 text-white hover:bg-blue-700"
-                        : "bg-blue-500 text-white hover:bg-blue-400"
-                } ${isConnecting ? "opacity-75 cursor-not-allowed" : ""}`}
-              >
-                {isConnecting ? (
-                  <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-white mr-2" />
-                ) : (
-                  React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })
-                )}
-                {isConnecting ? "Processing..." : getConnectionButtonText()}
-              </button>
-
-              <button
-                type="button"
-                className="px-4 py-3 bg-blue-500/20 text-white rounded-lg hover:bg-blue-500/30 transition-colors"
-              >
-                <Bookmark className="h-4 w-4" />
-              </button>
             </div>
-          </motion.div>
+
+            {/* Profile Info */}
+            <div className="flex-1 pb-2">
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
+                <div>
+                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                    {profileData?.name || profileData?.username}
+                  </h1>
+
+                  <p className="text-gray-600 text-base sm:text-lg">@{profileData?.username}</p>
+
+                  <div className="flex items-center text-gray-600 text-sm mt-1">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    <span>{profileData?.location || "Location not specified"}</span>
+
+                    <span className="mx-2">•</span>
+
+                    <Calendar className="h-4 w-4 mr-1" />
+                    <span>Joined {formatJoinDate(profileData?.date_joined)}</span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 mt-4 sm:mt-0">
+                  {/* MESSAGE */}
+                  <button
+                    onClick={async () => {
+                      const threadId = await getOrCreateDmThread(profileData!.id);
+                      navigate(`/chat/${threadId}`);
+                    }}
+                    className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
+                  >
+                    <Send className="h-4 w-4 mr-2" />
+                    Message
+                  </button>
+
+                  {/* CONNECT */}
+                  <button
+                    onClick={handleConnectionAction}
+                    disabled={isConnecting}
+                    className="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors flex items-center text-sm"
+                  >
+                    {React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })}
+                    {getConnectionButtonText()}
+                  </button>
+                </div>
+              </div>
+
+              {/* Stats */}
+              <div className="flex items-center gap-6 mt-4 text-sm">
+                <div className="flex items-center space-x-1">
+                  <span className="font-bold text-gray-900">{profileData?.properties_count}</span>
+                  <span className="text-gray-600">Listings</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <span className="font-bold text-gray-900">{profileData?.connections_count}</span>
+                  <span className="text-gray-600">Connections</span>
+                </div>
+                <div className="flex items-center space-x-1">
+                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                  <span className="font-bold text-gray-900">{overallRating ?? "N/A"}</span>
+                  <span className="text-gray-600">({overallReviewsCount ?? 0})</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Bio */}
+          {profileData?.bio && (
+            <div className="mt-4 max-w-2xl">
+              <p className="text-gray-900 leading-relaxed">{profileData.bio}</p>
+            </div>
+          )}
         </div>
-      </section>
+
+      </div>
+    </section>
+
+      <div className="border-t bg-white">
+      <div className="container mx-auto px-4">
+        <nav className="flex space-x-1 -mb-px overflow-x-auto" role="tablist">
+          {[
+            { id: "overview", label: "Overview", icon: User },
+            { id: "listings", label: "Listings", icon: Home },
+            { id: "reviews", label: "Reviews", icon: Star },
+            { id: "contact", label: "Contact", icon: Mail },
+          ].map((tab) => {
+            const Icon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => handleTabClick(tab.id)}
+                className={`flex items-center space-x-2 px-4 py-3 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-600 hover:text-gray-900 hover:border-gray-300"
+                }`}
+              >
+                <Icon className="h-4 w-4" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </div>
+    </div>
+
+
 
       {/* Main Content with Sidebar */}
       <div className="container mx-auto px-4 py-6 sm:py-8">
