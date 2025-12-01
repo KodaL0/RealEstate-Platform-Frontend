@@ -579,504 +579,369 @@ const PublicProfile: React.FC = () => {
   };
 
   const renderTabContent = () => {
-    switch (activeTab) {
-      case "overview":
-        return (
-          <div className="space-y-6">
-            {/* LLM structured data for AI agents and search engines */}
-            {profileData && (
-              <LLMProfileData user={profileData} propertiesCount={profileData.properties_count} />
+  switch (activeTab) {
+    case "overview":
+      return (
+        <div className="space-y-6">
+          {/* LLM structured data for AI agents and search engines */}
+          {profileData && (
+            <LLMProfileData
+              user={profileData}
+              propertiesCount={profileData.properties_count}
+            />
+          )}
+
+          {/* Bio Section */}
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
+              <User className="h-5 w-5 mr-2 text-blue-600" />
+              About {profileData?.name || profileData?.username}
+            </h3>
+
+            {profileData?.bio ? (
+              <p className="text-gray-700 leading-relaxed mb-4">
+                {profileData.bio}
+              </p>
+            ) : (
+              <p className="text-gray-500 italic">No bio available</p>
             )}
 
-            {/* Bio Section */}
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center">
-                <User className="h-5 w-5 mr-2 text-blue-600" />
-                About {profileData?.name || profileData?.username}
-              </h3>
-              {profileData?.bio ? (
-                <p className="text-gray-700 leading-relaxed mb-4">{profileData.bio}</p>
-              ) : (
-                <p className="text-gray-500 italic">No bio available</p>
-              )}
-              {/*
+            {/* COMMENTED OUT SECTION — SAFE */}
+            {/*
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div>
-                <h4 className="font-semibold text-gray-900 mb-2">Specializations</h4>
-                <div className="flex flex-wrap gap-2">
-                  {enhancedProfile.specializations.map((spec, index) => (
-                    <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">
-                      {spec}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              <div> 
-                <h4 className="font-semibold text-gray-900 mb-2">Languages</h4>
-                <div className="flex flex-wrap gap-2">
-                  {enhancedProfile.languages.map((lang, index) => (
-                    <span key={index} className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">
-                      {lang}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              ...
             </div>
-            
-            <div className="border-t pt-4">
-              <h4 className="font-semibold text-gray-900 mb-2">Certifications</h4>
-              <div className="space-y-2">
-                {enhancedProfile.certifications.map((cert, index) => (
-                  <div key={index} className="flex items-center text-gray-700">
-                    <Award className="h-4 w-4 mr-2 text-yellow-600" />
-                    {cert}
-                  </div>
-                ))}
-              </div> */}
+            */}
+          </div>
+
+          {/* Quick Stats */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+              <div className="text-xl sm:text-2xl font-bold text-blue-600">
+                {profileData?.properties_count || 0}
+              </div>
+              <div className="text-gray-600 text-xs sm:text-sm">Active Listings</div>
             </div>
 
-            {/* Quick Stats */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
-              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
-                <div className="text-xl sm:text-2xl font-bold text-blue-600">
-                  {profileData?.properties_count || 0}
-                </div>
-                <div className="text-gray-600 text-xs sm:text-sm">Active Listings</div>
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+              <div className="text-xl sm:text-2xl font-bold text-pink-600">
+                {profileData?.connections_count || 0}
               </div>
-              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
-                <div className="text-xl sm:text-2xl font-bold text-pink-600">
-                  {profileData?.connections_count || 0}
-                </div>
-                <div className="text-gray-600 text-xs sm:text-sm">Connections</div>
+              <div className="text-gray-600 text-xs sm:text-sm">Connections</div>
+            </div>
+
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center col-span-2 sm:col-span-1">
+              <div className="text-xl sm:text-2xl font-bold text-indigo-600">
+                {profileData?.mutual_connections_count || 0}
               </div>
-              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center sm:col-span-1 col-span-2">
-                <div className="text-xl sm:text-2xl font-bold text-indigo-600">
-                  {profileData?.mutual_connections_count || 0}
-                </div>
-                <div className="text-gray-600 text-xs sm:text-sm">Mutual Connections</div>
+              <div className="text-gray-600 text-xs sm:text-sm">Mutual Connections</div>
+            </div>
+
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+              <div className="text-xl sm:text-2xl font-bold text-yellow-600">
+                {overallRating !== null ? overallRating.toFixed(1) : "N/A"}
               </div>
-              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
-                <div className="text-xl sm:text-2xl font-bold text-yellow-600">
-                  {overallRating !== null ? overallRating.toFixed(1) : "N/A"}
-                </div>
-                <div className="text-gray-600 text-xs sm:text-sm">Avg Rating</div>
+              <div className="text-gray-600 text-xs sm:text-sm">Avg Rating</div>
+            </div>
+
+            <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
+              <div className="text-xl sm:text-2xl font-bold text-green-600">
+                {overallReviewsCount ?? "N/A"}
               </div>
-              <div className="bg-white p-3 sm:p-4 rounded-xl shadow-md text-center">
-                <div className="text-xl sm:text-2xl font-bold text-green-600">
-                  {overallReviewsCount ?? "N/A"}
-                </div>
-                <div className="text-gray-600 text-xs sm:text-sm">Total Reviews</div>
-              </div>
+              <div className="text-gray-600 text-xs sm:text-sm">Total Reviews</div>
             </div>
           </div>
-        );
+        </div>
+      );
 
-      case "listings":
-        return (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                  <Home className="h-5 w-5 mr-2 text-blue-600" />
-                  Published Listings ({profileData?.properties_count || 0})
-                </h3>
-              </div>
-
-              {properties.length === 0 ? (
-                <div className="text-center py-16">
-                  <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-xl font-semibold text-gray-900 mb-2">
-                    No Published Listings
-                  </h4>
-                  <p className="text-gray-600">This user has no published listings yet.</p>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                  {properties.map((property, index) => (
-                    <motion.div
-                      key={property.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.4, delay: 0.1 * index }}
-                    >
-                      <PropertyCard property={property} />
-                    </motion.div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        );
-
-      case "reviews":
-        return (
-          <div className="space-y-6">
-            {/* Review Summary */}
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <Star className="h-5 w-5 mr-2 text-yellow-600" />
-                Reviews & Ratings
+    case "listings":
+      return (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
+                <Home className="h-5 w-5 mr-2 text-blue-600" />
+                Published Listings ({profileData?.properties_count || 0})
               </h3>
+            </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-                    {reviewStats?.average_rating?.toFixed(1) || "0.0"}
-                  </div>
-                  <div className="flex justify-center mb-2">
-                    {renderStarRating(reviewStats?.average_rating || 0, "md")}
-                  </div>
-                  <p className="text-gray-600 text-sm sm:text-base">Overall Rating</p>
+            {properties.length === 0 ? (
+              <div className="text-center py-16">
+                <Home className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                  No Published Listings
+                </h4>
+                <p className="text-gray-600">This user has no published listings yet.</p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
+                {properties.map((property, index) => (
+                  <motion.div
+                    key={property.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 0.1 * index }}
+                  >
+                    <PropertyCard property={property} />
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      );
+
+    case "reviews":
+      return (
+        <div className="space-y-6">
+          {/* Review Summary */}
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Star className="h-5 w-5 mr-2 text-yellow-600" />
+              Reviews & Ratings
+            </h3>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                  {reviewStats?.average_rating?.toFixed(1) || "0.0"}
                 </div>
-                <div className="text-center">
-                  <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
-                    {reviewStats?.reviews_received_count || 0}
-                  </div>
-                  <p className="text-gray-600 text-sm sm:text-base">Total Reviews</p>
+
+                <div className="flex justify-center mb-2">
+                  {renderStarRating(reviewStats?.average_rating || 0, "md")}
                 </div>
+
+                <p className="text-gray-600 text-sm sm:text-base">Overall Rating</p>
               </div>
 
-              {/* Rating Breakdown */}
-              <div className="space-y-2">
-                {[5, 4, 3, 2, 1].map((rating) => {
-                  const count = reviewStats?.rating_distribution[rating.toString()] || 0;
-                  const totalReviews = reviewStats?.reviews_received_count || 1;
-                  const percentage = (count / totalReviews) * 100;
-                  return (
-                    <div key={rating} className="flex items-center space-x-3">
-                      <span className="text-sm font-medium w-8">{rating}</span>
-                      <Star className="h-4 w-4 text-yellow-400 fill-current" />
-                      <div className="flex-1 bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-yellow-400 h-2 rounded-full"
-                          style={{ width: `${percentage}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-sm text-gray-600 w-10">{count}</span>
-                    </div>
-                  );
-                })}
+              <div className="text-center">
+                <div className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
+                  {reviewStats?.reviews_received_count || 0}
+                </div>
+
+                <p className="text-gray-600 text-sm sm:text-base">Total Reviews</p>
               </div>
             </div>
 
-            {/* Individual Reviews */}
-            <div className="space-y-4">
-              {isLoadingReviews ? (
-                <div className="text-center py-8">
-                  <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
-                  <p className="text-gray-600">Loading reviews...</p>
-                </div>
-              ) : reviews.length === 0 ? (
-                <div className="text-center py-16">
-                  <Star className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                  <h4 className="text-xl font-semibold text-gray-900 mb-2">No Reviews Yet</h4>
-                  <p className="text-gray-600">
-                    This user hasn't received any reviews yet.
-                    {canReview?.can_review && " Be the first to write one!"}
-                  </p>
-                </div>
-              ) : (
-                reviews.map((review) => (
-                  <div key={review.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-md">
-                    <div className="flex items-start space-x-3 sm:space-x-4">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                        <span className="text-blue-600 font-semibold text-sm sm:text-base">
-                          {review.reviewer.username.substring(0, 2).toUpperCase()}
+            {/* Rating Breakdown */}
+            <div className="space-y-2">
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = reviewStats?.rating_distribution[rating.toString()] || 0;
+                const total = reviewStats?.reviews_received_count || 1;
+                const pct = (count / total) * 100;
+
+                return (
+                  <div key={rating} className="flex items-center space-x-3">
+                    <span className="text-sm font-medium w-8">{rating}</span>
+                    <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                    <div className="flex-1 bg-gray-200 rounded-full h-2">
+                      <div
+                        className="bg-yellow-400 h-2 rounded-full"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                    <span className="text-sm text-gray-600 w-10">{count}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Reviews List */}
+          <div className="space-y-4">
+            {isLoadingReviews ? (
+              <div className="text-center py-8">
+                <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-500 border-t-transparent mx-auto mb-4"></div>
+                <p className="text-gray-600">Loading reviews...</p>
+              </div>
+            ) : reviews.length === 0 ? (
+              <div className="text-center py-16">
+                <Star className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+                <h4 className="text-xl font-semibold text-gray-900 mb-2">
+                  No Reviews Yet
+                </h4>
+                <p className="text-gray-600">
+                  This user hasn't received any reviews yet.
+                  {canReview?.can_review && " Be the first to write one!"}
+                </p>
+              </div>
+            ) : (
+              reviews.map((review) => (
+                <div key={review.id} className="bg-white p-4 sm:p-6 rounded-2xl shadow-md">
+                  {/* Review block */}
+                  <div className="flex items-start space-x-3 sm:space-x-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <span className="text-blue-600 font-semibold text-sm sm:text-base">
+                        {review.reviewer.username.substring(0, 2).toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+                        <div className="flex items-center space-x-2 sm:space-x-3">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
+                            {review.reviewer.username}
+                          </h4>
+
+                          {review.is_verified && (
+                            <div className="flex items-center text-green-600">
+                              <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                              <span className="text-xs">Verified</span>
+                            </div>
+                          )}
+                        </div>
+
+                        <span className="text-gray-500 text-xs sm:text-sm">
+                          {formatDateOnly(review.created_at)}
                         </span>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 space-y-1 sm:space-y-0">
-                          <div className="flex items-center space-x-2 sm:space-x-3">
-                            <h4 className="font-semibold text-gray-900 text-sm sm:text-base truncate">
-                              {review.reviewer.username}
-                            </h4>
-                            {review.is_verified && (
-                              <div className="flex items-center text-green-600">
-                                <CheckCircle className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                                <span className="text-xs">Verified</span>
-                              </div>
-                            )}
-                          </div>
-                          <span className="text-gray-500 text-xs sm:text-sm">
-                            {formatDateOnly(review.created_at)}
-                          </span>
-                        </div>
-                        {review.title && (
-                          <h5 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">
-                            {review.title}
-                          </h5>
-                        )}
-                        <div className="flex items-center mb-3">
-                          {renderStarRating(review.overall_rating)}
-                          <span className="ml-2 text-xs sm:text-sm text-gray-600">
-                            ({review.overall_rating}/5)
-                          </span>
-                        </div>
-                        <p className="text-gray-700 mb-3 text-sm sm:text-base">{review.content}</p>
-                        {review.interaction_context && (
-                          <p className="text-xs sm:text-sm text-gray-500 mb-3 italic">
-                            Context: {review.interaction_context}
-                          </p>
-                        )}
-                        <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
-                          <button
-                            onClick={() => handleToggleHelpful(review.id, true)}
-                            className="flex items-center hover:text-blue-600 p-1"
-                          >
-                            <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            Helpful ({review.helpful_count})
-                          </button>
-                          <button
-                            onClick={() => handleReportReview(review.id)}
-                            className="flex items-center hover:text-red-600 p-1"
-                          >
-                            <Flag className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
-                            Report
-                          </button>
-                        </div>
-                        {review.response && (
-                          <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
-                            <div className="flex items-center mb-2">
-                              <h6 className="font-medium text-gray-900">
-                                Response from {profileData?.username}
-                              </h6>
-                              <span className="ml-auto text-xs text-gray-500">
-                                {formatDateOnly(review.response.created_at)}
-                              </span>
-                            </div>
-                            <p className="text-gray-700">{review.response.content}</p>
-                          </div>
-                        )}
+
+                      {review.title && (
+                        <h5 className="font-medium text-gray-900 mb-2 text-sm sm:text-base">
+                          {review.title}
+                        </h5>
+                      )}
+
+                      <div className="flex items-center mb-3">
+                        {renderStarRating(review.overall_rating)}
+                        <span className="ml-2 text-xs sm:text-sm text-gray-600">
+                          ({review.overall_rating}/5)
+                        </span>
                       </div>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-          </div>
-        );
 
-      /*  case 'analytics':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <BarChart3 className="h-5 w-5 mr-2 text-blue-600" />
-                Profile Analytics
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-blue-600 text-sm font-medium">Profile Views</p>
-                      <p className="text-2xl font-bold text-blue-900">{mockAnalytics.profileViews.toLocaleString()}</p>
-                    </div>
-                    <Eye className="h-8 w-8 text-blue-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+12% this month</span>
-                  </div>
-                </div>
+                      <p className="text-gray-700 mb-3 text-sm sm:text-base">
+                        {review.content}
+                      </p>
 
-                <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-green-600 text-sm font-medium">Listings Viewed</p>
-                      <p className="text-2xl font-bold text-green-900">{mockAnalytics.listingsViewed.toLocaleString()}</p>
-                    </div>
-                    <Home className="h-8 w-8 text-green-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+18% this month</span>
-                  </div>
-                </div>
+                      {review.interaction_context && (
+                        <p className="text-xs sm:text-sm text-gray-500 mb-3 italic">
+                          Context: {review.interaction_context}
+                        </p>
+                      )}
 
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-purple-600 text-sm font-medium">Messages Received</p>
-                      <p className="text-2xl font-bold text-purple-900">{mockAnalytics.messagesReceived}</p>
-                    </div>
-                    <MessageCircle className="h-8 w-8 text-purple-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+8% this month</span>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-yellow-600 text-sm font-medium">Total Likes</p>
-                      <p className="text-2xl font-bold text-yellow-900">{mockAnalytics.totalLikes}</p>
-                    </div>
-                    <Heart className="h-8 w-8 text-yellow-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+25% this month</span>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-indigo-600 text-sm font-medium">Response Rate</p>
-                      <p className="text-2xl font-bold text-indigo-900">{mockAnalytics.responseRate}%</p>
-                    </div>
-                    <Target className="h-8 w-8 text-indigo-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <Clock className="h-4 w-4 text-blue-500 mr-1" />
-                    <span className="text-blue-600">Avg: {mockAnalytics.avgResponseTime}</span>
-                  </div>
-                </div>
-
-                <div className="bg-gradient-to-r from-pink-50 to-pink-100 p-4 rounded-xl">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-pink-600 text-sm font-medium">Connections</p>
-                      <p className="text-2xl font-bold text-pink-900">{profileData?.connections_count || 0}</p>
-                    </div>
-                    <Users className="h-8 w-8 text-pink-500" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+{mockAnalytics.monthlyGrowth}% growth</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        ); 
-
-             case 'activity':
-        return (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <Activity className="h-5 w-5 mr-2 text-blue-600" />
-                Recent Activity Log
-              </h3>
-              
-              <div className="space-y-4">
-                {mockActivities.map((activity) => {
-                  const IconComponent = activity.icon;
-                  return (
-                    <div key={activity.id} className="flex items-start space-x-4 p-4 bg-gray-50 rounded-lg">
-                      <div className={`p-2 rounded-full ${
-                        activity.type === 'listing' ? 'bg-blue-100 text-blue-600' :
-                        activity.type === 'review' ? 'bg-yellow-100 text-yellow-600' :
-                        activity.type === 'profile' ? 'bg-purple-100 text-purple-600' :
-                        activity.type === 'message' ? 'bg-green-100 text-green-600' :
-                        activity.type === 'post' ? 'bg-indigo-100 text-indigo-600' :
-                        activity.type === 'connection' ? 'bg-pink-100 text-pink-600' :
-                        'bg-orange-100 text-orange-600'
-                      }`}>
-                        <IconComponent className="h-4 w-4" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-gray-900">{activity.action}</p>
-                        <p className="text-gray-600 text-sm">{activity.details}</p>
-                        <p className="text-gray-500 text-xs mt-1">{activity.time}</p>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
-        ); */
-
-      case "contact":
-        return (
-          <div className="space-y-6">
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
-                <Mail className="h-5 w-5 mr-2 text-blue-600" />
-                Contact Information
-              </h3>
-
-              <div className="space-y-4 sm:space-y-6">
-                <div className="space-y-3 sm:space-y-4">
-                  {profileData?.website && (
-                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <Globe className="h-5 w-5 text-blue-600 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Website</p>
-                        <a
-                          href={
-                            profileData.website.startsWith("http")
-                              ? profileData.website
-                              : `https://${profileData.website}`
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-blue-600 hover:text-blue-800 text-sm sm:text-base break-all"
+                      <div className="flex flex-wrap items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                        <button
+                          onClick={() => handleToggleHelpful(review.id, true)}
+                          className="flex items-center hover:text-blue-600 p-1"
                         >
-                          {profileData.website}
-                        </a>
-                      </div>
-                      <button
-                        type="button"
-                        className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0"
-                      >
-                        <Copy className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-                  )}
+                          <ThumbsUp className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          Helpful ({review.helpful_count})
+                        </button>
 
-                  {profileData?.office && (
-                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <MapPin className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Office</p>
-                        <p className="text-gray-600 text-sm sm:text-base">{profileData.office}</p>
+                        <button
+                          onClick={() => handleReportReview(review.id)}
+                          className="flex items-center hover:text-red-600 p-1"
+                        >
+                          <Flag className="h-3 w-3 sm:h-4 sm:w-4 mr-1" />
+                          Report
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0"
-                      >
-                        <Copy className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-                  )}
 
-                  {profileData?.phone && (
-                    <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
-                      <Phone className="h-5 w-5 text-green-600 flex-shrink-0" />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 text-sm sm:text-base">Phone</p>
-                        <p className="text-gray-600 text-sm sm:text-base">{profileData.phone}</p>
-                      </div>
-                      <button
-                        type="button"
-                        className="ml-auto p-2 hover:bg-gray-200 rounded-lg flex-shrink-0"
-                      >
-                        <Copy className="h-4 w-4 text-gray-500" />
-                      </button>
-                    </div>
-                  )}
+                      {review.response && (
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg border-l-4 border-blue-500">
+                          <div className="flex items-center mb-2">
+                            <h6 className="font-medium text-gray-900">
+                              Response from {profileData?.username}
+                            </h6>
+                            <span className="ml-auto text-xs text-gray-500">
+                              {formatDateOnly(review.response.created_at)}
+                            </span>
+                          </div>
 
-                  <div className="text-center py-4 text-gray-500">
-                    <p className="text-xs sm:text-sm">
-                      For direct contact, use the "Message" button above or connect with this user.
-                    </p>
+                          <p className="text-gray-700">{review.response.content}</p>
+                        </div>
+                      )}
+                    </div>
                   </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      );
+
+    case "contact":
+      return (
+        <div className="space-y-6">
+          <div className="bg-white p-6 rounded-2xl shadow-md">
+            <h3 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+              <Mail className="h-5 w-5 mr-2 text-blue-600" />
+              Contact Information
+            </h3>
+
+            <div className="space-y-4 sm:space-y-6">
+              <div className="space-y-3 sm:space-y-4">
+                {profileData?.website && (
+                  <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <Globe className="h-5 w-5 text-blue-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base">Website</p>
+                      <a
+                        href={
+                          profileData.website.startsWith("http")
+                            ? profileData.website
+                            : `https://${profileData.website}`
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 text-sm sm:text-base break-all"
+                      >
+                        {profileData.website}
+                      </a>
+                    </div>
+                    <button type="button" className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <Copy className="h-4 w-4 text-gray-500" />
+                    </button>
+                  </div>
+                )}
+
+                {profileData?.office && (
+                  <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <MapPin className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base">Office</p>
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {profileData.office}
+                      </p>
+                    </div>
+                    <button type="button" className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <Copy className="h-4 w-4 text-gray-500" />
+                    </button>
+                  </div>
+                )}
+
+                {profileData?.phone && (
+                  <div className="flex items-center space-x-3 p-3 sm:p-4 bg-gray-50 rounded-lg">
+                    <Phone className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-gray-900 text-sm sm:text-base">Phone</p>
+                      <p className="text-gray-600 text-sm sm:text-base">
+                        {profileData.phone}
+                      </p>
+                    </div>
+                    <button type="button" className="ml-auto p-2 hover:bg-gray-200 rounded-lg">
+                      <Copy className="h-4 w-4 text-gray-500" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="text-center py-4 text-gray-500">
+                  <p className="text-xs sm:text-sm">
+                    For direct contact, use the "Message" button above or connect with this user.
+                  </p>
                 </div>
               </div>
             </div>
           </div>
-        );
+        </div>
+      );
 
-      default:
-        return null;
-    }
-  };
+    default:
+      return null;
+  }
+};
+
 
   // Lazy-load reviews when the Reviews tab is opened
   useEffect(() => {
@@ -1141,40 +1006,39 @@ const PublicProfile: React.FC = () => {
   const socialLinks = profileData.website ? [profileData.website] : undefined;
 
   return (
-    <div className="pt-20 bg-gray-50 min-h-screen">
-      {/* SEO */}
-      <SEO
-        title={profileTitle}
-        description={profileDescription}
-        url={profileUrl}
-        image={profileImage}
-        imageAlt={`${profileTitle} profile picture`}
-        type="profile"
-        profileType="Person"
-        location={profileData.location}
-        author={profileData.name || profileData.username}
-        modifiedTime={profileData.date_joined}
-        personData={{
-          name: profileData.name || profileData.username,
-          jobTitle: "Real Estate Professional",
-          telephone: profileData.phone,
-          url: profileData.website,
-          address: profileData.location,
-          image: profileData.avatar,
-          sameAs: socialLinks,
-          memberSince: profileData.date_joined,
-        }}
-        breadcrumbs={[
-          { name: "Home", url: "/" },
-          { name: "Profiles", url: "/profiles" },
-          { name: profileData.username, url: profileUrl },
-        ]}
-      />
+  <div className="pt-20 bg-gray-50 min-h-screen">
+    {/* SEO */}
+    <SEO
+      title={profileTitle}
+      description={profileDescription}
+      url={profileUrl}
+      image={profileImage}
+      imageAlt={`${profileTitle} profile picture`}
+      type="profile"
+      profileType="Person"
+      location={profileData.location}
+      author={profileData.name || profileData.username}
+      modifiedTime={profileData.date_joined}
+      personData={{
+        name: profileData.name || profileData.username,
+        jobTitle: "Real Estate Professional",
+        telephone: profileData.phone,
+        url: profileData.website,
+        address: profileData.location,
+        image: profileData.avatar,
+        sameAs: socialLinks,
+        memberSince: profileData.date_joined,
+      }}
+      breadcrumbs={[
+        { name: "Home", url: "/" },
+        { name: "Profiles", url: "/profiles" },
+        { name: profileData.username, url: profileUrl },
+      ]}
+    />
 
-      {/* Profile Header */}
-      <section className="bg-white border-b">
+    {/* Profile Header */}
+    <section className="bg-white border-b">
       <div className="container mx-auto px-4">
-
         <div className="h-32 sm:h-48 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-4"></div>
 
         <div className="-mt-16 sm:-mt-20 pb-4">
@@ -1266,11 +1130,11 @@ const PublicProfile: React.FC = () => {
             </div>
           )}
         </div>
-
       </div>
     </section>
 
-      <div className="border-t bg-white">
+    {/* Horizontal Tabs */}
+    <div className="border-t bg-white">
       <div className="container mx-auto px-4">
         <nav className="flex space-x-1 -mb-px overflow-x-auto" role="tablist">
           {[
@@ -1299,90 +1163,34 @@ const PublicProfile: React.FC = () => {
       </div>
     </div>
 
-
-
-      {/* Main Content with Sidebar */}
-      <div className="container mx-auto px-4 py-6 sm:py-8">
-        {/* Mobile Tab Navigation */}
-        <div className="lg:hidden mb-6">
-          <div className="bg-white rounded-xl shadow-md p-2">
-            <div className="flex space-x-1 overflow-x-auto scrollbar-hide">
-              {sidebarTabs.map((tab) => {
-                const IconComponent = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => handleTabClick(tab.id)}
-                    className={`flex-shrink-0 flex flex-col items-center space-y-1 px-3 py-2 rounded-lg transition-colors min-w-[80px] ${
-                      activeTab === tab.id
-                        ? "bg-blue-100 text-blue-600 font-medium"
-                        : "text-gray-600 hover:bg-gray-100"
-                    }`}
-                  >
-                    <IconComponent className="h-5 w-5" />
-                    <span className="text-xs">{tab.label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-8">
-          {/* Desktop Sidebar */}
-          <div className="hidden lg:block lg:w-1/4">
-            <div className="bg-white rounded-2xl shadow-md p-6 sticky top-24">
-              <nav className="space-y-2">
-                {sidebarTabs.map((tab) => {
-                  const IconComponent = tab.icon;
-                  return (
-                    <button
-                      key={tab.id}
-                      onClick={() => handleTabClick(tab.id)}
-                      className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-left transition-colors ${
-                        activeTab === tab.id
-                          ? "bg-blue-100 text-blue-600 font-medium"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      <IconComponent className="h-5 w-5" />
-                      <span>{tab.label}</span>
-                    </button>
-                  );
-                })}
-              </nav>
-            </div>
-          </div>
-
-          {/* Main Content */}
-          <div className="w-full lg:w-3/4">
-            <motion.div
-              key={activeTab}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              {renderTabContent()}
-            </motion.div>
-          </div>
-        </div>
-      </div>
-
-      {/* Review Form Modal */}
-      {profileData && (
-        <ReviewForm
-          reviewee={{
-            id: profileData.id,
-            username: profileData.username,
-            email: "", // Not needed for the form
-          }}
-          isOpen={showReviewForm}
-          onClose={() => setShowReviewForm(false)}
-          onSuccess={handleReviewSuccess}
-        />
-      )}
+    {/* Main Content */}
+    <div className="container mx-auto px-4 py-6 sm:py-8">
+      <motion.div
+        key={activeTab}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+      >
+        {renderTabContent()}
+      </motion.div>
     </div>
-  );
-};
+
+    {/* Review Form Modal */}
+    {profileData && (
+      <ReviewForm
+        reviewee={{
+          id: profileData.id,
+          username: profileData.username,
+          email: "",
+        }}
+        isOpen={showReviewForm}
+        onClose={() => setShowReviewForm(false)}
+        onSuccess={handleReviewSuccess}
+      />
+    )}
+
+  </div> 
+);  
+}
 
 export default PublicProfile;
