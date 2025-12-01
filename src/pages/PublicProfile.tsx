@@ -1038,17 +1038,15 @@ const PublicProfile: React.FC = () => {
 
     {/* Profile Header */}
     <section className="bg-white border-b">
-    <div className="relative w-full">
+      {/* Banner */}
+      <div className="w-full h-36 sm:h-44 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
 
-      {/* Gradient Banner */}
-      <div className="h-40 sm:h-48 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
-
-      {/* Header Content */}
-      <div className="container mx-auto px-4 pb-6 -mt-16 relative z-10">
+      {/* Main Profile Header */}
+      <div className="container mx-auto px-4 relative -mt-16 pb-6">
         <div className="flex flex-col sm:flex-row sm:items-end gap-6">
 
           {/* Avatar */}
-          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-4 ring-white flex items-center justify-center overflow-hidden">
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-lg ring-4 ring-white overflow-hidden flex items-center justify-center">
             {profileData?.avatar ? (
               <img
                 src={profileData.avatar}
@@ -1060,34 +1058,35 @@ const PublicProfile: React.FC = () => {
             )}
           </div>
 
-          {/* NAME + INFO + BUTTONS */}
+          {/* Name / Info / Actions */}
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
 
+            {/* Top Row: Name + Buttons */}
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
                   {profileData?.name || profileData?.username}
                 </h1>
+                <p className="text-gray-600">@{profileData?.username}</p>
 
-                <p className="text-gray-600 text-sm">@{profileData?.username}</p>
-
-                <div className="flex items-center text-gray-600 text-sm mt-1 space-x-3">
-                  <span className="flex items-center space-x-1">
+                {/* Location + Join Date */}
+                <div className="flex items-center text-gray-600 text-sm gap-3 mt-1">
+                  <span className="flex items-center gap-1">
                     <MapPin className="h-4 w-4" />
-                    <span>{profileData?.location || "Location not specified"}</span>
+                    {profileData?.location || "Location not specified"}
                   </span>
 
                   <span>•</span>
 
-                  <span className="flex items-center space-x-1">
+                  <span className="flex items-center gap-1">
                     <Calendar className="h-4 w-4" />
-                    <span>Joined {formatJoinDate(profileData?.date_joined)}</span>
+                    Joined {formatJoinDate(profileData?.date_joined)}
                   </span>
                 </div>
               </div>
 
-              {/* ACTION BUTTONS */}
-              <div className="flex items-center gap-3 mt-4 sm:mt-0">
+              {/* Buttons */}
+              <div className="flex gap-2 mt-4 sm:mt-0">
                 <button
                   onClick={async () => {
                     const threadId = await getOrCreateDmThread(profileData!.id);
@@ -1095,8 +1094,7 @@ const PublicProfile: React.FC = () => {
                   }}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center hover:bg-blue-700"
                 >
-                  <Send className="h-4 w-4 mr-2" />
-                  Message
+                  <Send className="h-4 w-4 mr-2" /> Message
                 </button>
 
                 <button
@@ -1110,7 +1108,7 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* QUICK STATS */}
+            {/* Stats */}
             <div className="flex items-center gap-6 mt-3 text-sm">
               <div><span className="font-bold">{profileData?.properties_count}</span> Listings</div>
               <div><span className="font-bold">{profileData?.connections_count}</span> Connections</div>
@@ -1121,18 +1119,16 @@ const PublicProfile: React.FC = () => {
               </div>
             </div>
           </div>
-
         </div>
 
-        {/* BIO */}
+        {/* Bio */}
         {profileData?.bio && (
-          <p className="mt-4 max-w-2xl text-gray-700 leading-relaxed">
+          <p className="mt-4 max-w-3xl text-gray-800 leading-relaxed">
             {profileData.bio}
           </p>
         )}
       </div>
-    </div>
-  </section>
+    </section>
 
     {/* Horizontal Tabs */}
     <div className="border-t bg-white">
