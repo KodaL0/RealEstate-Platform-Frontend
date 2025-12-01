@@ -1038,100 +1038,101 @@ const PublicProfile: React.FC = () => {
 
     {/* Profile Header */}
     <section className="bg-white border-b">
-      <div className="container mx-auto px-4">
-        <div className="h-32 sm:h-48 bg-gradient-to-r from-blue-600 to-indigo-600 -mx-4"></div>
+    <div className="relative w-full">
 
-        <div className="-mt-16 sm:-mt-20 pb-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-end space-y-4 sm:space-y-0 sm:space-x-6">
+      {/* Gradient Banner */}
+      <div className="h-40 sm:h-48 bg-gradient-to-r from-blue-600 to-indigo-600"></div>
 
-            {/* Avatar */}
-            <div className="w-28 h-28 sm:w-36 sm:h-36 bg-white rounded-full flex items-center justify-center shadow-xl ring-4 ring-white">
-              {profileData?.avatar ? (
-                <img
-                  src={profileData.avatar}
-                  alt={profileData.username}
-                  className="w-full h-full rounded-full object-cover"
-                />
-              ) : (
-                <User className="h-14 w-14 sm:h-18 sm:w-18 text-blue-600" />
-              )}
-            </div>
+      {/* Header Content */}
+      <div className="container mx-auto px-4 pb-6 -mt-16 relative z-10">
+        <div className="flex flex-col sm:flex-row sm:items-end gap-6">
 
-            {/* Profile Info */}
-            <div className="flex-1 pb-2">
-              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between">
-                <div>
-                  <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
-                    {profileData?.name || profileData?.username}
-                  </h1>
+          {/* Avatar */}
+          <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-white shadow-xl ring-4 ring-white flex items-center justify-center overflow-hidden">
+            {profileData?.avatar ? (
+              <img
+                src={profileData.avatar}
+                alt={profileData.username}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <User className="h-14 w-14 text-blue-600" />
+            )}
+          </div>
 
-                  <p className="text-gray-600 text-base sm:text-lg">@{profileData?.username}</p>
+          {/* NAME + INFO + BUTTONS */}
+          <div className="flex-1">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between w-full">
 
-                  <div className="flex items-center text-gray-600 text-sm mt-1">
-                    <MapPin className="h-4 w-4 mr-1" />
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">
+                  {profileData?.name || profileData?.username}
+                </h1>
+
+                <p className="text-gray-600 text-sm">@{profileData?.username}</p>
+
+                <div className="flex items-center text-gray-600 text-sm mt-1 space-x-3">
+                  <span className="flex items-center space-x-1">
+                    <MapPin className="h-4 w-4" />
                     <span>{profileData?.location || "Location not specified"}</span>
+                  </span>
 
-                    <span className="mx-2">•</span>
+                  <span>•</span>
 
-                    <Calendar className="h-4 w-4 mr-1" />
+                  <span className="flex items-center space-x-1">
+                    <Calendar className="h-4 w-4" />
                     <span>Joined {formatJoinDate(profileData?.date_joined)}</span>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 mt-4 sm:mt-0">
-                  {/* MESSAGE */}
-                  <button
-                    onClick={async () => {
-                      const threadId = await getOrCreateDmThread(profileData!.id);
-                      navigate(`/chat/${threadId}`);
-                    }}
-                    className="px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm"
-                  >
-                    <Send className="h-4 w-4 mr-2" />
-                    Message
-                  </button>
-
-                  {/* CONNECT */}
-                  <button
-                    onClick={handleConnectionAction}
-                    disabled={isConnecting}
-                    className="px-4 py-2 bg-gray-200 text-gray-900 font-medium rounded-lg hover:bg-gray-300 transition-colors flex items-center text-sm"
-                  >
-                    {React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })}
-                    {getConnectionButtonText()}
-                  </button>
+                  </span>
                 </div>
               </div>
 
-              {/* Stats */}
-              <div className="flex items-center gap-6 mt-4 text-sm">
-                <div className="flex items-center space-x-1">
-                  <span className="font-bold text-gray-900">{profileData?.properties_count}</span>
-                  <span className="text-gray-600">Listings</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <span className="font-bold text-gray-900">{profileData?.connections_count}</span>
-                  <span className="text-gray-600">Connections</span>
-                </div>
-                <div className="flex items-center space-x-1">
-                  <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                  <span className="font-bold text-gray-900">{overallRating ?? "N/A"}</span>
-                  <span className="text-gray-600">({overallReviewsCount ?? 0})</span>
-                </div>
+              {/* ACTION BUTTONS */}
+              <div className="flex items-center gap-3 mt-4 sm:mt-0">
+                <button
+                  onClick={async () => {
+                    const threadId = await getOrCreateDmThread(profileData!.id);
+                    navigate(`/chat/${threadId}`);
+                  }}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center hover:bg-blue-700"
+                >
+                  <Send className="h-4 w-4 mr-2" />
+                  Message
+                </button>
+
+                <button
+                  onClick={handleConnectionAction}
+                  disabled={isConnecting}
+                  className="px-4 py-2 bg-gray-200 text-gray-900 rounded-lg flex items-center hover:bg-gray-300"
+                >
+                  {React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })}
+                  {getConnectionButtonText()}
+                </button>
+              </div>
+            </div>
+
+            {/* QUICK STATS */}
+            <div className="flex items-center gap-6 mt-3 text-sm">
+              <div><span className="font-bold">{profileData?.properties_count}</span> Listings</div>
+              <div><span className="font-bold">{profileData?.connections_count}</span> Connections</div>
+              <div className="flex items-center gap-1">
+                <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                <span className="font-bold">{overallRating ?? "N/A"}</span>
+                <span>({overallReviewsCount ?? 0})</span>
               </div>
             </div>
           </div>
 
-          {/* Bio */}
-          {profileData?.bio && (
-            <div className="mt-4 max-w-2xl">
-              <p className="text-gray-900 leading-relaxed">{profileData.bio}</p>
-            </div>
-          )}
         </div>
+
+        {/* BIO */}
+        {profileData?.bio && (
+          <p className="mt-4 max-w-2xl text-gray-700 leading-relaxed">
+            {profileData.bio}
+          </p>
+        )}
       </div>
-    </section>
+    </div>
+  </section>
 
     {/* Horizontal Tabs */}
     <div className="border-t bg-white">
