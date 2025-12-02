@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import {
   AlertCircle,
-  MapPin,
   Star,
   Send,
   UserPlus,
@@ -16,7 +15,11 @@ import PropertyCard from "../components/cards/PropertyCard";
 import { SEO } from "../components/SEO";
 import api from "../config/api";
 import { useChat } from "../context/ChatContext";
-import { normalizePropertyData, type Property, type PublicProfileData } from "../types";
+import {
+  normalizePropertyData,
+  type Property,
+  type PublicProfileData
+} from "../types";
 import ReviewForm from "../components/ReviewForm";
 
 const PublicProfile: React.FC = () => {
@@ -34,8 +37,18 @@ const PublicProfile: React.FC = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
 
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 9;
+
+  const totalPages = Math.ceil(properties.length / pageSize);
+  const paginatedProperties = properties.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   // -----------------------------
-  // Fetch Profile
+  // Fetch Profile + ALL Properties
   // -----------------------------
   useEffect(() => {
     if (!username) {
@@ -53,22 +66,22 @@ const PublicProfile: React.FC = () => {
 
         if (data.status === 200 && data.profile) {
           const profile = data.profile as PublicProfileData;
-
-        // Fetch ALL properties owned by this agent (instead of only the preview list)
-        try {
-          const allPropsRes = await api.properties.getUserProps(profile.username);
-
-          // Backend can return: { results: [...] } OR just an array
-          const raw = (allPropsRes.data as any)?.results ?? allPropsRes.data ?? [];
-
-          const normalizedProps = raw.map((prop: any) => normalizePropertyData(prop));
-
-          setProperties(normalizedProps);
-        } catch (err) {
-          console.error("Failed to load full property list:", err);
-        }
-
           setProfileData(profile);
+
+          // Fetch ALL properties this agent owns
+          try {
+            const propsRes = await api.properties.getUserProps(profile.username);
+
+            const raw =
+              (propsRes.data as any)?.results ??
+              propsRes.data ??
+              [];
+
+            const normalized = raw.map((p: any) => normalizePropertyData(p));
+            setProperties(normalized);
+          } catch (err) {
+            console.error("Failed to load full property list:", err);
+          }
 
           // Fetch rating summary
           try {
@@ -91,7 +104,7 @@ const PublicProfile: React.FC = () => {
   }, [username, navigate]);
 
   // -----------------------------
-  // Connection Button Action
+  // Connection Button
   // -----------------------------
   const handleConnectionAction = async () => {
     if (!profileData || isConnecting) return;
@@ -105,22 +118,19 @@ const PublicProfile: React.FC = () => {
     try {
       await api.connections.sendRequest(profileData.id);
 
-      // Optimistic update
+      // Optimistic UI update
       if (status === "none" || status === "rejected") {
         setProfileData({ ...profileData, connection_status: "pending_sent" });
       } else if (status === "pending_received") {
         setProfileData({ ...profileData, connection_status: "connected" });
       }
-    } catch {
     } finally {
       setIsConnecting(false);
     }
   };
 
   const getConnectionButtonText = () => {
-    if (!profileData) return "Connect";
-
-    switch (profileData.connection_status) {
+    switch (profileData?.connection_status) {
       case "connected":
         return "Connected";
       case "pending_sent":
@@ -133,9 +143,7 @@ const PublicProfile: React.FC = () => {
   };
 
   const getConnectionButtonIcon = () => {
-    if (!profileData) return UserPlus;
-
-    switch (profileData.connection_status) {
+    switch (profileData?.connection_status) {
       case "connected":
         return CheckCircle;
       case "pending_sent":
@@ -148,12 +156,12 @@ const PublicProfile: React.FC = () => {
   };
 
   // -----------------------------
-  // Loading / Error
+  // Loading / Error UI
   // -----------------------------
   if (isLoadingProfile) {
     return (
       <div className="pt-20 bg-gray-50 min-h-screen flex justify-center items-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500"></div>
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-blue-500" />
       </div>
     );
   }
@@ -166,7 +174,7 @@ const PublicProfile: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900 mb-2">{error}</h1>
           <button
             onClick={() => navigate("/")}
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+            className="px-6 py-3 bg-blue-600 text-white rounded-lg"
           >
             Go Home
           </button>
@@ -182,30 +190,23 @@ const PublicProfile: React.FC = () => {
   const profileDescription =
     profileData.bio ||
     `${profileTitle} is a real estate professional on PropertPro with ${profileData.properties_count} listings.`;
-  const profileImage = profileData.avatar || undefined;
-  const profileUrl = `/${profileData.username}`;
 
-  // -----------------------------
-  // MAIN UI
-  // -----------------------------
   return (
     <div className="pt-16 bg-gray-50 min-h-screen">
 
       <SEO
         title={profileTitle}
         description={profileDescription}
-        url={profileUrl}
-        image={profileImage}
+        url={`/${profileData.username}`}
+        image={profileData.avatar}
         type="profile"
       />
 
-      {/* ======================= */}
-      {/* HEADER WITH GRADIENT */}
-      {/* ======================= */}
+      {/* HEADER */}
       <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-10">
         <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between">
 
-          {/* LEFT SIDE */}
+          {/* LEFT */}
           <div className="flex items-center space-x-5">
             {/* Avatar with fallback initials */}
             <div
@@ -219,11 +220,10 @@ const PublicProfile: React.FC = () => {
               {!profileData.avatar &&
                 (profileData.name || profileData.username)
                   .split(" ")
-                  .map((n: string) => n[0])
+                  .map((n) => n[0])
                   .join("")
                   .substring(0, 2)
-                  .toUpperCase()
-              }
+                  .toUpperCase()}
             </div>
 
             <div>
@@ -231,7 +231,7 @@ const PublicProfile: React.FC = () => {
               <p className="opacity-80">@{profileData.username}</p>
 
               <div className="flex flex-wrap items-center gap-4 mt-2 text-sm opacity-90">
-                <span>{profileData.properties_count} Listings</span>
+                <span>{properties.length} Listings</span>
                 <span>{overallRating ?? "N/A"} ★</span>
                 <span>{overallReviewsCount ?? 0} Reviews</span>
                 <span>{profileData.connections_count} Connections</span>
@@ -239,10 +239,8 @@ const PublicProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* RIGHT SIDE BUTTONS */}
+          {/* RIGHT ACTIONS */}
           <div className="flex space-x-3 mt-6 md:mt-0">
-
-            {/* MESSAGE */}
             <button
               onClick={async () => {
                 const thread = await getOrCreateDmThread(profileData.id);
@@ -254,7 +252,6 @@ const PublicProfile: React.FC = () => {
               Message
             </button>
 
-            {/* CONNECT */}
             <button
               onClick={handleConnectionAction}
               disabled={isConnecting || profileData.connection_status === "pending_sent"}
@@ -269,11 +266,12 @@ const PublicProfile: React.FC = () => {
                 }
               `}
             >
-              {React.createElement(getConnectionButtonIcon(), { className: "h-4 w-4 mr-2" })}
+              {React.createElement(getConnectionButtonIcon(), {
+                className: "h-4 w-4 mr-2"
+              })}
               {getConnectionButtonText()}
             </button>
 
-            {/* WRITE REVIEW */}
             <button
               onClick={() => setShowReviewForm(true)}
               className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg flex items-center shadow-md"
@@ -285,9 +283,7 @@ const PublicProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ======================= */}
-      {/* ABOUT SECTION */}
-      {/* ======================= */}
+      {/* ABOUT */}
       <div className="container mx-auto px-4 mt-8">
         <div className="bg-white p-5 rounded-xl shadow-sm">
           <h2 className="font-semibold text-lg mb-2">About</h2>
@@ -295,19 +291,20 @@ const PublicProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ======================= */}
-      {/* CONTACT INFO CARD */}
-      {/* ======================= */}
+      {/* CONTACT INFO */}
       <div className="container mx-auto px-4 mt-4">
         <div className="bg-white p-5 rounded-xl shadow-sm space-y-3">
-
           <h2 className="font-semibold text-lg mb-2">Contact Information</h2>
 
           {profileData.website && (
             <div className="flex items-center gap-3 text-gray-700">
               <Globe className="h-5 w-5 text-blue-600" />
               <a
-                href={profileData.website.startsWith("http") ? profileData.website : `https://${profileData.website}`}
+                href={
+                  profileData.website.startsWith("http")
+                    ? profileData.website
+                    : `https://${profileData.website}`
+                }
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-600 hover:underline"
@@ -337,32 +334,45 @@ const PublicProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* ======================= */}
-      {/* FILTERS ROW */}
-      {/* ======================= */}
-      <div className="container mx-auto px-4 mt-6">
-        <div className="bg-white p-3 rounded-xl shadow-sm flex items-center space-x-3">
-          <button className="px-3 py-2 bg-gray-100 rounded-lg">Grid</button>
-          <button className="px-3 py-2 bg-gray-100 rounded-lg">List</button>
-          <button className="px-3 py-2 bg-gray-100 rounded-lg">Filters</button>
-          <button className="px-3 py-2 bg-gray-100 rounded-lg">Sort</button>
-        </div>
-      </div>
-
-      {/* ======================= */}
       {/* LISTINGS */}
-      {/* ======================= */}
       <div className="container mx-auto px-4 mt-6 pb-16">
         <h2 className="text-lg font-semibold mb-4">Listings</h2>
 
         {properties.length === 0 ? (
           <div className="text-center text-gray-500 py-10">No listings yet.</div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {properties.map((property) => (
-              <PropertyCard key={property.id} property={property} />
-            ))}
-          </div>
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {paginatedProperties.map((property) => (
+                <PropertyCard key={property.id} property={property} />
+              ))}
+            </div>
+
+            {/* PAGINATION */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-8 space-x-3">
+                <button
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                  className="px-4 py-2 rounded-lg bg-gray-200 disabled:opacity-40"
+                >
+                  Prev
+                </button>
+
+                <span className="px-4 py-2 bg-white rounded-lg shadow">
+                  Page {currentPage} / {totalPages}
+                </span>
+
+                <button
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                  className="px-4 py-2 rounded-lg bg-gray-200 disabled:opacity-40"
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
 
@@ -374,7 +384,7 @@ const PublicProfile: React.FC = () => {
           reviewee={{
             id: profileData.id,
             username: profileData.username,
-            email: "",
+            email: ""
           }}
           onSuccess={() => {}}
         />
