@@ -54,11 +54,19 @@ const PublicProfile: React.FC = () => {
         if (data.status === 200 && data.profile) {
           const profile = data.profile as PublicProfileData;
 
-          // Normalize properties
-          const normalizedProps = profile.published_properties.map((prop: any) =>
-            normalizePropertyData(prop)
-          );
+        // Fetch ALL properties owned by this agent (instead of only the preview list)
+        try {
+          const allPropsRes = await api.properties.getUserProps(profile.username);
+
+          // Backend can return: { results: [...] } OR just an array
+          const raw = (allPropsRes.data as any)?.results ?? allPropsRes.data ?? [];
+
+          const normalizedProps = raw.map((prop: any) => normalizePropertyData(prop));
+
           setProperties(normalizedProps);
+        } catch (err) {
+          console.error("Failed to load full property list:", err);
+        }
 
           setProfileData(profile);
 
