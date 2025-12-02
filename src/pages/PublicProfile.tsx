@@ -1,5 +1,16 @@
-import React, { useCallback, useEffect, useState } from "react";
-import { AlertCircle, MapPin, Star, Send, UserPlus, CheckCircle, Clock } from "lucide-react";
+import React, { useEffect, useState } from "react";
+import {
+  AlertCircle,
+  MapPin,
+  Star,
+  Send,
+  UserPlus,
+  CheckCircle,
+  Clock,
+  Globe,
+  Phone,
+  Building2
+} from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import PropertyCard from "../components/cards/PropertyCard";
 import { SEO } from "../components/SEO";
@@ -20,11 +31,7 @@ const PublicProfile: React.FC = () => {
 
   const [isLoadingProfile, setIsLoadingProfile] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  // Review Modal state
   const [showReviewForm, setShowReviewForm] = useState(false);
-
-  // Connection button loading state
   const [isConnecting, setIsConnecting] = useState(false);
 
   // -----------------------------
@@ -55,24 +62,18 @@ const PublicProfile: React.FC = () => {
 
           setProfileData(profile);
 
-          // Fetch lightweight rating
+          // Fetch rating summary
           try {
             const ratingRes = await api.reviews.getUserOverallRating(profile.id);
             const ratingData = ratingRes.data as any;
             setOverallRating(ratingData.average_rating ?? null);
             setOverallReviewsCount(ratingData.reviews_received_count ?? null);
-          } catch (err) {
-            console.error("Rating fetch error:", err);
-          }
+          } catch {}
         } else {
           setError("Profile not found");
         }
-      } catch (err) {
-        if ((err as any).response?.status === 404) {
-          setError("Profile not found");
-        } else {
-          setError("Failed to load profile.");
-        }
+      } catch {
+        setError("Failed to load profile.");
       } finally {
         setIsLoadingProfile(false);
       }
@@ -96,14 +97,13 @@ const PublicProfile: React.FC = () => {
     try {
       await api.connections.sendRequest(profileData.id);
 
-      // Optimistic UI update
+      // Optimistic update
       if (status === "none" || status === "rejected") {
         setProfileData({ ...profileData, connection_status: "pending_sent" });
       } else if (status === "pending_received") {
         setProfileData({ ...profileData, connection_status: "connected" });
       }
-    } catch (err) {
-      console.error("Connection action error:", err);
+    } catch {
     } finally {
       setIsConnecting(false);
     }
@@ -140,7 +140,7 @@ const PublicProfile: React.FC = () => {
   };
 
   // -----------------------------
-  // Loading / Error UI
+  // Loading / Error
   // -----------------------------
   if (isLoadingProfile) {
     return (
@@ -168,7 +168,7 @@ const PublicProfile: React.FC = () => {
   }
 
   // -----------------------------
-  // SEO metadata
+  // SEO
   // -----------------------------
   const profileTitle = profileData.name || `@${profileData.username}`;
   const profileDescription =
@@ -178,38 +178,38 @@ const PublicProfile: React.FC = () => {
   const profileUrl = `/${profileData.username}`;
 
   // -----------------------------
-  // MAIN UI LAYOUT
+  // MAIN UI
   // -----------------------------
   return (
-    <div className="pt-20 bg-gray-50 min-h-screen">
+    <div className="pt-16 bg-gray-50 min-h-screen">
 
       <SEO
         title={profileTitle}
         description={profileDescription}
         url={profileUrl}
         image={profileImage}
-        imageAlt={`${profileTitle} profile picture`}
         type="profile"
-        profileType="Person"
       />
 
-      {/* Header Section */}
-      <div className="w-full bg-white shadow-sm">
-        <div className="container mx-auto px-4 py-6 flex flex-col md:flex-row items-center justify-between">
+      {/* ======================= */}
+      {/* HEADER WITH GRADIENT */}
+      {/* ======================= */}
+      <div className="w-full bg-gradient-to-r from-blue-600 to-indigo-600 text-white py-10">
+        <div className="container mx-auto px-4 flex flex-col md:flex-row md:items-center md:justify-between">
 
-          {/* Left: Avatar + Info */}
-          <div className="flex items-center space-x-4">
+          {/* LEFT SIDE */}
+          <div className="flex items-center space-x-5">
             <img
               src={profileData.avatar || "/default-avatar.png"}
               alt={profileData.username}
-              className="w-20 h-20 rounded-full object-cover border"
+              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
             />
 
             <div>
-              <h1 className="text-xl font-bold">{profileTitle}</h1>
-              <p className="text-gray-500">@{profileData.username}</p>
+              <h1 className="text-2xl font-bold">{profileTitle}</h1>
+              <p className="opacity-80">@{profileData.username}</p>
 
-              <div className="flex space-x-4 mt-2 text-sm text-gray-700">
+              <div className="flex flex-wrap items-center gap-4 mt-2 text-sm opacity-90">
                 <span>{profileData.properties_count} Listings</span>
                 <span>{overallRating ?? "N/A"} ★</span>
                 <span>{overallReviewsCount ?? 0} Reviews</span>
@@ -218,8 +218,8 @@ const PublicProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* Right: ACTION BUTTONS */}
-          <div className="flex space-x-3 mt-4 md:mt-0">
+          {/* RIGHT SIDE BUTTONS */}
+          <div className="flex space-x-3 mt-6 md:mt-0">
 
             {/* MESSAGE */}
             <button
@@ -227,7 +227,7 @@ const PublicProfile: React.FC = () => {
                 const thread = await getOrCreateDmThread(profileData.id);
                 navigate(`/chat/${thread}`);
               }}
-              className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center"
+              className="px-4 py-2 bg-white text-blue-700 font-medium rounded-lg flex items-center shadow-md"
             >
               <Send className="h-4 w-4 mr-2" />
               Message
@@ -238,10 +238,10 @@ const PublicProfile: React.FC = () => {
               onClick={handleConnectionAction}
               disabled={isConnecting || profileData.connection_status === "pending_sent"}
               className={`
-                px-4 py-2 rounded-lg flex items-center text-white
+                px-4 py-2 rounded-lg flex items-center text-white shadow-md
                 ${
                   profileData.connection_status === "connected"
-                    ? "bg-green-600"
+                    ? "bg-green-500"
                     : profileData.connection_status === "pending_sent"
                     ? "bg-gray-400"
                     : "bg-blue-500"
@@ -255,7 +255,7 @@ const PublicProfile: React.FC = () => {
             {/* WRITE REVIEW */}
             <button
               onClick={() => setShowReviewForm(true)}
-              className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg flex items-center"
+              className="px-4 py-2 bg-yellow-400 hover:bg-yellow-500 text-white rounded-lg flex items-center shadow-md"
             >
               <Star className="h-4 w-4 mr-2" />
               Write Review
@@ -264,18 +264,62 @@ const PublicProfile: React.FC = () => {
         </div>
       </div>
 
-      {/* BIO */}
-      <div className="container mx-auto px-4 py-4">
-        <div className="bg-white p-4 rounded-xl shadow-sm">
-          <h2 className="font-semibold mb-2">About</h2>
-          <p className="text-gray-700">
-            {profileData.bio || "This user has not added a bio."}
-          </p>
+      {/* ======================= */}
+      {/* ABOUT SECTION */}
+      {/* ======================= */}
+      <div className="container mx-auto px-4 mt-8">
+        <div className="bg-white p-5 rounded-xl shadow-sm">
+          <h2 className="font-semibold text-lg mb-2">About</h2>
+          <p className="text-gray-700">{profileData.bio || "This user has not added a bio."}</p>
         </div>
       </div>
 
-      {/* FILTERS ROW */}
+      {/* ======================= */}
+      {/* CONTACT INFO CARD */}
+      {/* ======================= */}
       <div className="container mx-auto px-4 mt-4">
+        <div className="bg-white p-5 rounded-xl shadow-sm space-y-3">
+
+          <h2 className="font-semibold text-lg mb-2">Contact Information</h2>
+
+          {profileData.website && (
+            <div className="flex items-center gap-3 text-gray-700">
+              <Globe className="h-5 w-5 text-blue-600" />
+              <a
+                href={profileData.website.startsWith("http") ? profileData.website : `https://${profileData.website}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline"
+              >
+                {profileData.website}
+              </a>
+            </div>
+          )}
+
+          {profileData.phone && (
+            <div className="flex items-center gap-3 text-gray-700">
+              <Phone className="h-5 w-5 text-green-600" />
+              {profileData.phone}
+            </div>
+          )}
+
+          {profileData.office && (
+            <div className="flex items-center gap-3 text-gray-700">
+              <Building2 className="h-5 w-5 text-purple-600" />
+              {profileData.office}
+            </div>
+          )}
+
+          {!profileData.website && !profileData.phone && !profileData.office && (
+            <p className="text-gray-500 italic">No contact details provided.</p>
+          )}
+        </div>
+      </div>
+
+      {/* ======================= */}
+      {/* FILTERS ROW */}
+      {/* ======================= */}
+      <div className="container mx-auto px-4 mt-6">
         <div className="bg-white p-3 rounded-xl shadow-sm flex items-center space-x-3">
           <button className="px-3 py-2 bg-gray-100 rounded-lg">Grid</button>
           <button className="px-3 py-2 bg-gray-100 rounded-lg">List</button>
@@ -284,8 +328,10 @@ const PublicProfile: React.FC = () => {
         </div>
       </div>
 
+      {/* ======================= */}
       {/* LISTINGS */}
-      <div className="container mx-auto px-4 mt-6 pb-12">
+      {/* ======================= */}
+      <div className="container mx-auto px-4 mt-6 pb-16">
         <h2 className="text-lg font-semibold mb-4">Listings</h2>
 
         {properties.length === 0 ? (
@@ -299,7 +345,7 @@ const PublicProfile: React.FC = () => {
         )}
       </div>
 
-      {/* Review Modal */}
+      {/* REVIEW MODAL */}
       {profileData && (
         <ReviewForm
           isOpen={showReviewForm}
