@@ -199,11 +199,24 @@ const PublicProfile: React.FC = () => {
 
           {/* LEFT SIDE */}
           <div className="flex items-center space-x-5">
-            <img
-              src={profileData.avatar || "/default-avatar.png"}
-              alt={profileData.username}
-              className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-            />
+            {/* Avatar with fallback initials */}
+            <div
+              className="w-24 h-24 rounded-full flex items-center justify-center text-white font-bold text-2xl border-4 border-white shadow-lg overflow-hidden"
+              style={{
+                background: profileData.avatar
+                  ? `url(${profileData.avatar}) center/cover no-repeat`
+                  : "linear-gradient(135deg, #4f8ef7, #6a5af9)"
+              }}
+            >
+              {!profileData.avatar &&
+                (profileData.name || profileData.username)
+                  .split(" ")
+                  .map((n: string) => n[0])
+                  .join("")
+                  .substring(0, 2)
+                  .toUpperCase()
+              }
+            </div>
 
             <div>
               <h1 className="text-2xl font-bold">{profileTitle}</h1>
