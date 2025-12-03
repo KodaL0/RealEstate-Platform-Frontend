@@ -486,7 +486,7 @@ const MyPublicProfile: React.FC = () => {
                 {/* Right: buttons */}
                 <div className="flex gap-3 flex-wrap md:flex-nowrap">
                   <Link
-                    to={`/profiles/${username}`}
+                    to={`/${username}`}
                     className="flex-1 md:flex-none px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
                     <Send className="h-4 w-4" />
