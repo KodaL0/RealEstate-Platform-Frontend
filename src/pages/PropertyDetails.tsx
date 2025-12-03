@@ -1,5 +1,3 @@
-// src/pages/PropertyDetails.tsx
-
 import {
   Accessibility,
   Anchor,
@@ -60,7 +58,6 @@ import analytics from "../utils/analytics";
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
   imgs.map((i) => (typeof i === "string" ? { image: i } : i));
 
-// --- responsive helpers for thumbnail row ---
 const useMediaQuery = (query: string) => {
   const [matches, setMatches] = React.useState<boolean>(() =>
     typeof window !== "undefined" ? window.matchMedia(query).matches : false,
@@ -68,11 +65,9 @@ const useMediaQuery = (query: string) => {
   React.useEffect(() => {
     const mql = window.matchMedia(query);
     const onChange = (e: MediaQueryListEvent) => setMatches(e.matches);
-    // Safari compat
     if (mql.addEventListener) {
       mql.addEventListener("change", onChange);
     } else {
-      // Safari legacy support
       (mql as { addListener: (callback: (e: MediaQueryListEvent) => void) => void }).addListener(
         onChange,
       );
@@ -82,7 +77,6 @@ const useMediaQuery = (query: string) => {
       if (mql.removeEventListener) {
         mql.removeEventListener("change", onChange);
       } else {
-        // Safari legacy support
         (
           mql as { removeListener: (callback: (e: MediaQueryListEvent) => void) => void }
         ).removeListener(onChange);
@@ -95,7 +89,6 @@ const useMediaQuery = (query: string) => {
 const useThumbsPerRow = () => {
   const isLg = useMediaQuery("(min-width: 1024px)");
   const isMd = useMediaQuery("(min-width: 768px)");
-  // Keep in sync with: grid-cols-5 md:grid-cols-8 lg:grid-cols-10
   return isLg ? 10 : isMd ? 8 : 5;
 };
 
@@ -132,14 +125,11 @@ const mapPropertyData = (raw: any): Property => ({
   images: normaliseImages(raw?.images),
   documents: raw?.documents ?? [],
   is_favourite: raw?.is_favourite ?? false,
-  // Add latitude/longitude if API returns them:
   latitude: raw?.latitude != null ? +raw.latitude : undefined,
   longitude: raw?.longitude != null ? +raw.longitude : undefined,
-  // Add canonical URL for SEO
   url: raw?.url ?? undefined,
 });
 
-// Which specs are relevant per property_type
 const PTYPE_FIELDS: Record<
   string,
   Array<
@@ -155,7 +145,7 @@ const PTYPE_FIELDS: Record<
     | "construction_material"
   >
 > = {
-  land: ["lot_size", "construction_material"], // no energy for land
+  land: ["lot_size", "construction_material"],
   house: [
     "bedrooms",
     "bathrooms",
@@ -230,92 +220,64 @@ const PTYPE_FIELDS: Record<
   ],
 };
 
-// accept both strings ("15") and numbers; treat 0/"" as missing
 const hasNum = (v: any) =>
   v !== undefined && v !== null && String(v).trim() !== "" && Number(v) > 0;
 const hasText = (v: any) => v !== undefined && v !== null && String(v).trim() !== "";
 
 const amenityIcons: Record<string, JSX.Element> = {
-  // Building & Infrastructure
-  elevator: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  internal_staircase: <ArrowUpCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-  secure_door: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
-  manned_reception: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
-  attic: <Home className="h-5 w-5 mr-3 text-emerald-600" />,
-  facade: <Building2 className="h-5 w-5 mr-3 text-emerald-600" />,
-  corner: <MapPin className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Interior Features
-  frames_wooden: <TreePine className="h-5 w-5 mr-3 text-emerald-600" />,
-  floor_marble: <Square className="h-5 w-5 mr-3 text-emerald-600" />,
-  single_glass: <Glasses className="h-5 w-5 mr-3 text-emerald-600" />,
-  bright: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
-  airy: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  fireplace: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
-  furnished: <Bed className="h-5 w-5 mr-3 text-emerald-600" />,
-  storage: <Archive className="h-5 w-5 mr-3 text-emerald-600" />,
-  painted: <Palette className="h-5 w-5 mr-3 text-emerald-600" />,
-  luxury_home: <Crown className="h-5 w-5 mr-3 text-emerald-600" />,
-  playroom: <Baby className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Climate & Comfort
-  underfloor_heating: <Thermometer className="h-5 w-5 mr-3 text-emerald-600" />,
-  air_conditioning: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  solar_water_heating: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
-  night_power: <Zap className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Exterior & Outdoor
-  garden: <Flower className="h-5 w-5 mr-3 text-emerald-600" />,
-  swimming_pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
-  awning: <Umbrella className="h-5 w-5 mr-3 text-emerald-600" />,
-  built_in_bbq: <Utensils className="h-5 w-5 mr-3 text-emerald-600" />,
-  window_screens: <Glasses className="h-5 w-5 mr-3 text-emerald-600" />,
-  balcony: <DoorOpen className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Parking & Access
-  parking_space: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  garage: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  access_disabled: <Accessibility className="h-5 w-5 mr-3 text-emerald-600" />,
-  ev_charging: <Zap className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Security & Safety
-  alarm: <Bell className="h-5 w-5 mr-3 text-emerald-600" />,
-  security_system: <Shield className="h-5 w-5 mr-3 text-emerald-600" />,
-  doorman: <UserCheck className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Utilities & Technology
-  satellite_receiver: <Satellite className="h-5 w-5 mr-3 text-emerald-600" />,
-  wifi: <Wifi className="h-5 w-5 mr-3 text-emerald-600" />,
-  dishwasher: <Package className="h-5 w-5 mr-3 text-emerald-600" />,
-  laundry: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Location & Views
-  residential_zone: <MapPin className="h-5 w-5 mr-3 text-emerald-600" />,
-  view: <Eye className="h-5 w-5 mr-3 text-emerald-600" />,
-  waterfront: <Anchor className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Community & Shared
-  gym: <Dumbbell className="h-5 w-5 mr-3 text-emerald-600" />,
-  pool: <Droplet className="h-5 w-5 mr-3 text-emerald-600" />,
-  roof_deck: <Sun className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Policy & Lifestyle
-  pets: <Smile className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  // Legacy amenities
-  parking: <Car className="h-5 w-5 mr-3 text-emerald-600" />,
-  ac: <Wind className="h-5 w-5 mr-3 text-emerald-600" />,
-  heating: <Flame className="h-5 w-5 mr-3 text-emerald-600" />,
-
-  default: <CheckCircle className="h-5 w-5 mr-3 text-emerald-600" />,
+  elevator: <ArrowUpCircle className="h-5 w-5 text-blue-600" />,
+  internal_staircase: <ArrowUpCircle className="h-5 w-5 text-blue-600" />,
+  secure_door: <Shield className="h-5 w-5 text-blue-600" />,
+  manned_reception: <UserCheck className="h-5 w-5 text-blue-600" />,
+  attic: <Home className="h-5 w-5 text-blue-600" />,
+  facade: <Building2 className="h-5 w-5 text-blue-600" />,
+  corner: <MapPin className="h-5 w-5 text-blue-600" />,
+  frames_wooden: <TreePine className="h-5 w-5 text-blue-600" />,
+  floor_marble: <Square className="h-5 w-5 text-blue-600" />,
+  single_glass: <Glasses className="h-5 w-5 text-blue-600" />,
+  bright: <Sun className="h-5 w-5 text-blue-600" />,
+  airy: <Wind className="h-5 w-5 text-blue-600" />,
+  fireplace: <Flame className="h-5 w-5 text-blue-600" />,
+  furnished: <Bed className="h-5 w-5 text-blue-600" />,
+  storage: <Archive className="h-5 w-5 text-blue-600" />,
+  painted: <Palette className="h-5 w-5 text-blue-600" />,
+  luxury_home: <Crown className="h-5 w-5 text-blue-600" />,
+  playroom: <Baby className="h-5 w-5 text-blue-600" />,
+  underfloor_heating: <Thermometer className="h-5 w-5 text-blue-600" />,
+  air_conditioning: <Wind className="h-5 w-5 text-blue-600" />,
+  solar_water_heating: <Sun className="h-5 w-5 text-blue-600" />,
+  night_power: <Zap className="h-5 w-5 text-blue-600" />,
+  garden: <Flower className="h-5 w-5 text-blue-600" />,
+  swimming_pool: <Droplet className="h-5 w-5 text-blue-600" />,
+  awning: <Umbrella className="h-5 w-5 text-blue-600" />,
+  built_in_bbq: <Utensils className="h-5 w-5 text-blue-600" />,
+  window_screens: <Glasses className="h-5 w-5 text-blue-600" />,
+  balcony: <DoorOpen className="h-5 w-5 text-blue-600" />,
+  parking_space: <Car className="h-5 w-5 text-blue-600" />,
+  garage: <Car className="h-5 w-5 text-blue-600" />,
+  access_disabled: <Accessibility className="h-5 w-5 text-blue-600" />,
+  ev_charging: <Zap className="h-5 w-5 text-blue-600" />,
+  alarm: <Bell className="h-5 w-5 text-blue-600" />,
+  security_system: <Shield className="h-5 w-5 text-blue-600" />,
+  doorman: <UserCheck className="h-5 w-5 text-blue-600" />,
+  satellite_receiver: <Satellite className="h-5 w-5 text-blue-600" />,
+  wifi: <Wifi className="h-5 w-5 text-blue-600" />,
+  dishwasher: <Package className="h-5 w-5 text-blue-600" />,
+  laundry: <CheckCircle className="h-5 w-5 text-blue-600" />,
+  residential_zone: <MapPin className="h-5 w-5 text-blue-600" />,
+  view: <Eye className="h-5 w-5 text-blue-600" />,
+  waterfront: <Anchor className="h-5 w-5 text-blue-600" />,
+  gym: <Dumbbell className="h-5 w-5 text-blue-600" />,
+  pool: <Droplet className="h-5 w-5 text-blue-600" />,
+  roof_deck: <Sun className="h-5 w-5 text-blue-600" />,
+  pets: <Smile className="h-5 w-5 text-blue-600" />,
+  parking: <Car className="h-5 w-5 text-blue-600" />,
+  ac: <Wind className="h-5 w-5 text-blue-600" />,
+  heating: <Flame className="h-5 w-5 text-blue-600" />,
+  default: <CheckCircle className="h-5 w-5 text-blue-600" />,
 };
 
-/* ───────────────── component ───────────────── */
-
 const PropertyDetails: React.FC = () => {
-  // Support both URL formats:
-  // Legacy: /property/:id
-  // New: /:username/:country/:locationSlug (where locationSlug = location-type-id)
   const { id, username, country, locationSlug } = useParams<{
     id?: string;
     username?: string;
@@ -324,13 +286,9 @@ const PropertyDetails: React.FC = () => {
   }>();
 
   const navigate = useNavigate();
-
-  // Extract property ID from either format
   const propertyId = id || (locationSlug ? locationSlug.split("-").pop() : null);
   const numericId = propertyId ? Number(propertyId) : 0;
 
-  // If we have username/country but no locationSlug, redirect to user profile
-  // This handles URLs like /john_doe/cyprus (which should go to profile, not property)
   useEffect(() => {
     if (username && country && !locationSlug && !id) {
       navigate(`/${username}`, { replace: true });
@@ -348,14 +306,10 @@ const PropertyDetails: React.FC = () => {
   const [imageOrientation, setImageOrientation] = useState<"portrait" | "landscape" | "square">(
     "landscape",
   );
-
-  // thumbnails collapse/expand
   const [showAllThumbs, setShowAllThumbs] = useState(false);
 
-  // Helper functions for image handling (must be declared before useEffect that uses them)
   const toUrl = (img: { image: string }) => img.image;
 
-  // Function to detect image orientation
   const getImageOrientation = (imageUrl: string): Promise<"portrait" | "landscape" | "square"> => {
     return new Promise((resolve) => {
       const img = new Image();
@@ -365,7 +319,7 @@ const PropertyDetails: React.FC = () => {
         else if (ratio < 0.8) resolve("portrait");
         else resolve("square");
       };
-      img.onerror = () => resolve("landscape"); // fallback
+      img.onerror = () => resolve("landscape");
       img.src = imageUrl;
     });
   };
@@ -382,15 +336,12 @@ const PropertyDetails: React.FC = () => {
         if (!isMounted) return;
         setProperty(mapped);
 
-        // REDIRECT LEGACY URLs TO CANONICAL URLs
-        // If we're on the old /property/:id format, redirect to the new SEO-friendly format
         if (id && !locationSlug && mapped.url) {
           console.log(`Redirecting from legacy URL /property/${id} to canonical URL ${mapped.url}`);
           navigate(mapped.url, { replace: true });
-          return; // Don't continue with setup if redirecting
+          return;
         }
 
-        // Track property view
         analytics.trackPropertyView({
           property_id: String(mapped.id),
           property_type: mapped.property_type,
@@ -403,7 +354,6 @@ const PropertyDetails: React.FC = () => {
           owner_username: mapped.owner?.username,
         });
 
-        // ── COORDINATE LOGIC ───────────────────────────────────────
         if (mapped.latitude != null && mapped.longitude != null) {
           setCoords({ lat: mapped.latitude, lng: mapped.longitude });
         } else if (mapped.location) {
@@ -414,7 +364,6 @@ const PropertyDetails: React.FC = () => {
             console.error("Geocoding failed:", geoErr);
           }
         }
-        // ───────────────────────────────────────────────────────────
 
         if (mapped.images.length > 0) {
           setActiveImage(0);
@@ -473,7 +422,6 @@ const PropertyDetails: React.FC = () => {
     return () => window.removeEventListener("keydown", onKey);
   }, [lightboxOpen, prevImg, nextImg, closeLightbox]);
 
-  // Update image orientation when lightbox image changes
   useEffect(() => {
     if (lightboxOpen && property?.images[lightboxIdx]) {
       getImageOrientation(toUrl(property.images[lightboxIdx])).then(setImageOrientation);
@@ -482,20 +430,29 @@ const PropertyDetails: React.FC = () => {
 
   if (loading || userLoading) {
     return (
-      <div className="pt-20 min-h-screen flex justify-center items-center">
-        <p className="text-xl text-gray-600">Loading…</p>
+      <div className="pt-20 min-h-screen bg-gradient-to-b from-slate-50 to-white flex justify-center items-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-lg text-slate-600 font-medium">Loading property details...</p>
+        </div>
       </div>
     );
   }
 
   if (!property) {
     return (
-      <div className="pt-20 min-h-screen flex justify-center items-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Property not found</h2>
-          <Link to="/" className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg">
-            Back to Home
-          </Link>
+      <div className="pt-20 min-h-screen bg-gradient-to-b from-slate-50 to-white flex justify-center items-center">
+        <div className="text-center max-w-md mx-auto px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-8 border border-slate-200">
+            <div className="w-16 h-16 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Home className="w-8 h-8 text-slate-400" />
+            </div>
+            <h2 className="text-2xl font-bold mb-3 text-slate-900">Property not found</h2>
+            <p className="text-slate-600 mb-6">This property may have been removed or doesn't exist.</p>
+            <Link to="/" className="inline-block bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5">
+              Back to Home
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -505,7 +462,6 @@ const PropertyDetails: React.FC = () => {
   const allowed = new Set(PTYPE_FIELDS[pTypeKey] || []);
   const allowedField = (k: string) => allowed.has(k as any);
 
-  // Conditional className based on image orientation
   const getImageClassName = () => {
     const baseClasses = "object-contain rounded-lg shadow-2xl";
 
@@ -520,8 +476,15 @@ const PropertyDetails: React.FC = () => {
   };
 
   const unpublishedBanner = !property.is_published ? (
-    <div className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-6">
-      <p className="text-sm text-amber-700">This property is not published. Only you can see it.</p>
+    <div className="bg-gradient-to-r from-amber-50 to-orange-50 border-l-4 border-amber-500 rounded-r-xl p-5 mb-6 shadow-sm">
+      <div className="flex items-center">
+        <div className="flex-shrink-0">
+          <Eye className="h-5 w-5 text-amber-600" />
+        </div>
+        <div className="ml-3">
+          <p className="text-sm font-medium text-amber-800">This property is not published. Only you can see it.</p>
+        </div>
+      </div>
     </div>
   ) : null;
 
@@ -537,8 +500,6 @@ const PropertyDetails: React.FC = () => {
     return `${n}${unit === 1 ? "st" : unit === 2 ? "nd" : unit === 3 ? "rd" : "th"}`;
   };
 
-  // Generate SEO data
-  // Use canonical URL for SEO, fallback to legacy format if not available
   const propertyUrl = property.url || `/property/${property.id}`;
   const primaryImage = property.images?.[0];
   const imageUrl = primaryImage
@@ -547,10 +508,8 @@ const PropertyDetails: React.FC = () => {
       : primaryImage.image
     : undefined;
 
-  // Generate rich description for SEO
   const seoDescription = `${property.property_type} for ${property.property_status.replace("_", " ")} in ${property.city || property.location}. ${property.bedrooms} bed, ${property.bathrooms} bath, ${property.area}m². Price: €${property.price.toLocaleString()}. ${property.description.substring(0, 100)}...`;
 
-  // Generate keywords
   const seoKeywords = [
     property.city,
     property.region,
@@ -564,8 +523,7 @@ const PropertyDetails: React.FC = () => {
     .join(", ");
 
   return (
-    <div className="pt-14 bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 min-h-screen">
-      {/* SEO Meta Tags for Google Search */}
+    <div className="pt-14 bg-gradient-to-b from-slate-50 via-white to-slate-50 min-h-screen">
       <SEO
         title={property.title}
         description={seoDescription}
@@ -589,12 +547,11 @@ const PropertyDetails: React.FC = () => {
         modifiedTime={property.updated_at}
       />
 
-      {/* LLM structured data for AI agents and search engines */}
       <LLMPropertyData property={property} />
 
       {lightboxOpen && totalImages > 0 && (
         <div
-          className="fixed inset-0 bg-black z-[9999] flex flex-col justify-center items-center"
+          className="fixed inset-0 bg-black/95 backdrop-blur-sm z-[9999] flex flex-col justify-center items-center"
           onTouchStart={(e) => {
             const touch = e.touches[0];
             const startX = touch.clientX;
@@ -607,7 +564,6 @@ const PropertyDetails: React.FC = () => {
               const diffX = startX - endX;
               const diffY = startY - endY;
 
-              // Only handle horizontal swipes (ignore vertical swipes)
               if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
                 if (diffX > 0) nextImg();
                 else prevImg();
@@ -619,15 +575,13 @@ const PropertyDetails: React.FC = () => {
             document.addEventListener("touchend", handleTouchEnd);
           }}
         >
-          {/* Close button */}
           <button
             onClick={closeLightbox}
-            className="absolute top-4 right-4 z-10 bg-black/70 hover:bg-black/90 text-white p-3 rounded-full transition-all duration-200 hover:scale-110 active:scale-95"
+            className="absolute top-6 right-6 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-md text-white p-3 rounded-full transition-all duration-300 hover:scale-110 active:scale-95 border border-white/20"
           >
             <X className="w-6 h-6" />
           </button>
 
-          {/* Main image - fully centered with bottom padding for controls */}
           <div className="relative w-full h-full flex items-center justify-center p-4 pb-20 sm:pb-24 md:pb-28">
             <img
               src={toUrl(property.images[lightboxIdx])}
@@ -636,24 +590,23 @@ const PropertyDetails: React.FC = () => {
             />
           </div>
 
-          {/* Navigation controls - centered at bottom */}
           {totalImages > 1 && (
-            <div className="absolute bottom-4 sm:bottom-6 md:bottom-8 left-1/2 transform -translate-x-1/2 z-10">
-              <div className="flex items-center gap-2 sm:gap-3 md:gap-4 bg-black/70 backdrop-blur-sm rounded-full px-3 py-2 sm:px-4 sm:py-2.5 md:px-6 md:py-3 shadow-lg">
+            <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 z-10">
+              <div className="flex items-center gap-4 bg-white/10 backdrop-blur-xl rounded-full px-6 py-3 shadow-2xl border border-white/20">
                 <button
                   onClick={prevImg}
-                  className="text-white hover:text-gray-300 transition-colors duration-200 p-1 sm:p-1.5 md:p-2 hover:scale-110 active:scale-95"
+                  className="text-white hover:text-blue-400 transition-all duration-200 p-2 hover:scale-110 active:scale-95 rounded-full hover:bg-white/10"
                 >
-                  <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  <ArrowLeft className="w-6 h-6" />
                 </button>
-                <span className="text-white text-xs sm:text-sm md:text-base font-medium px-2 sm:px-3 md:px-4">
+                <span className="text-white text-base font-semibold px-4 min-w-[80px] text-center">
                   {lightboxIdx + 1} / {totalImages}
                 </span>
                 <button
                   onClick={nextImg}
-                  className="text-white hover:text-gray-300 transition-colors duration-200 p-1 sm:p-1.5 md:p-2 hover:scale-110 active:scale-95"
+                  className="text-white hover:text-blue-400 transition-all duration-200 p-2 hover:scale-110 active:scale-95 rounded-full hover:bg-white/10"
                 >
-                  <ArrowRight className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" />
+                  <ArrowRight className="w-6 h-6" />
                 </button>
               </div>
             </div>
@@ -661,47 +614,37 @@ const PropertyDetails: React.FC = () => {
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {unpublishedBanner}
 
-        {/* 1. Title */}
-        <section className="bg-white rounded-lg shadow-md mb-6 overflow-hidden max-w-3xl mx-auto relative">
-          <div className="absolute inset-0 rounded-lg bg-gradient-to-r from-blue-500 via-purple-500 to-cyan-500 p-0.5 animate-pulse">
-            <div className="bg-white rounded-lg h-full w-full"></div>
-          </div>
-          <div className="relative px-6 py-5">
-            <h1 className="text-xl font-semibold text-gray-800 leading-relaxed text-center">
-              {property.title}
-            </h1>
+        <section className="mb-8">
+          <div className="bg-white rounded-3xl shadow-lg overflow-hidden border border-slate-200 backdrop-blur-sm bg-white/80">
+            <div className="px-8 py-6 bg-gradient-to-r from-blue-600 to-cyan-600">
+              <h1 className="text-3xl font-bold text-white leading-tight text-center drop-shadow-sm">
+                {property.title}
+              </h1>
+            </div>
           </div>
         </section>
 
-        {/* 2. Price, Status and Actions */}
-        <section
-          className="bg-white rounded-xl shadow-sm mb-6 overflow-hidden w-full"
-          style={{
-            borderRadius: "0.75rem",
-            boxShadow: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-          }}
-        >
-          <div className="px-4 py-3">
-            {/* Property Status and Actions */}
-            <div className="flex justify-between items-center mb-3">
-              <div className="flex items-center gap-2">
+        <section className="bg-white rounded-3xl shadow-lg mb-8 overflow-hidden border border-slate-200">
+          <div className="px-6 py-5">
+            <div className="flex justify-between items-center mb-4">
+              <div className="flex items-center gap-3">
                 <span
-                  className={`px-2 py-1 rounded text-xs font-semibold ${
+                  className={`px-4 py-2 rounded-xl text-sm font-bold shadow-sm ${
                     property.property_status === "for_sale"
-                      ? "bg-emerald-100 text-emerald-800"
-                      : "bg-blue-100 text-blue-800"
+                      ? "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
+                      : "bg-gradient-to-r from-blue-500 to-cyan-500 text-white"
                   }`}
                 >
                   {property.property_status === "for_sale" ? "For Sale" : "For Rent"}
                 </span>
-                <span className="px-2 py-1 rounded bg-gray-100 text-gray-700 text-xs font-semibold">
+                <span className="px-4 py-2 rounded-xl bg-slate-100 text-slate-700 text-sm font-bold">
                   {property.property_type}
                 </span>
               </div>
-              <div className="scale-100">
+              <div className="scale-110">
                 <FavouriteButton
                   itemId={numericId}
                   itemType="property"
@@ -710,10 +653,10 @@ const PropertyDetails: React.FC = () => {
               </div>
             </div>
 
-            {/* Price and Mortgage Calculator */}
-            <div className="flex flex-col md:flex-row md:justify-between md:items-center">
-              <div className="text-center md:text-left mb-1 md:mb-0">
-                <p className="text-2xl font-bold text-gray-900">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center gap-4">
+              <div className="text-center md:text-left">
+                <p className="text-sm font-medium text-slate-600 mb-1">Price</p>
+                <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
                   €{Number.isFinite(property.price) ? property.price.toLocaleString() : "0"}
                 </p>
               </div>
@@ -728,13 +671,13 @@ const PropertyDetails: React.FC = () => {
                       }
                     }}
                     disabled={!property.price || property.price <= 0}
-                    className={`inline-flex items-center px-4 py-2 ${
+                    className={`inline-flex items-center px-6 py-3 ${
                       property.price && property.price > 0
-                        ? "bg-blue-600 hover:bg-blue-700"
-                        : "bg-gray-300 cursor-not-allowed"
-                    } text-white text-sm font-medium rounded-lg transition-colors shadow-sm`}
+                        ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl"
+                        : "bg-slate-300 cursor-not-allowed"
+                    } text-white text-sm font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-0.5`}
                   >
-                    <Calculator className="w-4 h-4 mr-2" />
+                    <Calculator className="w-5 h-5 mr-2" />
                     Calculate Mortgage
                   </button>
                 </div>
@@ -743,74 +686,58 @@ const PropertyDetails: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. Property Images */}
-        <section className="bg-white rounded-2xl overflow-hidden shadow-lg border border-gray-100 mb-12">
+        <section className="bg-white rounded-3xl overflow-hidden shadow-xl border border-slate-200 mb-12">
           <div className="flex flex-col">
-            {/* Main Image */}
             <div className="w-full">
               {totalImages > 0 ? (
                 <div
-                  className="relative h-80 lg:h-[400px] cursor-zoom-in group"
+                  className="relative h-96 lg:h-[500px] cursor-zoom-in group overflow-hidden"
                   onClick={() => openLightbox(activeImage)}
                 >
                   <img
                     src={toUrl(property.images[activeImage])}
-                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                     alt={property.title || "Property image"}
                   />
-                  {/* Overlay gradient for better text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-transparent to-transparent pointer-events-none" />
 
-                  {/* Zoom indicator */}
-                  <div className="absolute bottom-4 right-4 bg-black/50 text-white px-3 py-1.5 rounded-full text-xs font-medium backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                  <div className="absolute bottom-6 right-6 bg-black/50 backdrop-blur-md text-white px-4 py-2 rounded-full text-sm font-semibold opacity-0 group-hover:opacity-100 transition-opacity duration-300 border border-white/20">
                     Click to zoom
                   </div>
                 </div>
               ) : (
-                <div className="relative h-96 lg:h-[500px] bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                <div className="relative h-96 lg:h-[500px] bg-gradient-to-br from-slate-100 via-slate-50 to-slate-100 flex items-center justify-center">
                   <div className="text-center">
-                    <svg
-                      className="w-16 h-16 mx-auto mb-4 text-gray-400"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={1.5}
-                        d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-                      />
-                    </svg>
-                    <span className="text-gray-500 font-medium">No images available</span>
+                    <div className="w-20 h-20 bg-slate-200 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Home className="w-10 h-10 text-slate-400" />
+                    </div>
+                    <span className="text-slate-500 font-semibold text-lg">No images available</span>
                   </div>
                 </div>
               )}
             </div>
 
-            {/* Additional Images at Bottom */}
             {totalImages > 0 && (
-              <div className="bg-gray-50 p-6">
+              <div className="bg-gradient-to-b from-slate-50 to-white p-8 border-t border-slate-200">
                 {(() => {
-                  const maxThumbs = thumbsPerRow; // <-- use the hook value from top
+                  const maxThumbs = thumbsPerRow;
 
-                  // indices to show (one row when collapsed)
                   const indices = showAllThumbs
                     ? property.images.map((_, i) => i)
                     : Array.from({ length: Math.min(maxThumbs, totalImages) }, (_, i) => i);
 
                   return (
                     <>
-                      <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-3">
+                      <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-10 gap-4">
                         {indices.map((idx) => {
                           const img = property.images[idx];
                           return (
                             <div
                               key={idx}
-                              className={`relative w-full pt-[100%] overflow-hidden rounded-xl border-2 transition-all duration-200 group cursor-pointer ${
+                              className={`relative w-full pt-[100%] overflow-hidden rounded-2xl border-2 transition-all duration-300 group cursor-pointer ${
                                 idx === activeImage
-                                  ? "border-blue-500 shadow-lg scale-105"
-                                  : "border-gray-200 hover:border-gray-300 hover:shadow-md"
+                                  ? "border-blue-500 shadow-xl scale-105 ring-4 ring-blue-100"
+                                  : "border-slate-200 hover:border-blue-300 hover:shadow-lg hover:scale-105"
                               }`}
                             >
                               <img
@@ -819,13 +746,13 @@ const PropertyDetails: React.FC = () => {
                                   setActiveImage(idx);
                                   openLightbox(idx);
                                 }}
-                                className="absolute inset-0 w-full h-full object-cover transition-all duration-200 group-hover:scale-110"
+                                className="absolute inset-0 w-full h-full object-cover transition-all duration-300 group-hover:scale-110"
                                 alt={`Thumbnail ${idx + 1}`}
                               />
                               {idx === activeImage && (
-                                <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-sm" />
+                                <div className="absolute top-2 right-2 w-3 h-3 bg-blue-500 rounded-full border-2 border-white shadow-lg animate-pulse" />
                               )}
-                              <div className="absolute bottom-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <div className="absolute bottom-2 left-2 bg-black/70 backdrop-blur-sm text-white text-xs px-2 py-1 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 font-semibold">
                                 {idx + 1}
                               </div>
                             </div>
@@ -834,12 +761,12 @@ const PropertyDetails: React.FC = () => {
                       </div>
 
                       {totalImages > maxThumbs && (
-                        <div className="mt-4 flex justify-center">
+                        <div className="mt-6 flex justify-center">
                           <button
                             onClick={() => setShowAllThumbs((v) => !v)}
-                            className="inline-flex items-center px-4 py-2 bg-white hover:bg-gray-50 border border-gray-300 text-gray-700 text-sm font-medium rounded-lg shadow-sm transition-colors"
+                            className="inline-flex items-center px-6 py-3 bg-white hover:bg-slate-50 border-2 border-slate-200 hover:border-blue-300 text-slate-700 text-sm font-bold rounded-xl shadow-md hover:shadow-lg transition-all duration-300 transform hover:-translate-y-0.5"
                           >
-                            {showAllThumbs ? "Show less" : `Show more (${totalImages - maxThumbs})`}
+                            {showAllThumbs ? "Show less" : `Show all ${totalImages} photos`}
                           </button>
                         </div>
                       )}
@@ -851,109 +778,120 @@ const PropertyDetails: React.FC = () => {
           </div>
         </section>
 
-        {/* 3. Key Features */}
-        <section className="bg-gray-50 rounded-xl shadow-sm mb-8 overflow-hidden">
-          <div className="p-6">
-            <h2 className="text-xl font-bold text-gray-900 mb-6 flex items-center">
-              <Home className="w-6 h-6 mr-2 text-blue-600" />
+        <section className="bg-gradient-to-br from-white to-slate-50 rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+          <div className="p-8">
+            <h2 className="text-2xl font-bold text-slate-900 mb-8 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <Home className="w-6 h-6 text-white" />
+              </div>
               Key Features
             </h2>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {/* Bedrooms */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
               {allowedField("bedrooms") && hasNum(property.bedrooms) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Bed className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">BEDROOMS</p>
-                  <p className="text-blue-600 text-xl font-bold">{Number(property.bedrooms)}</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Bed className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BEDROOMS</p>
+                  <p className="text-blue-600 text-3xl font-bold">{Number(property.bedrooms)}</p>
                 </div>
               )}
 
-              {/* Bathrooms */}
               {allowedField("bathrooms") && hasNum(property.bathrooms) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Bath className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">BATHROOMS</p>
-                  <p className="text-blue-600 text-xl font-bold">{Number(property.bathrooms)}</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Bath className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BATHROOMS</p>
+                  <p className="text-blue-600 text-3xl font-bold">{Number(property.bathrooms)}</p>
                 </div>
               )}
 
-              {/* Area */}
               {allowedField("area") && hasNum(property.area) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Square className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">AREA</p>
-                  <p className="text-blue-600 text-xl font-bold">
-                    {Number(property.area).toLocaleString()} m²
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Square className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">AREA</p>
+                  <p className="text-blue-600 text-3xl font-bold">
+                    {Number(property.area).toLocaleString()}<span className="text-lg ml-1">m²</span>
                   </p>
                 </div>
               )}
 
-              {/* Year Built */}
               {allowedField("year_built") && hasText(property.year_built) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Calendar className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">YEAR BUILT</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.year_built}</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Calendar className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">YEAR BUILT</p>
+                  <p className="text-blue-600 text-3xl font-bold">{property.year_built}</p>
                 </div>
               )}
 
-              {/* Parking Spaces */}
               {allowedField("parking_spaces") && hasNum(property.parking_spaces) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Car className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">PARKING SPACES</p>
-                  <p className="text-blue-600 text-xl font-bold">
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Car className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">PARKING</p>
+                  <p className="text-blue-600 text-3xl font-bold">
                     {Number(property.parking_spaces)}
                   </p>
                 </div>
               )}
 
-              {/* Lot Size */}
               {allowedField("lot_size") && hasNum(property.lot_size) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <MapPin className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">LOT SIZE</p>
-                  <p className="text-blue-600 text-xl font-bold">
-                    {Number(property.lot_size).toLocaleString()} m²
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <MapPin className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">LOT SIZE</p>
+                  <p className="text-blue-600 text-3xl font-bold">
+                    {Number(property.lot_size).toLocaleString()}<span className="text-lg ml-1">m²</span>
                   </p>
                 </div>
               )}
 
-              {/* Floor */}
               {allowedField("floor_level") && hasText(property.floor_level) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <ArrowUpCircle className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">FLOOR</p>
-                  <p className="text-blue-600 text-xl font-bold">
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <ArrowUpCircle className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">FLOOR</p>
+                  <p className="text-blue-600 text-3xl font-bold">
                     {formatFloor(property.floor_level)}
                   </p>
                 </div>
               )}
 
-              {/* Total Floors */}
               {allowedField("total_floors") && hasNum(property.total_floors) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">TOTAL FLOORS</p>
-                  <p className="text-blue-600 text-xl font-bold">{Number(property.total_floors)}</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Building2 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">TOTAL FLOORS</p>
+                  <p className="text-blue-600 text-3xl font-bold">{Number(property.total_floors)}</p>
                 </div>
               )}
 
-              {/* Energy */}
               {allowedField("energy_rating") && hasText(property.energy_rating) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Zap className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">ENERGY</p>
-                  <p className="text-blue-600 text-xl font-bold">{property.energy_rating}</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Zap className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">ENERGY</p>
+                  <p className="text-blue-600 text-3xl font-bold">{property.energy_rating}</p>
                 </div>
               )}
 
-              {/* Construction */}
               {allowedField("construction_material") && hasText(property.construction_material) && (
-                <div className="text-center p-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                  <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-900" />
-                  <p className="text-gray-600 text-xs uppercase font-medium mb-1">CONSTRUCTION</p>
+                <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+                  <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+                    <Building2 className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">CONSTRUCTION</p>
                   <p className="text-blue-600 text-xl font-bold">
                     {property.construction_material}
                   </p>
@@ -963,122 +901,43 @@ const PropertyDetails: React.FC = () => {
           </div>
         </section>
 
-        {/* 3.5. Available Units (for multi-unit properties) */}
-        {property.has_units && property.units && property.units.length > 0 && (
-          <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <Building2 className="w-6 h-6 mr-2 text-gray-600" />
-                Available Units
-              </h2>
-            </div>
-            <div className="p-6">
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="bg-gray-50 border-b border-gray-200">
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Unit</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Area (m²)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Beds</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Baths</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Price (€)</th>
-                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {property.units.map((unit) => (
-                      <tr key={unit.id || unit.unit_number} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 font-medium text-gray-900">{unit.unit_number}</td>
-                        <td className="px-4 py-3 text-gray-700">{unit.name || '-'}</td>
-                        <td className="px-4 py-3 text-gray-700">{unit.area ? unit.area.toLocaleString() : '-'}</td>
-                        <td className="px-4 py-3 text-gray-700">{unit.bedrooms || '-'}</td>
-                        <td className="px-4 py-3 text-gray-700">{unit.bathrooms || '-'}</td>
-                        <td className="px-4 py-3 font-semibold text-blue-600">
-                          {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
-                        </td>
-                        <td className="px-4 py-3">
-                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            unit.status === 'available' 
-                              ? 'bg-green-100 text-green-800' 
-                              : unit.status === 'reserved'
-                              ? 'bg-yellow-100 text-yellow-800'
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {unit.status === 'available' ? 'Available' : unit.status === 'reserved' ? 'Reserved' : 'Sold'}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+        <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path
+                    fillRule="evenodd"
+                    d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
+                    clipRule="evenodd"
+                  />
+                </svg>
               </div>
-              
-              {/* Summary */}
-              <div className="mt-6 pt-6 border-t border-gray-200">
-                <div className="flex flex-wrap gap-6 text-sm">
-                  <div>
-                    <span className="text-gray-600">Available Units: </span>
-                    <span className="font-semibold text-gray-900">{property.available_units || 0}</span>
-                    <span className="text-gray-600"> of </span>
-                    <span className="font-semibold text-gray-900">{property.total_units || 0}</span>
-                  </div>
-                  {property.unit_price_min && property.unit_price_max && (
-                    <div>
-                      <span className="text-gray-600">Price Range: </span>
-                      <span className="font-semibold text-blue-600">
-                        €{property.unit_price_min.toLocaleString()} - €{property.unit_price_max.toLocaleString()}
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
-
-        {/* 4. Description */}
-        <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-          <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                <path
-                  fillRule="evenodd"
-                  d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z"
-                  clipRule="evenodd"
-                />
-              </svg>
               Property Description
             </h2>
           </div>
-          <div className="p-6">
+          <div className="p-8">
             <div className="prose prose-lg max-w-none">
-              <p className="text-gray-700 leading-relaxed whitespace-pre-line text-base">
+              <p className="text-slate-700 leading-relaxed whitespace-pre-line text-base">
                 {property.description || "No description available for this property."}
               </p>
             </div>
           </div>
         </section>
 
-        {/* 4.5. Property Documents - Conditionally rendered */}
         <PropertyDocuments documents={property.documents || []} />
 
-        {/* 5. Amenities */}
         {property.amenities.length > 0 && (
-          <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 flex items-center">
-                <svg className="w-6 h-6 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                  <path
-                    fillRule="evenodd"
-                    d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z"
-                    clipRule="evenodd"
-                  />
-                </svg>
+          <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+            <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+              <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                  <Zap className="w-6 h-6 text-white" />
+                </div>
                 Amenities & Features
               </h2>
             </div>
-            <div className="p-6">
+            <div className="p-8">
               {(() => {
                 const categorizedAmenities: { [category: string]: string[] } = {};
 
@@ -1105,9 +964,9 @@ const PropertyDetails: React.FC = () => {
                 });
 
                 return Object.entries(categorizedAmenities).map(([category, amenityIds]) => (
-                  <div key={category} className="mb-8 last:mb-0">
-                    <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                      <div className="w-2 h-2 bg-purple-500 rounded-full mr-3"></div>
+                  <div key={category} className="mb-10 last:mb-0">
+                    <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center">
+                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mr-3"></div>
                       {category}
                     </h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1116,22 +975,22 @@ const PropertyDetails: React.FC = () => {
                         return amenity ? (
                           <div
                             key={i}
-                            className="flex items-center p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+                            className="flex items-center p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
                           >
-                            <div className="p-1.5 rounded-md bg-white mr-3">
+                            <div className="p-2 rounded-xl bg-white shadow-sm mr-4 border border-slate-100">
                               {amenityIcons[amenityId] ?? amenityIcons.default}
                             </div>
-                            <span className="text-sm text-gray-600">{amenity.label}</span>
+                            <span className="text-sm font-semibold text-slate-700">{amenity.label}</span>
                           </div>
                         ) : (
                           <div
                             key={i}
-                            className="flex items-center p-3 rounded-lg bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors duration-200"
+                            className="flex items-center p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
                           >
-                            <div className="p-1.5 rounded-md bg-white mr-3">
+                            <div className="p-2 rounded-xl bg-white shadow-sm mr-4 border border-slate-100">
                               {amenityIcons.default}
                             </div>
-                            <span className="text-sm text-gray-600">{amenityId}</span>
+                            <span className="text-sm font-semibold text-slate-700">{amenityId}</span>
                           </div>
                         );
                       })}
@@ -1143,64 +1002,71 @@ const PropertyDetails: React.FC = () => {
           </section>
         )}
 
-        {/* 6. Map */}
-        <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-          <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <MapPin className="w-6 h-6 mr-2 text-gray-600" />
+        <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
               Location Map
             </h2>
           </div>
-          <div className="p-6">
+          <div className="p-8">
             {coords ? (
-              <MapView lat={coords.lat} lng={coords.lng} />
+              <div className="rounded-2xl overflow-hidden shadow-lg border border-slate-200">
+                <MapView lat={coords.lat} lng={coords.lng} />
+              </div>
             ) : (
-              <p className="text-gray-600">Location coordinates unavailable.</p>
+              <div className="bg-slate-50 rounded-2xl p-8 text-center border-2 border-dashed border-slate-300">
+                <MapPin className="w-12 h-12 text-slate-400 mx-auto mb-3" />
+                <p className="text-slate-600 font-medium">Location coordinates unavailable.</p>
+              </div>
             )}
           </div>
         </section>
 
-        {/* 7. Address */}
-        <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-          <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-bold text-gray-900 flex items-center">
-              <MapPin className="w-6 h-6 mr-2 text-gray-600" />
+        <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <MapPin className="w-6 h-6 text-white" />
+              </div>
               Property Address
             </h2>
           </div>
-          <div className="p-6">
-            <div className="flex items-start p-4 rounded-xl bg-gradient-to-r from-orange-50 to-red-50 border border-orange-100">
-              <MapPin className="h-6 w-6 mr-3 text-orange-600 mt-0.5" />
+          <div className="p-8">
+            <div className="flex items-start p-6 rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 shadow-md">
+              <div className="p-2 rounded-xl bg-white shadow-sm mr-4">
+                <MapPin className="h-6 w-6 text-blue-600" />
+              </div>
               <div>
-                <p className="text-gray-700">{property.location}</p>
+                <p className="text-slate-700 font-semibold text-lg">{property.location}</p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* 8. Contact Information */}
-        <section className="bg-white rounded-xl shadow-sm overflow-hidden">
-          <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-            <h3 className="text-xl font-bold text-gray-900 flex items-center">
-              <svg className="w-6 h-6 mr-2 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
-                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
-                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
-              </svg>
+        <section className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-200">
+          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+            <h3 className="text-2xl font-bold text-slate-900 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+                  <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z" />
+                  <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z" />
+                </svg>
+              </div>
               Contact Information
             </h3>
           </div>
-          <div className="p-6">
-            {/* Show contact details only for authenticated users */}
+          <div className="p-8">
             {user ? (
-              // Authenticated user - show contact information
               property.contact_phone || property.contact_email ? (
-                <div className="space-y-6">
-                  {/* Property Owner */}
+                <div className="space-y-5">
                   {property.owner && (
-                    <div className="flex items-center p-4 rounded-xl bg-gradient-to-r from-purple-50 to-pink-50 border border-purple-100">
-                      <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                    <div className="flex items-center p-5 rounded-2xl bg-gradient-to-r from-blue-50 to-cyan-50 border-2 border-blue-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="p-3 rounded-xl bg-white shadow-md mr-4">
                         <svg
-                          className="w-6 h-6 text-purple-600"
+                          className="w-7 h-7 text-blue-600"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -1212,12 +1078,12 @@ const PropertyDetails: React.FC = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-gray-500 text-sm uppercase font-medium">
+                        <p className="text-slate-600 text-xs uppercase font-bold mb-1 tracking-wide">
                           PROPERTY OWNER
                         </p>
                         <Link
                           to={`/${property.owner.username}/listings`}
-                          className="text-purple-600 font-semibold hover:text-purple-700 transition-colors duration-200"
+                          className="text-blue-600 font-bold text-lg hover:text-cyan-600 transition-colors duration-200"
                         >
                           {property.owner.username || property.owner.email || "Property Owner"}
                         </Link>
@@ -1226,10 +1092,10 @@ const PropertyDetails: React.FC = () => {
                   )}
 
                   {property.contact_phone && (
-                    <div className="flex items-center p-4 rounded-xl bg-blue-50 border border-blue-100">
-                      <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                    <div className="flex items-center p-5 rounded-2xl bg-gradient-to-r from-emerald-50 to-teal-50 border-2 border-emerald-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="p-3 rounded-xl bg-white shadow-md mr-4">
                         <svg
-                          className="w-6 h-6 text-blue-600"
+                          className="w-7 h-7 text-emerald-600"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -1237,10 +1103,10 @@ const PropertyDetails: React.FC = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-gray-500 text-sm uppercase font-medium">PHONE</p>
+                        <p className="text-slate-600 text-xs uppercase font-bold mb-1 tracking-wide">PHONE</p>
                         <a
                           href={`tel:${encodeURIComponent(property.contact_phone.trim())}`}
-                          className="text-blue-600 font-semibold hover:text-blue-700"
+                          className="text-emerald-600 font-bold text-lg hover:text-teal-600 transition-colors duration-200"
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() =>
@@ -1253,10 +1119,10 @@ const PropertyDetails: React.FC = () => {
                     </div>
                   )}
                   {property.contact_email && (
-                    <div className="flex items-center p-4 rounded-xl bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100">
-                      <div className="p-2 rounded-lg bg-white shadow-sm mr-3">
+                    <div className="flex items-center p-5 rounded-2xl bg-gradient-to-r from-violet-50 to-purple-50 border-2 border-violet-200 shadow-md hover:shadow-lg transition-all duration-300">
+                      <div className="p-3 rounded-xl bg-white shadow-md mr-4">
                         <svg
-                          className="w-5 h-5 text-blue-600"
+                          className="w-7 h-7 text-violet-600"
                           fill="currentColor"
                           viewBox="0 0 20 20"
                         >
@@ -1265,10 +1131,10 @@ const PropertyDetails: React.FC = () => {
                         </svg>
                       </div>
                       <div>
-                        <p className="text-gray-500 text-sm uppercase font-medium">Email</p>
+                        <p className="text-slate-600 text-xs uppercase font-bold mb-1 tracking-wide">EMAIL</p>
                         <a
                           href={`mailto:${encodeURIComponent(property.contact_email.trim())}`}
-                          className="text-blue-600 font-semibold hover:text-blue-700"
+                          className="text-violet-600 font-bold text-lg hover:text-purple-600 transition-colors duration-200 break-all"
                           target="_blank"
                           rel="noopener noreferrer"
                           onClick={() =>
@@ -1281,8 +1147,7 @@ const PropertyDetails: React.FC = () => {
                     </div>
                   )}
 
-                  {/* Chat button */}
-                  <div className="pt-4 border-t border-gray-100">
+                  <div className="pt-6 border-t-2 border-slate-200">
                     <ChatButton
                       sellerId={Number(property.owner?.id)}
                       itemId={Number(property.id)}
@@ -1293,9 +1158,9 @@ const PropertyDetails: React.FC = () => {
                   </div>
                 </div>
               ) : (
-                <div className="text-center py-8">
-                  <div className="bg-gray-50 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
-                    <svg className="w-8 h-8 text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+                <div className="text-center py-12">
+                  <div className="bg-slate-100 rounded-full w-20 h-20 flex items-center justify-center mx-auto mb-5 shadow-md">
+                    <svg className="w-10 h-10 text-slate-400" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
@@ -1303,20 +1168,19 @@ const PropertyDetails: React.FC = () => {
                       />
                     </svg>
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-2">No Contact Details</h4>
-                  <p className="text-gray-600 text-sm">
+                  <h4 className="text-xl font-bold text-slate-900 mb-3">No Contact Details</h4>
+                  <p className="text-slate-600">
                     Contact information not provided by the property owner.
                   </p>
                 </div>
               )
             ) : (
-              // Unauthenticated user - show login prompt
               <div className="space-y-6">
-                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6 text-center">
-                  <div className="flex items-center justify-center mb-4">
-                    <div className="bg-blue-100 rounded-full p-3">
+                <div className="bg-gradient-to-br from-blue-50 via-cyan-50 to-blue-50 border-2 border-blue-300 rounded-2xl p-8 text-center shadow-xl">
+                  <div className="flex items-center justify-center mb-5">
+                    <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full p-4 shadow-lg">
                       <svg
-                        className="w-6 h-6 text-blue-600"
+                        className="w-8 h-8 text-white"
                         fill="currentColor"
                         viewBox="0 0 20 20"
                       >
@@ -1328,17 +1192,17 @@ const PropertyDetails: React.FC = () => {
                       </svg>
                     </div>
                   </div>
-                  <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                  <h4 className="text-2xl font-bold text-slate-900 mb-3">
                     Contact Details Protected
                   </h4>
-                  <p className="text-gray-600 text-sm mb-6">
+                  <p className="text-slate-700 mb-8 max-w-md mx-auto leading-relaxed">
                     Please log in to view contact information and send messages to property owners.
                   </p>
                   <button
                     onClick={() => navigate("/login")}
-                    className="inline-flex items-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg shadow-sm transition duration-200"
+                    className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-bold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-0.5"
                   >
-                    <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-5 h-5 mr-2" fill="currentColor" viewBox="0 0 20 20">
                       <path
                         fillRule="evenodd"
                         d="M3 3a1 1 0 011 1v12a1 1 0 11-2 0V4a1 1 0 011-1zm7.707 3.293a1 1 0 010 1.414L9.414 9H17a1 1 0 110 2H9.414l1.293 1.293a1 1 0 01-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0z"
@@ -1349,13 +1213,12 @@ const PropertyDetails: React.FC = () => {
                   </button>
                 </div>
 
-                {/* Alternative contact method note */}
                 <div className="text-center">
-                  <p className="text-xs text-gray-500">
+                  <p className="text-sm text-slate-600">
                     Already have an account?{" "}
                     <button
                       onClick={() => navigate("/login")}
-                      className="text-blue-600 hover:text-blue-700 underline"
+                      className="text-blue-600 hover:text-cyan-600 font-bold underline transition-colors duration-200"
                     >
                       Sign in here
                     </button>
