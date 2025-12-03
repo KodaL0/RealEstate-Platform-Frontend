@@ -10,14 +10,16 @@ import {
   Layers,
   MapPin,
   ParkingCircle,
+  Plus,
   Ruler,
+  Trash2,
 } from "lucide-react";
 import React, { memo, useCallback, useEffect, useMemo } from "react";
 import toast from "react-hot-toast";
 import AmenitySelector from "../../../components/AmenitySelector";
 import api from "../../../config/api";
 import { useWizardNavigation } from "../../../context/ListingWizardContext";
-import { COUNTRY_OPTIONS, type ListingForm, PROPERTY_STATUS } from "../../../types";
+import { COUNTRY_OPTIONS, type ListingForm, PROPERTY_STATUS, type PropertyUnit, type UserType } from "../../../types";
 import LocationAutocomplete from "../../LocationAutocomplete";
 
 // Debounce utility function
@@ -207,9 +209,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const ptype = (formData.propertyType || "") as PT;
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
+  
+  // Multi-unit state
+  const isMultiUnit = formData.has_units === true;
+  const canHaveUnits = ptype && ptype !== 'land';
 
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
-  const showField = useCallback((k: keyof ListingForm) => show.has(k), [show]);
+  const showField = useCallback((k: keyof ListingForm) => {
+    if (!show.has(k)) return false;
+    // Hide single property fields if multi-unit
+    if (isMultiUnit && ['bedrooms', 'bathrooms', 'area', 'price'].includes(k)) {
+      return false;
+    }
+    return true;
+  }, [show, isMultiUnit]);
 
   // Debug logging for amenities visibility
   useEffect(() => {
@@ -245,6 +258,37 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       return () => clearTimeout(timer);
     }
   }, [isEditing, hasLoadedPropertyData, isInitialLoad]);
+
+  // Initialize units when has_units is checked
+  useEffect(() => {
+    if (isMultiUnit && (!formData.units || formData.units.length === 0)) {
+      // Initialize with 2 default units
+      const defaultUnits: PropertyUnit[] = [
+        {
+          unit_number: "1",
+          bedrooms: 1,
+          bathrooms: 1,
+          area: 0,
+          price: 0,
+          status: 'available',
+          is_published: true,
+        },
+        {
+          unit_number: "2",
+          bedrooms: 1,
+          bathrooms: 1,
+          area: 0,
+          price: 0,
+          status: 'available',
+          is_published: true,
+        },
+      ];
+      setFormData(f => ({ ...f, units: defaultUnits }));
+    } else if (!isMultiUnit && formData.units && formData.units.length > 0) {
+      // Clear units if unchecked
+      setFormData(f => ({ ...f, units: [] }));
+    }
+  }, [isMultiUnit]);
 
   // Load property details when editing (only if not already loaded by parent)
   useEffect(() => {
@@ -287,6 +331,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           virtual_tour_url?: string;
           video_url?: string;
           user_type?: string;
+          has_units?: boolean;
+          units?: PropertyUnit[];
         };
 
         // Normalize property status
@@ -309,41 +355,60 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         console.log("📋 Step2: Loaded amenities:", d.amenities);
         console.log("📋 Step2: Property type from API:", d.property_type);
 
-        // Update form data with property details
-        setFormData((prev) => ({
-          ...prev,
-          title: d.title || "",
-          description: d.description || "",
-          price: d.price?.toString() || "",
-          location: d.location || "",
-          country: d.country || "Cyprus",
-          region: d.region || "",
-          city: d.city || "",
-          postal_code: d.postal_code || "",
-          street: d.street || "",
-          latitude: d.latitude?.toString() || "",
-          longitude: d.longitude?.toString() || "",
-          propertyType: d.property_type || "",
-          bedrooms: d.bedrooms?.toString() || "",
-          bathrooms: d.bathrooms?.toString() || "",
-          area: d.area?.toString() || "",
-          amenities: Array.isArray(d.amenities) ? d.amenities : [],
-          yearBuilt: d.year_built?.toString() || "",
-          parkingSpaces: d.parking_spaces?.toString() || "",
-          lotSize: d.lot_size?.toString() || "",
-          propertyStatus,
-          energyRating: d.energy_rating || "",
-          constructionMaterial: d.construction_material || "",
-          floorLevel: d.floor_level?.toString() || "",
-          totalFloors: d.total_floors?.toString() || "",
-          availableFrom: d.available_from || "",
-          contactPhone: phone,
-          contactEmail: d.contact_email || "",
-          virtualTourUrl: d.virtual_tour_url || "",
-          videoUrl: d.video_url || "",
-          images: [],
-          userType: d.user_type || prev.userType || "owner_agent",
-        }));
+        // Load units separately if property has units but units not in response
+        const loadUnits = async () => {
+          if (d.has_units && (!d.units || d.units.length === 0)) {
+            try {
+              const unitsRes = await api.propertyUnits.list(Number(propertyId));
+              const unitsData = (unitsRes.data as { results?: PropertyUnit[] })?.results || unitsRes.data as PropertyUnit[] || [];
+              return Array.isArray(unitsData) ? unitsData : [];
+            } catch (err) {
+              console.warn("Failed to load units:", err);
+              return [];
+            }
+          }
+          return d.units || [];
+        };
+
+        loadUnits().then((units) => {
+          // Update form data with property details
+          setFormData((prev) => ({
+            ...prev,
+            title: d.title || "",
+            description: d.description || "",
+            price: d.price?.toString() || "",
+            location: d.location || "",
+            country: d.country || "Cyprus",
+            region: d.region || "",
+            city: d.city || "",
+            postal_code: d.postal_code || "",
+            street: d.street || "",
+            latitude: d.latitude?.toString() || "",
+            longitude: d.longitude?.toString() || "",
+            propertyType: d.property_type || "",
+            bedrooms: d.bedrooms?.toString() || "",
+            bathrooms: d.bathrooms?.toString() || "",
+            area: d.area?.toString() || "",
+            amenities: Array.isArray(d.amenities) ? d.amenities : [],
+            yearBuilt: d.year_built?.toString() || "",
+            parkingSpaces: d.parking_spaces?.toString() || "",
+            lotSize: d.lot_size?.toString() || "",
+            propertyStatus,
+            energyRating: d.energy_rating || "",
+            constructionMaterial: d.construction_material || "",
+            floorLevel: d.floor_level?.toString() || "",
+            totalFloors: d.total_floors?.toString() || "",
+            availableFrom: d.available_from || "",
+            contactPhone: phone,
+            contactEmail: d.contact_email || "",
+            virtualTourUrl: d.virtual_tour_url || "",
+            videoUrl: d.video_url || "",
+            images: [],
+            userType: (d.user_type as UserType) || prev.userType || ("owner_agent" as UserType),
+            has_units: d.has_units || false,
+            units: units,
+          }));
+        });
 
         // Call callback to let parent handle images and other data
         if (onPropertyDataLoaded) {
@@ -378,6 +443,19 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     !!ptype;
 
   const validSpecs = (() => {
+    // If multi-unit, validate units instead
+    if (isMultiUnit) {
+      const units = formData.units || [];
+      if (units.length < 2) return false;
+      return units.every(unit => 
+        unit.area > 0 && 
+        unit.price > 0 && 
+        unit.bedrooms >= 0 && 
+        unit.bathrooms > 0
+      );
+    }
+    
+    // Single property validation
     if (["house", "apartment", "condo", "townhouse"].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
     if (ptype === "land") return !!formData.lotSize; // Land requires lot_size, not area
@@ -386,6 +464,47 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   })();
 
   const valid = validBasics && validSpecs;
+  
+  // Unit management functions
+  const handleAddUnit = () => {
+    const units = formData.units || [];
+    const nextNumber = (units.length + 1).toString();
+    const newUnit: PropertyUnit = {
+      unit_number: nextNumber,
+      bedrooms: 1,
+      bathrooms: 1,
+      area: 0,
+      price: 0,
+      status: 'available',
+      is_published: true,
+    };
+    setFormData(f => ({ ...f, units: [...units, newUnit] }));
+  };
+
+  const handleRemoveUnit = (index: number) => {
+    const units = formData.units || [];
+    if (units.length <= 2) {
+      toast.error("Minimum 2 units required");
+      return;
+    }
+    
+    const newUnits = units.filter((_, i) => i !== index);
+    // Renumber units sequentially
+    const renumberedUnits = newUnits.map((unit, i) => ({
+      ...unit,
+      unit_number: (i + 1).toString(),
+    }));
+    setFormData(f => ({ ...f, units: renumberedUnits }));
+  };
+
+  const handleUnitChange = (index: number, field: keyof PropertyUnit, value: any) => {
+    setFormData(f => ({
+      ...f,
+      units: (f.units || []).map((unit, i) => 
+        i === index ? { ...unit, [field]: value } : unit
+      )
+    }));
+  };
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
@@ -619,6 +738,176 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             ))}
           </select>
         </div>
+
+        {/* Multiple Units Toggle */}
+        {canHaveUnits && (
+          <div className="lg:col-span-2 border-t pt-6 mt-4">
+            <div className="flex items-center space-x-3 mb-4">
+              <input
+                type="checkbox"
+                id="has_units"
+                checked={isMultiUnit}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  setFormData(f => ({
+                    ...f,
+                    has_units: checked,
+                    units: checked ? (f.units || []) : [],
+                    // Clear single property fields if enabling units
+                    ...(checked ? {
+                      bedrooms: '',
+                      bathrooms: '',
+                      area: '',
+                      price: '',
+                    } : {}),
+                  }));
+                }}
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+              />
+              <label htmlFor="has_units" className="font-semibold text-lg cursor-pointer text-gray-800">
+                This property has multiple units
+              </label>
+            </div>
+
+            {isMultiUnit && formData.units && formData.units.length > 0 && (
+              <div className="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200">
+                <p className="text-sm text-blue-900 mb-4">
+                  <strong>Multi-unit property:</strong> Specify bedrooms, bathrooms, area, and pricing for each individual unit below.
+                </p>
+
+                {/* Units Table */}
+                <div className="overflow-x-auto border rounded-lg bg-white">
+                  <table className="w-full">
+                    <thead className="bg-gray-100">
+                      <tr>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Unit #</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Area (m²)</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beds</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Baths</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Price (€)</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Status</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700"></th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {formData.units.map((unit, index) => (
+                        <tr key={index} className="hover:bg-gray-50">
+                          {/* Unit Number - Read-only */}
+                          <td className="px-3 py-2">
+                            <span className="font-medium text-gray-700">{unit.unit_number}</span>
+                          </td>
+                          
+                          {/* Name */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="text"
+                              value={unit.name || ''}
+                              onChange={(e) => handleUnitChange(index, 'name', e.target.value)}
+                              placeholder="e.g., Garden View Studio"
+                              className="w-full px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                            />
+                          </td>
+                          
+                          {/* Area */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              value={unit.area || ''}
+                              onChange={(e) => handleUnitChange(index, 'area', Number(e.target.value) || 0)}
+                              className="w-24 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              min="0"
+                            />
+                          </td>
+                          
+                          {/* Bedrooms */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              value={unit.bedrooms || ''}
+                              onChange={(e) => handleUnitChange(index, 'bedrooms', Number(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              min="0"
+                            />
+                          </td>
+                          
+                          {/* Bathrooms */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={unit.bathrooms || ''}
+                              onChange={(e) => handleUnitChange(index, 'bathrooms', Number(e.target.value) || 0)}
+                              className="w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              min="0"
+                            />
+                          </td>
+                          
+                          {/* Price */}
+                          <td className="px-3 py-2">
+                            <input
+                              type="number"
+                              value={unit.price || ''}
+                              onChange={(e) => handleUnitChange(index, 'price', Number(e.target.value) || 0)}
+                              className="w-32 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              min="0"
+                            />
+                          </td>
+                          
+                          {/* Status */}
+                          <td className="px-3 py-2">
+                            <select
+                              value={unit.status}
+                              onChange={(e) => handleUnitChange(index, 'status', e.target.value)}
+                              className="w-28 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                            >
+                              <option value="available">Available</option>
+                              <option value="reserved">Reserved</option>
+                              <option value="sold">Sold</option>
+                            </select>
+                          </td>
+                          
+                          {/* Delete Button */}
+                          <td className="px-3 py-2">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveUnit(index)}
+                              disabled={formData.units && formData.units.length <= 2}
+                              className={`text-red-600 hover:text-red-800 disabled:text-gray-300 disabled:cursor-not-allowed ${
+                                formData.units && formData.units.length <= 2 ? 'opacity-50' : ''
+                              }`}
+                              title={formData.units && formData.units.length <= 2 ? 'Minimum 2 units required' : 'Remove unit'}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Add Unit Button */}
+                <button
+                  type="button"
+                  onClick={handleAddUnit}
+                  disabled={formData.units && formData.units.length >= 100}
+                  className={`w-full py-3 border-2 border-dashed rounded-lg transition-colors flex items-center justify-center space-x-2 ${
+                    formData.units && formData.units.length >= 100
+                      ? 'border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed'
+                      : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-600'
+                  }`}
+                >
+                  <Plus className="w-5 h-5" />
+                  <span>Add Unit</span>
+                  {formData.units && formData.units.length >= 100 && (
+                    <span className="ml-2 text-xs">(Maximum 100 units)</span>
+                  )}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
 
         {/* Area */}
         {showField("area") && (

@@ -324,6 +324,19 @@ const api = {
     toggleFavorite: (pid: number) => apiPost(`properties/${pid}/favourite`),
   },
 
+  propertyUnits: {
+    list: (propertyId?: number) => {
+      const url = propertyId 
+        ? `properties/property-units/?property=${propertyId}`
+        : 'properties/property-units/';
+      return apiGet(url);
+    },
+    get: (id: number) => apiGet(`properties/property-units/${id}/`),
+    create: (data: unknown) => apiPost('properties/property-units/', data),
+    update: (id: number, data: unknown) => apiPut(`properties/property-units/${id}/`, data),
+    delete: (id: number) => apiDelete(`properties/property-units/${id}/`),
+  },
+
   favourites: {
     list: (p?: Record<string, unknown>) =>
       apiGet("properties/my-favourites", { params: p }).then((res) => {

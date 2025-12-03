@@ -21,6 +21,23 @@ export interface PropertyDocument {
   uploaded_at: string;
 }
 
+export interface PropertyUnit {
+  id?: number;
+  property?: number;
+  unit_number: string;
+  name?: string;
+  bedrooms: number;
+  bathrooms: number;
+  area: number;
+  price: number;
+  status: 'available' | 'reserved' | 'sold';
+  is_published: boolean;
+  description?: string;
+  features?: string[];
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Owner {
   username: string;
   id: string;
@@ -82,12 +99,25 @@ export interface Property {
   updated_at: string;
   images: PropertyImage[];
   documents?: PropertyDocument[];
+  units?: PropertyUnit[];
   // Additional fields that may be present in API responses
   latitude?: number;
   longitude?: number;
   is_favourite?: boolean;
   city?: string;
   region?: string;
+  // Multi-unit fields
+  has_units?: boolean;
+  total_units?: number;
+  available_units?: number;
+  unit_bedrooms_min?: number;
+  unit_bedrooms_max?: number;
+  unit_bathrooms_min?: number;
+  unit_bathrooms_max?: number;
+  unit_area_min?: number;
+  unit_area_max?: number;
+  unit_price_min?: number;
+  unit_price_max?: number;
   // Instagram integration
   instagram_posted?: boolean;
   instagram_post_count?: number;
@@ -101,20 +131,20 @@ export const normalizePropertyData = (
   property: Partial<Property> & Record<string, unknown>,
 ): Property => ({
   ...property,
-  price: typeof property.price === "string" ? parseFloat(property.price) : property.price,
-  area: typeof property.area === "string" ? parseFloat(property.area) : property.area,
+  price: typeof property.price === "string" ? parseFloat(property.price) : (property.price ?? 0),
+  area: typeof property.area === "string" ? parseFloat(property.area) : (property.area ?? 0),
   bedrooms:
-    typeof property.bedrooms === "string" ? parseInt(property.bedrooms, 10) : property.bedrooms,
+    typeof property.bedrooms === "string" ? parseInt(property.bedrooms, 10) : (property.bedrooms ?? 0),
   bathrooms:
-    typeof property.bathrooms === "string" ? parseInt(property.bathrooms, 10) : property.bathrooms,
+    typeof property.bathrooms === "string" ? parseFloat(String(property.bathrooms)) : (property.bathrooms ?? 0),
   year_built:
     typeof property.year_built === "string"
       ? parseInt(property.year_built, 10)
-      : property.year_built,
+      : (property.year_built ?? 0),
   parking_spaces:
     typeof property.parking_spaces === "string"
       ? parseInt(property.parking_spaces, 10)
-      : property.parking_spaces,
+      : (property.parking_spaces ?? 0),
   lot_size:
     typeof property.lot_size === "string" ? parseFloat(property.lot_size) : property.lot_size,
   floor_level:
@@ -126,7 +156,7 @@ export const normalizePropertyData = (
       ? parseInt(property.total_floors, 10)
       : property.total_floors,
   country: property.country || "",
-});
+} as Property);
 
 /* ---------- Unified Listings ---------- */
 export type UnifiedListingItem =
@@ -187,6 +217,10 @@ export interface ListingForm {
   // NEW for wizard
   userType: UserType;
   devUnits: DevUnitRow[];
+  
+  // Multi-unit fields
+  has_units?: boolean;
+  units?: PropertyUnit[];
 }
 
 /* ---------- Dev amenities (optional helper list) ---------- */

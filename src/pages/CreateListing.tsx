@@ -12,7 +12,7 @@ import {
   type WizardMode,
 } from "../context/ListingWizardContext";
 import { useUser } from "../context/UserContext";
-import { COUNTRY_CODES, DEFAULT_FORM_STATE, type ListingForm, type UserType } from "../types";
+import { COUNTRY_CODES, DEFAULT_FORM_STATE, type ListingForm, type PropertyUnit, type UserType } from "../types";
 // ⬇️ New step order imports
 import Step1_PropertyType from "./CreateListing/steps/Step1_PropertyType";
 import Step2_PropertyDetails from "./CreateListing/steps/Step2_PropertyDetails";
@@ -366,6 +366,7 @@ const CreateListing: React.FC = () => {
   function appendFormFieldsToFormData(fd: FormData) {
     Object.entries(formData).forEach(([k, v]) => {
       if (k === "images") return; // Handled separately
+      if (k === "units") return; // Units handled separately after property creation
       if (k === "amenities") {
         (v as string[]).forEach((a) => {
           fd.append("amenities[]", a);
@@ -380,6 +381,11 @@ const CreateListing: React.FC = () => {
         fd.append(k, String(v));
       }
     });
+    
+    // Add has_units flag
+    if (formData.has_units) {
+      fd.append("has_units", "true");
+    }
   }
 
   // Normalize and set special fields (phone, coordinates, floor levels)
@@ -683,6 +689,14 @@ const CreateListing: React.FC = () => {
         : await api.formPost("properties/create_property", fd);
 
       if (res.status >= 200 && res.status < 300) {
+        // Get property ID from response
+        const propertyData = res.data as { id?: number };
+        const propertyId = isEditing ? Number(id) : (propertyData.id || propertyData.id);
+        
+        if (!propertyId) {
+          throw new Error("Property ID not found in response");
+        }
+
         // Phase 2: If we uploaded new images in edit mode, reorder all images to match UI order
         if (isEditing && formData.images.length > 0) {
           try {
@@ -728,6 +742,53 @@ const CreateListing: React.FC = () => {
             console.error("Failed to reorder images after upload:", reorderError);
             // Don't fail the whole submission - images are uploaded, just in wrong order
             toast.error("Images uploaded but order may be incorrect. Please reorder manually.");
+          }
+        }
+
+        // Phase 3: Save units if multi-unit property
+        if (formData.has_units && formData.units && formData.units.length > 0) {
+          try {
+            if (isEditing) {
+              // In edit mode: Get existing units, update/create/delete as needed
+              const existingUnitsRes = await api.propertyUnits.list(propertyId);
+              const existingUnits = (existingUnitsRes.data as { results?: PropertyUnit[] })?.results || [];
+              const existingUnitsMap = new Map(existingUnits.map(u => [u.id, u]));
+              
+              // Process each unit from form
+              for (const unit of formData.units) {
+                const unitData = {
+                  ...unit,
+                  property: propertyId,
+                };
+                
+                if (unit.id && existingUnitsMap.has(unit.id)) {
+                  // Update existing unit
+                  await api.propertyUnits.update(unit.id, unitData);
+                  existingUnitsMap.delete(unit.id);
+                } else {
+                  // Create new unit
+                  await api.propertyUnits.create(unitData);
+                }
+              }
+              
+              // Delete units that were removed
+              for (const [unitId] of existingUnitsMap) {
+                await api.propertyUnits.delete(unitId!);
+              }
+            } else {
+              // Create mode: Create all units
+              for (const unit of formData.units) {
+                const unitData = {
+                  ...unit,
+                  property: propertyId,
+                };
+                await api.propertyUnits.create(unitData);
+              }
+            }
+            console.log("✅ Units saved successfully");
+          } catch (unitError: unknown) {
+            console.error("Failed to save units:", unitError);
+            toast.error("Property saved but units may not have been saved correctly. Please check and update manually.");
           }
         }
 

@@ -963,6 +963,80 @@ const PropertyDetails: React.FC = () => {
           </div>
         </section>
 
+        {/* 3.5. Available Units (for multi-unit properties) */}
+        {property.has_units && property.units && property.units.length > 0 && (
+          <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
+            <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 flex items-center">
+                <Building2 className="w-6 h-6 mr-2 text-gray-600" />
+                Available Units
+              </h2>
+            </div>
+            <div className="p-6">
+              <div className="overflow-x-auto">
+                <table className="w-full border-collapse">
+                  <thead>
+                    <tr className="bg-gray-50 border-b border-gray-200">
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Unit</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Name</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Area (m²)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Beds</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Baths</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Price (€)</th>
+                      <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {property.units.map((unit) => (
+                      <tr key={unit.id || unit.unit_number} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 font-medium text-gray-900">{unit.unit_number}</td>
+                        <td className="px-4 py-3 text-gray-700">{unit.name || '-'}</td>
+                        <td className="px-4 py-3 text-gray-700">{unit.area ? unit.area.toLocaleString() : '-'}</td>
+                        <td className="px-4 py-3 text-gray-700">{unit.bedrooms || '-'}</td>
+                        <td className="px-4 py-3 text-gray-700">{unit.bathrooms || '-'}</td>
+                        <td className="px-4 py-3 font-semibold text-blue-600">
+                          {unit.price ? `€${unit.price.toLocaleString()}` : '-'}
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            unit.status === 'available' 
+                              ? 'bg-green-100 text-green-800' 
+                              : unit.status === 'reserved'
+                              ? 'bg-yellow-100 text-yellow-800'
+                              : 'bg-gray-100 text-gray-800'
+                          }`}>
+                            {unit.status === 'available' ? 'Available' : unit.status === 'reserved' ? 'Reserved' : 'Sold'}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              
+              {/* Summary */}
+              <div className="mt-6 pt-6 border-t border-gray-200">
+                <div className="flex flex-wrap gap-6 text-sm">
+                  <div>
+                    <span className="text-gray-600">Available Units: </span>
+                    <span className="font-semibold text-gray-900">{property.available_units || 0}</span>
+                    <span className="text-gray-600"> of </span>
+                    <span className="font-semibold text-gray-900">{property.total_units || 0}</span>
+                  </div>
+                  {property.unit_price_min && property.unit_price_max && (
+                    <div>
+                      <span className="text-gray-600">Price Range: </span>
+                      <span className="font-semibold text-blue-600">
+                        €{property.unit_price_min.toLocaleString()} - €{property.unit_price_max.toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {/* 4. Description */}
         <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
           <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">

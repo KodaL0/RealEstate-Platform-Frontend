@@ -61,6 +61,11 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     property_type,
     is_favourite,
     url,
+    has_units,
+    unit_price_min,
+    unit_price_max,
+    available_units,
+    total_units,
   } = property;
 
   // Use the URL from API if available, otherwise fall back to legacy format
@@ -538,16 +543,36 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
 
         {/* Price */}
         <div className="mb-6">
-          <div className="flex items-baseline space-x-1">
-            <span className="text-3xl font-bold text-gray-900">
-              €{Number.isFinite(Number(price)) ? Number(price).toLocaleString() : "0"}
-            </span>
-            {property_status !== "for_sale" && (
-              <span className="text-lg font-semibold text-gray-600">/mo</span>
-            )}
-          </div>
-          {property_status === "for_sale" && (
-            <p className="text-sm text-emerald-600 font-medium mt-1">Purchase Price</p>
+          {has_units && unit_price_min && unit_price_max ? (
+            <div>
+              <div className="flex items-baseline space-x-1">
+                <span className="text-3xl font-bold text-gray-900">
+                  €{unit_price_min.toLocaleString()} - €{unit_price_max.toLocaleString()}
+                </span>
+              </div>
+              <div className="flex items-center gap-2 mt-1">
+                <p className="text-sm text-emerald-600 font-medium">Price Range</p>
+                {available_units && total_units && (
+                  <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full font-medium">
+                    {available_units} units available
+                  </span>
+                )}
+              </div>
+            </div>
+          ) : (
+            <div>
+              <div className="flex items-baseline space-x-1">
+                <span className="text-3xl font-bold text-gray-900">
+                  €{Number.isFinite(Number(price)) ? Number(price).toLocaleString() : "0"}
+                </span>
+                {property_status !== "for_sale" && (
+                  <span className="text-lg font-semibold text-gray-600">/mo</span>
+                )}
+              </div>
+              {property_status === "for_sale" && (
+                <p className="text-sm text-emerald-600 font-medium mt-1">Purchase Price</p>
+              )}
+            </div>
           )}
         </div>
 
