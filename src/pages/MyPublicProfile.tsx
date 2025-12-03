@@ -488,22 +488,21 @@ const MyPublicProfile: React.FC = () => {
 
                 {/* Right: buttons (Edit + Analytics) */}
                 <div className="flex gap-3 flex-wrap md:flex-nowrap">
-                  <button
-                    type="button"
-                    onClick={() => setIsEditingProfile(true)}
-                    className="flex-1 md:flex-none px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-                  >
+                <Link
+                    to="/profile"
+                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
+                >
                     <Pencil className="h-4 w-4" />
-                    <span>Edit Profile</span>
-                  </button>
+                    Edit Profile
+                </Link>
 
-                  <Link
+                <Link
                     to="/analytics"
                     className="flex-1 md:flex-none px-7 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-                  >
+                >
                     <TrendingUp className="h-4 w-4" />
                     <span>Analytics</span>
-                  </Link>
+                </Link>
                 </div>
               </div>
             </div>
