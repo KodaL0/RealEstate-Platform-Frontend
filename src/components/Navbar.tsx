@@ -366,7 +366,7 @@ const Navbar: React.FC = () => {
             {user ? (
               <div className="relative">
                 <Link
-                  to="/profile"
+                  to="/my-profile"
                   className="flex items-center space-x-2 bg-gradient-to-r from-blue-500 to-indigo-600 text-white px-4 py-2 rounded-lg hover:from-blue-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
                 >
                   <div className="w-6 h-6 bg-white/20 rounded-full flex items-center justify-center">

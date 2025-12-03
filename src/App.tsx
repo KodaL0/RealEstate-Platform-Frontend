@@ -46,6 +46,8 @@ import { ResetPassword } from "./pages/ResetPassword";
 import SitemapViewer from "./pages/SitemapViewer";
 import TermsandConditions from "./pages/TermsandConditions";
 import consentManager, { type ConsentPreferences } from "./services/ConsentManager";
+import MyPublicProfile from "./pages/MyPublicProfile";
+
 
 function RouteChangeTracker() {
   const { pathname, search } = useLocation();
@@ -392,8 +394,18 @@ function AppContent() {
             }
           />
 
+          <Route
+            path="/my-profile"
+            element={
+              <RequireAuth>
+                <MyPublicProfile />
+              </RequireAuth>
+            }
+          />
+
           {/* Public profile route - must come before property route to catch 1-2 segment URLs */}
           <Route path="/:username/:tab?" element={<PublicProfile />} />
+
 
           {/* Property detail route with new URL format: /username/country/location-type-id */}
           {/* This MUST come after profile route since it requires exactly 3 segments */}
