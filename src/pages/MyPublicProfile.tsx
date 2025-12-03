@@ -490,7 +490,7 @@ const MyPublicProfile: React.FC = () => {
                 <div className="flex gap-3 flex-wrap md:flex-nowrap">
                 <Link
                     to="/profile"
-                    className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
+                    className="inline-flex items-center gap-2 px-7 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
                 >
                     <Pencil className="h-4 w-4" />
                     Edit Profile
