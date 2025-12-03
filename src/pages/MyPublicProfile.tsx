@@ -19,6 +19,7 @@ import {
   UserPlus,
   Send,
   Pencil,
+  X,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import PropertyCard from "../components/cards/PropertyCard";
@@ -51,7 +52,7 @@ interface UserResponse {
     website?: string;
     date_joined: string;
     is_developer?: boolean;
-    connections_count?: number; // allow TS to know about this
+    connections_count?: number;
   };
 }
 
@@ -81,7 +82,7 @@ const MyPublicProfile: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
 
-  // --- Inline editing state ---
+  // --- Editing state (modal) ---
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [isSavingProfile, setIsSavingProfile] = useState(false);
   const [profileMessage, setProfileMessage] = useState("");
@@ -90,7 +91,7 @@ const MyPublicProfile: React.FC = () => {
   const [originalProfileData, setOriginalProfileData] =
     useState<ProfileData | null>(null);
 
-  // --- Username state ---
+  // --- Username state (now edited inside modal too) ---
   const [newUsername, setNewUsername] = useState("");
   const [usernameMessage, setUsernameMessage] = useState("");
   const [usernameError, setUsernameError] = useState("");
@@ -132,6 +133,7 @@ const MyPublicProfile: React.FC = () => {
   const validateWebsite = (website: string): string | null => {
     if (!website) return null;
     try {
+      // Allow missing protocol by trying to prepend https if needed
       new URL(website.startsWith("http") ? website : `https://${website}`);
       return null;
     } catch {
@@ -230,7 +232,7 @@ const MyPublicProfile: React.FC = () => {
   }, [user, navigate, loadMyProfile]);
 
   // --------------------------------
-  // Handlers: inline profile editing
+  // Handlers: editing
   // --------------------------------
   const handleProfileFieldChange = (field: keyof ProfileData, value: string) => {
     setProfileData((prev) => ({ ...prev, [field]: value }));
@@ -238,62 +240,6 @@ const MyPublicProfile: React.FC = () => {
     if (profileError) setProfileError("");
   };
 
-  const handleSaveProfile = async () => {
-    if (!user) return;
-
-    // Validate phone + website
-    const phoneError = validatePhone(profileData.phone);
-    const websiteError = validateWebsite(profileData.website);
-
-    if (phoneError || websiteError) {
-      setProfileError(phoneError || websiteError || "");
-      return;
-    }
-
-    setIsSavingProfile(true);
-    setProfileError("");
-    setProfileMessage("");
-
-    try {
-      const response = await api.auth.updateProfile(profileData);
-      if (response.status === 200) {
-        setProfileMessage("Profile updated successfully!");
-        setOriginalProfileData(profileData);
-        // sync user context
-        updateUserData({
-          name: profileData.name,
-          bio: profileData.bio,
-          location: profileData.location,
-          phone: profileData.phone,
-          office: profileData.office,
-          avatar: profileData.avatar,
-          website: profileData.website,
-        });
-        setIsEditingProfile(false);
-      }
-    } catch (err: any) {
-      console.error("Profile update failed:", err);
-      const apiError = err as {
-        response?: { data?: { error?: string }; status?: number };
-      };
-      setProfileError(apiError.response?.data?.error || "Failed to update profile.");
-    } finally {
-      setIsSavingProfile(false);
-    }
-  };
-
-  const handleCancelProfileEdit = () => {
-    if (originalProfileData) {
-      setProfileData(originalProfileData);
-    }
-    setProfileError("");
-    setProfileMessage("");
-    setIsEditingProfile(false);
-  };
-
-  // --------------------------------
-  // Handlers: username editing
-  // --------------------------------
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase();
     setNewUsername(value);
@@ -304,33 +250,77 @@ const MyPublicProfile: React.FC = () => {
     if (usernameError) setUsernameError("");
   };
 
-  const handleUpdateUsername = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user) return;
-
+  const handleCancelProfileEdit = () => {
+    if (originalProfileData) {
+      setProfileData(originalProfileData);
+    }
+    setNewUsername(username);
+    setProfileError("");
+    setProfileMessage("");
     setUsernameError("");
     setUsernameMessage("");
+    setValidationError("");
+    setIsEditingProfile(false);
+  };
 
-    const err = validateUsername(newUsername);
-    if (err) {
-      setValidationError(err);
+  const handleSaveAll = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!user) return;
+
+    const unameError = validateUsername(newUsername);
+    const phoneError = validatePhone(profileData.phone);
+    const websiteError = validateWebsite(profileData.website);
+
+    if (unameError) {
+      setValidationError(unameError);
       return;
     }
 
+    if (phoneError || websiteError) {
+      setProfileError(phoneError || websiteError || "");
+      return;
+    }
+
+    setIsSavingProfile(true);
+    setProfileError("");
+    setProfileMessage("");
+    setUsernameError("");
+    setUsernameMessage("");
+
     try {
-      const response = await api.auth.updateProfile({ username: newUsername });
+      const payload = { ...profileData, username: newUsername };
+      const response = await api.auth.updateProfile(payload);
+
       if (response.status === 200) {
+        setProfileMessage("Profile updated successfully!");
         setUsernameMessage("Username updated successfully!");
+        setOriginalProfileData(profileData);
         setUsername(newUsername);
         setValidationError("");
-        updateUserData({ username: newUsername });
+
+        updateUserData({
+          username: newUsername,
+          name: profileData.name,
+          bio: profileData.bio,
+          location: profileData.location,
+          phone: profileData.phone,
+          office: profileData.office,
+          avatar: profileData.avatar,
+          website: profileData.website,
+        });
+
+        setIsEditingProfile(false);
       }
-    } catch (error: any) {
-      console.error("Username update failed:", error);
-      const apiError = error as {
+    } catch (err: any) {
+      console.error("Profile update failed:", err);
+      const apiError = err as {
         response?: { data?: { error?: string }; status?: number };
       };
-      setUsernameError(apiError.response?.data?.error || "Failed to update username.");
+      const msg = apiError.response?.data?.error || "Failed to update profile.";
+      setProfileError(msg);
+      setUsernameError(msg);
+    } finally {
+      setIsSavingProfile(false);
     }
   };
 
@@ -353,7 +343,9 @@ const MyPublicProfile: React.FC = () => {
         <div className="text-center max-w-md mx-auto px-4">
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <AlertCircle className="h-20 w-20 text-red-500 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-3">{loadError}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-3">
+              {loadError}
+            </h1>
             <p className="text-gray-600 mb-6">
               Please refresh the page or try again in a moment.
             </p>
@@ -460,7 +452,9 @@ const MyPublicProfile: React.FC = () => {
                     <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-2">
                       {profileTitle}
                     </h1>
-                    <p className="text-gray-600 text-base sm:text-lg mb-4">@{username}</p>
+                    <p className="text-gray-600 text-base sm:text-lg mb-4">
+                      @{username}
+                    </p>
 
                     <div className="flex flex-wrap items-center gap-6">
                       <div className="flex items-center gap-2">
@@ -492,15 +486,16 @@ const MyPublicProfile: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Right: buttons */}
+                {/* Right: buttons (Edit + Analytics) */}
                 <div className="flex gap-3 flex-wrap md:flex-nowrap">
-                  <Link
-                    to={`/${username}`}
+                  <button
+                    type="button"
+                    onClick={() => setIsEditingProfile(true)}
                     className="flex-1 md:flex-none px-7 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
                   >
-                    <Send className="h-4 w-4" />
-                    <span>View Public Profile</span>
-                  </Link>
+                    <Pencil className="h-4 w-4" />
+                    <span>Edit Profile</span>
+                  </button>
 
                   <Link
                     to="/analytics"
@@ -513,127 +508,85 @@ const MyPublicProfile: React.FC = () => {
               </div>
             </div>
 
-            {/* ABOUT + PERFORMANCE + CONTACT + USERNAME/PRIVACY */}
+            {/* ABOUT + CONTACT + PERFORMANCE (view-only, like PublicProfile) */}
             <div className="px-6 pb-8 pt-6 bg-gray-50">
-              {/* About + Performance */}
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="text-2xl font-bold text-gray-900">About</h2>
-                <button
-                  type="button"
-                  onClick={() => setIsEditingProfile((prev) => !prev)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 text-sm font-medium rounded-lg bg-gray-900 text-white hover:bg-black transition-colors"
-                >
-                  <Pencil className="h-4 w-4" />
-                  {isEditingProfile ? "Cancel" : "Edit profile"}
-                </button>
-              </div>
-
-              {/* Messages for profile save */}
-              {profileMessage && (
-                <div className="mb-4 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
-                  <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                  <span className="text-sm text-emerald-800 font-medium">
-                    {profileMessage}
-                  </span>
-                </div>
-              )}
-              {profileError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4 text-red-600" />
-                  <span className="text-sm text-red-800 font-medium">{profileError}</span>
-                </div>
-              )}
+              {/* ABOUT SECTION */}
+              <h2 className="text-2xl font-bold text-gray-900 mb-3">About</h2>
+              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-8">
+                {profileData.bio || "You haven't added a bio yet."}
+              </p>
 
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                {/* Left: Bio + basic fields */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
-                  {isEditingProfile ? (
-                    <>
-                      <div>
-                        <label className="block mb-2 text-sm font-semibold text-gray-700">
-                          Full Name
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.name}
-                          onChange={(e) =>
-                            handleProfileFieldChange("name", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          placeholder="Your full name"
-                        />
-                      </div>
+                {/* Contact Info (view-only) */}
+                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <Phone className="h-5 w-5 text-blue-600" />
+                    Contact Information
+                  </h3>
 
-                      <div>
-                        <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                          <MapPin className="h-4 w-4 mr-1 text-gray-500" />
-                          Location
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.location}
-                          onChange={(e) =>
-                            handleProfileFieldChange("location", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          placeholder="City, Country"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block mb-2 text-sm font-semibold text-gray-700">
-                          Bio
-                        </label>
-                        <div className="relative">
-                          <textarea
-                            value={profileData.bio}
-                            onChange={(e) =>
-                              handleProfileFieldChange("bio", e.target.value)
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {profileData.website && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+                          <Globe className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Website</p>
+                          <a
+                            href={
+                              profileData.website.startsWith("http")
+                                ? profileData.website
+                                : `https://${profileData.website}`
                             }
-                            className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                            rows={4}
-                            maxLength={500}
-                            placeholder="Tell clients who you are, your expertise, and what makes you different."
-                          />
-                          <div className="absolute bottom-2 right-3 text-xs text-gray-400">
-                            {profileData.bio.length}/500
-                          </div>
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline break-all"
+                          >
+                            {profileData.website}
+                          </a>
                         </div>
                       </div>
-                    </>
-                  ) : (
-                    <>
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                        <FileText className="h-5 w-5 text-blue-600" />
-                        Bio
-                      </h3>
-                      <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
-                        {profileData.bio || "You haven't added a bio yet."}
-                      </p>
+                    )}
 
-                      <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div>
-                          <p className="text-xs font-semibold uppercase text-gray-500 mb-1">
-                            Full Name
-                          </p>
-                          <p className="text-gray-900 font-medium">
-                            {profileData.name || "Not set"}
-                          </p>
+                    {profileData.phone && (
+                      <div className="flex items-start gap-4">
+                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mt-1">
+                          <Phone className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-xs font-semibold uppercase text-gray-500 mb-1">
-                            Location
-                          </p>
-                          <p className="text-gray-900 font-medium">
-                            {profileData.location || "Not set"}
+                          <p className="text-sm font-medium text-gray-600">Phone</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData.phone}
                           </p>
                         </div>
                       </div>
-                    </>
-                  )}
+                    )}
+
+                    {profileData.office && (
+                      <div className="flex items-start gap-4 md:col-span-2">
+                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mt-1">
+                          <Building2 className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-600">Office</p>
+                          <p className="font-medium text-gray-900">
+                            {profileData.office}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {!profileData.website &&
+                      !profileData.phone &&
+                      !profileData.office && (
+                        <p className="text-gray-500 italic col-span-full">
+                          No contact details provided.
+                        </p>
+                      )}
+                  </div>
                 </div>
 
-                {/* Right: Performance */}
+                {/* PERFORMANCE */}
                 {overallRating !== null && (
                   <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-200 p-6">
                     <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
@@ -645,7 +598,9 @@ const MyPublicProfile: React.FC = () => {
                       <div className="bg-white rounded-lg p-4 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">
                           <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="text-xs font-medium text-gray-600">Rating</span>
+                          <span className="text-xs font-medium text-gray-600">
+                            Rating
+                          </span>
                         </div>
                         <p className="text-3xl font-bold text-gray-900">
                           {overallRating.toFixed(1)}
@@ -667,289 +622,10 @@ const MyPublicProfile: React.FC = () => {
                   </div>
                 )}
               </div>
-
-              {/* Contact + account settings */}
-              <div className="mt-6 space-y-6">
-                {/* Contact information */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                    <Phone className="h-4 w-4 text-blue-600" />
-                    Contact Information
-                  </h3>
-
-                  {isEditingProfile ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {/* Website */}
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                          <Globe className="h-3 w-3 text-gray-400" />
-                          Website
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.website}
-                          onChange={(e) =>
-                            handleProfileFieldChange("website", e.target.value)
-                          }
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                          placeholder="example.com"
-                        />
-                      </div>
-
-                      {/* Phone */}
-                      <div className="flex flex-col gap-1">
-                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                          <Phone className="h-3 w-3 text-gray-400" />
-                          Phone
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.phone}
-                          onChange={(e) =>
-                            handleProfileFieldChange("phone", e.target.value)
-                          }
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                          placeholder="+123456789"
-                        />
-                      </div>
-
-                      {/* Office */}
-                      <div className="flex flex-col gap-1 sm:col-span-2">
-                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                          <Building2 className="h-3 w-3 text-gray-400" />
-                          Office / Workplace
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.office}
-                          onChange={(e) =>
-                            handleProfileFieldChange("office", e.target.value)
-                          }
-                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                          placeholder="Company name"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                      {profileData.website && (
-                        <div className="flex items-start gap-2">
-                          <Globe className="h-4 w-4 text-blue-600 mt-1" />
-                          <div>
-                            <p className="text-xs uppercase text-gray-500">Website</p>
-                            <a
-                              href={
-                                profileData.website.startsWith("http")
-                                  ? profileData.website
-                                  : `https://${profileData.website}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-sm font-medium text-gray-900 hover:text-blue-600 break-all"
-                            >
-                              {profileData.website}
-                            </a>
-                          </div>
-                        </div>
-                      )}
-
-                      {profileData.phone && (
-                        <div className="flex items-start gap-2">
-                          <Phone className="h-4 w-4 text-green-600 mt-1" />
-                          <div>
-                            <p className="text-xs uppercase text-gray-500">Phone</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {profileData.phone}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {profileData.office && (
-                        <div className="flex items-start gap-2">
-                          <Building2 className="h-4 w-4 text-purple-600 mt-1" />
-                          <div>
-                            <p className="text-xs uppercase text-gray-500">Office</p>
-                            <p className="text-sm font-medium text-gray-900">
-                              {profileData.office}
-                            </p>
-                          </div>
-                        </div>
-                      )}
-
-                      {!profileData.website &&
-                        !profileData.phone &&
-                        !profileData.office && (
-                          <p className="text-gray-500 italic text-sm">
-                            No contact details provided.
-                          </p>
-                        )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Save / Cancel buttons */}
-                {isEditingProfile && (
-                  <div className="flex justify-end gap-3">
-                    <button
-                      type="button"
-                      onClick={handleCancelProfileEdit}
-                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleSaveProfile}
-                      disabled={isSavingProfile}
-                      className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-md hover:bg-emerald-700 disabled:opacity-60 transition flex items-center gap-2"
-                    >
-                      {isSavingProfile ? (
-                        <>
-                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <Save className="h-4 w-4" />
-                          Save Profile
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
-
-                {/* Username + Privacy + Developer in one row */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* Username card */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center mb-4">
-                      <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                        <UserIcon className="h-5 w-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Username Settings
-                      </h3>
-                    </div>
-
-                    {usernameMessage && (
-                      <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                        <span className="text-xs text-emerald-800 font-medium">
-                          {usernameMessage}
-                        </span>
-                      </div>
-                    )}
-                    {usernameError && (
-                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                        <AlertCircle className="h-4 w-4 text-red-600" />
-                        <span className="text-xs text-red-800 font-medium">
-                          {usernameError}
-                        </span>
-                      </div>
-                    )}
-
-                    <form onSubmit={handleUpdateUsername} className="space-y-3">
-                      <div>
-                        <p className="text-xs font-semibold text-gray-500 mb-1">
-                          Current username
-                        </p>
-                        <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-900">
-                          @{username}
-                        </div>
-                      </div>
-
-                      <div>
-                        <label className="block mb-1 text-xs font-semibold text-gray-600">
-                          New username
-                        </label>
-                        <input
-                          type="text"
-                          value={newUsername}
-                          onChange={handleUsernameChange}
-                          className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
-                            validationError
-                              ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                              : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
-                          }`}
-                          placeholder="your_new_username"
-                        />
-                        {validationError && (
-                          <p className="mt-1 text-xs text-red-600 font-medium">
-                            {validationError}
-                          </p>
-                        )}
-                        <p className="mt-1 text-xs text-gray-500">
-                          Lowercase letters, numbers, underscores, and hyphens only.
-                        </p>
-                      </div>
-
-                      <button
-                        type="submit"
-                        disabled={!!validationError || !newUsername.trim()}
-                        className={`w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                          validationError || !newUsername.trim()
-                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg"
-                        }`}
-                      >
-                        Update Username
-                      </button>
-                    </form>
-                  </div>
-
-                  {/* Privacy card */}
-                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                    <div className="flex items-center mb-3">
-                      <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                        <Shield className="h-5 w-5 text-white" />
-                      </div>
-                      <h3 className="text-lg font-semibold text-gray-900">
-                        Privacy & GDPR
-                      </h3>
-                    </div>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Manage consent preferences and privacy controls related to your
-                      public profile and communication.
-                    </p>
-                    <Link
-                      to="/privacy-settings"
-                      className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 text-white hover:bg-black text-xs font-medium transition-colors"
-                    >
-                      <Shield className="h-4 w-4" />
-                      <span>Open Privacy Settings</span>
-                    </Link>
-                  </div>
-
-                  {/* Developer portal (if applicable) */}
-                  {user?.is_developer && (
-                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                      <div className="flex items-center mb-3">
-                        <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                          <Building className="h-5 w-5 text-white" />
-                        </div>
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Developer Portal
-                        </h3>
-                      </div>
-                      <p className="text-sm text-gray-600 mb-3">
-                        Access your API keys, integrations, and developer analytics.
-                      </p>
-                      <Link
-                        to="/developer-api"
-                        className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-xs font-medium transition-all"
-                      >
-                        <Building className="h-4 w-4" />
-                        <span>Open Developer Portal</span>
-                      </Link>
-                    </div>
-                  )}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* LISTINGS SECTION (unchanged style) */}
+          {/* LISTINGS SECTION (same as PublicProfile) */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-12">
             <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Listings</h2>
@@ -1036,6 +712,315 @@ const MyPublicProfile: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ========================== */}
+      {/* FULL-SCREEN EDIT MODAL    */}
+      {/* ========================== */}
+      {isEditingProfile && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6">
+            {/* Close button */}
+            <button
+              type="button"
+              onClick={handleCancelProfileEdit}
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+
+            <div className="mb-4 flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
+                <UserIcon className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Edit Profile
+                </h2>
+                <p className="text-sm text-gray-500">
+                  Update your public information, contact details, and username.
+                </p>
+              </div>
+            </div>
+
+            {/* Messages */}
+            {profileMessage && (
+              <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm text-emerald-800 font-medium">
+                  {profileMessage}
+                </span>
+              </div>
+            )}
+            {profileError && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-800 font-medium">
+                  {profileError}
+                </span>
+              </div>
+            )}
+            {usernameMessage && (
+              <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                <span className="text-sm text-emerald-800 font-medium">
+                  {usernameMessage}
+                </span>
+              </div>
+            )}
+            {usernameError && (
+              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                <AlertCircle className="h-4 w-4 text-red-600" />
+                <span className="text-sm text-red-800 font-medium">
+                  {usernameError}
+                </span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveAll} className="space-y-6 mt-2">
+              {/* Username */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                  <UserIcon className="h-4 w-4 text-blue-600" />
+                  Username
+                </h3>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-500 mb-1">
+                      Current username
+                    </p>
+                    <div className="px-3 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-900">
+                      @{username}
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-gray-600">
+                      New username
+                    </label>
+                    <input
+                      type="text"
+                      value={newUsername}
+                      onChange={handleUsernameChange}
+                      className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-white transition-all duration-200 focus:outline-none focus:ring-2 ${
+                        validationError
+                          ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                          : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
+                      }`}
+                      placeholder="your_new_username"
+                    />
+                    {validationError && (
+                      <p className="mt-1 text-xs text-red-600 font-medium">
+                        {validationError}
+                      </p>
+                    )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Lowercase letters, numbers, underscores, and hyphens only.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Basic info */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-blue-600" />
+                  Basic Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block mb-1 text-xs font-semibold text-gray-700">
+                      Full Name
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.name}
+                      onChange={(e) =>
+                        handleProfileFieldChange("name", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+                      placeholder="Your full name"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="mb-1 text-xs font-semibold text-gray-700 flex items-center gap-1">
+                      <MapPin className="h-3 w-3 text-gray-500" />
+                      Location
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.location}
+                      onChange={(e) =>
+                        handleProfileFieldChange("location", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+                      placeholder="City, Country"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block mb-1 text-xs font-semibold text-gray-700">
+                    Bio
+                  </label>
+                  <div className="relative">
+                    <textarea
+                      value={profileData.bio}
+                      onChange={(e) =>
+                        handleProfileFieldChange("bio", e.target.value)
+                      }
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
+                      rows={4}
+                      maxLength={500}
+                      placeholder="Tell clients who you are, your expertise, and what makes you different."
+                    />
+                    <div className="absolute bottom-2 right-3 text-xs text-gray-400">
+                      {profileData.bio.length}/500
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact info */}
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
+                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+                  <Phone className="h-4 w-4 text-blue-600" />
+                  Contact Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Website */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                      <Globe className="h-3 w-3 text-gray-400" />
+                      Website
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.website}
+                      onChange={(e) =>
+                        handleProfileFieldChange("website", e.target.value)
+                      }
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                      placeholder="example.com"
+                    />
+                  </div>
+
+                  {/* Phone */}
+                  <div className="flex flex-col gap-1">
+                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                      <Phone className="h-3 w-3 text-gray-400" />
+                      Phone
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.phone}
+                      onChange={(e) =>
+                        handleProfileFieldChange("phone", e.target.value)
+                      }
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                      placeholder="+123456789"
+                    />
+                  </div>
+
+                  {/* Office */}
+                  <div className="flex flex-col gap-1 sm:col-span-2">
+                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                      <Building2 className="h-3 w-3 text-gray-400" />
+                      Office / Workplace
+                    </label>
+                    <input
+                      type="text"
+                      value={profileData.office}
+                      onChange={(e) =>
+                        handleProfileFieldChange("office", e.target.value)
+                      }
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                      placeholder="Company name"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick links: Privacy + Developer */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                  <div className="flex items-center mb-2">
+                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-2">
+                      <Shield className="h-4 w-4 text-white" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      Privacy &amp; GDPR
+                    </h3>
+                  </div>
+                  <p className="text-xs text-gray-600 mb-3">
+                    Manage consent preferences and privacy controls related to your
+                    public profile and communication.
+                  </p>
+                  <Link
+                    to="/privacy-settings"
+                    className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-black text-xs font-medium transition-colors"
+                  >
+                    <Shield className="h-3 w-3" />
+                    <span>Open Privacy Settings</span>
+                  </Link>
+                </div>
+
+                {user?.is_developer && (
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                    <div className="flex items-center mb-2">
+                      <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-2">
+                        <Building className="h-4 w-4 text-white" />
+                      </div>
+                      <h3 className="text-sm font-semibold text-gray-900">
+                        Developer Portal
+                      </h3>
+                    </div>
+                    <p className="text-xs text-gray-600 mb-3">
+                      Access your API keys, integrations, and developer analytics.
+                    </p>
+                    <Link
+                      to="/developer-api"
+                      className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-xs font-medium transition-all"
+                    >
+                      <Building className="h-3 w-3" />
+                      <span>Open Developer Portal</span>
+                    </Link>
+                  </div>
+                )}
+              </div>
+
+              {/* Save / Cancel */}
+              <div className="flex justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={handleCancelProfileEdit}
+                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingProfile}
+                  className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-md hover:bg-emerald-700 disabled:opacity-60 transition flex items-center gap-2"
+                >
+                  {isSavingProfile ? (
+                    <>
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-4 w-4" />
+                      Save Changes
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
