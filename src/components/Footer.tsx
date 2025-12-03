@@ -1,4 +1,4 @@
-import { Building2, Home, Instagram, Linkedin, Mail, Phone } from "lucide-react";
+import { Building2, Home, Instagram, Linkedin, Mail } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -128,14 +128,6 @@ const Footer = () => {
                 <span className="absolute bottom-0 left-0 w-12 h-0.5 bg-blue-500"></span>
               </h3>
               <ul className="space-y-4">
-                <li className="flex items-start group">
-                  <Phone className="h-5 w-5 text-blue-400 mr-3 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
-                  <span className="text-gray-300 text-sm leading-relaxed">
-                    +357 94007875
-                    <br />
-                    +357 94046844
-                  </span>
-                </li>
                 <li className="flex items-start group">
                   <Mail className="h-5 w-5 text-blue-400 mr-3 mt-1 flex-shrink-0 group-hover:scale-110 transition-transform" />
                   <a
