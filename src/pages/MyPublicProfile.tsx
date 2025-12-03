@@ -5,7 +5,6 @@ import {
   Building,
   Building2,
   CheckCircle2,
-  Clock,
   FileText,
   Globe,
   MapPin,
@@ -52,6 +51,7 @@ interface UserResponse {
     website?: string;
     date_joined: string;
     is_developer?: boolean;
+    connections_count?: number; // allow TS to know about this
   };
 }
 
@@ -74,7 +74,9 @@ const MyPublicProfile: React.FC = () => {
 
   const [properties, setProperties] = useState<Property[]>([]);
   const [overallRating, setOverallRating] = useState<number | null>(null);
-  const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(null);
+  const [overallReviewsCount, setOverallReviewsCount] = useState<number | null>(
+    null
+  );
 
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -85,7 +87,8 @@ const MyPublicProfile: React.FC = () => {
   const [profileMessage, setProfileMessage] = useState("");
   const [profileError, setProfileError] = useState("");
 
-  const [originalProfileData, setOriginalProfileData] = useState<ProfileData | null>(null);
+  const [originalProfileData, setOriginalProfileData] =
+    useState<ProfileData | null>(null);
 
   // --- Username state ---
   const [newUsername, setNewUsername] = useState("");
@@ -129,10 +132,6 @@ const MyPublicProfile: React.FC = () => {
   const validateWebsite = (website: string): string | null => {
     if (!website) return null;
     try {
-      // Allow missing protocol by trying to prepend https if needed
-      // but for validation we accept both forms.
-      // This is just a sanity check.
-      // eslint-disable-next-line no-new
       new URL(website.startsWith("http") ? website : `https://${website}`);
       return null;
     } catch {
@@ -378,6 +377,11 @@ const MyPublicProfile: React.FC = () => {
     profileData.bio ||
     `${profileTitle} is a real estate professional on PropertPro with ${properties.length} listings.`;
 
+  const connectionsCount =
+    (user as any)?.connections_count !== undefined
+      ? (user as any).connections_count
+      : 0;
+
   return (
     <div className="pt-16 bg-white min-h-screen">
       <SEO
@@ -395,7 +399,12 @@ const MyPublicProfile: React.FC = () => {
           <div className="absolute inset-0 opacity-30">
             <svg className="w-full h-full" preserveAspectRatio="xMidYMid slice">
               <defs>
-                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                <pattern
+                  id="grid"
+                  width="40"
+                  height="40"
+                  patternUnits="userSpaceOnUse"
+                >
                   <path
                     d="M 40 0 L 0 0 0 40"
                     fill="none"
@@ -475,7 +484,7 @@ const MyPublicProfile: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <UserPlus className="h-5 w-5 text-gray-500" />
                         <span className="text-lg font-semibold text-gray-900">
-                          {user?.connections_count ?? 0}
+                          {connectionsCount}
                         </span>
                         <span className="text-gray-600">Connections</span>
                       </div>
@@ -535,7 +544,7 @@ const MyPublicProfile: React.FC = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left: Bio + basic fields */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6 space-y-5">
                   {isEditingProfile ? (
@@ -659,251 +668,284 @@ const MyPublicProfile: React.FC = () => {
                 )}
               </div>
 
-            {/* Contact + username + privacy in same container */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              {/* Contact + account settings */}
+              <div className="mt-6 space-y-6">
+                {/* Contact information */}
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+                  <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
+                    <Phone className="h-4 w-4 text-blue-600" />
+                    Contact Information
+                  </h3>
 
+                  {isEditingProfile ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {/* Website */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                          <Globe className="h-3 w-3 text-gray-400" />
+                          Website
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.website}
+                          onChange={(e) =>
+                            handleProfileFieldChange("website", e.target.value)
+                          }
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                          placeholder="example.com"
+                        />
+                      </div>
 
-            {/* Contact information (editable inline) */}
-            <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-4">
-                <h3 className="text-base font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                <Phone className="h-4 w-4 text-blue-600" />
-                Contact Information
-                </h3>
+                      {/* Phone */}
+                      <div className="flex flex-col gap-1">
+                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                          <Phone className="h-3 w-3 text-gray-400" />
+                          Phone
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.phone}
+                          onChange={(e) =>
+                            handleProfileFieldChange("phone", e.target.value)
+                          }
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                          placeholder="+123456789"
+                        />
+                      </div>
 
-                {isEditingProfile ? (
-                /* EDIT MODE */
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                    {/* Website */}
-                    <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                        <Globe className="h-3 w-3 text-gray-400" />
-                        Website
-                    </label>
-                    <input
-                        type="text"
-                        value={profileData.website}
-                        onChange={(e) => handleProfileFieldChange("website", e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                        placeholder="example.com"
-                    />
+                      {/* Office */}
+                      <div className="flex flex-col gap-1 sm:col-span-2">
+                        <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
+                          <Building2 className="h-3 w-3 text-gray-400" />
+                          Office / Workplace
+                        </label>
+                        <input
+                          type="text"
+                          value={profileData.office}
+                          onChange={(e) =>
+                            handleProfileFieldChange("office", e.target.value)
+                          }
+                          className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
+                          placeholder="Company name"
+                        />
+                      </div>
                     </div>
-
-                    {/* Phone */}
-                    <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                        <Phone className="h-3 w-3 text-gray-400" />
-                        Phone
-                    </label>
-                    <input
-                        type="text"
-                        value={profileData.phone}
-                        onChange={(e) => handleProfileFieldChange("phone", e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                        placeholder="+123456789"
-                    />
-                    </div>
-
-                    {/* Office */}
-                    <div className="flex flex-col gap-1 sm:col-span-2">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                        <Building2 className="h-3 w-3 text-gray-400" />
-                        Office / Workplace
-                    </label>
-                    <input
-                        type="text"
-                        value={profileData.office}
-                        onChange={(e) => handleProfileFieldChange("office", e.target.value)}
-                        className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                        placeholder="Company name"
-                    />
-                    </div>
-
-                </div>
-                ) : (
-                /* VIEW MODE */
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-
-                    {profileData.website && (
-                    <div className="flex items-start gap-2">
-                        <Globe className="h-4 w-4 text-blue-600 mt-1" />
-                        <div>
-                        <p className="text-xs uppercase text-gray-500">Website</p>
-                        <a
-                            href={profileData.website}
-                            className="text-sm font-medium text-gray-900 hover:text-blue-600 break-all"
-                        >
-                            {profileData.website}
-                        </a>
+                  ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                      {profileData.website && (
+                        <div className="flex items-start gap-2">
+                          <Globe className="h-4 w-4 text-blue-600 mt-1" />
+                          <div>
+                            <p className="text-xs uppercase text-gray-500">Website</p>
+                            <a
+                              href={
+                                profileData.website.startsWith("http")
+                                  ? profileData.website
+                                  : `https://${profileData.website}`
+                              }
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm font-medium text-gray-900 hover:text-blue-600 break-all"
+                            >
+                              {profileData.website}
+                            </a>
+                          </div>
                         </div>
-                    </div>
-                    )}
+                      )}
 
-                    {profileData.phone && (
-                    <div className="flex items-start gap-2">
-                        <Phone className="h-4 w-4 text-green-600 mt-1" />
-                        <div>
-                        <p className="text-xs uppercase text-gray-500">Phone</p>
-                        <p className="text-sm font-medium text-gray-900">
-                            {profileData.phone}
-                        </p>
+                      {profileData.phone && (
+                        <div className="flex items-start gap-2">
+                          <Phone className="h-4 w-4 text-green-600 mt-1" />
+                          <div>
+                            <p className="text-xs uppercase text-gray-500">Phone</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {profileData.phone}
+                            </p>
+                          </div>
                         </div>
-                    </div>
-                    )}
+                      )}
 
-                    {profileData.office && (
-                    <div className="flex items-start gap-2">
-                        <Building2 className="h-4 w-4 text-purple-600 mt-1" />
-                        <div>
-                        <p className="text-xs uppercase text-gray-500">Office</p>
-                        <p className="text-sm font-medium text-gray-900">
-                            {profileData.office}
-                        </p>
+                      {profileData.office && (
+                        <div className="flex items-start gap-2">
+                          <Building2 className="h-4 w-4 text-purple-600 mt-1" />
+                          <div>
+                            <p className="text-xs uppercase text-gray-500">Office</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {profileData.office}
+                            </p>
+                          </div>
                         </div>
+                      )}
+
+                      {!profileData.website &&
+                        !profileData.phone &&
+                        !profileData.office && (
+                          <p className="text-gray-500 italic text-sm">
+                            No contact details provided.
+                          </p>
+                        )}
                     </div>
-                    )}
-
-                    {!profileData.website &&
-                    !profileData.phone &&
-                    !profileData.office && (
-                    <p className="text-gray-500 italic text-sm">
-                        No contact details provided.
-                    </p>
-                    )}
-
-                </div>
-                )}
-            </div> 
-            {/* END OF CONTACT BLOCK – THIS DIV WAS MISSING IN YOUR FILE */}
-
-            {/* Username + Privacy */}
-            <div className="space-y-4">
-                {/* Username card */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-4">
-                    <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                    <UserIcon className="h-5 w-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                    Username Settings
-                    </h3>
+                  )}
                 </div>
 
-                {usernameMessage && (
-                    <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
-                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                    <span className="text-xs text-emerald-800 font-medium">
-                        {usernameMessage}
-                    </span>
-                    </div>
-                )}
-                {usernameError && (
-                    <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                    <AlertCircle className="h-4 w-4 text-red-600" />
-                    <span className="text-xs text-red-800 font-medium">
-                        {usernameError}
-                    </span>
-                    </div>
-                )}
-
-                <form onSubmit={handleUpdateUsername} className="space-y-3">
-                    <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">
-                        Current username
-                    </p>
-                    <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-900">
-                        @{username}
-                    </div>
-                    </div>
-
-                    <div>
-                    <label className="block mb-1 text-xs font-semibold text-gray-600">
-                        New username
-                    </label>
-                    <input
-                        type="text"
-                        value={newUsername}
-                        onChange={handleUsernameChange}
-                        className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
-                        validationError
-                            ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                            : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
-                        }`}
-                        placeholder="your_new_username"
-                    />
-                    {validationError && (
-                        <p className="mt-1 text-xs text-red-600 font-medium">
-                        {validationError}
-                        </p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-500">
-                        Lowercase letters, numbers, underscores, and hyphens only.
-                    </p>
-                    </div>
-
+                {/* Save / Cancel buttons */}
+                {isEditingProfile && (
+                  <div className="flex justify-end gap-3">
                     <button
-                    type="submit"
-                    disabled={!!validationError || !newUsername.trim()}
-                    className={`w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
-                        validationError || !newUsername.trim()
-                        ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg"
-                    }`}
+                      type="button"
+                      onClick={handleCancelProfileEdit}
+                      className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
                     >
-                    Update Username
+                      Cancel
                     </button>
-                </form>
-                </div>
+                    <button
+                      type="button"
+                      onClick={handleSaveProfile}
+                      disabled={isSavingProfile}
+                      className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-md hover:bg-emerald-700 disabled:opacity-60 transition flex items-center gap-2"
+                    >
+                      {isSavingProfile ? (
+                        <>
+                          <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          Saving...
+                        </>
+                      ) : (
+                        <>
+                          <Save className="h-4 w-4" />
+                          Save Profile
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
 
-                {/* Privacy card */}
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <div className="flex items-center mb-3">
-                    <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                    <Shield className="h-5 w-5 text-white" />
+                {/* Username + Privacy + Developer in one row */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* Username card */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div className="flex items-center mb-4">
+                      <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
+                        <UserIcon className="h-5 w-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Username Settings
+                      </h3>
                     </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                    Privacy & GDPR
-                    </h3>
-                </div>
-                <p className="text-sm text-gray-600 mb-3">
-                    Manage consent preferences and privacy controls related to your
-                    public profile and communication.
-                </p>
-                <Link
-                    to="/privacy-settings"
-                    className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 text-white hover:bg-black text-xs font-medium transition-colors"
-                >
-                    <Shield className="h-4 w-4" />
-                    <span>Open Privacy Settings</span>
-                </Link>
-                </div>
 
-                {/* Developer Portal */}
-                {user?.is_developer && (
-                <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    {usernameMessage && (
+                      <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                        <span className="text-xs text-emerald-800 font-medium">
+                          {usernameMessage}
+                        </span>
+                      </div>
+                    )}
+                    {usernameError && (
+                      <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
+                        <AlertCircle className="h-4 w-4 text-red-600" />
+                        <span className="text-xs text-red-800 font-medium">
+                          {usernameError}
+                        </span>
+                      </div>
+                    )}
+
+                    <form onSubmit={handleUpdateUsername} className="space-y-3">
+                      <div>
+                        <p className="text-xs font-semibold text-gray-500 mb-1">
+                          Current username
+                        </p>
+                        <div className="px-3 py-2 bg-gray-50 rounded-lg border border-gray-200 text-sm font-medium text-gray-900">
+                          @{username}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block mb-1 text-xs font-semibold text-gray-600">
+                          New username
+                        </label>
+                        <input
+                          type="text"
+                          value={newUsername}
+                          onChange={handleUsernameChange}
+                          className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-white/80 backdrop-blur-sm transition-all duration-200 focus:outline-none focus:ring-2 ${
+                            validationError
+                              ? "border-red-300 focus:border-red-500 focus:ring-red-100"
+                              : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
+                          }`}
+                          placeholder="your_new_username"
+                        />
+                        {validationError && (
+                          <p className="mt-1 text-xs text-red-600 font-medium">
+                            {validationError}
+                          </p>
+                        )}
+                        <p className="mt-1 text-xs text-gray-500">
+                          Lowercase letters, numbers, underscores, and hyphens only.
+                        </p>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={!!validationError || !newUsername.trim()}
+                        className={`w-full py-2.5 text-sm font-semibold rounded-lg transition-all duration-200 ${
+                          validationError || !newUsername.trim()
+                            ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                            : "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg"
+                        }`}
+                      >
+                        Update Username
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Privacy card */}
+                  <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
                     <div className="flex items-center mb-3">
-                    <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
-                        <Building className="h-5 w-5 text-white" />
-                    </div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                        Developer Portal
-                    </h3>
+                      <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
+                        <Shield className="h-5 w-5 text-white" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        Privacy & GDPR
+                      </h3>
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
-                    Access your API keys, integrations, and developer analytics.
+                      Manage consent preferences and privacy controls related to your
+                      public profile and communication.
                     </p>
                     <Link
-                    to="/developer-api"
-                    className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-xs font-medium transition-all"
+                      to="/privacy-settings"
+                      className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gray-900 text-white hover:bg-black text-xs font-medium transition-colors"
                     >
-                    <Building className="h-4 w-4" />
-                    <span>Open Developer Portal</span>
+                      <Shield className="h-4 w-4" />
+                      <span>Open Privacy Settings</span>
                     </Link>
-                </div>
-                )}
-            </div>
-            </div>
+                  </div>
 
+                  {/* Developer portal (if applicable) */}
+                  {user?.is_developer && (
+                    <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                      <div className="flex items-center mb-3">
+                        <div className="flex items-center justify-center w-9 h-9 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-3">
+                          <Building className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Developer Portal
+                        </h3>
+                      </div>
+                      <p className="text-sm text-gray-600 mb-3">
+                        Access your API keys, integrations, and developer analytics.
+                      </p>
+                      <Link
+                        to="/developer-api"
+                        className="inline-flex items-center space-x-2 px-3 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-xs font-medium transition-all"
+                      >
+                        <Building className="h-4 w-4" />
+                        <span>Open Developer Portal</span>
+                      </Link>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
           </div>
 
