@@ -57,8 +57,6 @@ type Props = {
 type PT =
   | "house"
   | "apartment"
-  | "condo"
-  | "townhouse"
   | "land"
   | "hotel"
   | "shop"
@@ -93,41 +91,6 @@ const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
     "location",
     "propertyStatus",
     "area",
-    "bedrooms",
-    "bathrooms",
-    "floorLevel",
-    "totalFloors",
-    "parkingSpaces",
-    "energyRating",
-    "yearBuilt",
-    "amenities",
-    "description",
-  ],
-  condo: [
-    "title",
-    "price",
-    "country",
-    "location",
-    "propertyStatus",
-    "area",
-    "bedrooms",
-    "bathrooms",
-    "floorLevel",
-    "totalFloors",
-    "parkingSpaces",
-    "energyRating",
-    "yearBuilt",
-    "amenities",
-    "description",
-  ],
-  townhouse: [
-    "title",
-    "price",
-    "country",
-    "location",
-    "propertyStatus",
-    "area",
-    "lotSize",
     "bedrooms",
     "bathrooms",
     "floorLevel",
@@ -212,7 +175,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   
   // Multi-unit state
   const isMultiUnit = formData.has_units === true;
-  const canHaveUnits = ptype && ptype !== 'land';
+  const canHaveUnits = ptype && [
+    'house',
+    'apartment',
+    'office',
+    'shop'
+  ].includes(ptype);
 
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
   const showField = useCallback((k: keyof ListingForm) => {
@@ -231,8 +199,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       const isInAmenitiesList = [
         "house",
         "apartment",
-        "condo",
-        "townhouse",
         "hotel",
         "residential_building",
       ].includes(ptype);
@@ -456,7 +422,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
     
     // Single property validation
-    if (["house", "apartment", "condo", "townhouse"].includes(ptype))
+    if (["house", "apartment"].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
     if (ptype === "land") return !!formData.lotSize; // Land requires lot_size, not area
     if (["hotel", "shop", "office", "residential_building"].includes(ptype)) return !!formData.area;
@@ -1085,7 +1051,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         )}
 
         {/* Amenities */}
-        {["house", "apartment", "condo", "townhouse", "hotel", "residential_building"].includes(
+        {["house", "apartment", "hotel", "residential_building"].includes(
           ptype,
         ) &&
           (showField("amenities") || (isEditing && formData.propertyType)) && (

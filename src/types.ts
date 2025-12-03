@@ -503,8 +503,6 @@ export const DEFAULT_FORM_STATE: ListingForm = {
 export const PROPERTY_TYPES = [
   { value: "house", label: "House" },
   { value: "apartment", label: "Apartment" },
-  { value: "condo", label: "Condo" },
-  { value: "townhouse", label: "Townhouse" },
   { value: "land", label: "Land" },
   { value: "hotel", label: "Hotel" },
   { value: "shop", label: "Shop" },

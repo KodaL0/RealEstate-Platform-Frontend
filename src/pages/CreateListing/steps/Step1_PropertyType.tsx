@@ -17,8 +17,6 @@ type Props = {
 type PT =
   | "house"
   | "apartment"
-  | "condo"
-  | "townhouse"
   | "land"
   | "hotel"
   | "shop"
