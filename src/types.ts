@@ -229,6 +229,8 @@ export interface PublicProfileData {
   avatar?: string;
   website?: string;
   phone?: string;
+  is_agent?: boolean;
+  is_developer?: boolean;
   properties_count: number;
   published_properties: Property[];
   connections_count: number;

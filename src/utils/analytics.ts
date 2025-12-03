@@ -474,6 +474,7 @@ export const setUserProperties = (
   userId: string | number,
   properties: {
     is_developer?: boolean;
+    is_agent?: boolean;
     is_verified?: boolean;
     listings_count?: number;
     connections_count?: number;

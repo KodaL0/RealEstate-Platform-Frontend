@@ -307,6 +307,7 @@ export interface DeveloperOrganization {
   id: number;
   owner: number;
   name: string;
+  slug?: string; // URL-friendly identifier for organization
   description?: string;
   country: string;
   website?: string;
@@ -328,36 +329,110 @@ export interface DeveloperMembership {
   updated_at: string;
 }
 
+export interface ProjectImage {
+  image: string;
+  is_primary: boolean;
+  display_order: number;
+  created_at?: string;
+}
+
 export interface Project {
+  // Core identification
   id: number;
   organization: number;
   name: string;
+  slug?: string; // URL-friendly identifier for project
   description?: string;
+  
+  // Location
   location: string;
   country: string;
+  latitude?: number;
+  longitude?: number;
+  
+  // Status and dates
   status: "planning" | "construction" | "completed" | "available";
   start_date?: string;
   completion_date?: string;
+  finish_date?: string; // Alternative name used in some components (maps to completion_date)
+  
+  // Units
   total_units: number;
   available_units: number;
+  
+  // Denormalized counts
   assets_count?: number; // Count of DeveloperAsset documents (denormalized)
   photos_count?: number; // Count of ProjectAsset photos (denormalized)
+  
+  // Pricing (legacy - prefer sale_price_min/max or rent_price_min/max)
   price_min?: number;
   price_max?: number;
   currency: string;
+  
+  // Sale range fields (denormalized from Units with listing_type='for_sale')
+  sale_bedrooms_min?: number;
+  sale_bedrooms_max?: number;
+  sale_bathrooms_min?: number;
+  sale_bathrooms_max?: number;
+  sale_area_min?: number;
+  sale_area_max?: number;
+  sale_price_min?: number;
+  sale_price_max?: number;
+  sale_total_value?: number;
+  
+  // Rent range fields (denormalized from Units with listing_type='for_rent')
+  rent_bedrooms_min?: number;
+  rent_bedrooms_max?: number;
+  rent_bathrooms_min?: number;
+  rent_bathrooms_max?: number;
+  rent_area_min?: number;
+  rent_area_max?: number;
+  rent_price_min?: number;
+  rent_price_max?: number;
+  rent_total_value?: number;
+  
+  // Arrays
   property_types: string[];
   amenities: string[];
   features: string[];
   metadata: Record<string, unknown>;
+  
+  // Images and media
   main_image?: string;
-  latitude?: number;
-  longitude?: number;
+  images?: ProjectImage[]; // Normalized images array for card/feed display
+  assets?: ProjectAsset[]; // Photos come from Project.assets (ProjectAsset with category='photos')
+  developer_assets?: DeveloperAsset[]; // Documents come from DeveloperAsset endpoint
+  
+  // Related data
+  units?: Unit[];
+  
+  // Organization/Owner (for feed/public views)
+  owner?: {
+    id: number;
+    email: string;
+    name?: string;
+    username?: string;
+  };
+  contact_phone?: string;
+  contact_email?: string;
+  
+  // Feed-specific fields (for personalized feed)
+  match_score?: number | null;
+  slot_type?: 'personalized' | 'explore' | string | null;
+  
+  // Computed/display fields
+  is_favourite?: boolean;
+  favorites_count?: number;
+  view_count?: number;
+  
+  // Frontend display
+  url?: string; // Format: /developers/{orgSlug}/{projectSlug}
+  _type?: "project"; // Discriminator for feed/card components
+  
+  // Publication
   is_published: boolean;
   created_at: string;
   updated_at: string;
-  assets?: ProjectAsset[]; // Photos come from Project.assets (ProjectAsset with category='photos')
-  developer_assets?: DeveloperAsset[]; // Documents come from DeveloperAsset endpoint
-  units?: Unit[];
 }
 
 // ProjectAsset interface for photos (from projects endpoint)
@@ -399,6 +474,7 @@ export interface Unit {
   currency: string;
   vat_included: boolean;
   status: "available" | "reserved" | "sold";
+  listing_type?: "for_sale" | "for_rent"; // Whether unit is for sale or rent
   pool_type?: string;
   delivery_months?: number;
   price_min_furniture_package?: number;

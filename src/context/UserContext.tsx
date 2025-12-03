@@ -10,6 +10,8 @@ type User = {
   username: string;
   email: string;
   is_developer?: boolean;
+  is_agent?: boolean;
+  properties_count?: number;
   name?: string;
   bio?: string;
   location?: string;
@@ -123,6 +125,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
             analytics.setUserProperties(userData.id, {
               is_developer: userData.is_developer || false,
+              is_agent: userData.is_agent || false,
               is_verified: userData.email_verified || false,
               account_age_days: accountAgeDays,
             });

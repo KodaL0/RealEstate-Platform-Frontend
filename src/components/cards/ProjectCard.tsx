@@ -488,7 +488,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         {priceRange && (
           <div className="mb-4 sm:mb-6">
             <div className="flex items-baseline">
-              <span className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '100%' }} title={priceRange}>
+              <span className="text-xl sm:text-2xl md:text-xl lg:text-3xl font-bold text-gray-900 whitespace-nowrap overflow-hidden text-ellipsis" style={{ maxWidth: '100%' }} title={priceRange}>
                 {priceRange}
               </span>
             </div>
@@ -503,7 +503,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
         {/* Dynamic stats in single line layout */}
         {stats.length > 0 && (
           <div className="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-3 sm:p-4 border border-gray-100">
-            <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-2 lg:gap-4">
+            <div className="flex items-start justify-between gap-2 sm:gap-3 md:gap-2.5 lg:gap-4">
               {stats.slice(0, 4).map((s, index) => {
                 const isArea = s.key === "area";
                 return (
@@ -517,7 +517,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
                     <div 
                       className={`font-bold text-gray-900 leading-tight whitespace-nowrap overflow-hidden text-ellipsis mb-1 ${
                         isArea 
-                          ? "text-sm md:text-xs lg:text-lg" // Smaller on 2-card (md), larger on 3-card (lg)
+                          ? "text-sm md:text-sm lg:text-lg" // Keep readable on 2-card (md), larger on 3-card (lg)
                           : "text-base sm:text-lg" // Standard sizing for other stats
                       }`}
                       style={{ maxWidth: '100%' }}
