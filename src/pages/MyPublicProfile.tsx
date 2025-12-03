@@ -663,159 +663,148 @@ const MyPublicProfile: React.FC = () => {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Contact information (editable inline) */}
                 <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
                     <Phone className="h-5 w-5 text-blue-600" />
                     Contact Information
-                  </h3>
+                </h3>
 
-                  {isEditingProfile ? (
+                {isEditingProfile ? (
+                    /* --- EDIT MODE (more compact) --- */
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                      <div>
-                        <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                          <Globe className="h-4 w-4 mr-1 text-gray-500" />
-                          Website
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.website}
-                          onChange={(e) =>
-                            handleProfileFieldChange("website", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          placeholder="https://example.com"
-                        />
-                      </div>
 
-                      <div>
-                        <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                          <Phone className="h-4 w-4 mr-1 text-gray-500" />
-                          Phone
+                    {/* Website */}
+                    <div>
+                        <label className="mb-1.5 text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <Globe className="h-4 w-4 text-gray-500" />
+                        Website
                         </label>
                         <input
-                          type="tel"
-                          value={profileData.phone}
-                          onChange={(e) =>
-                            handleProfileFieldChange("phone", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          placeholder="+1234567890"
+                        type="text"
+                        value={profileData.website}
+                        onChange={(e) => handleProfileFieldChange("website", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        placeholder="https://example.com"
                         />
-                      </div>
-
-                      <div className="md:col-span-2">
-                        <label className="mb-2 text-sm font-semibold text-gray-700 flex items-center">
-                          <Building className="h-4 w-4 mr-1 text-gray-500" />
-                          Office / Workplace
-                        </label>
-                        <input
-                          type="text"
-                          value={profileData.office}
-                          onChange={(e) =>
-                            handleProfileFieldChange("office", e.target.value)
-                          }
-                          className="w-full px-3 py-2 border-2 border-gray-200 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                          placeholder="Company or office name"
-                        />
-                      </div>
                     </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {profileData.website && (
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0 mt-1">
+
+                    {/* Phone */}
+                    <div>
+                        <label className="mb-1.5 text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <Phone className="h-4 w-4 text-gray-500" />
+                        Phone
+                        </label>
+                        <input
+                        type="tel"
+                        value={profileData.phone}
+                        onChange={(e) => handleProfileFieldChange("phone", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        placeholder="+123456789"
+                        />
+                    </div>
+
+                    {/* Office */}
+                    <div className="md:col-span-2">
+                        <label className="mb-1.5 text-sm font-medium text-gray-700 flex items-center gap-1">
+                        <Building2 className="h-4 w-4 text-gray-500" />
+                        Office / Workplace
+                        </label>
+                        <input
+                        type="text"
+                        value={profileData.office}
+                        onChange={(e) => handleProfileFieldChange("office", e.target.value)}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-500"
+                        placeholder="Company name"
+                        />
+                    </div>
+                    </div>
+
+                ) : (
+                    /* --- VIEW MODE (clean premium) --- */
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+
+                    {/* Website */}
+                    {profileData.website && (
+                        <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                             <Globe className="h-5 w-5 text-blue-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-600 mb-1">
-                              Website
-                            </p>
+                        </div>
+                        <div>
+                            <p className="text-xs uppercase text-gray-500 tracking-wide">Website</p>
                             <a
-                              href={
-                                profileData.website.startsWith("http")
-                                  ? profileData.website
-                                  : `https://${profileData.website}`
-                              }
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-700 font-medium hover:underline break-all"
+                            href={profileData.website.startsWith("http") ? profileData.website : `https://${profileData.website}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-gray-900 font-medium hover:text-blue-600 hover:underline break-all"
                             >
-                              {profileData.website}
+                            {profileData.website}
                             </a>
-                          </div>
                         </div>
-                      )}
+                        </div>
+                    )}
 
-                      {profileData.phone && (
-                        <div className="flex items-start gap-4">
-                          <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0 mt-1">
+                    {/* Phone */}
+                    {profileData.phone && (
+                        <div className="flex items-start gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-green-50 flex items-center justify-center">
                             <Phone className="h-5 w-5 text-green-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-600 mb-1">Phone</p>
-                            <p className="text-gray-900 font-medium">
-                              {profileData.phone}
-                            </p>
-                          </div>
                         </div>
-                      )}
+                        <div>
+                            <p className="text-xs uppercase text-gray-500 tracking-wide">Phone</p>
+                            <p className="text-gray-900 font-medium">{profileData.phone}</p>
+                        </div>
+                        </div>
+                    )}
 
-                      {profileData.office && (
-                        <div className="flex items-start gap-4 md:col-span-2">
-                          <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center flex-shrink-0 mt-1">
+                    {/* Office */}
+                    {profileData.office && (
+                        <div className="flex items-start gap-3 sm:col-span-2">
+                        <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center">
                             <Building2 className="h-5 w-5 text-purple-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-600 mb-1">
-                              Office
-                            </p>
-                            <p className="text-gray-900 font-medium">
-                              {profileData.office}
-                            </p>
-                          </div>
                         </div>
-                      )}
+                        <div>
+                            <p className="text-xs uppercase text-gray-500 tracking-wide">Office</p>
+                            <p className="text-gray-900 font-medium">{profileData.office}</p>
+                        </div>
+                        </div>
+                    )}
 
-                      {!profileData.website &&
-                        !profileData.phone &&
-                        !profileData.office && (
-                          <p className="text-gray-500 italic col-span-full py-2 text-center">
-                            No contact details provided
-                          </p>
-                        )}
+                    {!profileData.website && !profileData.phone && !profileData.office && (
+                        <p className="text-gray-500 italic col-span-full">No contact details provided.</p>
+                    )}
                     </div>
-                  )}
+                )}
 
-                  {/* Save / Cancel buttons for profile edit */}
-                  {isEditingProfile && (
+                {/* Save / Cancel buttons (unchanged) */}
+                {isEditingProfile && (
                     <div className="mt-6 flex flex-wrap gap-3 justify-end">
-                      <button
+                    <button
                         type="button"
                         onClick={handleCancelProfileEdit}
-                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-100 transition-colors"
-                      >
+                        className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
+                    >
                         Cancel
-                      </button>
-                      <button
+                    </button>
+                    <button
                         type="button"
                         onClick={handleSaveProfile}
                         disabled={isSavingProfile}
-                        className="px-5 py-2 rounded-lg bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold shadow-md hover:shadow-lg hover:from-emerald-700 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center gap-2"
-                      >
+                        className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-md hover:bg-emerald-700 disabled:opacity-60 transition flex items-center gap-2"
+                    >
                         {isSavingProfile ? (
-                          <>
+                        <>
                             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                            <span>Saving...</span>
-                          </>
+                            Saving...
+                        </>
                         ) : (
-                          <>
-                            <Save className="h-4 w-4" />
-                            <span>Save Profile</span>
-                          </>
+                        <>
+                            Save
+                        </>
                         )}
-                      </button>
+                    </button>
                     </div>
-                  )}
+                )}
                 </div>
+
 
                 {/* Username + Privacy */}
                 <div className="space-y-4">
