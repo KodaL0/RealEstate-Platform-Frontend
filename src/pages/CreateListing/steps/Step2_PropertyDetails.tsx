@@ -468,69 +468,24 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
 
   const validSpecs = (() => {
-    // If multi-unit, validate units instead
+    // ⭐ MULTI-UNIT MODE = skip all single-property validation
     if (isMultiUnit) {
-      const units = formData.units || [];
-      if (units.length < 2) return false;
-      
-      // House-specific validation
-      if (ptype === 'house') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.lot_size && unit.lot_size > 0 &&
-          unit.total_floors && unit.total_floors > 0 &&
-          unit.parking_spaces !== undefined &&
-          unit.price > 0 && 
-          unit.bedrooms >= 0 && 
-          unit.bathrooms > 0
-        );
-      }
-      
-      // Apartment-specific validation
-      if (ptype === 'apartment') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 && 
-          unit.bedrooms >= 0 && 
-          unit.bathrooms > 0
-        );
-      }
-      
-      // Shop-specific validation (NO bedrooms, bathrooms can be 0)
-      if (ptype === 'shop') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 &&
-          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
-        );
-      }
-      
-      // Office-specific validation (NO bedrooms, bathrooms can be 0)
-      if (ptype === 'office') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 &&
-          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
-        );
-      }
-      
-      // Other property types (fallback)
-      return units.every(unit => 
-        unit.area > 0 && 
-        unit.price > 0
-      );
+      return true;
     }
-    
-    // Single property validation
+
+    // ⭐ SINGLE-PROPERTY VALIDATION
     if (["house", "apartment"].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
-    if (ptype === "land") return !!formData.lotSize; // Land requires lot_size, not area
-    if (["hotel", "shop", "office", "residential_building"].includes(ptype)) return !!formData.area;
+
+    if (ptype === "land")
+      return !!formData.lotSize;
+
+    if (["hotel", "shop", "office", "residential_building"].includes(ptype))
+      return !!formData.area;
+
     return false;
   })();
+
 
   const valid = validBasics && validSpecs;
 
