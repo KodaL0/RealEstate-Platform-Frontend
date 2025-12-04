@@ -788,7 +788,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               Lot <span className="text-red-500">*</span>
                             </th>
                             <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
-                              Flrs <span className="text-red-500">*</span>
+                              Floor <span className="text-red-500">*</span>
                             </th>
                           </>
                         )}
@@ -802,7 +802,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                         
                         {ptype === 'house' && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
-                            Park <span className="text-red-500">*</span>
+                            Parking <span className="text-red-500">*</span>
                           </th>
                         )}
                         
