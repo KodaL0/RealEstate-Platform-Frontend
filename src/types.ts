@@ -29,8 +29,9 @@ export interface PropertyUnit {
   bedrooms: number;
   bathrooms: number;
   area: number;
-  lot_size?: number;
-  total_floors?: number;
+  floor_level?: number;        // Which floor the unit is on (for apartments)
+  lot_size?: number;           // For houses
+  total_floors?: number;       // For houses (floors within unit)
   parking_spaces?: number;
   price: number;
   status: 'available' | 'reserved' | 'sold';
