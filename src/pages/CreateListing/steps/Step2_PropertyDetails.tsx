@@ -173,6 +173,24 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   const [showValidationErrors, setShowValidationErrors] = React.useState(false);
   
+  // Detect portrait mode for responsive layout
+  const [isPortrait, setIsPortrait] = React.useState(false);
+  
+  React.useEffect(() => {
+    const checkOrientation = () => {
+      setIsPortrait(window.innerHeight > window.innerWidth && window.innerWidth < 1024);
+    };
+    
+    checkOrientation();
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+    
+    return () => {
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
+    };
+  }, []);
+  
   // Multi-unit state
   const isMultiUnit = formData.has_units === true;
   const canHaveUnits = ptype && [
@@ -766,9 +784,155 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   <strong>Multi-unit property:</strong> Specify details for each unit below.
                 </p>
 
-                {/* Units Table */}
-                <div className="border rounded-lg bg-white overflow-x-auto sm:overflow-x-visible">
-                  <table className="w-full text-xs min-w-[520px] sm:min-w-0">
+                {/* Portrait Mode: Card View */}
+                {isPortrait ? (
+                  <div className="space-y-3">
+                    {formData.units.map((unit, index) => (
+                      <div key={index} className="border rounded-lg bg-white p-3 space-y-2">
+                        <div className="flex justify-between items-center mb-2 pb-2 border-b">
+                          <span className="font-semibold text-sm">Unit {unit.unit_number}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveUnit(index)}
+                            disabled={formData.units && formData.units.length <= 2}
+                            className={`text-red-600 hover:text-red-800 disabled:text-gray-300 ${
+                              formData.units && formData.units.length <= 2 ? 'opacity-50' : ''
+                            }`}
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="text-xs text-gray-600">Name</label>
+                            <input
+                              type="text"
+                              value={unit.unit_name || ''}
+                              onChange={(e) => handleUnitChange(index, 'unit_name', e.target.value)}
+                              placeholder="Main"
+                              className="w-full px-2 py-1 border rounded text-xs"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs text-gray-600">Status</label>
+                            <select
+                              value={unit.status}
+                              onChange={(e) => handleUnitChange(index, 'status', e.target.value)}
+                              className="w-full px-2 py-1 border rounded text-xs"
+                            >
+                              <option value="available">Available</option>
+                              <option value="reserved">Reserved</option>
+                              <option value="sold">Sold</option>
+                            </select>
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs text-gray-600">Area (m²) *</label>
+                            <input
+                              type="number"
+                              value={unit.area || ''}
+                              onChange={(e) => handleUnitChange(index, 'area', Number(e.target.value) || 0)}
+                              className={`w-full px-2 py-1 border rounded text-xs ${
+                                isUnitFieldInvalid(unit, 'area') ? 'border-red-300 bg-red-50' : ''
+                              }`}
+                              min="0"
+                            />
+                          </div>
+                          
+                          {ptype === 'house' && (
+                            <div>
+                              <label className="text-xs text-gray-600">Lot (m²) *</label>
+                              <input
+                                type="number"
+                                value={unit.lot_size || ''}
+                                onChange={(e) => handleUnitChange(index, 'lot_size', Number(e.target.value) || 0)}
+                                className={`w-full px-2 py-1 border rounded text-xs ${
+                                  isUnitFieldInvalid(unit, 'lot_size') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                              />
+                            </div>
+                          )}
+                          
+                          {ptype === 'house' && (
+                            <div>
+                              <label className="text-xs text-gray-600">Floors *</label>
+                              <input
+                                type="number"
+                                value={unit.total_floors || ''}
+                                onChange={(e) => handleUnitChange(index, 'total_floors', Number(e.target.value) || 0)}
+                                className={`w-full px-2 py-1 border rounded text-xs ${
+                                  isUnitFieldInvalid(unit, 'total_floors') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="1"
+                              />
+                            </div>
+                          )}
+                          
+                          <div>
+                            <label className="text-xs text-gray-600">Beds *</label>
+                            <input
+                              type="number"
+                              value={unit.bedrooms ?? ''}
+                              onChange={(e) => handleUnitChange(index, 'bedrooms', Number(e.target.value) || 0)}
+                              className={`w-full px-2 py-1 border rounded text-xs ${
+                                isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
+                              }`}
+                              min="0"
+                            />
+                          </div>
+                          
+                          <div>
+                            <label className="text-xs text-gray-600">Baths *</label>
+                            <input
+                              type="number"
+                              step="0.5"
+                              value={unit.bathrooms || ''}
+                              onChange={(e) => handleUnitChange(index, 'bathrooms', Number(e.target.value) || 0)}
+                              className={`w-full px-2 py-1 border rounded text-xs ${
+                                isUnitFieldInvalid(unit, 'bathrooms') ? 'border-red-300 bg-red-50' : ''
+                              }`}
+                              min="0"
+                            />
+                          </div>
+                          
+                          {ptype === 'house' && (
+                            <div>
+                              <label className="text-xs text-gray-600">Parking *</label>
+                              <input
+                                type="number"
+                                value={unit.parking_spaces ?? ''}
+                                onChange={(e) => handleUnitChange(index, 'parking_spaces', Number(e.target.value) || 0)}
+                                className={`w-full px-2 py-1 border rounded text-xs ${
+                                  isUnitFieldInvalid(unit, 'parking_spaces') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                              />
+                            </div>
+                          )}
+                          
+                          <div className="col-span-2">
+                            <label className="text-xs text-gray-600">Price (€) *</label>
+                            <input
+                              type="number"
+                              value={unit.price || ''}
+                              onChange={(e) => handleUnitChange(index, 'price', Number(e.target.value) || 0)}
+                              className={`w-full px-2 py-1 border rounded text-xs ${
+                                isUnitFieldInvalid(unit, 'price') ? 'border-red-300 bg-red-50' : ''
+                              }`}
+                              min="0"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  /* Landscape Mode: Table View */
+                  <div className="border rounded-lg bg-white overflow-x-auto lg:overflow-x-visible">
+                    <table className="w-full text-xs min-w-[520px] lg:min-w-0">
                     <thead className="bg-gray-100">
                       <tr>
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
@@ -966,6 +1130,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                     </tbody>
                   </table>
                 </div>
+                )}
 
                 {/* Validation Summary - only show after submission attempt */}
                 {showValidationErrors && !validSpecs && formData.units && formData.units.length >= 2 && (
