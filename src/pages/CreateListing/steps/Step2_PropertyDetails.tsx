@@ -6,7 +6,6 @@ import {
   ChevronRight,
   Euro,
   Hash,
-  Home,
   Layers,
   MapPin,
   ParkingCircle,
@@ -586,20 +585,16 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   };
 
   return (
-    <section className="bg-gradient-to-br from-white to-gray-50 p-8 rounded-2xl shadow-xl border border-gray-100 pb-8 max-w-6xl mx-auto">
+    <section className="bg-gradient-to-br from-white to-gray-50 p-4 sm:p-6 rounded-2xl shadow-xl border border-gray-100 max-w-full mx-auto">
       {/* Header */}
-      <div className="text-center mb-6">
-        <div className="inline-flex items-center justify-center w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full mb-2">
-          <Home className="w-5 h-5 text-white" />
-        </div>
-        <h2 className="text-xl font-bold text-gray-800">Property Details</h2>
-        <p className="text-gray-600 text-sm">
-          Only the relevant fields are shown for{" "}
-          <span className="font-semibold">{formData.propertyType?.replace("_", " / ")}</span>.
+      <div className="text-center mb-3 sm:mb-4">
+        <h2 className="text-lg sm:text-xl font-bold text-gray-800">Property Details</h2>
+        <p className="text-gray-600 text-xs sm:text-sm">
+          {formData.propertyType?.replace("_", " / ")}
         </p>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 bg-white p-6 rounded-xl shadow-md border border-gray-100 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 bg-white p-3 sm:p-4 lg:p-6 rounded-xl shadow-md border border-gray-100 mb-4 sm:mb-6">
         {/* Title */}
         <div className="lg:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -780,75 +775,75 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 </p>
 
                 {/* Units Table */}
-                <div className="border rounded-lg bg-white">
-                  <table className="w-full">
+                <div className="border rounded-lg bg-white overflow-x-auto sm:overflow-x-visible">
+                  <table className="w-full text-xs min-w-[520px] sm:min-w-0">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Unit # <span className="text-red-500">*</span>
                         </th>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Name</th>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Name</th>
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Area <span className="text-red-500">*</span>
                         </th>
                         
                         {ptype === 'house' && (
                           <>
-                            <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                               Lot <span className="text-red-500">*</span>
                             </th>
-                            <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                               Flrs <span className="text-red-500">*</span>
                             </th>
                           </>
                         )}
                         
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Beds <span className="text-red-500">*</span>
                         </th>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Baths <span className="text-red-500">*</span>
                         </th>
                         
                         {ptype === 'house' && (
-                          <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                          <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Park <span className="text-red-500">*</span>
                           </th>
                         )}
                         
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Price (€) <span className="text-red-500">*</span>
                         </th>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700">Status</th>
-                        <th className="px-2 py-2 text-left text-xs font-semibold text-gray-700"></th>
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700"></th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
                       {formData.units.map((unit, index) => (
                         <tr key={index} className="hover:bg-gray-50">
                           {/* Unit Number - Read-only */}
-                          <td className="px-3 py-2">
-                            <span className="font-medium text-gray-700">{unit.unit_number}</span>
+                          <td className="px-1 py-1.5">
+                            <span className="font-medium text-gray-700 text-xs">{unit.unit_number}</span>
                           </td>
                           
                           {/* Name */}
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1.5">
                             <input
                               type="text"
                               value={unit.unit_name || ''}
                               onChange={(e) => handleUnitChange(index, 'unit_name', e.target.value)}
                               placeholder="Main"
-                              className="w-20 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className="w-16 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                             />
                           </td>
                           
                           {/* Area */}
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1.5">
                             <input
                               type="number"
                               value={unit.area || ''}
                               onChange={(e) => handleUnitChange(index, 'area', Number(e.target.value) || 0)}
-                              className={`w-16 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                              className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'area') ? 'border-red-300 bg-red-50' : ''
                               }`}
                               min="0"
@@ -858,12 +853,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           
                           {/* House-specific: Lot Size */}
                           {ptype === 'house' && (
-                            <td className="px-2 py-2">
+                            <td className="px-1 py-1.5">
                               <input
                                 type="number"
                                 value={unit.lot_size || ''}
                                 onChange={(e) => handleUnitChange(index, 'lot_size', Number(e.target.value) || 0)}
-                                className={`w-16 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'lot_size') ? 'border-red-300 bg-red-50' : ''
                                 }`}
                                 min="0"
@@ -874,12 +869,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           
                           {/* House-specific: Total Floors */}
                           {ptype === 'house' && (
-                            <td className="px-2 py-2">
+                            <td className="px-1 py-1.5">
                               <input
                                 type="number"
                                 value={unit.total_floors || ''}
                                 onChange={(e) => handleUnitChange(index, 'total_floors', Number(e.target.value) || 0)}
-                                className={`w-12 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'total_floors') ? 'border-red-300 bg-red-50' : ''
                                 }`}
                                 min="1"
@@ -889,12 +884,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           )}
                           
                           {/* Bedrooms */}
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1.5">
                             <input
                               type="number"
                               value={unit.bedrooms ?? ''}
                               onChange={(e) => handleUnitChange(index, 'bedrooms', Number(e.target.value) || 0)}
-                              className={`w-12 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                              className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
                               }`}
                               min="0"
@@ -903,13 +898,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           </td>
                           
                           {/* Bathrooms */}
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1.5">
                             <input
                               type="number"
                               step="0.5"
                               value={unit.bathrooms || ''}
                               onChange={(e) => handleUnitChange(index, 'bathrooms', Number(e.target.value) || 0)}
-                              className={`w-12 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                              className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'bathrooms') ? 'border-red-300 bg-red-50' : ''
                               }`}
                               min="0"
@@ -919,12 +914,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           
                           {/* House-specific: Parking Spaces */}
                           {ptype === 'house' && (
-                            <td className="px-2 py-2">
+                            <td className="px-1 py-1.5">
                               <input
                                 type="number"
                                 value={unit.parking_spaces ?? ''}
                                 onChange={(e) => handleUnitChange(index, 'parking_spaces', Number(e.target.value) || 0)}
-                                className={`w-12 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'parking_spaces') ? 'border-red-300 bg-red-50' : ''
                                 }`}
                                 min="0"
@@ -934,12 +929,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           )}
                           
                           {/* Price */}
-                          <td className="px-2 py-2">
+                          <td className="px-1 py-1.5">
                             <input
                               type="number"
                               value={unit.price || ''}
                               onChange={(e) => handleUnitChange(index, 'price', Number(e.target.value) || 0)}
-                              className={`w-24 px-1 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                              className={`w-24 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'price') ? 'border-red-300 bg-red-50' : ''
                               }`}
                               min="0"
@@ -952,7 +947,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             <select
                               value={unit.status}
                               onChange={(e) => handleUnitChange(index, 'status', e.target.value)}
-                              className="w-28 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className="w-24 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                             >
                               <option value="available">Available</option>
                               <option value="reserved">Reserved</option>
@@ -1279,7 +1274,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       </div>
 
       {/* Nav */}
-      <div className="flex justify-between items-center mt-6 pt-6 border-t border-gray-200">
+      <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
         <button
           type="button"
           onClick={back}

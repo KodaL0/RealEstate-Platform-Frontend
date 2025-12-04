@@ -144,11 +144,11 @@ const WizardContent: React.FC<WizardProps> = (props) => {
   return (
     <form onSubmit={handleSubmitWithReset} noValidate className="h-full flex flex-col">
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto px-2 sm:px-4">
-        <div className="w-full max-w-5xl mx-auto bg-white shadow-sm rounded-2xl p-6">
+        <div className="w-full mx-auto bg-white shadow-sm rounded-2xl p-3 sm:p-4 lg:p-6">
           {/* Progress + Step form as one section */}
           <ProgressBar isEditing={props.isEditing} scrollContainerRef={scrollContainerRef} />
 
-          <div className="mt-8">{steps[currentStep]}</div>
+          <div className="mt-4 sm:mt-6">{steps[currentStep]}</div>
         </div>
       </div>
     </form>
@@ -831,8 +831,8 @@ const CreateListing: React.FC = () => {
       totalSteps={5}
       propertyId={id}
     >
-      <div className="fixed inset-0 bg-gray-50 pt-24">
-        <div className="h-full w-full max-w-7xl mx-auto px-4 lg:px-8 flex flex-col">
+      <div className="fixed inset-0 bg-gray-50 pt-20">
+        <div className="h-full w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 flex flex-col">
           {error && (
             <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4 flex-shrink-0">
               <p className="text-sm text-red-700">{error}</p>
