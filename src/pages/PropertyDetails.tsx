@@ -333,6 +333,14 @@ const PropertyDetails: React.FC = () => {
       try {
         const response = await api.get(`properties/${numericId}`);
         const mapped = mapPropertyData(response.data);
+        // ⭐ Fetch Units for This Property ⭐
+        try {
+          const unitsRes = await api.propertyUnits.list(numericId);
+          mapped.units = Array.isArray(unitsRes.data) ? unitsRes.data : [];
+        } catch (err) {
+          console.error("Failed to fetch units:", err);
+        }
+
         if (!isMounted) return;
         setProperty(mapped);
 
@@ -900,6 +908,73 @@ const PropertyDetails: React.FC = () => {
             </div>
           </div>
         </section>
+
+      {property.units && property.units.length > 0 && (
+        <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+          <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+            <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+              <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+                <Building2 className="w-6 h-6 text-white" />
+              </div>
+              Available Units
+            </h2>
+          </div>
+
+          <div className="p-8 overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white text-left">
+                  <th className="px-4 py-3 text-sm font-semibold">Unit</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Beds</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Baths</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Area (m²)</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Floor</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Lot Size</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Parking</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Price (€)</th>
+                  <th className="px-4 py-3 text-sm font-semibold">Status</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {property.units.map((u, idx) => (
+                  <tr
+                    key={idx}
+                    className={idx % 2 === 0 ? "bg-white" : "bg-slate-50"}
+                  >
+                    <td className="px-4 py-3 font-semibold text-slate-800">
+                      {u.unit_number}
+                    </td>
+                    <td className="px-4 py-3">{u.bedrooms ?? "—"}</td>
+                    <td className="px-4 py-3">{u.bathrooms ?? "—"}</td>
+                    <td className="px-4 py-3">{u.area ?? "—"}</td>
+                    <td className="px-4 py-3">{u.floor_level ?? "—"}</td>
+                    <td className="px-4 py-3">{u.lot_size ?? "—"}</td>
+                    <td className="px-4 py-3">{u.parking_spaces ?? "—"}</td>
+                    <td className="px-4 py-3 font-bold text-blue-600">
+                      {u.price?.toLocaleString?.() ?? "—"}
+                    </td>
+                    <td className="px-4 py-3">
+                      <span
+                        className={`px-3 py-1 rounded-lg text-xs font-bold ${
+                          u.status === "available"
+                            ? "bg-emerald-100 text-emerald-700"
+                            : u.status === "reserved"
+                            ? "bg-amber-100 text-amber-700"
+                            : "bg-red-100 text-red-700"
+                        }`}
+                      >
+                        {u.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
 
         <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
           <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
