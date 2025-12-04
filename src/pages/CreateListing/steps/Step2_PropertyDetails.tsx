@@ -498,10 +498,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   };
 
   const handleUnitChange = (index: number, field: keyof PropertyUnit, value: any) => {
+    // For number fields, allow empty string (user is typing), convert to 0 only if completely empty on blur
+    const processedValue = value === '' ? '' : value;
+    
     setFormData(f => ({
       ...f,
       units: (f.units || []).map((unit, i) => 
-        i === index ? { ...unit, [field]: value } : unit
+        i === index ? { ...unit, [field]: processedValue } : unit
       )
     }));
   };
@@ -834,7 +837,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             <input
                               type="number"
                               value={unit.area || ''}
-                              onChange={(e) => handleUnitChange(index, 'area', Number(e.target.value) || 0)}
+                              onChange={(e) => handleUnitChange(index, 'area', e.target.value === '' ? '' : Number(e.target.value))}
                               className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'area') ? 'border-red-300 bg-red-50' : ''
                               }`}
@@ -849,7 +852,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               <input
                                 type="number"
                                 value={unit.lot_size || ''}
-                                onChange={(e) => handleUnitChange(index, 'lot_size', Number(e.target.value) || 0)}
+                                onChange={(e) => handleUnitChange(index, 'lot_size', e.target.value === '' ? '' : Number(e.target.value))}
                                 className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'lot_size') ? 'border-red-300 bg-red-50' : ''
                                 }`}
@@ -865,7 +868,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               <input
                                 type="number"
                                 value={unit.total_floors || ''}
-                                onChange={(e) => handleUnitChange(index, 'total_floors', Number(e.target.value) || 0)}
+                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'total_floors') ? 'border-red-300 bg-red-50' : ''
                                 }`}
@@ -880,7 +883,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             <input
                               type="number"
                               value={unit.bedrooms ?? ''}
-                              onChange={(e) => handleUnitChange(index, 'bedrooms', Number(e.target.value) || 0)}
+                              onChange={(e) => handleUnitChange(index, 'bedrooms', e.target.value === '' ? '' : Number(e.target.value))}
                               className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
                               }`}
@@ -895,7 +898,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               type="number"
                               step="0.5"
                               value={unit.bathrooms || ''}
-                              onChange={(e) => handleUnitChange(index, 'bathrooms', Number(e.target.value) || 0)}
+                              onChange={(e) => handleUnitChange(index, 'bathrooms', e.target.value === '' ? '' : Number(e.target.value))}
                               className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'bathrooms') ? 'border-red-300 bg-red-50' : ''
                               }`}
@@ -910,7 +913,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               <input
                                 type="number"
                                 value={unit.parking_spaces ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'parking_spaces', Number(e.target.value) || 0)}
+                                onChange={(e) => handleUnitChange(index, 'parking_spaces', e.target.value === '' ? '' : Number(e.target.value))}
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                   isUnitFieldInvalid(unit, 'parking_spaces') ? 'border-red-300 bg-red-50' : ''
                                 }`}
@@ -925,7 +928,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             <input
                               type="number"
                               value={unit.price || ''}
-                              onChange={(e) => handleUnitChange(index, 'price', Number(e.target.value) || 0)}
+                              onChange={(e) => handleUnitChange(index, 'price', e.target.value === '' ? '' : Number(e.target.value))}
                               className={`w-24 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
                                 isUnitFieldInvalid(unit, 'price') ? 'border-red-300 bg-red-50' : ''
                               }`}
