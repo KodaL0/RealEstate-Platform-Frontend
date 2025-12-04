@@ -185,12 +185,19 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
   const showField = useCallback((k: keyof ListingForm) => {
     if (!show.has(k)) return false;
+    
     // Hide single property fields if multi-unit
     if (isMultiUnit && ['bedrooms', 'bathrooms', 'area', 'price'].includes(k)) {
       return false;
     }
+    
+    // Hide house-specific fields in multi-unit mode (moved to unit level)
+    if (isMultiUnit && ptype === 'house' && ['totalFloors', 'parkingSpaces', 'lotSize'].includes(k)) {
+      return false;
+    }
+    
     return true;
-  }, [show, isMultiUnit]);
+  }, [show, isMultiUnit, ptype]);
 
   // Debug logging for amenities visibility
   useEffect(() => {
@@ -232,18 +239,26 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       const defaultUnits: PropertyUnit[] = [
         {
           unit_number: "1",
+          unit_name: "",
           bedrooms: 1,
           bathrooms: 1,
           area: 0,
+          lot_size: 0,
+          total_floors: 1,
+          parking_spaces: 0,
           price: 0,
           status: 'available',
           is_published: true,
         },
         {
           unit_number: "2",
+          unit_name: "",
           bedrooms: 1,
           bathrooms: 1,
           area: 0,
+          lot_size: 0,
+          total_floors: 1,
+          parking_spaces: 0,
           price: 0,
           status: 'available',
           is_published: true,
@@ -413,6 +428,21 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     if (isMultiUnit) {
       const units = formData.units || [];
       if (units.length < 2) return false;
+      
+      // House-specific validation
+      if (ptype === 'house') {
+        return units.every(unit => 
+          unit.area > 0 && 
+          unit.lot_size && unit.lot_size > 0 &&
+          unit.total_floors && unit.total_floors > 0 &&
+          unit.parking_spaces !== undefined &&
+          unit.price > 0 && 
+          unit.bedrooms >= 0 && 
+          unit.bathrooms > 0
+        );
+      }
+      
+      // Other property types (apartment, office, shop)
       return units.every(unit => 
         unit.area > 0 && 
         unit.price > 0 && 
@@ -437,9 +467,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     const nextNumber = (units.length + 1).toString();
     const newUnit: PropertyUnit = {
       unit_number: nextNumber,
+      unit_name: "",
       bedrooms: 1,
       bathrooms: 1,
       area: 0,
+      lot_size: 0,
+      total_floors: 1,
+      parking_spaces: 0,
       price: 0,
       status: 'available',
       is_published: true,
@@ -474,6 +508,27 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
+
+  // Helper to check if unit field is invalid
+  const isUnitFieldInvalid = (unit: PropertyUnit, field: keyof PropertyUnit): boolean => {
+    if (ptype !== 'house') return false;
+    
+    switch (field) {
+      case 'area':
+      case 'price':
+      case 'bathrooms':
+        return !unit[field] || unit[field] <= 0;
+      case 'lot_size':
+      case 'total_floors':
+        return !unit[field] || unit[field] <= 0;
+      case 'parking_spaces':
+        return unit[field] === undefined;
+      case 'bedrooms':
+        return unit[field] < 0;
+      default:
+        return false;
+    }
+  };
 
   // Enhanced next handler with location validation
   const handleNext = () => {
@@ -556,26 +611,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           />
         </div>
 
-        {/* Price */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Price (€) <span className="text-red-500">*</span>
-          </label>
-          <div className="relative">
-            <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
-            <input
-              type="number"
-              name="price"
-              value={formData.price}
-              onChange={handleChangeWithPatch}
-              className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
-              min={0}
-              step="0.01"
-              placeholder="0.00"
-            />
-          </div>
-        </div>
-
         {/* Country */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -593,6 +628,28 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             {COUNTRY_OPTIONS.map((c: { value: string; label: string }) => (
               <option key={c.value} value={c.value}>
                 {c.label}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {/* Property Status */}
+        <div>
+          <label className="block text-sm font-semibold text-gray-700 mb-2">
+            Property Status <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="propertyStatus"
+            value={formData.propertyStatus}
+            onChange={handleChangeWithPatch}
+            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+          >
+            <option value="" disabled>
+              Select status
+            </option>
+            {PROPERTY_STATUS.map((s: { value: string; label: string }) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
               </option>
             ))}
           </select>
@@ -683,28 +740,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           />
         </div>
 
-        {/* Status */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
-            Property Status <span className="text-red-500">*</span>
-          </label>
-          <select
-            name="propertyStatus"
-            value={formData.propertyStatus}
-            onChange={handleChangeWithPatch}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
-          >
-            <option value="" disabled>
-              Select status
-            </option>
-            {PROPERTY_STATUS.map((s: { value: string; label: string }) => (
-              <option key={s.value} value={s.value}>
-                {s.label}
-              </option>
-            ))}
-          </select>
-        </div>
-
         {/* Multiple Units Toggle */}
         {canHaveUnits && (
           <div className="lg:col-span-2 border-t pt-6 mt-4">
@@ -746,12 +781,41 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   <table className="w-full">
                     <thead className="bg-gray-100">
                       <tr>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Unit #</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                          Unit # <span className="text-red-500">*</span>
+                        </th>
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Name</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Area (m²)</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Beds</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Baths</th>
-                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Price (€)</th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                          Area (m²) <span className="text-red-500">*</span>
+                        </th>
+                        
+                        {ptype === 'house' && (
+                          <>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                              Lot (m²) <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                              Floors <span className="text-red-500">*</span>
+                            </th>
+                          </>
+                        )}
+                        
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                          Beds <span className="text-red-500">*</span>
+                        </th>
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                          Baths <span className="text-red-500">*</span>
+                        </th>
+                        
+                        {ptype === 'house' && (
+                          <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                            Parking <span className="text-red-500">*</span>
+                          </th>
+                        )}
+                        
+                        <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">
+                          Price (€) <span className="text-red-500">*</span>
+                        </th>
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700">Status</th>
                         <th className="px-3 py-2 text-left text-sm font-semibold text-gray-700"></th>
                       </tr>
@@ -768,9 +832,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           <td className="px-3 py-2">
                             <input
                               type="text"
-                              value={unit.name || ''}
-                              onChange={(e) => handleUnitChange(index, 'name', e.target.value)}
-                              placeholder="e.g., Garden View Studio"
+                              value={unit.unit_name || ''}
+                              onChange={(e) => handleUnitChange(index, 'unit_name', e.target.value)}
+                              placeholder="e.g., Main House"
                               className="w-full px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
                             />
                           </td>
@@ -781,19 +845,57 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               type="number"
                               value={unit.area || ''}
                               onChange={(e) => handleUnitChange(index, 'area', Number(e.target.value) || 0)}
-                              className="w-24 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className={`w-24 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                isUnitFieldInvalid(unit, 'area') ? 'border-red-300 bg-red-50' : ''
+                              }`}
                               min="0"
+                              required
                             />
                           </td>
+                          
+                          {/* House-specific: Lot Size */}
+                          {ptype === 'house' && (
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={unit.lot_size || ''}
+                                onChange={(e) => handleUnitChange(index, 'lot_size', Number(e.target.value) || 0)}
+                                className={`w-24 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'lot_size') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                                required
+                              />
+                            </td>
+                          )}
+                          
+                          {/* House-specific: Total Floors */}
+                          {ptype === 'house' && (
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={unit.total_floors || ''}
+                                onChange={(e) => handleUnitChange(index, 'total_floors', Number(e.target.value) || 0)}
+                                className={`w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'total_floors') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="1"
+                                required
+                              />
+                            </td>
+                          )}
                           
                           {/* Bedrooms */}
                           <td className="px-3 py-2">
                             <input
                               type="number"
-                              value={unit.bedrooms || ''}
+                              value={unit.bedrooms ?? ''}
                               onChange={(e) => handleUnitChange(index, 'bedrooms', Number(e.target.value) || 0)}
-                              className="w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className={`w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
+                              }`}
                               min="0"
+                              required
                             />
                           </td>
                           
@@ -804,10 +906,29 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               step="0.5"
                               value={unit.bathrooms || ''}
                               onChange={(e) => handleUnitChange(index, 'bathrooms', Number(e.target.value) || 0)}
-                              className="w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className={`w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                isUnitFieldInvalid(unit, 'bathrooms') ? 'border-red-300 bg-red-50' : ''
+                              }`}
                               min="0"
+                              required
                             />
                           </td>
+                          
+                          {/* House-specific: Parking Spaces */}
+                          {ptype === 'house' && (
+                            <td className="px-3 py-2">
+                              <input
+                                type="number"
+                                value={unit.parking_spaces ?? ''}
+                                onChange={(e) => handleUnitChange(index, 'parking_spaces', Number(e.target.value) || 0)}
+                                className={`w-16 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'parking_spaces') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                                required
+                              />
+                            </td>
+                          )}
                           
                           {/* Price */}
                           <td className="px-3 py-2">
@@ -815,8 +936,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               type="number"
                               value={unit.price || ''}
                               onChange={(e) => handleUnitChange(index, 'price', Number(e.target.value) || 0)}
-                              className="w-32 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500"
+                              className={`w-32 px-2 py-1 border rounded text-sm focus:ring-1 focus:ring-blue-500 ${
+                                isUnitFieldInvalid(unit, 'price') ? 'border-red-300 bg-red-50' : ''
+                              }`}
                               min="0"
+                              required
                             />
                           </td>
                           
@@ -853,6 +977,38 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   </table>
                 </div>
 
+                {/* Validation Summary */}
+                {!validSpecs && formData.units && formData.units.length >= 2 && (
+                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                    <p className="text-sm text-red-800 font-semibold mb-2">
+                      Please fix the following issues:
+                    </p>
+                    <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+                      {formData.units.map((unit, idx) => {
+                        const errors: string[] = [];
+                        if (!unit.area || unit.area <= 0) errors.push('Area required');
+                        if (ptype === 'house' && (!unit.lot_size || unit.lot_size <= 0)) 
+                          errors.push('Lot size required');
+                        if (ptype === 'house' && (!unit.total_floors || unit.total_floors <= 0)) 
+                          errors.push('Floors required');
+                        if (ptype === 'house' && unit.parking_spaces === undefined) 
+                          errors.push('Parking required');
+                        if (!unit.bathrooms || unit.bathrooms <= 0) errors.push('Bathrooms required');
+                        if (!unit.price || unit.price <= 0) errors.push('Price required');
+                        
+                        if (errors.length > 0) {
+                          return (
+                            <li key={idx}>
+                              <strong>Unit {unit.unit_number}:</strong> {errors.join(', ')}
+                            </li>
+                          );
+                        }
+                        return null;
+                      })}
+                    </ul>
+                  </div>
+                )}
+
                 {/* Add Unit Button */}
                 <button
                   type="button"
@@ -872,6 +1028,28 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 </button>
               </div>
             )}
+          </div>
+        )}
+
+        {/* Price - only show if NOT multi-unit */}
+        {!isMultiUnit && (
+          <div>
+            <label className="block text-sm font-semibold text-gray-700 mb-2">
+              Price (€) <span className="text-red-500">*</span>
+            </label>
+            <div className="relative">
+              <Euro className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
+              <input
+                type="number"
+                name="price"
+                value={formData.price}
+                onChange={handleChangeWithPatch}
+                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                min={0}
+                step="0.01"
+                placeholder="0.00"
+              />
+            </div>
           </div>
         )}
 

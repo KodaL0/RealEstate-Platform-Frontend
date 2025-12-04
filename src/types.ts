@@ -25,15 +25,16 @@ export interface PropertyUnit {
   id?: number;
   property?: number;
   unit_number: string;
-  name?: string;
+  unit_name?: string;
   bedrooms: number;
   bathrooms: number;
   area: number;
+  lot_size?: number;
+  total_floors?: number;
+  parking_spaces?: number;
   price: number;
   status: 'available' | 'reserved' | 'sold';
   is_published: boolean;
-  description?: string;
-  features?: string[];
   created_at?: string;
   updated_at?: string;
 }
