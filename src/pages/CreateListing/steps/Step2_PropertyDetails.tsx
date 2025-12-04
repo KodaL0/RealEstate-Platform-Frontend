@@ -192,7 +192,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
     
     // Hide house-specific fields in multi-unit mode (moved to unit level)
-    if (isMultiUnit && ptype === 'house' && ['totalFloors', 'parkingSpaces', 'lotSize'].includes(k)) {
+    if (isMultiUnit && ptype === 'house' && ['floorLevel', 'totalFloors', 'parkingSpaces', 'lotSize'].includes(k)) {
       return false;
     }
     
