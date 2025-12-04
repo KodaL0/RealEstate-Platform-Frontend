@@ -201,6 +201,16 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       return false;
     }
     
+    // Hide shop-specific fields in multi-unit mode (moved to unit level)
+    if (isMultiUnit && ptype === 'shop' && ['floorLevel', 'totalFloors'].includes(k)) {
+      return false;
+    }
+    
+    // Hide office-specific fields in multi-unit mode (moved to unit level)
+    if (isMultiUnit && ptype === 'office' && ['floorLevel', 'totalFloors'].includes(k)) {
+      return false;
+    }
+    
     return true;
   }, [show, isMultiUnit, ptype]);
 
@@ -460,12 +470,30 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         );
       }
       
-      // Other property types (office, shop)
+      // Shop-specific validation (NO bedrooms, bathrooms can be 0)
+      if (ptype === 'shop') {
+        return units.every(unit => 
+          unit.area > 0 && 
+          unit.floor_level !== undefined && unit.floor_level >= 0 &&
+          unit.price > 0 &&
+          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
+        );
+      }
+      
+      // Office-specific validation (NO bedrooms, bathrooms can be 0)
+      if (ptype === 'office') {
+        return units.every(unit => 
+          unit.area > 0 && 
+          unit.floor_level !== undefined && unit.floor_level >= 0 &&
+          unit.price > 0 &&
+          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
+        );
+      }
+      
+      // Other property types (fallback)
       return units.every(unit => 
         unit.area > 0 && 
-        unit.price > 0 && 
-        unit.bedrooms >= 0 && 
-        unit.bathrooms > 0
+        unit.price > 0
       );
     }
     
@@ -538,12 +566,28 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     const value = unit[field];
     
     // Common fields for all property types
-    if (['area', 'price', 'bathrooms'].includes(field)) {
+    if (['area', 'price'].includes(field)) {
       return !value || (typeof value === 'number' && value <= 0);
     }
     
+    // Bathrooms validation - property-type-specific
+    if (field === 'bathrooms') {
+      // Residential: bathrooms must be > 0
+      if (['house', 'apartment'].includes(ptype)) {
+        return !value || (typeof value === 'number' && value <= 0);
+      }
+      // Commercial (shop/office): bathrooms can be 0, but must be >= 0 if provided
+      if (['shop', 'office'].includes(ptype)) {
+        return value === undefined || value === null || (typeof value === 'number' && value < 0);
+      }
+    }
+    
+    // Bedrooms - only validate for residential properties
     if (field === 'bedrooms') {
-      return typeof value === 'number' && value < 0;
+      if (['house', 'apartment'].includes(ptype)) {
+        return typeof value === 'number' && value < 0;
+      }
+      return false;  // Don't validate bedrooms for commercial
     }
     
     // House-specific fields
@@ -558,6 +602,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     
     // Apartment-specific fields
     if (ptype === 'apartment') {
+      if (field === 'floor_level') {
+        return value === undefined || value === null || value === '';
+      }
+    }
+    
+    // Shop-specific fields
+    if (ptype === 'shop') {
+      if (field === 'floor_level') {
+        return value === undefined || value === null || value === '';
+      }
+    }
+    
+    // Office-specific fields
+    if (ptype === 'office') {
       if (field === 'floor_level') {
         return value === undefined || value === null || value === '';
       }
@@ -829,6 +887,30 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           </th>
                         )}
                         
+                        {/* Shop-specific: Floor Level and Total Floors */}
+                        {ptype === 'shop' && (
+                          <>
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                              Floor <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                              Floors
+                            </th>
+                          </>
+                        )}
+                        
+                        {/* Office-specific: Floor Level and Total Floors */}
+                        {ptype === 'office' && (
+                          <>
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                              Floor <span className="text-red-500">*</span>
+                            </th>
+                            <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                              Floors
+                            </th>
+                          </>
+                        )}
+                        
                         {/* House-specific: Floors in unit */}
                         {ptype === 'house' && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
@@ -836,9 +918,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           </th>
                         )}
                         
-                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
-                          Beds <span className="text-red-500">*</span>
-                        </th>
+                        {/* Bedrooms - ONLY for residential (house, apartment) */}
+                        {['house', 'apartment'].includes(ptype) && (
+                          <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                            Beds <span className="text-red-500">*</span>
+                          </th>
+                        )}
+                        
+                        {/* Bathrooms - ALL property types */}
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Baths <span className="text-red-500">*</span>
                         </th>
@@ -850,8 +937,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                           </th>
                         )}
                         
-                        {/* Apartment-specific: Parking (optional) */}
-                        {ptype === 'apartment' && (
+                        {/* Apartment/Shop/Office: Parking (optional) */}
+                        {['apartment', 'shop', 'office'].includes(ptype) && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Parking
                           </th>
@@ -929,6 +1016,64 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             </td>
                           )}
                           
+                          {/* Shop-specific: Floor Level (required) */}
+                          {ptype === 'shop' && (
+                            <td className="px-1 py-1.5">
+                              <input
+                                type="number"
+                                value={unit.floor_level ?? ''}
+                                onChange={(e) => handleUnitChange(index, 'floor_level', e.target.value === '' ? '' : Number(e.target.value))}
+                                className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'floor_level') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                                required
+                              />
+                            </td>
+                          )}
+                          
+                          {/* Shop-specific: Total Floors (optional) */}
+                          {ptype === 'shop' && (
+                            <td className="px-1 py-1.5">
+                              <input
+                                type="number"
+                                value={unit.total_floors || ''}
+                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
+                                min="1"
+                              />
+                            </td>
+                          )}
+                          
+                          {/* Office-specific: Floor Level (required) */}
+                          {ptype === 'office' && (
+                            <td className="px-1 py-1.5">
+                              <input
+                                type="number"
+                                value={unit.floor_level ?? ''}
+                                onChange={(e) => handleUnitChange(index, 'floor_level', e.target.value === '' ? '' : Number(e.target.value))}
+                                className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'floor_level') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                                required
+                              />
+                            </td>
+                          )}
+                          
+                          {/* Office-specific: Total Floors (optional) */}
+                          {ptype === 'office' && (
+                            <td className="px-1 py-1.5">
+                              <input
+                                type="number"
+                                value={unit.total_floors || ''}
+                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
+                                className="w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
+                                min="1"
+                              />
+                            </td>
+                          )}
+                          
                           {/* House-specific: Total Floors */}
                           {ptype === 'house' && (
                             <td className="px-1 py-1.5">
@@ -945,19 +1090,21 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             </td>
                           )}
                           
-                          {/* Bedrooms */}
-                          <td className="px-1 py-1.5">
-                            <input
-                              type="number"
-                              value={unit.bedrooms ?? ''}
-                              onChange={(e) => handleUnitChange(index, 'bedrooms', e.target.value === '' ? '' : Number(e.target.value))}
-                              className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
-                              }`}
-                              min="0"
-                              required
-                            />
-                          </td>
+                          {/* Bedrooms - ONLY for residential (house, apartment) */}
+                          {['house', 'apartment'].includes(ptype) && (
+                            <td className="px-1 py-1.5">
+                              <input
+                                type="number"
+                                value={unit.bedrooms ?? ''}
+                                onChange={(e) => handleUnitChange(index, 'bedrooms', e.target.value === '' ? '' : Number(e.target.value))}
+                                className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
+                                  isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
+                                }`}
+                                min="0"
+                                required
+                              />
+                            </td>
+                          )}
                           
                           {/* Bathrooms */}
                           <td className="px-1 py-1.5">
@@ -990,8 +1137,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             </td>
                           )}
                           
-                          {/* Apartment-specific: Parking Spaces (optional) */}
-                          {ptype === 'apartment' && (
+                          {/* Apartment/Shop/Office: Parking Spaces (optional) */}
+                          {['apartment', 'shop', 'office'].includes(ptype) && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
@@ -1077,7 +1224,27 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             errors.push('Floor level required');
                         }
                         
-                        if (!unit.bathrooms || unit.bathrooms <= 0) errors.push('Bathrooms required');
+                        // Shop-specific errors
+                        if (ptype === 'shop') {
+                          if (unit.floor_level === undefined || unit.floor_level === null) 
+                            errors.push('Floor level required');
+                          if (unit.bathrooms !== undefined && unit.bathrooms < 0)
+                            errors.push('Bathrooms cannot be negative');
+                        }
+                        
+                        // Office-specific errors
+                        if (ptype === 'office') {
+                          if (unit.floor_level === undefined || unit.floor_level === null) 
+                            errors.push('Floor level required');
+                          if (unit.bathrooms !== undefined && unit.bathrooms < 0)
+                            errors.push('Bathrooms cannot be negative');
+                        }
+                        
+                        // Bathrooms validation - property-type-specific
+                        if (['house', 'apartment'].includes(ptype)) {
+                          if (!unit.bathrooms || unit.bathrooms <= 0) errors.push('Bathrooms required');
+                        }
+                        
                         if (!unit.price || unit.price <= 0) errors.push('Price required');
                         
                         if (errors.length > 0) {
@@ -1388,3 +1555,4 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 };
 
 export default memo(Step2_PropertyDetails);
+
