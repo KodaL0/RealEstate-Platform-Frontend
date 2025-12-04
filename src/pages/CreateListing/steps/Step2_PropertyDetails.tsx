@@ -433,7 +433,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const validBasics =
     !!formData.title?.trim() &&
-    !!formData.price &&
+    (!isMultiUnit && !!formData.price) &&
     !!formData.country &&
     !!formData.location?.trim() &&
     !!formData.city?.trim() && // ← ADDED: Ensure city is populated from dropdown selection
