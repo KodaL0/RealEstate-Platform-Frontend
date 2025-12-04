@@ -586,18 +586,10 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   return (
     <section className="max-w-full mx-auto">
-      {/* Header */}
-      <div className="text-center mb-3 sm:mb-4">
-        <h2 className="text-lg sm:text-xl font-bold text-gray-800">Property Details</h2>
-        <p className="text-gray-600 text-xs sm:text-sm">
-          {formData.propertyType?.replace("_", " / ")}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 lg:gap-4 mb-3 sm:mb-4">
         {/* Title */}
-        <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+        <div className="sm:col-span-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             Property Title <span className="text-red-500">*</span>
           </label>
           <input
@@ -605,20 +597,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             value={formData.title}
             onChange={handleChangeWithPatch}
             placeholder="e.g. Modern 2BR Apartment in City Center"
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         {/* Country */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             Country <span className="text-red-500">*</span>
           </label>
           <select
             name="country"
             value={formData.country}
             onChange={handleChangeWithPatch}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
               Select country
@@ -633,14 +625,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Property Status */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             Property Status <span className="text-red-500">*</span>
           </label>
           <select
             name="propertyStatus"
             value={formData.propertyStatus}
             onChange={handleChangeWithPatch}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
           >
             <option value="" disabled>
               Select status
@@ -655,7 +647,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Location (Mapbox autocomplete) */}
         <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             Address <span className="text-red-500">*</span>
           </label>
           <div className="relative">
@@ -689,7 +681,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Location Details - Auto-filled from autocomplete, editable */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             City <span className="text-red-500">*</span>
           </label>
           <input
@@ -698,43 +690,43 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             value={formData.city || ""}
             onChange={handleChangeWithPatch}
             placeholder="e.g., Παραλίμνι"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Region</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Region</label>
           <input
             type="text"
             name="region"
             value={formData.region || ""}
             onChange={handleChangeWithPatch}
             placeholder="e.g., Famagusta"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Postal Code</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Postal Code</label>
           <input
             type="text"
             name="postal_code"
             value={formData.postal_code || ""}
             onChange={handleChangeWithPatch}
             placeholder="e.g., 5290"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-2">Street Address</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Street Address</label>
           <input
             type="text"
             name="street"
             value={formData.street || ""}
             onChange={handleChangeWithPatch}
             placeholder="e.g., Filellinon"
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           />
         </div>
 
@@ -1032,7 +1024,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Price - only show if NOT multi-unit */}
         {!isMultiUnit && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
               Price (€) <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -1042,7 +1034,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="price"
                 value={formData.price}
                 onChange={handleChangeWithPatch}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
                 step="0.01"
                 placeholder="0.00"
@@ -1054,7 +1046,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Area */}
         {showField("area") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
               Area (m²){ptype !== "land" ? " *" : ""}
             </label>
             <div className="relative">
@@ -1064,7 +1056,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="area"
                 value={formData.area}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1074,7 +1066,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Lot Size */}
         {showField("lotSize") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Lot Area (m²)</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Lot Area (m²)</label>
             <div className="relative">
               <Layers
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1085,7 +1077,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="lotSize"
                 value={formData.lotSize}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1095,7 +1087,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Bedrooms */}
         {showField("bedrooms") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Bedrooms</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Bedrooms</label>
             <div className="relative">
               <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1103,7 +1095,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="bedrooms"
                 value={formData.bedrooms}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1113,7 +1105,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Bathrooms */}
         {showField("bathrooms") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Bathrooms</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Bathrooms</label>
             <div className="relative">
               <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1121,7 +1113,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="bathrooms"
                 value={formData.bathrooms}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1131,7 +1123,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Floor */}
         {showField("floorLevel") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Floor</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Floor</label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1139,7 +1131,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 value={formData.floorLevel}
                 onChange={onChange}
                 placeholder="e.g. 0, 1, 2"
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
               />
             </div>
           </div>
@@ -1148,7 +1140,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Total Floors */}
         {showField("totalFloors") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Total Floors</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Total Floors</label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1156,7 +1148,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="totalFloors"
                 value={formData.totalFloors}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1166,7 +1158,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Parking */}
         {showField("parkingSpaces") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Parking Spaces</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Parking Spaces</label>
             <div className="relative">
               <ParkingCircle
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1177,7 +1169,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="parkingSpaces"
                 value={formData.parkingSpaces}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={0}
               />
             </div>
@@ -1187,12 +1179,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Energy Rating */}
         {showField("energyRating") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Energy Rating</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Energy Rating</label>
             <select
               name="energyRating"
               value={formData.energyRating || ""}
               onChange={onChange}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
+              className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 bg-white"
             >
               <option value="">Select</option>
               {["A", "B", "C", "D", "E", "F", "G"].map((r: string) => (
@@ -1207,7 +1199,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Year Built */}
         {showField("yearBuilt") && (
           <div>
-            <label className="block text-sm font-semibold text-gray-700 mb-2">Year Built</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Year Built</label>
             <div className="relative">
               <Calendar
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1218,7 +1210,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 name="yearBuilt"
                 value={formData.yearBuilt}
                 onChange={onChange}
-                className="w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500"
                 min={1800}
                 max={2100}
               />
@@ -1259,7 +1251,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         {/* Description */}
         <div className="lg:col-span-2">
-          <label className="block text-sm font-semibold text-gray-700 mb-2">
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
             Description <span className="text-red-500">*</span>
           </label>
           <textarea
@@ -1268,32 +1260,32 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             onChange={handleChangeWithPatch}
             rows={4}
             placeholder="Describe the property..."
-            className="w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full px-3 py-2 text-sm border rounded-lg focus:ring-2 focus:ring-blue-500 resize-none"
           />
         </div>
       </div>
 
       {/* Nav */}
-      <div className="flex justify-between items-center mt-4 pt-4 border-t border-gray-200">
+      <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-200">
         <button
           type="button"
           onClick={back}
-          className="group inline-flex items-center px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-semibold hover:bg-gray-50"
+          className="group inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 font-semibold hover:bg-gray-50"
         >
-          <ChevronLeft className="w-5 h-5 mr-2" /> Back
+          <ChevronLeft className="w-4 h-4 mr-1" /> Back
         </button>
         <button
           type="button"
           disabled={!valid}
           onClick={handleNext}
-          className={`group px-8 py-4 rounded-xl font-semibold text-white ${
+          className={`group px-6 py-2 rounded-lg text-sm font-semibold text-white ${
             valid
               ? "bg-gradient-to-r from-blue-600 to-purple-600"
               : "bg-gray-300 cursor-not-allowed"
           }`}
         >
           <span className="flex items-center">
-            Continue <ChevronRight className="w-5 h-5 ml-2" />
+            Continue <ChevronRight className="w-4 h-4 ml-1" />
           </span>
         </button>
       </div>
