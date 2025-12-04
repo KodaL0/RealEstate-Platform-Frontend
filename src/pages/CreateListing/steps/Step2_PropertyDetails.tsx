@@ -166,8 +166,32 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   setCountryCode,
   username,
   hasLoadedPropertyData = false,
+
+
 }) => {
+
+  // ⭐ NORMALIZE SINGLE-PROPERTY FIELDS IN MULTI-UNIT MODE
+  const normalizeMultiUnitFields = (form: ListingForm): ListingForm => {
+    if (!form.has_units) return form;
+
+    return {
+      ...form,
+      price: "",
+      area: "",
+      bedrooms: "",
+      bathrooms: "",
+      floorLevel: "",
+      totalFloors: "",
+      parkingSpaces: "",
+      lotSize: "",
+      energyRating: "",
+      yearBuilt: "",
+    };
+
+  };
+
   const { next, back } = useWizardNavigation();
+
   const ptype = (formData.propertyType || "") as PT;
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
@@ -431,14 +455,17 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     setFormData,
   ]); // Removed changing dependencies
 
+  const normalizedForm = normalizeMultiUnitFields(formData);
+
   const validBasics =
-    !!formData.title?.trim() &&
-    (!isMultiUnit && !!formData.price) &&
-    !!formData.country &&
-    !!formData.location?.trim() &&
-    !!formData.city?.trim() && // ← ADDED: Ensure city is populated from dropdown selection
-    !!formData.propertyStatus &&
+    !!normalizedForm.title?.trim() &&
+    (isMultiUnit || !!normalizedForm.price) &&   // <-- if multi-unit, skip price
+    !!normalizedForm.country &&
+    !!normalizedForm.location?.trim() &&
+    !!normalizedForm.city?.trim() &&
+    !!normalizedForm.propertyStatus &&
     !!ptype;
+
 
   const validSpecs = (() => {
     // If multi-unit, validate units instead
@@ -506,6 +533,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   })();
 
   const valid = validBasics && validSpecs;
+
   
   // Unit management functions
   const handleAddUnit = () => {
