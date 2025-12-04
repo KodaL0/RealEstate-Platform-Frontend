@@ -7,7 +7,7 @@ interface AmenitySelectorProps {
 }
 
 export default function AmenitySelector({ selectedAmenities, onChange }: AmenitySelectorProps) {
-  const [expanded, setExpanded] = useState<Set<string>>(new Set(PROPERTY_AMENITY_CATEGORIES));
+  const [expanded, setExpanded] = useState<Set<string>>(new Set());
 
   const toggle = (id: string) => {
     const newAmenities = selectedAmenities.includes(id)

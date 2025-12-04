@@ -499,6 +499,8 @@ export const DEFAULT_FORM_STATE: ListingForm = {
       pool: false,
     },
   ],
+  has_units: false,
+  units: [],
 };
 
 export const PROPERTY_TYPES = [
