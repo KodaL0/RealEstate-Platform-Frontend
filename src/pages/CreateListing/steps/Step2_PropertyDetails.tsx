@@ -585,7 +585,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   };
 
   return (
-    <section className="bg-gradient-to-br from-white to-gray-50 p-4 sm:p-6 rounded-2xl shadow-xl border border-gray-100 max-w-full mx-auto">
+    <section className="max-w-full mx-auto">
       {/* Header */}
       <div className="text-center mb-3 sm:mb-4">
         <h2 className="text-lg sm:text-xl font-bold text-gray-800">Property Details</h2>
@@ -594,7 +594,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-6 bg-white p-3 sm:p-4 lg:p-6 rounded-xl shadow-md border border-gray-100 mb-4 sm:mb-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 lg:gap-5 mb-4 sm:mb-6">
         {/* Title */}
         <div className="lg:col-span-2">
           <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -769,9 +769,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             </div>
 
             {isMultiUnit && formData.units && formData.units.length > 0 && (
-              <div className="bg-blue-50 p-4 rounded-lg space-y-4 border border-blue-200">
-                <p className="text-sm text-blue-900 mb-4">
-                  <strong>Multi-unit property:</strong> Specify bedrooms, bathrooms, area, and pricing for each individual unit below.
+              <div className="space-y-3">
+                <p className="text-xs sm:text-sm text-gray-700 mb-2">
+                  <strong>Multi-unit property:</strong> Specify details for each unit below.
                 </p>
 
                 {/* Units Table */}
