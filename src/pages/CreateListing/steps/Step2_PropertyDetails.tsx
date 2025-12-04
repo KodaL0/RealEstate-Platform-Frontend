@@ -777,7 +777,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 </p>
 
                 {/* Units Table */}
-                <div className="overflow-x-auto border rounded-lg bg-white">
+                <div className="border rounded-lg bg-white">
                   <table className="w-full">
                     <thead className="bg-gray-100">
                       <tr>
