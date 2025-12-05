@@ -795,13 +795,32 @@ const CreateListing: React.FC = () => {
                   ...rest,
                   property: propertyId,
                 };
-                await api.propertyUnits.create(unitData);
+                console.log("Creating unit with data:", unitData);
+                try {
+                  await api.propertyUnits.create(unitData);
+                  console.log("✅ Unit created successfully");
+                } catch (unitCreateError: unknown) {
+                  console.error("Failed to create unit:", unitCreateError);
+                  const error = unitCreateError as { response?: { status?: number; data?: unknown } };
+                  console.error("Error status:", error.response?.status);
+                  console.error("Error data:", error.response?.data);
+                  throw unitCreateError; // Re-throw to be caught by outer catch
+                }
               }
             }
             console.log("✅ Units saved successfully");
           } catch (unitError: unknown) {
             console.error("Failed to save units:", unitError);
-            toast.error("Property saved but units may not have been saved correctly. Please check and update manually.");
+            const error = unitError as { response?: { status?: number; data?: unknown; statusText?: string } };
+            const errorMessage = error.response?.data 
+              ? JSON.stringify(error.response.data)
+              : error.response?.statusText || "Unknown error";
+            console.error("Unit error details:", {
+              status: error.response?.status,
+              data: error.response?.data,
+              message: errorMessage
+            });
+            toast.error(`Property saved but units failed to save: ${errorMessage}`);
           }
         }
 
