@@ -333,12 +333,14 @@ const PropertyDetails: React.FC = () => {
       try {
         const response = await api.get(`properties/${numericId}`);
         const mapped = mapPropertyData(response.data);
-        // ⭐ Fetch Units for This Property ⭐
-        try {
-          const unitsRes = await api.propertyUnits.list(numericId);
-          mapped.units = Array.isArray(unitsRes.data) ? unitsRes.data : [];
-        } catch (err) {
-          console.error("Failed to fetch units:", err);
+        // ⭐ Fetch Units for This Property (only if it has multiple units) ⭐
+        if (mapped.has_units) {
+          try {
+            const unitsRes = await api.propertyUnits.list(numericId);
+            mapped.units = Array.isArray(unitsRes.data) ? unitsRes.data : [];
+          } catch (err) {
+            console.error("Failed to fetch units:", err);
+          }
         }
 
         if (!isMounted) return;
