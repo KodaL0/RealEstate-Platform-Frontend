@@ -118,6 +118,10 @@ const mapPropertyData = (raw: any): Property => ({
   video_url: raw?.video_url ?? "",
   amenities: raw?.amenities ?? [],
 
+  has_units: raw?.has_units ?? false,   // ← 🔥 THIS WAS MISSING
+
+  units: raw?.units ?? [],              // ← Optional: handle backend-provided units
+
   owner: raw?.owner ?? null,
   is_published: raw?.is_published ?? false,
   created_at: raw?.created_at ?? "",
@@ -129,6 +133,7 @@ const mapPropertyData = (raw: any): Property => ({
   longitude: raw?.longitude != null ? +raw.longitude : undefined,
   url: raw?.url ?? undefined,
 });
+
 
 const PTYPE_FIELDS: Record<
   string,
