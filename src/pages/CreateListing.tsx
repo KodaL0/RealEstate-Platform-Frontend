@@ -766,19 +766,21 @@ const CreateListing: React.FC = () => {
               
               // Process each unit from form
               for (const unit of formData.units) {
-                const unitData = {
-                  ...unit,
-                  property: propertyId,
-                };
-                
-                if (unit.id && existingUnitsMap.has(unit.id)) {
-                  // Update existing unit
-                  await api.propertyUnits.update(unit.id, unitData);
-                  existingUnitsMap.delete(unit.id);
-                } else {
-                  // Create new unit
-                  await api.propertyUnits.create(unitData);
-                }
+              // Remove id from POST data
+              const { id, ...rest } = unit;
+              const unitData = {
+                ...rest,
+                property: propertyId,
+              };
+
+              if (unit.id && existingUnitsMap.has(unit.id)) {
+                // Update existing unit
+                await api.propertyUnits.update(unit.id, unitData);
+                existingUnitsMap.delete(unit.id);
+              } else {
+                // Create new unit (NO id included)
+                await api.propertyUnits.create(unitData);
+              }
               }
               
               // Delete units that were removed
@@ -788,8 +790,9 @@ const CreateListing: React.FC = () => {
             } else {
               // Create mode: Create all units
               for (const unit of formData.units) {
+                const { id, ...rest } = unit;
                 const unitData = {
-                  ...unit,
+                  ...rest,
                   property: propertyId,
                 };
                 await api.propertyUnits.create(unitData);
