@@ -328,14 +328,16 @@ const api = {
     list: (propertyId?: number) => {
       const url = propertyId
         ? `property-units/?property=${propertyId}`
-        : "property-units/";
+        : `property-units/`;
       return apiGet(url);
     },
     get: (id: number) => apiGet(`property-units/${id}/`),
-    create: (data: unknown) => apiPost("property-units/", data),
+    create: (data: unknown) => apiPost(`property-units/`, data),
     update: (id: number, data: unknown) => apiPut(`property-units/${id}/`, data),
     delete: (id: number) => apiDelete(`property-units/${id}/`),
   },
+
+
 
   favourites: {
     list: (p?: Record<string, unknown>) =>
