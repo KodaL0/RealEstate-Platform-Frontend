@@ -377,6 +377,14 @@ const CreateListing: React.FC = () => {
         fd.append("devUnits", JSON.stringify(v));
         return;
       }
+      
+      // Special handling for price in multi-unit properties
+      // Backend expects price=0 for multi-unit properties (it will be calculated from units)
+      if (k === "price" && formData.has_units && (v === "" || v === undefined || v === null)) {
+        fd.append("price", "0");
+        return;
+      }
+      
       if (v !== undefined && v !== null && v !== "") {
         fd.append(k, String(v));
       }
