@@ -378,10 +378,12 @@ const CreateListing: React.FC = () => {
         return;
       }
       
-      // Special handling for price in multi-unit properties
-      // Backend expects price=0 for multi-unit properties (it will be calculated from units)
-      if (k === "price" && formData.has_units && (v === "" || v === undefined || v === null)) {
-        fd.append("price", "0");
+      // Special handling for unit-level fields in multi-unit properties
+      // For multi-unit properties, these fields are specified at the unit level, not property level
+      // Backend expects placeholder values (0) which will be calculated from actual units
+      const unitLevelFields = ['price', 'bedrooms', 'bathrooms', 'area'];
+      if (unitLevelFields.includes(k) && formData.has_units && (v === "" || v === undefined || v === null)) {
+        fd.append(k, "0");
         return;
       }
       
