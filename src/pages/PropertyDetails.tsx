@@ -96,16 +96,16 @@ const mapPropertyData = (raw: any): Property => ({
   id: raw?.id ?? 0,
   title: raw?.title ?? "Untitled Property",
   description: raw?.description ?? "",
-  price: raw?.price ? +raw.price : 0,
+  price: raw?.price ? Math.round(+raw.price) : 0,
   location: raw?.location ?? "",
   country: raw?.country ?? "",
   property_type: raw?.property_type ?? "",
   bedrooms: raw?.bedrooms ?? 0,
-  bathrooms: raw?.bathrooms ? +raw.bathrooms : 0,
-  area: raw?.area ? +raw.area : 0,
+  bathrooms: raw?.bathrooms ? Math.round(+raw.bathrooms) : 0,
+  area: raw?.area ? Math.round(+raw.area) : 0,
   year_built: raw?.year_built ?? "",
-  parking_spaces: raw?.parking_spaces ?? 0,
-  lot_size: raw?.lot_size ?? "",
+  parking_spaces: raw?.parking_spaces ? Math.round(+raw.parking_spaces) : 0,
+  lot_size: raw?.lot_size ? Math.round(+raw.lot_size) : 0,
   property_status: raw?.property_status ?? "unavailable",
   energy_rating: raw?.energy_rating ?? "",
   construction_material: raw?.construction_material ?? "",
@@ -959,7 +959,7 @@ const PropertyDetails: React.FC = () => {
                     <td className="px-4 py-3">{u.lot_size ?? "—"}</td>
                     <td className="px-4 py-3">{u.parking_spaces ?? "—"}</td>
                     <td className="px-4 py-3 font-bold text-blue-600">
-                      {u.price?.toLocaleString?.() ?? "—"}
+                      {u.price ? Math.round(u.price).toLocaleString() : "—"}
                     </td>
                     <td className="px-4 py-3">
                       <span
