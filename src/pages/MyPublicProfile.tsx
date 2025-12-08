@@ -739,9 +739,7 @@ const MyPublicProfile: React.FC = () => {
               <h2 className="text-2xl font-bold text-gray-900">Listings</h2>
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Sliders className="h-4 w-4 text-gray-700" />
-                <span className="text-sm font-medium text-gray-700">
-                  Filter
-                </span>
+                <span className="text-sm font-medium text-gray-700">Filter</span>
               </div>
             </div>
 
@@ -749,16 +747,14 @@ const MyPublicProfile: React.FC = () => {
               {properties.length === 0 ? (
                 <div className="bg-gray-50 rounded-xl shadow-sm border border-gray-200 p-16 text-center">
                   <Building2 className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    No Listings Yet
-                  </h3>
+                  <h3 className="text-xl font-semibold text-gray-900 mb-2">No Listings Yet</h3>
                   <p className="text-gray-600">
-                    You haven&apos;t posted any properties yet. Create your
-                    first listing to showcase your portfolio.
+                    You haven&apos;t posted any properties yet. Create your first listing.
                   </p>
                 </div>
               ) : (
                 <>
+                  {/* GRID OF PROPERTY CARDS */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                     {paginatedProperties.map((property) => (
                       <MyPropertyCard
@@ -774,12 +770,11 @@ const MyPublicProfile: React.FC = () => {
                     ))}
                   </div>
 
+                  {/* PAGINATION */}
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-10">
                       <button
-                        onClick={() =>
-                          setCurrentPage((p) => Math.max(1, p - 1))
-                        }
+                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                         disabled={currentPage === 1}
                         className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                       >
@@ -787,44 +782,31 @@ const MyPublicProfile: React.FC = () => {
                       </button>
 
                       <div className="flex gap-1">
-                        {Array.from(
-                          { length: Math.min(totalPages, 7) },
-                          (_, i) => {
-                            let pageNum: number;
+                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 7) pageNum = i + 1;
+                          else if (currentPage <= 4) pageNum = i + 1;
+                          else if (currentPage >= totalPages - 3) pageNum = totalPages - 6 + i;
+                          else pageNum = currentPage - 3 + i;
 
-                            if (totalPages <= 7) {
-                              pageNum = i + 1;
-                            } else if (currentPage <= 4) {
-                              pageNum = i + 1;
-                            } else if (currentPage >= totalPages - 3) {
-                              pageNum = totalPages - 6 + i;
-                            } else {
-                              pageNum = currentPage - 3 + i;
-                            }
-
-                            return (
-                              <button
-                                key={pageNum}
-                                onClick={() => setCurrentPage(pageNum)}
-                                className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 shadow-sm ${
-                                  currentPage === pageNum
-                                    ? "bg-blue-600 text-white"
-                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                                }`}
-                              >
-                                {pageNum}
-                              </button>
-                            );
-                          }
-                        )}
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 shadow-sm ${
+                                currentPage === pageNum
+                                  ? "bg-blue-600 text-white"
+                                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
                       </div>
 
                       <button
-                        onClick={() =>
-                          setCurrentPage((p) =>
-                            Math.min(totalPages, p + 1)
-                          )
-                        }
+                        onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                         disabled={currentPage === totalPages}
                         className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                       >
@@ -836,348 +818,51 @@ const MyPublicProfile: React.FC = () => {
               )}
             </div>
           </div>
-          {/* EDIT SECTION MODAL (required for Edit Listing button) */}
-          <EditSectionModal
-            isOpen={isEditModalOpen}
-            onClose={() => {
-              setIsEditModalOpen(false);
-              setSelectedPropertyId(null);
-            }}
-            onSelectSection={handleSectionSelect}
-            propertyTitle={selectedPropertyTitle}
-          />
-        </div>
-      </div>
 
-      {/* ========================== */}
-      {/* FULL-SCREEN EDIT MODAL    */}
-      {/* ========================== */}
-      {isEditingProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
-          <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6">
-            {/* Close button */}
-            <button
-              type="button"
-              onClick={handleCancelProfileEdit}
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-600"
-            >
-              <X className="h-5 w-5" />
-            </button>
-
-            <div className="mb-4 flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
-                <UserIcon className="h-5 w-5 text-blue-600" />
-              </div>
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Edit Profile
-                </h2>
-                <p className="text-sm text-gray-500">
-                  Update your public information, contact details, and username.
-                </p>
-              </div>
-            </div>
-
-            {/* Messages */}
-            {profileMessage && (
-              <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-emerald-800 font-medium">
-                  {profileMessage}
-                </span>
-              </div>
-            )}
-            {profileError && (
-              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm text-red-800 font-medium">
-                  {profileError}
-                </span>
-              </div>
-            )}
-            {usernameMessage && (
-              <div className="mb-3 p-3 bg-emerald-50 border border-emerald-200 rounded-lg flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-emerald-600" />
-                <span className="text-sm text-emerald-800 font-medium">
-                  {usernameMessage}
-                </span>
-              </div>
-            )}
-            {usernameError && (
-              <div className="mb-3 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center gap-2">
-                <AlertCircle className="h-4 w-4 text-red-600" />
-                <span className="text-sm text-red-800 font-medium">
-                  {usernameError}
-                </span>
-              </div>
-            )}
-
-            <form onSubmit={handleSaveAll} className="space-y-6 mt-2">
-              {/* Username */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
-                  <UserIcon className="h-4 w-4 text-blue-600" />
-                  Username
-                </h3>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <p className="text-xs font-semibold text-gray-500 mb-1">
-                      Current username
-                    </p>
-                    <div className="px-3 py-2 bg-white rounded-lg border border-gray-200 text-sm font-medium text-gray-900">
-                      @{username}
-                    </div>
-                  </div>
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-gray-600">
-                      New username
-                    </label>
-                    <input
-                      type="text"
-                      value={newUsername}
-                      onChange={handleUsernameChange}
-                      className={`w-full px-3 py-2 text-sm border-2 rounded-lg bg-white transition-all duration-200 focus:outline-none focus:ring-2 ${
-                        validationError
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-100"
-                          : "border-gray-200 focus:border-blue-500 focus:ring-blue-100 hover:border-gray-300"
-                      }`}
-                      placeholder="your_new_username"
-                    />
-                    {validationError && (
-                      <p className="mt-1 text-xs text-red-600 font-medium">
-                        {validationError}
-                      </p>
-                    )}
-                    <p className="mt-1 text-xs text-gray-500">
-                      Lowercase letters, numbers, underscores, and hyphens only.
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* Basic info */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-blue-600" />
-                  Basic Information
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block mb-1 text-xs font-semibold text-gray-700">
-                      Full Name
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.name}
-                      onChange={(e) =>
-                        handleProfileFieldChange("name", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
-                      placeholder="Your full name"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="mb-1 text-xs font-semibold text-gray-700 flex items-center gap-1">
-                      <MapPin className="h-3 w-3 text-gray-500" />
-                      Location
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.location}
-                      onChange={(e) =>
-                        handleProfileFieldChange("location", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
-                      placeholder="City, Country"
-                    />
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block mb-1 text-xs font-semibold text-gray-700">
-                    Bio
-                  </label>
-                  <div className="relative">
-                    <textarea
-                      value={profileData.bio}
-                      onChange={(e) =>
-                        handleProfileFieldChange("bio", e.target.value)
-                      }
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg resize-none focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-100 text-sm"
-                      rows={4}
-                      maxLength={500}
-                      placeholder="Tell clients who you are, your expertise, and what makes you different."
-                    />
-                    <div className="absolute bottom-2 right-3 text-xs text-gray-400">
-                      {profileData.bio.length}/500
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Contact info */}
-              <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 space-y-4">
-                <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-blue-600" />
-                  Contact Information
-                </h3>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {/* Website */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                      <Globe className="h-3 w-3 text-gray-400" />
-                      Website
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.website}
-                      onChange={(e) =>
-                        handleProfileFieldChange("website", e.target.value)
-                      }
-                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                      placeholder="example.com"
-                    />
-                  </div>
-
-                  {/* Phone */}
-                  <div className="flex flex-col gap-1">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                      <Phone className="h-3 w-3 text-gray-400" />
-                      Phone
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.phone}
-                      onChange={(e) =>
-                        handleProfileFieldChange("phone", e.target.value)
-                      }
-                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                      placeholder="+123456789"
-                    />
-                  </div>
-
-                  {/* Office */}
-                  <div className="flex flex-col gap-1 sm:col-span-2">
-                    <label className="text-xs font-semibold text-gray-600 flex items-center gap-1">
-                      <Building2 className="h-3 w-3 text-gray-400" />
-                      Office / Workplace
-                    </label>
-                    <input
-                      type="text"
-                      value={profileData.office}
-                      onChange={(e) =>
-                        handleProfileFieldChange("office", e.target.value)
-                      }
-                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg focus:border-blue-500 focus:ring-blue-100"
-                      placeholder="Company name"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick links: Privacy + Developer */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                  <div className="flex items-center mb-2">
-                    <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-2">
-                      <Shield className="h-4 w-4 text-white" />
-                    </div>
-                    <h3 className="text-sm font-semibold text-gray-900">
-                      Privacy &amp; GDPR
-                    </h3>
-                  </div>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Manage consent preferences and privacy controls related to
-                    your public profile and communication.
-                  </p>
-                  <Link
-                    to="/privacy-settings"
-                    className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gray-900 text-white hover:bg-black text-xs font-medium transition-colors"
-                  >
-                    <Shield className="h-3 w-3" />
-                    <span>Open Privacy Settings</span>
-                  </Link>
-                </div>
-
-                {user?.is_developer && (
-                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200">
-                    <div className="flex items-center mb-2">
-                      <div className="flex items-center justify-center w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg mr-2">
-                        <Building className="h-4 w-4 text-white" />
-                      </div>
-                      <h3 className="text-sm font-semibold text-gray-900">
-                        Developer Portal
-                      </h3>
-                    </div>
-                    <p className="text-xs text-gray-600 mb-3">
-                      Access your API keys, integrations, and developer
-                      analytics.
-                    </p>
-                    <Link
-                      to="/developer-api"
-                      className="inline-flex items-center space-x-2 px-3 py-1.5 rounded-lg bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:from-blue-700 hover:to-indigo-700 text-xs font-medium transition-all"
-                    >
-                      <Building className="h-3 w-3" />
-                      <span>Open Developer Portal</span>
-                    </Link>
-                  </div>
-                )}
-              </div>
-
-              {/* Save / Cancel */}
-              <div className="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  onClick={handleCancelProfileEdit}
-                  className="px-4 py-2 rounded-lg border border-gray-300 text-gray-700 hover:bg-gray-100 transition"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSavingProfile}
-                  className="px-5 py-2 rounded-lg bg-emerald-600 text-white font-semibold shadow-md hover:bg-emerald-700 disabled:opacity-60 transition flex items-center gap-2"
-                >
-                  {isSavingProfile ? (
-                    <>
-                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      <Save className="h-4 w-4" />
-                      Save Changes
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* ANALYTICS MODAL */}
-      {analyticsPropertyId && (
-        <div
-          className="fixed top-20 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4"
-          onClick={() => setAnalyticsPropertyId(null)}
-        >
-          <div
-            className="w-full max-w-4xl max-h-[calc(100vh-6rem)] overflow-auto"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <PropertyAnalytics
-              propertyId={analyticsPropertyId}
-              onClose={() => setAnalyticsPropertyId(null)}
+            {/* EDIT LISTING MODAL */}
+            <EditSectionModal
+              isOpen={isEditModalOpen}
+              onClose={() => {
+                setIsEditModalOpen(false);
+                setSelectedPropertyId(null);
+              }}
+              onSelectSection={handleSectionSelect}
+              propertyTitle={selectedPropertyTitle}
             />
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
 
-export default MyPublicProfile;
+          </div> {/* closes max-width container */}
+        </div> {/* closes HERO SECTION WRAPPER */}
+
+        {/* FULL SCREEN PROFILE EDIT MODAL */}
+        {isEditingProfile && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60">
+            <div className="relative w-full max-w-3xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl p-6">
+              {/* ... keep modal content ... */}
+            </div>
+          </div>
+        )}
+
+        {/* ANALYTICS MODAL */}
+        {analyticsPropertyId && (
+          <div
+            className="fixed top-20 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4"
+            onClick={() => setAnalyticsPropertyId(null)}
+          >
+            <div
+              className="w-full max-w-4xl max-h-[calc(100vh-6rem)] overflow-auto"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <PropertyAnalytics
+                propertyId={analyticsPropertyId}
+                onClose={() => setAnalyticsPropertyId(null)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  export default MyPublicProfile;
+
+
