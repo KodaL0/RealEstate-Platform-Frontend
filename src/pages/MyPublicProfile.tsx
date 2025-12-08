@@ -17,12 +17,12 @@ import {
   TrendingUp,
   User as UserIcon,
   UserPlus,
-  Send,
   Pencil,
   X,
+  Plus,
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import PropertyCard from "../components/cards/PropertyCard";
+import MyPropertyCard from "../components/cards/MyPropertyCard";
 import { SEO } from "../components/SEO";
 import api from "../config/api";
 import { useUser } from "../context/UserContext";
@@ -104,6 +104,19 @@ const MyPublicProfile: React.FC = () => {
   const paginatedProperties = properties.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
+  );
+
+  // Listing management modal states
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [selectedPropertyId, setSelectedPropertyId] = useState<string | null>(
+    null
+  );
+  const [selectedPropertyTitle, setSelectedPropertyTitle] =
+    useState<string>("");
+
+  // Analytics modal
+  const [analyticsPropertyId, setAnalyticsPropertyId] = useState<string | null>(
+    null
   );
 
   // --------------------------------
@@ -324,6 +337,92 @@ const MyPublicProfile: React.FC = () => {
     }
   };
 
+  // =============================
+  // LISTING MANAGEMENT FUNCTIONS
+  // =============================
+
+  const handleEditClick = (id: string | number) => {
+    const idStr = String(id);
+    const property = properties.find((p) => String(p.id) === idStr);
+    setSelectedPropertyId(idStr);
+    setSelectedPropertyTitle(property?.title || "Property");
+    setIsEditModalOpen(true);
+  };
+
+  const handleSectionSelect = (section: number) => {
+    if (selectedPropertyId !== null) {
+      navigate(`/edit-listing/${selectedPropertyId}?step=${section}`);
+    }
+    setIsEditModalOpen(false);
+    setSelectedPropertyId(null);
+  };
+
+  const handlePublish = async (id: string | number) => {
+    if (!username) {
+      alert("User info unavailable");
+      return;
+    }
+    if (!window.confirm("Publish this listing?")) return;
+
+    const idStr = String(id);
+
+    try {
+      await api.put(`properties/${username}/property/${idStr}/publish`);
+      setProperties((ps) =>
+        ps.map((p) =>
+          String(p.id) === idStr ? { ...p, is_published: true } : p
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to publish listing.");
+    }
+  };
+
+  const handleUnpublish = async (id: string | number) => {
+    if (!username) {
+      alert("User info unavailable");
+      return;
+    }
+    if (!window.confirm("Unpublish this listing?")) return;
+
+    const idStr = String(id);
+
+    try {
+      await api.put(`properties/${username}/property/${idStr}/unpublish`);
+      setProperties((ps) =>
+        ps.map((p) =>
+          String(p.id) === idStr ? { ...p, is_published: false } : p
+        )
+      );
+    } catch (err) {
+      console.error(err);
+      alert("Failed to unpublish listing.");
+    }
+  };
+
+  const handleRemove = async (id: string | number) => {
+    if (!username) {
+      alert("User info unavailable");
+      return;
+    }
+    if (!window.confirm("Remove this listing?")) return;
+
+    const idStr = String(id);
+
+    try {
+      await api.delete(`properties/${username}/property/${idStr}/delete`);
+      setProperties((ps) => ps.filter((p) => String(p.id) !== idStr));
+    } catch (err) {
+      console.error(err);
+      alert("Failed to remove listing.");
+    }
+  };
+
+  const handleViewAnalytics = (id: string | number) => {
+    setAnalyticsPropertyId(String(id));
+  };
+
   // --------------------------------
   // Loading / error UI
   // --------------------------------
@@ -468,7 +567,9 @@ const MyPublicProfile: React.FC = () => {
                       <div className="flex items-center gap-2">
                         <Star className="h-5 w-5 text-yellow-500 fill-yellow-500" />
                         <span className="text-lg font-semibold text-gray-900">
-                          {overallRating !== null ? overallRating.toFixed(1) : "N/A"}
+                          {overallRating !== null
+                            ? overallRating.toFixed(1)
+                            : "N/A"}
                         </span>
                         <span className="text-gray-600">
                           ({overallReviewsCount ?? 0} reviews)
@@ -488,21 +589,29 @@ const MyPublicProfile: React.FC = () => {
 
                 {/* Right: buttons (Edit + Analytics) */}
                 <div className="flex gap-3 flex-wrap md:flex-nowrap">
-                <Link
+                  <Link
                     to="/profile"
                     className="inline-flex items-center gap-2 px-7 py-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
-                >
+                  >
                     <Pencil className="h-4 w-4" />
                     Edit Profile
-                </Link>
+                  </Link>
 
-                <Link
+                  <Link
                     to="/analytics"
                     className="flex-1 md:flex-none px-7 py-3 bg-gray-900 hover:bg-black text-white font-semibold rounded-lg transition-all duration-200 flex items-center justify-center gap-2 shadow-lg hover:shadow-xl"
-                >
+                  >
                     <TrendingUp className="h-4 w-4" />
                     <span>Analytics</span>
-                </Link>
+                  </Link>
+
+                  <button
+                    onClick={() => navigate("/create-listing")}
+                    className="inline-flex items-center gap-2 px-7 py-3 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
+                  >
+                    <Plus className="h-4 w-4" />
+                    Create Listing
+                  </button>
                 </div>
               </div>
             </div>
@@ -530,7 +639,9 @@ const MyPublicProfile: React.FC = () => {
                           <Globe className="h-5 w-5 text-blue-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Website</p>
+                          <p className="text-sm font-medium text-gray-600">
+                            Website
+                          </p>
                           <a
                             href={
                               profileData.website.startsWith("http")
@@ -553,7 +664,9 @@ const MyPublicProfile: React.FC = () => {
                           <Phone className="h-5 w-5 text-green-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Phone</p>
+                          <p className="text-sm font-medium text-gray-600">
+                            Phone
+                          </p>
                           <p className="font-medium text-gray-900">
                             {profileData.phone}
                           </p>
@@ -567,7 +680,9 @@ const MyPublicProfile: React.FC = () => {
                           <Building2 className="h-5 w-5 text-purple-600" />
                         </div>
                         <div>
-                          <p className="text-sm font-medium text-gray-600">Office</p>
+                          <p className="text-sm font-medium text-gray-600">
+                            Office
+                          </p>
                           <p className="font-medium text-gray-900">
                             {profileData.office}
                           </p>
@@ -624,13 +739,15 @@ const MyPublicProfile: React.FC = () => {
             </div>
           </div>
 
-          {/* LISTINGS SECTION (same as PublicProfile) */}
+          {/* LISTINGS SECTION */}
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-12">
             <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Listings</h2>
               <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Sliders className="h-4 w-4 text-gray-700" />
-                <span className="text-sm font-medium text-gray-700">Filter</span>
+                <span className="text-sm font-medium text-gray-700">
+                  Filter
+                </span>
               </div>
             </div>
 
@@ -642,22 +759,33 @@ const MyPublicProfile: React.FC = () => {
                     No Listings Yet
                   </h3>
                   <p className="text-gray-600">
-                    You haven&apos;t posted any properties yet. Create your first
-                    listing to showcase your portfolio.
+                    You haven&apos;t posted any properties yet. Create your
+                    first listing to showcase your portfolio.
                   </p>
                 </div>
               ) : (
                 <>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-6">
                     {paginatedProperties.map((property) => (
-                      <PropertyCard key={property.id} property={property} />
+                      <MyPropertyCard
+                        key={property.id}
+                        property={property}
+                        onEdit={handleEditClick}
+                        onRemove={handleRemove}
+                        onPublish={handlePublish}
+                        onUnpublish={handleUnpublish}
+                        onNavigate={(id) => navigate(`/property/${id}`)}
+                        onViewAnalytics={handleViewAnalytics}
+                      />
                     ))}
                   </div>
 
                   {totalPages > 1 && (
                     <div className="flex justify-center items-center gap-2 mt-10">
                       <button
-                        onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                        onClick={() =>
+                          setCurrentPage((p) => Math.max(1, p - 1))
+                        }
                         disabled={currentPage === 1}
                         className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
                       >
@@ -665,38 +793,43 @@ const MyPublicProfile: React.FC = () => {
                       </button>
 
                       <div className="flex gap-1">
-                        {Array.from({ length: Math.min(totalPages, 7) }, (_, i) => {
-                          let pageNum: number;
+                        {Array.from(
+                          { length: Math.min(totalPages, 7) },
+                          (_, i) => {
+                            let pageNum: number;
 
-                          if (totalPages <= 7) {
-                            pageNum = i + 1;
-                          } else if (currentPage <= 4) {
-                            pageNum = i + 1;
-                          } else if (currentPage >= totalPages - 3) {
-                            pageNum = totalPages - 6 + i;
-                          } else {
-                            pageNum = currentPage - 3 + i;
+                            if (totalPages <= 7) {
+                              pageNum = i + 1;
+                            } else if (currentPage <= 4) {
+                              pageNum = i + 1;
+                            } else if (currentPage >= totalPages - 3) {
+                              pageNum = totalPages - 6 + i;
+                            } else {
+                              pageNum = currentPage - 3 + i;
+                            }
+
+                            return (
+                              <button
+                                key={pageNum}
+                                onClick={() => setCurrentPage(pageNum)}
+                                className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 shadow-sm ${
+                                  currentPage === pageNum
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                                }`}
+                              >
+                                {pageNum}
+                              </button>
+                            );
                           }
-
-                          return (
-                            <button
-                              key={pageNum}
-                              onClick={() => setCurrentPage(pageNum)}
-                              className={`w-10 h-10 rounded-lg font-medium transition-all duration-200 shadow-sm ${
-                                currentPage === pageNum
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                              }`}
-                            >
-                              {pageNum}
-                            </button>
-                          );
-                        })}
+                        )}
                       </div>
 
                       <button
                         onClick={() =>
-                          setCurrentPage((p) => Math.min(totalPages, p + 1))
+                          setCurrentPage((p) =>
+                            Math.min(totalPages, p + 1)
+                          )
                         }
                         disabled={currentPage === totalPages}
                         className="px-4 py-2 rounded-lg bg-white border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
@@ -953,8 +1086,8 @@ const MyPublicProfile: React.FC = () => {
                     </h3>
                   </div>
                   <p className="text-xs text-gray-600 mb-3">
-                    Manage consent preferences and privacy controls related to your
-                    public profile and communication.
+                    Manage consent preferences and privacy controls related to
+                    your public profile and communication.
                   </p>
                   <Link
                     to="/privacy-settings"
@@ -976,7 +1109,8 @@ const MyPublicProfile: React.FC = () => {
                       </h3>
                     </div>
                     <p className="text-xs text-gray-600 mb-3">
-                      Access your API keys, integrations, and developer analytics.
+                      Access your API keys, integrations, and developer
+                      analytics.
                     </p>
                     <Link
                       to="/developer-api"
