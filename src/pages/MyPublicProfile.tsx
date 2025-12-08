@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import MyPropertyCard from "../components/cards/MyPropertyCard";
+import EditSectionModal from "../components/modals/EditSectionModal";
 import { SEO } from "../components/SEO";
 import api from "../config/api";
 import { useUser } from "../context/UserContext";
@@ -407,6 +408,13 @@ const MyPublicProfile: React.FC = () => {
   const handleViewAnalytics = (id: string | number) => {
     setAnalyticsPropertyId(String(id));
   };
+  const handleSectionSelect = (section: number) => {
+  if (selectedPropertyId !== null) {
+    navigate(`/edit-listing/${selectedPropertyId}?step=${section}`);
+  }
+  setIsEditModalOpen(false);
+  setSelectedPropertyId(null);
+};
 
   // --------------------------------
   // Loading / error UI
@@ -827,6 +835,16 @@ const MyPublicProfile: React.FC = () => {
               )}
             </div>
           </div>
+          {/* EDIT SECTION MODAL (required for Edit Listing button) */}
+          <EditSectionModal
+            isOpen={isEditModalOpen}
+            onClose={() => {
+              setIsEditModalOpen(false);
+              setSelectedPropertyId(null);
+            }}
+            onSelectSection={handleSectionSelect}
+            propertyTitle={selectedPropertyTitle}
+          />
         </div>
       </div>
 
