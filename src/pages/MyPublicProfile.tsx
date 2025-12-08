@@ -24,6 +24,7 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import MyPropertyCard from "../components/cards/MyPropertyCard";
 import EditSectionModal from "../components/modals/EditSectionModal";
+import PropertyAnalytics from "../components/analytics/PropertyAnalytics";
 import { SEO } from "../components/SEO";
 import api from "../config/api";
 import { useUser } from "../context/UserContext";
@@ -1154,6 +1155,24 @@ const MyPublicProfile: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* ANALYTICS MODAL */}
+      {analyticsPropertyId && (
+        <div
+          className="fixed top-20 left-0 right-0 bottom-0 bg-black/50 flex items-center justify-center z-50 p-4"
+          onClick={() => setAnalyticsPropertyId(null)}
+        >
+          <div
+            className="w-full max-w-4xl max-h-[calc(100vh-6rem)] overflow-auto"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <PropertyAnalytics
+              propertyId={analyticsPropertyId}
+              onClose={() => setAnalyticsPropertyId(null)}
+            />
           </div>
         </div>
       )}
