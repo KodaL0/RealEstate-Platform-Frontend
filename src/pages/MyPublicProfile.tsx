@@ -342,37 +342,27 @@ const MyPublicProfile: React.FC = () => {
   // =============================
 
   const handleEditClick = (id: string | number) => {
-    const idStr = String(id);
-    const property = properties.find((p) => String(p.id) === idStr);
-    setSelectedPropertyId(idStr);
+    const idNum = Number(id);
+    const property = properties.find((p) => String(p.id) === String(idNum));
+    setSelectedPropertyId(String(idNum));
     setSelectedPropertyTitle(property?.title || "Property");
     setIsEditModalOpen(true);
   };
 
-  const handleSectionSelect = (section: number) => {
-    if (selectedPropertyId !== null) {
-      navigate(`/edit-listing/${selectedPropertyId}?step=${section}`);
-    }
-    setIsEditModalOpen(false);
-    setSelectedPropertyId(null);
-  };
-
   const handlePublish = async (id: string | number) => {
-    if (!username) {
-      alert("User info unavailable");
-      return;
-    }
+    if (!username) return alert("User info unavailable");
     if (!window.confirm("Publish this listing?")) return;
 
-    const idStr = String(id);
+    const idNum = Number(id);
 
     try {
-      await api.put(`properties/${username}/property/${idStr}/publish`);
+      await api.put(`properties/${username}/property/${idNum}/publish`);
       setProperties((ps) =>
         ps.map((p) =>
-          String(p.id) === idStr ? { ...p, is_published: true } : p
+          String(p.id) === String(idNum) ? { ...p, is_published: true } : p
         )
       );
+
     } catch (err) {
       console.error(err);
       alert("Failed to publish listing.");
@@ -380,21 +370,19 @@ const MyPublicProfile: React.FC = () => {
   };
 
   const handleUnpublish = async (id: string | number) => {
-    if (!username) {
-      alert("User info unavailable");
-      return;
-    }
+    if (!username) return alert("User info unavailable");
     if (!window.confirm("Unpublish this listing?")) return;
 
-    const idStr = String(id);
+    const idNum = Number(id);
 
     try {
-      await api.put(`properties/${username}/property/${idStr}/unpublish`);
+      await api.put(`properties/${username}/property/${idNum}/unpublish`);
       setProperties((ps) =>
         ps.map((p) =>
-          String(p.id) === idStr ? { ...p, is_published: false } : p
+          String(p.id) === String(idNum) ? { ...p, is_published: false } : p
         )
       );
+
     } catch (err) {
       console.error(err);
       alert("Failed to unpublish listing.");
@@ -402,17 +390,14 @@ const MyPublicProfile: React.FC = () => {
   };
 
   const handleRemove = async (id: string | number) => {
-    if (!username) {
-      alert("User info unavailable");
-      return;
-    }
+    if (!username) return alert("User info unavailable");
     if (!window.confirm("Remove this listing?")) return;
 
-    const idStr = String(id);
+    const idNum = Number(id);
 
     try {
-      await api.delete(`properties/${username}/property/${idStr}/delete`);
-      setProperties((ps) => ps.filter((p) => String(p.id) !== idStr));
+      await api.delete(`properties/${username}/property/${idNum}/delete`);
+      setProperties((ps) => ps.filter((p) => String(p.id) !== String(idNum)));
     } catch (err) {
       console.error(err);
       alert("Failed to remove listing.");
