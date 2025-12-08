@@ -547,7 +547,7 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <div>
               <div className="flex items-baseline space-x-1">
                 <span className="text-3xl font-bold text-gray-900">
-                  €{unit_price_min.toLocaleString()} - €{unit_price_max.toLocaleString()}
+                  €{Math.round(Number(unit_price_min)).toLocaleString()} - €{Math.round(Number(unit_price_max)).toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
