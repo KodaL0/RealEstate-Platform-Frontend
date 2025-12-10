@@ -33,16 +33,10 @@ interface TopProperty {
   views: number;
 }
 
-interface RecentTrend {
-  date: string;
-  views: number;
-}
-
 interface AnalyticsResponse {
   period_days: number;
   summary: SummaryData;
   top_properties: TopProperty[];
-  recent_trend: RecentTrend[];
   message?: string;
 }
 
@@ -116,7 +110,7 @@ const ProfileAnalytics: React.FC = () => {
     );
   }
 
-  const { summary, top_properties, recent_trend } = data;
+  const { summary, top_properties } = data;
 
   const statCards = [
     {
@@ -253,37 +247,6 @@ const ProfileAnalytics: React.FC = () => {
                 <div className="flex items-center space-x-2">
                   <Eye className="h-5 w-5 text-gray-400" />
                   <span className="font-bold text-gray-900">{prop.views}</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Trend */}
-      {recent_trend && recent_trend.length > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-bold text-gray-900 mb-4">Views Trend (Last 7 Days)</h2>
-          <div className="space-y-2">
-            {recent_trend.map((trend, index) => (
-              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded">
-                <span className="text-sm text-gray-600">
-                  {new Date(trend.date).toLocaleDateString()}
-                </span>
-                <div className="flex items-center space-x-2">
-                  <div className="w-32 bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full"
-                      style={{
-                        width: `${
-                          (trend.views /
-                            Math.max(...recent_trend.map((t) => t.views), 1)) *
-                          100
-                        }%`,
-                      }}
-                    ></div>
-                  </div>
-                  <span className="font-medium text-gray-900 w-12 text-right">{trend.views}</span>
                 </div>
               </div>
             ))}
