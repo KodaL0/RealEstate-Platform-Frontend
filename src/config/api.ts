@@ -376,6 +376,8 @@ const api = {
       myProjects: (projectId: number, p?: Record<string, unknown>) =>
         apiGet(`analytics/my-projects/${projectId}`, { params: p }),
     },
+    myListingsSummary: (days?: number) =>
+      apiGet(`analytics/my-listings/summary/`, { params: days ? { days } : {} }),
   },
 
   chat: {

@@ -47,6 +47,7 @@ import SitemapViewer from "./pages/SitemapViewer";
 import TermsandConditions from "./pages/TermsandConditions";
 import consentManager, { type ConsentPreferences } from "./services/ConsentManager";
 import MyPublicProfile from "./pages/MyPublicProfile";
+import ProfileAnalyticsScreen from "./pages/analytics/profileanalytics/profileanalyticsscreen";
 
 
 function RouteChangeTracker() {
@@ -399,6 +400,15 @@ function AppContent() {
             element={
               <RequireAuth>
                 <MyPublicProfile />
+              </RequireAuth>
+            }
+          />
+
+          <Route
+            path="/analytics"
+            element={
+              <RequireAuth>
+                <ProfileAnalyticsScreen />
               </RequireAuth>
             }
           />
