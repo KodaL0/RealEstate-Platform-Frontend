@@ -95,7 +95,6 @@ const Navbar: React.FC = () => {
     ? [
         { path: "/my-profile", label: "Profile", icon: User },
         // Privacy Settings entry removed; access now only via Profile page
-        { path: "/my-listings", label: "My Listings", icon: List },
         { path: "/favourites", label: "Favourites", icon: Star },
         { path: "/connections", label: "Connections", icon: Users, badge: totalConnectionsCount },
       ]
