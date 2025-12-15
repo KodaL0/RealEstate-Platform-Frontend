@@ -381,16 +381,23 @@ const Navbar: React.FC = () => {
 
             {/* CREATE LISTING – quick access */}
             {user && (
-              <button
-                type="button"
-                onClick={handleCreateListing}
-                className="hidden md:inline-flex items-center gap-2 px-4 py-2 rounded-lg
-                          bg-blue-600 hover:bg-blue-700 text-white font-semibold
-                          shadow-md hover:shadow-lg transition-all duration-200"
-              >
-                <Plus className="h-4 w-4" />
-                <span>Create Listing</span>
-              </button>
+              <>
+                {/* Separator */}
+                <div className="hidden md:block h-6 w-px bg-gray-300 mx-1" />
+
+                {/* Create Listing (icon only) */}
+                <button
+                  type="button"
+                  onClick={handleCreateListing}
+                  title="Create Listing"
+                  className="hidden md:flex items-center justify-center
+                            w-10 h-10 rounded-lg
+                            bg-blue-600 hover:bg-blue-700 text-white
+                            shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+              </>
             )}
 
             {/* User Button (no dropdown) */}
