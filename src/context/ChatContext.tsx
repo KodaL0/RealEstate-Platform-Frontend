@@ -362,6 +362,8 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         case "message.read": {
           const { thread_id, message_ids, read_at } = data;
+
+          // Update messages
           setMessages((prev) => {
             if (!prev[thread_id]) return prev;
             return {
@@ -371,6 +373,19 @@ export const ChatProvider: React.FC<{ children: React.ReactNode }> = ({ children
               ),
             };
           });
+
+          // 🔥 FIX: also reset unread count on the thread
+          setThreads((prev) =>
+            prev.map((t) =>
+              t.id === thread_id
+                ? {
+                    ...t,
+                    unread_count: 0,
+                  }
+                : t
+            )
+          );
+
           break;
         }
 
