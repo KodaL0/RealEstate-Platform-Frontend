@@ -308,13 +308,6 @@ const PropertyLeaderboard = () => {
     return listing.location || "—";
   };
 
-  const getType = (listing: UnifiedListingItem): string => {
-    if (listing._type === 'project') {
-      return listing.property_types?.[0]?.replace("_", " ") || "—";
-    }
-    return (listing.property_type || "").replace("_", " ") || "—";
-  };
-
   const getOwner = (listing: UnifiedListingItem): string => {
     if (listing._type === 'project') {
       // Project owner can be an object with name/username or just organization ID
@@ -359,6 +352,37 @@ const PropertyLeaderboard = () => {
     return listing.url || `/property/${listing.id}`;
   };
 
+  const getImageUrl = (listing: UnifiedListingItem): string | null => {
+    if (listing._type === 'property') {
+      // Property has images array with PropertyImage objects
+      if (listing.images && listing.images.length > 0) {
+        // Find primary image first, then fallback to first image
+        const primaryImage = listing.images.find(img => img.is_primary);
+        if (primaryImage && primaryImage.image) {
+          return primaryImage.image;
+        }
+        const firstImage = listing.images[0];
+        if (firstImage && firstImage.image) {
+          return firstImage.image;
+        }
+      }
+    } else {
+      // Project - check for main_image first, then images array
+      const project = listing as Project & { _type: 'project'; view_count: number };
+      if (project.main_image) {
+        return project.main_image;
+      }
+      if (project.images && project.images.length > 0) {
+        // Project images are ProjectImage[] array
+        const firstImage = project.images[0];
+        if (firstImage && firstImage.image) {
+          return firstImage.image;
+        }
+      }
+    }
+    return null;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-8 pb-16">
       <div className="container mx-auto px-4">
@@ -374,6 +398,12 @@ const PropertyLeaderboard = () => {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-slate-50 to-gray-100">
                   <tr>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Rank
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Picture
+                    </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Name
                     </th>
@@ -386,14 +416,8 @@ const PropertyLeaderboard = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Location
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Type
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Views
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
-                      Rank
                     </th>
                   </tr>
                 </thead>
@@ -409,6 +433,32 @@ const PropertyLeaderboard = () => {
                           index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                         }`}
                       >
+                        <td className="px-4 py-3 whitespace-nowrap border-r border-gray-200">
+                          <div className="flex items-center justify-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm">
+                              {rank}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-r border-gray-200">
+                          <div className="flex items-center justify-center">
+                            {getImageUrl(listing) ? (
+                              <img
+                                src={getImageUrl(listing)!}
+                                alt={getTitle(listing)}
+                                className="w-16 h-16 object-cover rounded-md"
+                                onError={(e) => {
+                                  // Fallback to placeholder if image fails to load
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect width="64" height="64" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                }}
+                              />
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                                <span className="text-gray-400 text-xs">No Image</span>
+                              </div>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-4 py-3 border-r border-gray-200">
                           <Link
                             to={listingUrl}
@@ -426,18 +476,8 @@ const PropertyLeaderboard = () => {
                         <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
                           {getLocation(listing)}
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
-                          {getType(listing)}
-                        </td>
-                        <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right border-r border-gray-200">
+                        <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right">
                           {listing.view_count ? listing.view_count.toLocaleString() : "0"}
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <div className="flex items-center justify-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm">
-                              {rank}
-                            </span>
-                          </div>
                         </td>
                       </tr>
                     );
