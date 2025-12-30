@@ -108,6 +108,9 @@ export interface Property {
   is_favourite?: boolean;
   city?: string;
   region?: string;
+  // Analytics fields
+  view_count?: number;
+  favorites_count?: number;
   // Multi-unit fields
   has_units?: boolean;
   total_units?: number;

@@ -39,6 +39,7 @@ import PrivacySettings from "./pages/PrivacySettings";
 import ProfilePage from "./pages/ProfilePage";
 import ProjectDetail from "./pages/ProjectDetail";
 import PropertyDetails from "./pages/PropertyDetails";
+import PropertyLeaderboard from "./pages/PropertyLeaderboard";
 import PublicProfile from "./pages/PublicProfile";
 import Rent from "./pages/Rent";
 import RentVsBuyPage from "./pages/RentvsBuypage";
@@ -317,6 +318,7 @@ function AppContent() {
           <Route path="/privacy-settings" element={<PrivacySettings />} />
           <Route path="/mortgage-calculator" element={<MortgageCalculator />} />
           <Route path="/rent-vs-buy" element={<RentVsBuyPage />} />
+          <Route path="/leaderboard" element={<PropertyLeaderboard />} />
           <Route path="/developers" element={<Developers />} />
           <Route path="/sitemap-view" element={<SitemapViewer />} />
           <Route path="/sitemap" element={<SitemapViewer />} />

@@ -243,6 +243,17 @@ const api = {
         };
       }),
 
+    leaderboard: (p?: { limit?: number }) =>
+      apiGet<{ results: Array<{ id: number; view_count: number; _type: 'property' | 'project' }> }>(
+        "properties/leaderboard",
+        { params: p },
+      ).then((res) => {
+        const d = res.data;
+        return {
+          results: Array.isArray(d.results) ? d.results : [],
+        };
+      }),
+
     getUserProp: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProperty: (u: string, pid: number) => apiGet(`properties/${u}/property/${pid}`),
     getUserProps: (u: string) => apiGet(`properties/${u}/properties`),
