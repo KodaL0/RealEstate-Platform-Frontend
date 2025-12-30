@@ -402,7 +402,7 @@ const PropertyLeaderboard = () => {
                       Rank
                     </th>
                     <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Picture
+                      Profile
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Name
@@ -446,14 +446,14 @@ const PropertyLeaderboard = () => {
                               <img
                                 src={getImageUrl(listing)!}
                                 alt={getTitle(listing)}
-                                className="w-16 h-16 object-cover rounded-md"
+                                className="w-36 aspect-[9/16] object-cover rounded-md"
                                 onError={(e) => {
                                   // Fallback to placeholder if image fails to load
-                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="64" height="64"%3E%3Crect width="64" height="64" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="144" height="256"%3E%3Crect width="144" height="256" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             ) : (
-                              <div className="w-16 h-16 bg-gray-200 rounded-md flex items-center justify-center">
+                              <div className="w-36 aspect-[9/16] bg-gray-200 rounded-md flex items-center justify-center">
                                 <span className="text-gray-400 text-xs">No Image</span>
                               </div>
                             )}
