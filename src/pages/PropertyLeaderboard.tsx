@@ -194,17 +194,72 @@ const PropertyLeaderboard = () => {
         console.log('[Leaderboard] Failed fetches count:', failedCount);
         console.log('[Leaderboard] Successful listings:', successfulListings);
         
-        if (successfulListings.length === 0 && failedCount > 0) {
-          console.error('[Leaderboard] All property fetches failed! Check errors above.');
-          setError(`Failed to load property details. ${failedCount} out of ${leaderboard.results.length} properties could not be fetched. Please check the console for details.`);
+        // If all fetches failed but we have IDs, create minimal listings from leaderboard data
+        if (successfulListings.length === 0 && failedCount > 0 && leaderboard.results.length > 0) {
+          console.warn('[Leaderboard] All property fetches failed! Creating minimal listings from leaderboard data.');
+          // Create minimal listings with just the data we have from leaderboard
+          const minimalListings: UnifiedListingItem[] = leaderboard.results.map((item) => {
+            // Create a minimal property object with just the data we have
+            const minimalProperty: Property & { _type: 'property'; view_count: number } = {
+              id: String(item.id),
+              _type: 'property' as const,
+              view_count: item.view_count,
+              title: `Property ${item.id}`, // Fallback title
+              description: '',
+              location: '—',
+              country: '',
+              property_type: '',
+              price: 0,
+              bedrooms: 0,
+              bathrooms: 0,
+              area: 0,
+              year_built: 0,
+              parking_spaces: 0,
+              lot_size: 0,
+              property_status: 'unavailable',
+              energy_rating: '',
+              construction_material: '',
+              floor_level: 0,
+              total_floors: 0,
+              available_from: '',
+              contact_phone: '',
+              contact_email: '',
+              virtual_tour_url: '',
+              video_url: '',
+              amenities: [],
+              has_units: false,
+              units: [],
+              owner: {
+                id: String(item.id),
+                username: '—',
+                email: '',
+              },
+              is_published: false,
+              created_at: '',
+              updated_at: '',
+              images: [],
+              documents: [],
+              is_favourite: false,
+              latitude: undefined,
+              longitude: undefined,
+              url: undefined,
+            };
+            return minimalProperty;
+          });
+          
+          console.log('[Leaderboard] Created minimal listings:', minimalListings);
+          setCachedLeaderboard(newSignature, minimalListings);
+          setListings(minimalListings);
+          setError(`Warning: Could not load full property details. Showing basic information for ${minimalListings.length} properties.`);
         } else if (successfulListings.length === 0) {
           // No results and no failures - this shouldn't happen if leaderboard has results
           console.warn('[Leaderboard] No successful listings but also no failures - this is unexpected');
+          setListings([]);
+        } else {
+          // We have successful listings
+          setCachedLeaderboard(newSignature, successfulListings);
+          setListings(successfulListings);
         }
-
-        // Cache the new data (even if empty, to avoid repeated failed fetches)
-        setCachedLeaderboard(newSignature, successfulListings);
-        setListings(successfulListings);
       } catch (err) {
         console.error("Error fetching leaderboard:", err);
         setError("Failed to load leaderboard. Please try again later.");
