@@ -407,14 +407,14 @@ const PropertyLeaderboard = () => {
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Name
                     </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Owner
-                    </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Price
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Location
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Owner
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Views
@@ -467,14 +467,14 @@ const PropertyLeaderboard = () => {
                             {getTitle(listing)}
                           </Link>
                         </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
-                          {getOwner(listing)}
-                        </td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right border-r border-gray-200">
                           {formatPrice(listing)}
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
                           {getLocation(listing)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getOwner(listing)}
                         </td>
                         <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right">
                           {listing.view_count ? listing.view_count.toLocaleString() : "0"}
