@@ -9,6 +9,68 @@ type UnifiedListingItem =
   | (Property & { _type: "property"; view_count: number })
   | (Project & { _type: "project"; view_count: number });
 
+type LeaderboardSignature = Array<{ id: number; _type: 'property' | 'project' }>;
+
+interface LeaderboardCache {
+  signature: LeaderboardSignature;
+  listings: UnifiedListingItem[];
+  timestamp: number;
+}
+
+// Cache key for localStorage
+const CACHE_KEY = 'leaderboard:cache';
+const CACHE_TTL = 15 * 60 * 1000; // 15 minutes (matches backend cache)
+
+/**
+ * Compare two leaderboard signatures to check if order/IDs changed
+ */
+const compareSignatures = (sig1: LeaderboardSignature, sig2: LeaderboardSignature): boolean => {
+  if (sig1.length !== sig2.length) return false;
+  return sig1.every((item, index) => 
+    item.id === sig2[index].id && item._type === sig2[index]._type
+  );
+};
+
+/**
+ * Get cached leaderboard data if signature matches
+ */
+const getCachedLeaderboard = (): LeaderboardCache | null => {
+  try {
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (!cached) return null;
+
+    const cache: LeaderboardCache = JSON.parse(cached);
+    const now = Date.now();
+
+    // Check if cache is expired
+    if (now - cache.timestamp > CACHE_TTL) {
+      localStorage.removeItem(CACHE_KEY);
+      return null;
+    }
+
+    return cache;
+  } catch (error) {
+    console.error('Error reading leaderboard cache:', error);
+    return null;
+  }
+};
+
+/**
+ * Save leaderboard data to cache
+ */
+const setCachedLeaderboard = (signature: LeaderboardSignature, listings: UnifiedListingItem[]): void => {
+  try {
+    const cache: LeaderboardCache = {
+      signature,
+      listings,
+      timestamp: Date.now(),
+    };
+    localStorage.setItem(CACHE_KEY, JSON.stringify(cache));
+  } catch (error) {
+    console.error('Error saving leaderboard cache:', error);
+  }
+};
+
 const PropertyLeaderboard = () => {
   const [listings, setListings] = useState<UnifiedListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,6 +90,25 @@ const PropertyLeaderboard = () => {
           setIsLoading(false);
           return;
         }
+
+        // Create signature from leaderboard response
+        const newSignature: LeaderboardSignature = leaderboard.results.map(item => ({
+          id: item.id,
+          _type: item._type,
+        }));
+
+        // Check cache
+        const cached = getCachedLeaderboard();
+        if (cached && compareSignatures(cached.signature, newSignature)) {
+          // Signature matches - use cached data
+          console.log('[Leaderboard] Using cached data (signature unchanged)');
+          setListings(cached.listings);
+          setIsLoading(false);
+          return;
+        }
+
+        // Signature changed or cache expired - fetch new data
+        console.log('[Leaderboard] Signature changed or cache expired, fetching new data');
 
         // Step 2: Fetch full listing data in parallel using Promise.allSettled for resilience
         const fetchPromises = leaderboard.results.map(async (item) => {
@@ -65,6 +146,8 @@ const PropertyLeaderboard = () => {
           }
         }
 
+        // Cache the new data
+        setCachedLeaderboard(newSignature, successfulListings);
         setListings(successfulListings);
       } catch (err) {
         console.error("Error fetching leaderboard:", err);
@@ -121,17 +204,19 @@ const PropertyLeaderboard = () => {
     return (listing.property_type || "").replace("_", " ") || "—";
   };
 
-  const getStatus = (listing: UnifiedListingItem): { text: string; isForSale: boolean } => {
+  const getOwner = (listing: UnifiedListingItem): string => {
     if (listing._type === 'project') {
-      const hasSale = listing.sale_price_min && Number(listing.sale_price_min) > 0;
-      const hasRent = listing.rent_price_min && Number(listing.rent_price_min) > 0;
-      if (hasSale && hasRent) return { text: "For Sale/Rent", isForSale: true };
-      if (hasSale) return { text: "For Sale", isForSale: true };
-      if (hasRent) return { text: "For Rent", isForSale: false };
-      return { text: "—", isForSale: false };
+      // Project owner can be an object with name/username or just organization ID
+      if (listing.owner && typeof listing.owner === 'object') {
+        return listing.owner.name || listing.owner.username || listing.owner.email || "—";
+      }
+      return "—";
     }
-    const isForSale = listing.property_status === "for_sale";
-    return { text: isForSale ? "For Sale" : "For Rent", isForSale };
+    // Property owner is an Owner object
+    if (listing.owner) {
+      return listing.owner.username || listing.owner.email || "—";
+    }
+    return "—";
   };
 
   const formatPrice = (listing: UnifiedListingItem): string => {
@@ -194,7 +279,7 @@ const PropertyLeaderboard = () => {
                       Type
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Status
+                      Owner
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Price
@@ -216,7 +301,6 @@ const PropertyLeaderboard = () => {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {listings.map((listing, index) => {
                     const rank = index + 1;
-                    const status = getStatus(listing);
                     const listingUrl = getUrl(listing);
                     
                     return (
@@ -247,16 +331,8 @@ const PropertyLeaderboard = () => {
                         <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
                           {getType(listing)}
                         </td>
-                        <td className="px-4 py-3 border-r border-gray-200">
-                          <span
-                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                              status.isForSale
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-indigo-100 text-indigo-700"
-                            }`}
-                          >
-                            {status.text}
-                          </span>
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getOwner(listing)}
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right border-r border-gray-200">
                           {formatPrice(listing)}
