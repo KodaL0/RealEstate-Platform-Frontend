@@ -3,7 +3,7 @@ import {
   Calculator,
   Calendar,
   Home,
-  List,
+  Plus,
   LogOut,
   Menu,
   MessageCircle,
@@ -79,6 +79,12 @@ const Navbar: React.FC = () => {
     recalculateUnreadCounts();
   };
 
+  const handleCreateListing = () => {
+  setIsSidebarOpen(false);
+  navigate("/create-listing");
+  };
+
+
   const navigationItems = [
     { path: "/", label: "Home", icon: Home },
     { path: "/buy", label: "Buy", icon: ShoppingCart },
@@ -95,7 +101,6 @@ const Navbar: React.FC = () => {
     ? [
         { path: "/my-profile", label: "Profile", icon: User },
         // Privacy Settings entry removed; access now only via Profile page
-        { path: "/my-listings", label: "My Listings", icon: List },
         { path: "/favourites", label: "Favourites", icon: Star },
         { path: "/connections", label: "Connections", icon: Users, badge: totalConnectionsCount },
       ]
@@ -148,7 +153,6 @@ const Navbar: React.FC = () => {
                   <h3 className="font-semibold text-gray-900" title={user.username || user.email}>
                     {user.username || user.email || "User"}
                   </h3>
-                  {/* Privacy indicator removed per request: show only username */}
                 </div>
               </div>
 
@@ -156,7 +160,9 @@ const Navbar: React.FC = () => {
               <div className="flex space-x-2">
                 <Link
                   to="/chat"
-                  className="flex-1 flex items-center justify-center space-x-2 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-2 rounded-lg transition-colors"
+                  className="flex-1 flex items-center justify-center space-x-2
+                            bg-blue-50 hover:bg-blue-100 text-blue-700
+                            px-3 py-2 rounded-lg transition-colors"
                   onClick={handleChatClick}
                 >
                   <MessageCircle className="h-4 w-4" />
@@ -167,6 +173,17 @@ const Navbar: React.FC = () => {
                     </span>
                   )}
                 </Link>
+
+                <button
+                  type="button"
+                  onClick={handleCreateListing}
+                  className="flex-1 flex items-center justify-center space-x-2
+                            bg-blue-600 hover:bg-blue-700 text-white
+                            px-3 py-2 rounded-lg transition-colors"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm font-medium">Create</span>
+                </button>
               </div>
             </div>
           )}
@@ -360,6 +377,27 @@ const Navbar: React.FC = () => {
                   </span>
                 )}
               </Link>
+            )}
+
+            {/* CREATE LISTING – quick access */}
+            {user && (
+              <>
+                {/* Separator */}
+                <div className="hidden md:block h-6 w-px bg-gray-300 mx-1" />
+
+                {/* Create Listing (icon only) */}
+                <button
+                  type="button"
+                  onClick={handleCreateListing}
+                  title="Create Listing"
+                  className="hidden md:flex items-center justify-center
+                            w-10 h-10 rounded-lg
+                            bg-blue-600 hover:bg-blue-700 text-white
+                            shadow-md hover:shadow-lg transition-all duration-200"
+                >
+                  <Plus className="h-5 w-5" />
+                </button>
+              </>
             )}
 
             {/* User Button (no dropdown) */}

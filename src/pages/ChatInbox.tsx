@@ -69,16 +69,19 @@ export default function ChatInbox() {
   useEffect(() => {
     let filtered = [...currentThreads];
 
-    // Always sort by most recent message first (most relevant)
     filtered = filtered.sort((a, b) => {
-      const aLastMessage = getLastMessage(a.id);
-      const bLastMessage = getLastMessage(b.id);
+      // 1️⃣ Unread threads ALWAYS first
+      if (a.unread_count > 0 && b.unread_count === 0) return -1;
+      if (a.unread_count === 0 && b.unread_count > 0) return 1;
 
-      // Use the most recent timestamp available
-      const aTimestamp = aLastMessage?.created_at || a.updated_at || new Date(0).toISOString();
-      const bTimestamp = bLastMessage?.created_at || b.updated_at || new Date(0).toISOString();
+      // 2️⃣ Then sort by most recent activity
+      const aLast = getLastMessage(a.id);
+      const bLast = getLastMessage(b.id);
 
-      return new Date(bTimestamp).getTime() - new Date(aTimestamp).getTime();
+      const aTime = aLast?.created_at || a.updated_at;
+      const bTime = bLast?.created_at || b.updated_at;
+
+      return new Date(bTime).getTime() - new Date(aTime).getTime();
     });
 
     if (searchTerm) {
@@ -398,3 +401,4 @@ export default function ChatInbox() {
     </div>
   );
 }
+ 
