@@ -85,10 +85,13 @@ const PropertyLeaderboard = () => {
         // Step 1: Get leaderboard with IDs, view_count, and _type
         const leaderboard = await api.properties.leaderboard({ limit: 10 });
         console.log('[Leaderboard] API response:', leaderboard);
+        console.log('[Leaderboard] API response type:', typeof leaderboard);
+        console.log('[Leaderboard] Results:', leaderboard.results);
         console.log('[Leaderboard] Results count:', leaderboard.results?.length);
+        console.log('[Leaderboard] Is results array?', Array.isArray(leaderboard.results));
 
-        if (!leaderboard.results || leaderboard.results.length === 0) {
-          console.log('[Leaderboard] No results from API');
+        if (!leaderboard || !leaderboard.results || !Array.isArray(leaderboard.results) || leaderboard.results.length === 0) {
+          console.log('[Leaderboard] No results from API - leaderboard:', leaderboard);
           setListings([]);
           setIsLoading(false);
           return;
@@ -128,20 +131,40 @@ const PropertyLeaderboard = () => {
                 view_count: item.view_count,
               };
             } else {
-              // Property IDs are strings in the frontend, but API returns numbers
-              const propertyId = String(item.id);
+              // Property IDs - use number directly (axios will convert to string in URL)
+              const propertyId = item.id;
+              console.log(`[Leaderboard] Fetching property ${propertyId} (type: ${typeof propertyId})...`);
               const response = await api.get(`properties/${propertyId}`);
-              console.log(`[Leaderboard] Property ${propertyId} response:`, response.data);
+              console.log(`[Leaderboard] Property ${propertyId} raw response:`, response);
+              console.log(`[Leaderboard] Property ${propertyId} response.data:`, response.data);
+              
+              if (!response.data) {
+                console.error(`[Leaderboard] Property ${propertyId} has no data in response`);
+                return null;
+              }
+              
               const normalized = normalizePropertyData(response.data as Partial<Property> & Record<string, unknown>);
               console.log(`[Leaderboard] Property ${propertyId} normalized:`, normalized);
+              
+              if (!normalized || !normalized.id) {
+                console.error(`[Leaderboard] Property ${propertyId} normalization failed or missing id`);
+                return null;
+              }
+              
               return {
                 ...normalized,
                 _type: 'property' as const,
                 view_count: item.view_count,
               } as UnifiedListingItem;
             }
-          } catch (err) {
-            console.error(`Error fetching ${item._type} ${item.id}:`, err);
+          } catch (err: any) {
+            console.error(`[Leaderboard] Error fetching ${item._type} ${item.id}:`, err);
+            console.error(`[Leaderboard] Error details:`, {
+              message: err?.message,
+              status: err?.response?.status,
+              statusText: err?.response?.statusText,
+              data: err?.response?.data,
+            });
             return null; // Return null for failed fetches
           }
         });
@@ -149,21 +172,37 @@ const PropertyLeaderboard = () => {
         // Use allSettled to handle partial failures gracefully
         const results = await Promise.allSettled(fetchPromises);
         console.log('[Leaderboard] Fetch results:', results);
+        console.log('[Leaderboard] Total results:', results.length);
         
         // Filter out failed fetches and null results
         const successfulListings: UnifiedListingItem[] = [];
+        let failedCount = 0;
         for (const result of results) {
           if (result.status === 'fulfilled' && result.value !== null) {
             successfulListings.push(result.value);
-          } else if (result.status === 'rejected') {
-            console.error('[Leaderboard] Fetch rejected:', result.reason);
+          } else {
+            failedCount++;
+            if (result.status === 'rejected') {
+              console.error('[Leaderboard] Fetch rejected:', result.reason);
+            } else if (result.status === 'fulfilled' && result.value === null) {
+              console.warn('[Leaderboard] Fetch returned null (likely failed silently)');
+            }
           }
         }
 
         console.log('[Leaderboard] Successful listings count:', successfulListings.length);
+        console.log('[Leaderboard] Failed fetches count:', failedCount);
         console.log('[Leaderboard] Successful listings:', successfulListings);
+        
+        if (successfulListings.length === 0 && failedCount > 0) {
+          console.error('[Leaderboard] All property fetches failed! Check errors above.');
+          setError(`Failed to load property details. ${failedCount} out of ${leaderboard.results.length} properties could not be fetched. Please check the console for details.`);
+        } else if (successfulListings.length === 0) {
+          // No results and no failures - this shouldn't happen if leaderboard has results
+          console.warn('[Leaderboard] No successful listings but also no failures - this is unexpected');
+        }
 
-        // Cache the new data
+        // Cache the new data (even if empty, to avoid repeated failed fetches)
         setCachedLeaderboard(newSignature, successfulListings);
         setListings(successfulListings);
       } catch (err) {
