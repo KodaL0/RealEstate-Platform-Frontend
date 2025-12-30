@@ -84,8 +84,11 @@ const PropertyLeaderboard = () => {
       try {
         // Step 1: Get leaderboard with IDs, view_count, and _type
         const leaderboard = await api.properties.leaderboard({ limit: 10 });
+        console.log('[Leaderboard] API response:', leaderboard);
+        console.log('[Leaderboard] Results count:', leaderboard.results?.length);
 
-        if (leaderboard.results.length === 0) {
+        if (!leaderboard.results || leaderboard.results.length === 0) {
+          console.log('[Leaderboard] No results from API');
           setListings([]);
           setIsLoading(false);
           return;
@@ -96,12 +99,15 @@ const PropertyLeaderboard = () => {
           id: item.id,
           _type: item._type,
         }));
+        console.log('[Leaderboard] New signature:', newSignature);
 
         // Check cache
         const cached = getCachedLeaderboard();
+        console.log('[Leaderboard] Cached data:', cached);
         if (cached && compareSignatures(cached.signature, newSignature)) {
           // Signature matches - use cached data
           console.log('[Leaderboard] Using cached data (signature unchanged)');
+          console.log('[Leaderboard] Cached listings count:', cached.listings.length);
           setListings(cached.listings);
           setIsLoading(false);
           return;
@@ -115,14 +121,19 @@ const PropertyLeaderboard = () => {
           try {
             if (item._type === 'project') {
               const project = await developersApi.projects.getPublic(item.id);
+              console.log(`[Leaderboard] Project ${item.id} response:`, project);
               return {
                 ...project,
                 _type: 'project' as const,
                 view_count: item.view_count,
               };
             } else {
-              const response = await api.get(`properties/${item.id}`);
+              // Property IDs are strings in the frontend, but API returns numbers
+              const propertyId = String(item.id);
+              const response = await api.get(`properties/${propertyId}`);
+              console.log(`[Leaderboard] Property ${propertyId} response:`, response.data);
               const normalized = normalizePropertyData(response.data as Partial<Property> & Record<string, unknown>);
+              console.log(`[Leaderboard] Property ${propertyId} normalized:`, normalized);
               return {
                 ...normalized,
                 _type: 'property' as const,
@@ -137,14 +148,20 @@ const PropertyLeaderboard = () => {
 
         // Use allSettled to handle partial failures gracefully
         const results = await Promise.allSettled(fetchPromises);
+        console.log('[Leaderboard] Fetch results:', results);
         
         // Filter out failed fetches and null results
         const successfulListings: UnifiedListingItem[] = [];
         for (const result of results) {
           if (result.status === 'fulfilled' && result.value !== null) {
             successfulListings.push(result.value);
+          } else if (result.status === 'rejected') {
+            console.error('[Leaderboard] Fetch rejected:', result.reason);
           }
         }
+
+        console.log('[Leaderboard] Successful listings count:', successfulListings.length);
+        console.log('[Leaderboard] Successful listings:', successfulListings);
 
         // Cache the new data
         setCachedLeaderboard(newSignature, successfulListings);
