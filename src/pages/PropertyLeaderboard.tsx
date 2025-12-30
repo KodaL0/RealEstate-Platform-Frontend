@@ -446,14 +446,14 @@ const PropertyLeaderboard = () => {
                               <img
                                 src={getImageUrl(listing)!}
                                 alt={getTitle(listing)}
-                                className="w-36 aspect-[9/16] object-cover rounded-md"
+                                className="w-36 aspect-[4/3] object-cover rounded-md"
                                 onError={(e) => {
                                   // Fallback to placeholder if image fails to load
-                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="144" height="256"%3E%3Crect width="144" height="256" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
+                                  (e.target as HTMLImageElement).src = 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="144" height="108"%3E%3Crect width="144" height="108" fill="%23e5e7eb"/%3E%3Ctext x="50%25" y="50%25" text-anchor="middle" dy=".3em" fill="%239ca3af" font-size="12"%3ENo Image%3C/text%3E%3C/svg%3E';
                                 }}
                               />
                             ) : (
-                              <div className="w-36 aspect-[9/16] bg-gray-200 rounded-md flex items-center justify-center">
+                              <div className="w-36 aspect-[4/3] bg-gray-200 rounded-md flex items-center justify-center">
                                 <span className="text-gray-400 text-xs">No Image</span>
                               </div>
                             )}
