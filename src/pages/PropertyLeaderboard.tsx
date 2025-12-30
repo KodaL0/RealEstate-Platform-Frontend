@@ -1,10 +1,9 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import api from "../config/api";
 import { developersApi, type Project } from "../config/developers-api";
 import { normalizePropertyData } from "../types";
 import type { Property } from "../types";
-import PropertyCard from "../components/cards/PropertyCard";
-import ProjectCard from "../components/cards/ProjectCard";
 
 type UnifiedListingItem =
   | (Property & { _type: "property"; view_count: number })
@@ -106,6 +105,64 @@ const PropertyLeaderboard = () => {
     );
   }
 
+  // Helper functions using PropertyCard/ProjectCard data structure
+  const getTitle = (listing: UnifiedListingItem): string => {
+    return listing._type === 'property' ? listing.title : listing.name;
+  };
+
+  const getLocation = (listing: UnifiedListingItem): string => {
+    return listing.location || "—";
+  };
+
+  const getType = (listing: UnifiedListingItem): string => {
+    if (listing._type === 'project') {
+      return listing.property_types?.[0]?.replace("_", " ") || "—";
+    }
+    return (listing.property_type || "").replace("_", " ") || "—";
+  };
+
+  const getStatus = (listing: UnifiedListingItem): { text: string; isForSale: boolean } => {
+    if (listing._type === 'project') {
+      const hasSale = listing.sale_price_min && Number(listing.sale_price_min) > 0;
+      const hasRent = listing.rent_price_min && Number(listing.rent_price_min) > 0;
+      if (hasSale && hasRent) return { text: "For Sale/Rent", isForSale: true };
+      if (hasSale) return { text: "For Sale", isForSale: true };
+      if (hasRent) return { text: "For Rent", isForSale: false };
+      return { text: "—", isForSale: false };
+    }
+    const isForSale = listing.property_status === "for_sale";
+    return { text: isForSale ? "For Sale" : "For Rent", isForSale };
+  };
+
+  const formatPrice = (listing: UnifiedListingItem): string => {
+    if (listing._type === 'project') {
+      const salePrice = listing.sale_price_min;
+      const rentPrice = listing.rent_price_min;
+      if (salePrice && rentPrice) {
+        return `€${Math.round(Number(salePrice)).toLocaleString()} - €${Math.round(Number(rentPrice)).toLocaleString()}`;
+      } else if (salePrice) {
+        return `€${Math.round(Number(salePrice)).toLocaleString()}`;
+      } else if (rentPrice) {
+        return `€${Math.round(Number(rentPrice)).toLocaleString()}/mo`;
+      }
+      return "—";
+    }
+    // Property pricing logic (same as PropertyCard)
+    if (listing.has_units && listing.unit_price_min && listing.unit_price_max) {
+      return `€${Math.round(Number(listing.unit_price_min)).toLocaleString()} - €${Math.round(Number(listing.unit_price_max)).toLocaleString()}`;
+    }
+    const price = Number.isFinite(Number(listing.price)) ? Number(listing.price) : 0;
+    const suffix = listing.property_status !== "for_sale" ? "/mo" : "";
+    return `€${price.toLocaleString()}${suffix}`;
+  };
+
+  const getUrl = (listing: UnifiedListingItem): string => {
+    if (listing._type === 'project') {
+      return listing.url || `/developers/project/${listing.id}`;
+    }
+    return listing.url || `/property/${listing.id}`;
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pt-8 pb-16">
       <div className="container mx-auto px-4">
@@ -117,40 +174,111 @@ const PropertyLeaderboard = () => {
           </p>
         </div>
 
-        {/* Leaderboard Cards */}
+        {/* Excel-like Table */}
         {listings.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {listings.map((listing, index) => {
-              const rank = index + 1;
-              return (
-                <div key={`${listing._type}-${listing.id}`} className="relative">
-                  {/* Rank Badge */}
-                  <div className="absolute top-4 left-4 z-30">
-                    <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm shadow-lg">
-                      #{rank}
-                    </span>
-                  </div>
-                  {/* View Count Badge */}
-                  <div className="absolute top-4 right-4 z-30">
-                    <span className="inline-flex items-center justify-center px-3 py-1.5 rounded-full bg-blue-500/90 backdrop-blur-sm text-white text-xs font-semibold shadow-lg">
-                      👁 {listing.view_count?.toLocaleString() || "0"}
-                    </span>
-                  </div>
-                  {/* Card Component */}
-                  {listing._type === 'property' ? (
-                    <PropertyCard
-                      property={listing}
-                      showFavoriteButton={true}
-                    />
-                  ) : (
-                    <ProjectCard
-                      project={listing}
-                      listingType={listing.sale_price_min && listing.sale_price_min > 0 ? "sale" : "rent"}
-                    />
-                  )}
-                </div>
-              );
-            })}
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gradient-to-r from-slate-50 to-gray-100">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Rank
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Title
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Location
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Status
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Price
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Beds
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Baths
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Area (m²)
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Views
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {listings.map((listing, index) => {
+                    const rank = index + 1;
+                    const status = getStatus(listing);
+                    const listingUrl = getUrl(listing);
+                    
+                    return (
+                      <tr
+                        key={`${listing._type}-${listing.id}`}
+                        className={`hover:bg-gray-50 transition-colors ${
+                          index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
+                        }`}
+                      >
+                        <td className="px-4 py-3 whitespace-nowrap border-r border-gray-200">
+                          <div className="flex items-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm">
+                              {rank}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 border-r border-gray-200">
+                          <Link
+                            to={listingUrl}
+                            className="text-sm font-medium text-gray-900 hover:text-emerald-600 transition-colors"
+                          >
+                            {getTitle(listing)}
+                          </Link>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getLocation(listing)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getType(listing)}
+                        </td>
+                        <td className="px-4 py-3 border-r border-gray-200">
+                          <span
+                            className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              status.isForSale
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-indigo-100 text-indigo-700"
+                            }`}
+                          >
+                            {status.text}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right border-r border-gray-200">
+                          {formatPrice(listing)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 text-center border-r border-gray-200">
+                          {listing._type === 'property' ? (listing.bedrooms ?? "—") : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 text-center border-r border-gray-200">
+                          {listing._type === 'property' ? (listing.bathrooms ?? "—") : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 text-right border-r border-gray-200">
+                          {listing._type === 'property' ? (listing.area ? listing.area.toLocaleString() : "—") : "—"}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right">
+                          {listing.view_count ? listing.view_count.toLocaleString() : "0"}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <div className="text-center py-16 bg-white rounded-xl shadow-lg border border-gray-200">
