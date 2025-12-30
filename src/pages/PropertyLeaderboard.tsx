@@ -375,16 +375,7 @@ const PropertyLeaderboard = () => {
                 <thead className="bg-gradient-to-r from-slate-50 to-gray-100">
                   <tr>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Rank
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Title
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Location
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Type
+                      Name
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Owner
@@ -392,8 +383,17 @@ const PropertyLeaderboard = () => {
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Price
                     </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Location
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
+                      Type
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Views
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Rank
                     </th>
                   </tr>
                 </thead>
@@ -409,13 +409,6 @@ const PropertyLeaderboard = () => {
                           index % 2 === 0 ? "bg-white" : "bg-gray-50/50"
                         }`}
                       >
-                        <td className="px-4 py-3 whitespace-nowrap border-r border-gray-200">
-                          <div className="flex items-center">
-                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm">
-                              {rank}
-                            </span>
-                          </div>
-                        </td>
                         <td className="px-4 py-3 border-r border-gray-200">
                           <Link
                             to={listingUrl}
@@ -425,19 +418,26 @@ const PropertyLeaderboard = () => {
                           </Link>
                         </td>
                         <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
-                          {getLocation(listing)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
-                          {getType(listing)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
                           {getOwner(listing)}
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right border-r border-gray-200">
                           {formatPrice(listing)}
                         </td>
-                        <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right">
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getLocation(listing)}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-700 border-r border-gray-200">
+                          {getType(listing)}
+                        </td>
+                        <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right border-r border-gray-200">
                           {listing.view_count ? listing.view_count.toLocaleString() : "0"}
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center justify-center">
+                            <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-gradient-to-r from-emerald-500 to-emerald-600 text-white font-bold text-sm">
+                              {rank}
+                            </span>
+                          </div>
                         </td>
                       </tr>
                     );
