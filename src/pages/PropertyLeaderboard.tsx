@@ -365,9 +365,6 @@ const PropertyLeaderboard = () => {
         {/* Header Section */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Listings Leaderboard</h1>
-          <p className="text-lg text-gray-600">
-            Top 10 listings (properties & projects) ranked by total views
-          </p>
         </div>
 
         {/* Excel-like Table */}
@@ -394,15 +391,6 @@ const PropertyLeaderboard = () => {
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
                       Price
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Beds
-                    </th>
-                    <th className="px-4 py-3 text-center text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Baths
-                    </th>
-                    <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider border-r border-gray-200">
-                      Area (m²)
                     </th>
                     <th className="px-4 py-3 text-right text-xs font-semibold text-gray-700 uppercase tracking-wider">
                       Views
@@ -447,15 +435,6 @@ const PropertyLeaderboard = () => {
                         </td>
                         <td className="px-4 py-3 text-sm font-semibold text-gray-900 text-right border-r border-gray-200">
                           {formatPrice(listing)}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 text-center border-r border-gray-200">
-                          {listing._type === 'property' ? (listing.bedrooms ?? "—") : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 text-center border-r border-gray-200">
-                          {listing._type === 'property' ? (listing.bathrooms ?? "—") : "—"}
-                        </td>
-                        <td className="px-4 py-3 text-sm text-gray-700 text-right border-r border-gray-200">
-                          {listing._type === 'property' ? (listing.area ? listing.area.toLocaleString() : "—") : "—"}
                         </td>
                         <td className="px-4 py-3 text-sm font-bold text-blue-600 text-right">
                           {listing.view_count ? listing.view_count.toLocaleString() : "0"}
