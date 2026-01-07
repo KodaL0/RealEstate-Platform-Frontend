@@ -1,6 +1,5 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import html2canvas from "html2canvas";
 import api from "../config/api";
 import { developersApi, type Project } from "../config/developers-api";
 import { normalizePropertyData } from "../types";
@@ -76,8 +75,6 @@ const PropertyLeaderboard = () => {
   const [listings, setListings] = useState<UnifiedListingItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [isExporting, setIsExporting] = useState(false);
-  const tableRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -386,164 +383,17 @@ const PropertyLeaderboard = () => {
     return null;
   };
 
-  const exportTableAsPNG = async () => {
-    if (!tableRef.current) {
-      return;
-    }
-
-    setIsExporting(true);
-    try {
-      // Wait for all images to load
-      const images = tableRef.current.querySelectorAll('img');
-      const imagePromises = Array.from(images).map((img) => {
-        if (img.complete && img.naturalHeight !== 0) {
-          return Promise.resolve();
-        }
-        return new Promise<void>((resolve) => {
-          const timeout = setTimeout(() => resolve(), 5000); // Timeout after 5 seconds
-          img.onload = () => {
-            clearTimeout(timeout);
-            resolve();
-          };
-          img.onerror = () => {
-            clearTimeout(timeout);
-            resolve(); // Continue even if image fails
-          };
-        });
-      });
-      await Promise.all(imagePromises);
-
-      // Get the table element
-      const tableElement = tableRef.current.querySelector('table');
-      if (!tableElement) {
-        console.error('Table element not found');
-        setIsExporting(false);
-        return;
-      }
-
-      // Temporarily modify styles for better capture
-      const overflowContainer = tableRef.current.querySelector('.overflow-x-auto') as HTMLElement;
-      const originalOverflow = overflowContainer?.style.overflow;
-      const originalOverflowX = overflowContainer?.style.overflowX;
-      
-      // Make container visible for full capture
-      if (overflowContainer) {
-        overflowContainer.style.overflow = 'visible';
-        overflowContainer.style.overflowX = 'visible';
-      }
-
-      // Ensure table is fully visible
-      const originalTableStyle = {
-        width: (tableElement as HTMLElement).style.width,
-        minWidth: (tableElement as HTMLElement).style.minWidth,
-      };
-      (tableElement as HTMLElement).style.width = `${tableElement.scrollWidth}px`;
-      (tableElement as HTMLElement).style.minWidth = 'auto';
-
-      // Small delay to ensure styles are applied
-      await new Promise(resolve => setTimeout(resolve, 100));
-
-      // Capture with optimized settings
-      const canvas = await html2canvas(tableRef.current, {
-        backgroundColor: '#ffffff',
-        scale: 2,
-        logging: false,
-        useCORS: true,
-        allowTaint: false,
-        removeContainer: false,
-        imageTimeout: 15000,
-        onclone: (clonedDoc) => {
-          // Ensure images are visible in cloned document
-          const clonedImages = clonedDoc.querySelectorAll('img');
-          clonedImages.forEach((img) => {
-            (img as HTMLImageElement).style.display = 'block';
-          });
-        },
-      });
-
-      // Restore original styles
-      if (overflowContainer) {
-        if (originalOverflow !== undefined) {
-          overflowContainer.style.overflow = originalOverflow;
-        } else {
-          overflowContainer.style.overflow = '';
-        }
-        if (originalOverflowX !== undefined) {
-          overflowContainer.style.overflowX = originalOverflowX;
-        } else {
-          overflowContainer.style.overflowX = '';
-        }
-      }
-      (tableElement as HTMLElement).style.width = originalTableStyle.width;
-      (tableElement as HTMLElement).style.minWidth = originalTableStyle.minWidth;
-
-      // Convert canvas to blob and download
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          console.error('Failed to create blob');
-          setIsExporting(false);
-          return;
-        }
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `leaderboard-${new Date().toISOString().split('T')[0]}.png`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-        setIsExporting(false);
-      }, 'image/png', 1.0);
-    } catch (error) {
-      console.error('Error exporting table as PNG:', error);
-      setIsExporting(false);
-    }
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 pt-8 pb-16">
       <div className="container mx-auto px-4">
         {/* Header Section */}
-        <div className="mb-8 flex items-center justify-between">
+        <div className="mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-2">Leaderboard Properties</h1>
-          {listings.length > 0 && (
-            <button
-              onClick={exportTableAsPNG}
-              disabled={isExporting}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold rounded-lg shadow-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isExporting ? (
-                <>
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>Exporting...</span>
-                </>
-              ) : (
-                <>
-                  <svg
-                    xmlns="http://www.w3.org/2000/svg"
-                    className="h-5 w-5"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                    <polyline points="7 10 12 15 17 10" />
-                    <line x1="12" y1="15" x2="12" y2="3" />
-                  </svg>
-                  <span>Export as PNG</span>
-                </>
-              )}
-            </button>
-          )}
         </div>
 
         {/* Excel-like Table */}
         {listings.length > 0 ? (
-          <div ref={tableRef} className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+          <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gradient-to-r from-slate-50 to-gray-100">
