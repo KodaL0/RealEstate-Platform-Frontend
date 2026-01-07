@@ -393,13 +393,89 @@ const PropertyLeaderboard = () => {
 
     setIsExporting(true);
     try {
+      // Wait for all images to load
+      const images = tableRef.current.querySelectorAll('img');
+      const imagePromises = Array.from(images).map((img) => {
+        if (img.complete && img.naturalHeight !== 0) {
+          return Promise.resolve();
+        }
+        return new Promise<void>((resolve) => {
+          const timeout = setTimeout(() => resolve(), 5000); // Timeout after 5 seconds
+          img.onload = () => {
+            clearTimeout(timeout);
+            resolve();
+          };
+          img.onerror = () => {
+            clearTimeout(timeout);
+            resolve(); // Continue even if image fails
+          };
+        });
+      });
+      await Promise.all(imagePromises);
+
+      // Get the table element
+      const tableElement = tableRef.current.querySelector('table');
+      if (!tableElement) {
+        console.error('Table element not found');
+        setIsExporting(false);
+        return;
+      }
+
+      // Temporarily modify styles for better capture
+      const overflowContainer = tableRef.current.querySelector('.overflow-x-auto') as HTMLElement;
+      const originalOverflow = overflowContainer?.style.overflow;
+      const originalOverflowX = overflowContainer?.style.overflowX;
+      
+      // Make container visible for full capture
+      if (overflowContainer) {
+        overflowContainer.style.overflow = 'visible';
+        overflowContainer.style.overflowX = 'visible';
+      }
+
+      // Ensure table is fully visible
+      const originalTableStyle = {
+        width: (tableElement as HTMLElement).style.width,
+        minWidth: (tableElement as HTMLElement).style.minWidth,
+      };
+      (tableElement as HTMLElement).style.width = `${tableElement.scrollWidth}px`;
+      (tableElement as HTMLElement).style.minWidth = 'auto';
+
+      // Small delay to ensure styles are applied
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Capture with optimized settings
       const canvas = await html2canvas(tableRef.current, {
         backgroundColor: '#ffffff',
-        scale: 2, // Higher quality
+        scale: 2,
         logging: false,
         useCORS: true,
-        allowTaint: true,
+        allowTaint: false,
+        removeContainer: false,
+        imageTimeout: 15000,
+        onclone: (clonedDoc) => {
+          // Ensure images are visible in cloned document
+          const clonedImages = clonedDoc.querySelectorAll('img');
+          clonedImages.forEach((img) => {
+            (img as HTMLImageElement).style.display = 'block';
+          });
+        },
       });
+
+      // Restore original styles
+      if (overflowContainer) {
+        if (originalOverflow !== undefined) {
+          overflowContainer.style.overflow = originalOverflow;
+        } else {
+          overflowContainer.style.overflow = '';
+        }
+        if (originalOverflowX !== undefined) {
+          overflowContainer.style.overflowX = originalOverflowX;
+        } else {
+          overflowContainer.style.overflowX = '';
+        }
+      }
+      (tableElement as HTMLElement).style.width = originalTableStyle.width;
+      (tableElement as HTMLElement).style.minWidth = originalTableStyle.minWidth;
 
       // Convert canvas to blob and download
       canvas.toBlob((blob) => {
@@ -418,7 +494,7 @@ const PropertyLeaderboard = () => {
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
         setIsExporting(false);
-      }, 'image/png');
+      }, 'image/png', 1.0);
     } catch (error) {
       console.error('Error exporting table as PNG:', error);
       setIsExporting(false);
