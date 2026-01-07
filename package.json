@@ -25,6 +25,7 @@
     "bootstrap": "^5.3.3",
     "date-fns": "^3.6.0",
     "framer-motion": "^12.9.2",
+    "html2canvas": "^1.4.1",
     "js-cookie": "^3.0.1",
     "leaflet": "^1.9.3",
     "lucide-react": "^0.344.0",
