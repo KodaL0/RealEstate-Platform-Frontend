@@ -560,7 +560,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     currentPage,
     listingType,
     filters.amenities,
-    syncCanonicalUrl,
+    // syncCanonicalUrl removed - it's only called after fetch completes, not used in fetch logic
   ]);
 
   const canonicalPath = location.pathname || `/${listingRouteType}`;
