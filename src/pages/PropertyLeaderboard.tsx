@@ -83,7 +83,7 @@ const PropertyLeaderboard = () => {
 
       try {
         // Step 1: Get leaderboard with IDs, view_count, and _type
-        const leaderboard = await api.properties.leaderboard({ limit: 10 });
+        const leaderboard = await api.properties.leaderboard({ limit: 5 });
         console.log('[Leaderboard] API response:', leaderboard);
         console.log('[Leaderboard] API response type:', typeof leaderboard);
         console.log('[Leaderboard] Results:', leaderboard.results);
@@ -388,7 +388,7 @@ const PropertyLeaderboard = () => {
       <div className="container mx-auto px-4">
         {/* Header Section */}
         <div className="mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Listings Leaderboard</h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-2">Leaderboard Properties</h1>
         </div>
 
         {/* Excel-like Table */}
