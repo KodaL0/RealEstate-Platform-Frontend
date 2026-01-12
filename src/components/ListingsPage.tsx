@@ -246,6 +246,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sortOption, setSortOption] = useState(decodedCanonical.extras.sort);
+  const [searchEventId, setSearchEventId] = useState<number | null>(null);
 
   const [filters, setFilters] = useState<FilterState>(canonicalFilters);
   const [localFilters, setLocalFilters] = useState<FilterState>(canonicalFilters);
@@ -464,6 +465,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     const fetchProperties = async () => {
       setIsLoading(true);
       setError(null);
+      setSearchEventId(null); // Reset search_event_id for new search
 
       const qp: Record<string, string> = {
         page_size: PAGE_SIZE.toString(),
@@ -509,6 +511,11 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         setProperties(normalized as UnifiedListingItem[]);
         setTotalCount(count); // Use API total count (across all pages)
         setTotalPages(Math.max(1, Math.ceil(count / PAGE_SIZE)));
+        
+        // Extract search_event_id from API response for click tracking
+        if (paginatedData.search_event_id) {
+          setSearchEventId(paginatedData.search_event_id);
+        }
 
         // Update results count in URL after fetch completes
         if (!isHydratingRef.current && !isSyncingRef.current) {
@@ -905,6 +912,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                             property_id: item.id,
                             position: index + 1,
                             item_type: item._type || "property",
+                            search_event_id: searchEventId,
                           });
                           const blob = new Blob([data], { type: "application/json" });
                           navigator.sendBeacon("/api/analytics/search/click/", blob);
