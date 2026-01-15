@@ -118,6 +118,49 @@ const PropertyKeyFeatures: React.FC<PropertyKeyFeaturesProps> = ({ property }) =
   const allowed = new Set(PTYPE_FIELDS[pTypeKey] || []);
   const allowedField = (k: string) => allowed.has(k as any);
 
+  // Collect all available features
+  const features: Array<{ label: string; value: string | number }> = [];
+
+  if (allowedField("bedrooms") && hasNum(property.bedrooms)) {
+    features.push({ label: "Bedrooms", value: Number(property.bedrooms) });
+  }
+  if (allowedField("bathrooms") && hasNum(property.bathrooms)) {
+    features.push({ label: "Bathrooms", value: Number(property.bathrooms) });
+  }
+  if (allowedField("area") && hasNum(property.area)) {
+    features.push({ 
+      label: "Area", 
+      value: `${Number(property.area).toLocaleString()}m²` 
+    });
+  }
+  if (allowedField("year_built") && hasText(property.year_built)) {
+    features.push({ label: "Year Built", value: property.year_built });
+  }
+  if (allowedField("parking_spaces") && hasNum(property.parking_spaces)) {
+    features.push({ label: "Parking", value: Number(property.parking_spaces) });
+  }
+  if (allowedField("lot_size") && hasNum(property.lot_size)) {
+    features.push({ 
+      label: "Lot Size", 
+      value: `${Number(property.lot_size).toLocaleString()}m²` 
+    });
+  }
+  if (allowedField("floor_level") && hasText(property.floor_level)) {
+    features.push({ label: "Floor", value: formatFloor(property.floor_level) });
+  }
+  if (allowedField("total_floors") && hasNum(property.total_floors)) {
+    features.push({ label: "Total Floors", value: Number(property.total_floors) });
+  }
+  if (allowedField("energy_rating") && hasText(property.energy_rating)) {
+    features.push({ label: "Energy", value: property.energy_rating });
+  }
+  if (allowedField("construction_material") && hasText(property.construction_material)) {
+    features.push({ label: "Construction", value: property.construction_material });
+  }
+
+  // If no features, don't render the section
+  if (features.length === 0) return null;
+
   return (
     <section className="bg-gradient-to-br from-white to-slate-50 rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
       <div className="p-8">
@@ -128,86 +171,20 @@ const PropertyKeyFeatures: React.FC<PropertyKeyFeaturesProps> = ({ property }) =
           Key Features
         </h2>
 
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {allowedField("bedrooms") && hasNum(property.bedrooms) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">{Number(property.bedrooms)}</p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Bedrooms</p>
-            </div>
-          )}
-
-          {allowedField("bathrooms") && hasNum(property.bathrooms) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">{Number(property.bathrooms)}</p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Bathrooms</p>
-            </div>
-          )}
-
-          {allowedField("area") && hasNum(property.area) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">
-                {Number(property.area).toLocaleString()}<span className="text-base sm:text-lg ml-0.5">m²</span>
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(140px,1fr))] gap-4">
+          {features.map((feature, idx) => (
+            <div 
+              key={idx}
+              className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200"
+            >
+              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1 break-words">
+                {feature.value}
               </p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Area</p>
-            </div>
-          )}
-
-          {allowedField("year_built") && hasText(property.year_built) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">{property.year_built}</p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Year Built</p>
-            </div>
-          )}
-
-          {allowedField("parking_spaces") && hasNum(property.parking_spaces) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">
-                {Number(property.parking_spaces)}
+              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">
+                {feature.label}
               </p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Parking</p>
             </div>
-          )}
-
-          {allowedField("lot_size") && hasNum(property.lot_size) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">
-                {Number(property.lot_size).toLocaleString()}<span className="text-base sm:text-lg ml-0.5">m²</span>
-              </p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Lot Size</p>
-            </div>
-          )}
-
-          {allowedField("floor_level") && hasText(property.floor_level) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">
-                {formatFloor(property.floor_level)}
-              </p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Floor</p>
-            </div>
-          )}
-
-          {allowedField("total_floors") && hasNum(property.total_floors) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">{Number(property.total_floors)}</p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Total Floors</p>
-            </div>
-          )}
-
-          {allowedField("energy_rating") && hasText(property.energy_rating) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-2xl sm:text-3xl font-bold mb-1">{property.energy_rating}</p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Energy</p>
-            </div>
-          )}
-
-          {allowedField("construction_material") && hasText(property.construction_material) && (
-            <div className="text-center p-4 rounded-xl bg-white border-2 border-slate-200 hover:border-blue-400 transition-all duration-200">
-              <p className="text-slate-900 text-lg sm:text-xl font-bold mb-1">
-                {property.construction_material}
-              </p>
-              <p className="text-slate-600 text-xs uppercase font-semibold tracking-wide">Construction</p>
-            </div>
-          )}
+          ))}
         </div>
       </div>
     </section>
