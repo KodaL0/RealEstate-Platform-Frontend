@@ -134,7 +134,7 @@ const PropertyKeyFeatures: React.FC<PropertyKeyFeaturesProps> = ({ property }) =
     });
   }
   if (allowedField("year_built") && hasText(property.year_built)) {
-    features.push({ label: "Year Built", value: property.year_built });
+    features.push({ label: "Year Built", value: String(property.year_built) });
   }
   if (allowedField("parking_spaces") && hasNum(property.parking_spaces)) {
     features.push({ label: "Parking", value: Number(property.parking_spaces) });
@@ -152,10 +152,10 @@ const PropertyKeyFeatures: React.FC<PropertyKeyFeaturesProps> = ({ property }) =
     features.push({ label: "Total Floors", value: Number(property.total_floors) });
   }
   if (allowedField("energy_rating") && hasText(property.energy_rating)) {
-    features.push({ label: "Energy", value: property.energy_rating });
+    features.push({ label: "Energy", value: String(property.energy_rating) });
   }
   if (allowedField("construction_material") && hasText(property.construction_material)) {
-    features.push({ label: "Construction", value: property.construction_material });
+    features.push({ label: "Construction", value: String(property.construction_material) });
   }
 
   // If no features, don't render the section
