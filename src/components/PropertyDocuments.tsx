@@ -112,7 +112,7 @@ const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ documents }) => {
       <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
         <h2 className="text-xl font-bold text-gray-900 flex items-center">
           <FileText className="w-6 h-6 mr-2 text-gray-600" />
-          Available Documents
+          Documents
         </h2>
       </div>
 
