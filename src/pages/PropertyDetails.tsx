@@ -45,7 +45,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import ChatButton from "../components/ChatButton";
 import FavouriteButton from "../components/FavouriteButton";
-import { geocodeAddress } from "../components/geocode";
+import { geocodePropertyLocation } from "../components/geocode";
 import LLMPropertyData from "../components/llms/llm-properties";
 import MapView from "../components/MapView";
 import PropertyDocuments from "../components/PropertyDocuments";
@@ -131,6 +131,10 @@ const mapPropertyData = (raw: any): Property => ({
   is_favourite: raw?.is_favourite ?? false,
   latitude: raw?.latitude != null ? +raw.latitude : undefined,
   longitude: raw?.longitude != null ? +raw.longitude : undefined,
+  city: raw?.city ?? undefined,
+  region: raw?.region ?? undefined,
+  postal_code: raw?.postal_code ?? undefined,
+  street: raw?.street ?? undefined,
   url: raw?.url ?? undefined,
 });
 
@@ -371,10 +375,23 @@ const PropertyDetails: React.FC = () => {
 
         if (mapped.latitude != null && mapped.longitude != null) {
           setCoords({ lat: mapped.latitude, lng: mapped.longitude });
-        } else if (mapped.location) {
+        } else {
+          // Try geocoding with fallback strategies
           try {
-            const real = await geocodeAddress(mapped.location, user?.email);
-            if (isMounted) setCoords(real);
+            const coords = await geocodePropertyLocation(
+              mapped.location,
+              {
+                street: mapped.street,
+                city: mapped.city,
+                region: mapped.region,
+                postal_code: mapped.postal_code,
+                country: mapped.country,
+              },
+              user?.email
+            );
+            if (isMounted && coords) {
+              setCoords(coords);
+            }
           } catch (geoErr) {
             console.error("Geocoding failed:", geoErr);
           }

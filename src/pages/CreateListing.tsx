@@ -827,7 +827,7 @@ const CreateListing: React.FC = () => {
         // Clear saved form data on successful submission
         // The wizard context will handle mode-specific cleanup
         toast.success(isEditing ? "Listing updated!" : "Listing created!");
-        navigate("/my-listings");
+        navigate("/my-profile");
       } else {
         setError(`Unexpected response ${res.status}`);
       }
