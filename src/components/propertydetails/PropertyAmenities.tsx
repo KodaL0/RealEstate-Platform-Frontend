@@ -118,28 +118,25 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
 
   return (
     <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
-      <div className="px-6 py-4 border-b border-slate-200">
-        <h2 className="text-lg font-bold text-slate-900">Amenities & Features</h2>
+      <div className="px-6 py-3 border-b border-slate-200">
+        <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Amenities</h2>
       </div>
-      <div className="p-4">
-        {Object.entries(categorizedAmenities).map(([category, categoryAmenities]) => (
-          <div key={category} className="mb-3 last:mb-0">
-            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
+      <div className="px-6 py-4">
+        {Object.entries(categorizedAmenities).map(([category, categoryAmenities], idx) => (
+          <div key={category}>
+            {idx > 0 && <div className="border-t border-slate-100 my-2" />}
+            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-1.5 pl-0.5">
               {category}
-            </h3>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-x-1 gap-y-0.5">
+            </div>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-x-0 gap-y-0">
               {categoryAmenities.map((amenity) => {
                 const isAvailable = hasAmenity(amenity.id);
                 return (
                   <div
                     key={amenity.id}
-                    className={`flex items-center gap-1 px-1.5 py-1 ${
-                      isAvailable
-                        ? "text-blue-700 font-medium"
-                        : "text-slate-400"
-                    }`}
+                    className="flex items-center gap-1.5 py-1.5"
                   >
-                    <div className="flex-shrink-0">
+                    <div className="flex-shrink-0 w-3.5">
                       {React.cloneElement(
                         amenityIcons[amenity.id] ?? amenityIcons.default,
                         {
@@ -149,7 +146,11 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
                         }
                       )}
                     </div>
-                    <span className="text-xs leading-none truncate">
+                    <span className={`text-[11px] leading-tight truncate ${
+                      isAvailable
+                        ? "text-slate-900 font-medium"
+                        : "text-slate-400 font-normal"
+                    }`}>
                       {amenity.label}
                     </span>
                   </div>
