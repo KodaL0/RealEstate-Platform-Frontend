@@ -129,10 +129,10 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
           return (
             <div key={category}>
               {idx > 0 && <div className="border-t border-slate-100 my-3" />}
-              <div className={`text-[10px] font-medium uppercase tracking-widest mb-2 pl-0.5 ${
+              <div className={`uppercase tracking-widest mb-2 pl-0.5 ${
                 hasSelectedAmenities 
-                  ? "text-blue-600 font-bold" 
-                  : "text-slate-400"
+                  ? "text-slate-900 font-bold text-base" 
+                  : "text-slate-400 font-medium text-[10px]"
               }`}>
                 {category}
               </div>
