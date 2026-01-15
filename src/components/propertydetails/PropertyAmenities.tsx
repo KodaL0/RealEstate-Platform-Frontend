@@ -146,7 +146,7 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
                         }
                       )}
                     </div>
-                    <span className={`text-[11px] leading-tight truncate ${
+                    <span className={`text-sm leading-tight truncate ${
                       isAvailable
                         ? "text-slate-900 font-medium"
                         : "text-slate-400 font-normal"
