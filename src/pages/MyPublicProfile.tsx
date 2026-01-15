@@ -480,7 +480,7 @@ const MyPublicProfile: React.FC = () => {
       {/* HERO BANNER + HEADER */}
       <div className="w-full">
         {/* Gradient band */}
-        <div className="h-96 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
+        <div className="h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
           <div className="absolute inset-0 opacity-30">
             <svg className="w-full h-full" preserveAspectRatio="xMidYMid slice">
               <defs>
@@ -507,7 +507,7 @@ const MyPublicProfile: React.FC = () => {
         </div>
 
         {/* MAIN WRAPPER CARD (everything except listings) */}
-        <div className="max-w-7xl mx-auto px-6" style={{ marginTop: "-90px" }}>
+        <div className="max-w-7xl mx-auto px-6" style={{ marginTop: "-60px" }}>
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden mb-10">
             {/* TOP HEADER ROW (avatar, stats, buttons) */}
             <div className="px-6 pt-8 pb-6 border-b border-gray-100">
