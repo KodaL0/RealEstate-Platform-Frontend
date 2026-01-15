@@ -665,42 +665,6 @@ const MyPublicProfile: React.FC = () => {
                       )}
                   </div>
                 </div>
-
-                {/* PERFORMANCE */}
-                {overallRating !== null && (
-                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-yellow-600" />
-                      Performance
-                    </h3>
-
-                    <div className="space-y-3">
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="text-xs font-medium text-gray-600">
-                            Rating
-                          </span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          {overallRating.toFixed(1)}
-                        </p>
-                      </div>
-
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <MessageCircle className="h-4 w-4 text-blue-500" />
-                          <span className="text-xs font-medium text-gray-600">
-                            Reviews
-                          </span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          {overallReviewsCount ?? 0}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
           </div>
