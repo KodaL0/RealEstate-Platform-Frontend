@@ -95,32 +95,25 @@ const amenityIcons: Record<string, JSX.Element> = {
 };
 
 const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
-  if (!amenities || amenities.length === 0) return null;
+  // Convert amenities array to Set for O(1) lookup
+  const propertyAmenitiesSet = new Set(
+    amenities.map((a) => (typeof a === "string" ? a : a.id))
+  );
 
-  // Categorize amenities
-  const categorizedAmenities: { [category: string]: string[] } = {};
+  // Check if an amenity is available in this property
+  const hasAmenity = (amenityId: string) => propertyAmenitiesSet.has(amenityId);
 
-  amenities.forEach((amenityItem) => {
-    const amenityId = typeof amenityItem === "string" ? amenityItem : amenityItem;
-    let amenity = AMENITIES.find((a) => a.id === amenityId);
-
-    if (!amenity) {
-      amenity = AMENITIES.find((a) => a.label === amenityId);
+  // Group all amenities by category
+  const categorizedAmenities: { [category: string]: typeof AMENITIES } = {};
+  
+  AMENITIES.forEach((amenity) => {
+    // Exclude Legacy category
+    if (amenity.category === "Legacy") return;
+    
+    if (!categorizedAmenities[amenity.category]) {
+      categorizedAmenities[amenity.category] = [];
     }
-
-    if (amenity) {
-      const category = amenity.category;
-      if (!categorizedAmenities[category]) {
-        categorizedAmenities[category] = [];
-      }
-      categorizedAmenities[category].push(amenity.id);
-    } else {
-      if (!categorizedAmenities.Other) {
-        categorizedAmenities.Other = [];
-      }
-      const idToPush = typeof amenityId === "string" ? amenityId : amenityId.id;
-      categorizedAmenities.Other.push(idToPush);
-    }
+    categorizedAmenities[amenity.category].push(amenity);
   });
 
   return (
@@ -134,33 +127,36 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
         </h2>
       </div>
       <div className="p-6">
-        {Object.entries(categorizedAmenities).map(([category, amenityIds]) => (
-          <div key={category} className="mb-5 last:mb-0">
+        {Object.entries(categorizedAmenities).map(([category, categoryAmenities]) => (
+          <div key={category} className="mb-6 last:mb-0">
             <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
               {category}
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
-              {amenityIds.map((amenityId, i) => {
-                const amenity = AMENITIES.find((a) => a.id === amenityId);
-                return amenity ? (
+              {categoryAmenities.map((amenity) => {
+                const isAvailable = hasAmenity(amenity.id);
+                return (
                   <div
-                    key={i}
-                    className="flex items-center gap-1.5 p-2 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors duration-200"
+                    key={amenity.id}
+                    className={`flex items-center gap-1.5 p-2 rounded-md transition-all duration-200 ${
+                      isAvailable
+                        ? "bg-blue-50 border border-blue-200 text-blue-900"
+                        : "bg-slate-50 border border-slate-200 text-slate-400"
+                    }`}
                   >
                     <div className="flex-shrink-0">
-                      {amenityIcons[amenityId] ?? amenityIcons.default}
+                      {React.cloneElement(
+                        amenityIcons[amenity.id] ?? amenityIcons.default,
+                        {
+                          className: isAvailable
+                            ? "h-4 w-4 text-blue-600"
+                            : "h-4 w-4 text-slate-300",
+                        }
+                      )}
                     </div>
-                    <span className="text-xs font-medium text-slate-700 leading-tight truncate">{amenity.label}</span>
-                  </div>
-                ) : (
-                  <div
-                    key={i}
-                    className="flex items-center gap-1.5 p-2 rounded-md bg-slate-50 hover:bg-slate-100 transition-colors duration-200"
-                  >
-                    <div className="flex-shrink-0">
-                      {amenityIcons.default}
-                    </div>
-                    <span className="text-xs font-medium text-slate-700 leading-tight truncate">{amenityId}</span>
+                    <span className="text-xs font-medium leading-tight truncate">
+                      {amenity.label}
+                    </span>
                   </div>
                 );
               })}
