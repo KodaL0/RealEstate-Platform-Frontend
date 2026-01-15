@@ -1,43 +1,17 @@
 import {
-  Accessibility,
-  Anchor,
-  Archive,
   ArrowLeft,
   ArrowRight,
   ArrowUpCircle,
-  Baby,
   Bath,
   Bed,
-  Bell,
   Building2,
   Calculator,
   Calendar,
   Car,
-  CheckCircle,
-  Crown,
-  DoorOpen,
-  Droplet,
-  Dumbbell,
   Eye,
-  Flame,
-  Flower,
-  Glasses,
   Home,
   MapPin,
-  Package,
-  Palette,
-  Satellite,
-  Shield,
-  Smile,
   Square,
-  Sun,
-  Thermometer,
-  TreePine,
-  Umbrella,
-  UserCheck,
-  Utensils,
-  Wifi,
-  Wind,
   X,
   Zap,
 } from "lucide-react";
@@ -48,11 +22,12 @@ import FavouriteButton from "../components/FavouriteButton";
 import { geocodePropertyLocation } from "../components/geocode";
 import LLMPropertyData from "../components/llms/llm-properties";
 import MapView from "../components/MapView";
-import PropertyDocuments from "../components/PropertyDocuments";
+import PropertyAmenities from "../components/propertydetails/PropertyAmenities";
+import PropertyDocuments from "../components/propertydetails/PropertyDocuments";
 import SEO from "../components/SEO";
 import api from "../config/api";
 import { useUser } from "../context/UserContext";
-import { AMENITIES, type Property, type PropertyImage } from "../types";
+import { type Property, type PropertyImage } from "../types";
 import analytics from "../utils/analytics";
 
 const normaliseImages = (imgs: any[] = []): PropertyImage[] =>
@@ -232,60 +207,6 @@ const PTYPE_FIELDS: Record<
 const hasNum = (v: any) =>
   v !== undefined && v !== null && String(v).trim() !== "" && Number(v) > 0;
 const hasText = (v: any) => v !== undefined && v !== null && String(v).trim() !== "";
-
-const amenityIcons: Record<string, JSX.Element> = {
-  elevator: <ArrowUpCircle className="h-5 w-5 text-blue-600" />,
-  internal_staircase: <ArrowUpCircle className="h-5 w-5 text-blue-600" />,
-  secure_door: <Shield className="h-5 w-5 text-blue-600" />,
-  manned_reception: <UserCheck className="h-5 w-5 text-blue-600" />,
-  attic: <Home className="h-5 w-5 text-blue-600" />,
-  facade: <Building2 className="h-5 w-5 text-blue-600" />,
-  corner: <MapPin className="h-5 w-5 text-blue-600" />,
-  frames_wooden: <TreePine className="h-5 w-5 text-blue-600" />,
-  floor_marble: <Square className="h-5 w-5 text-blue-600" />,
-  single_glass: <Glasses className="h-5 w-5 text-blue-600" />,
-  bright: <Sun className="h-5 w-5 text-blue-600" />,
-  airy: <Wind className="h-5 w-5 text-blue-600" />,
-  fireplace: <Flame className="h-5 w-5 text-blue-600" />,
-  furnished: <Bed className="h-5 w-5 text-blue-600" />,
-  storage: <Archive className="h-5 w-5 text-blue-600" />,
-  painted: <Palette className="h-5 w-5 text-blue-600" />,
-  luxury_home: <Crown className="h-5 w-5 text-blue-600" />,
-  playroom: <Baby className="h-5 w-5 text-blue-600" />,
-  underfloor_heating: <Thermometer className="h-5 w-5 text-blue-600" />,
-  air_conditioning: <Wind className="h-5 w-5 text-blue-600" />,
-  solar_water_heating: <Sun className="h-5 w-5 text-blue-600" />,
-  night_power: <Zap className="h-5 w-5 text-blue-600" />,
-  garden: <Flower className="h-5 w-5 text-blue-600" />,
-  swimming_pool: <Droplet className="h-5 w-5 text-blue-600" />,
-  awning: <Umbrella className="h-5 w-5 text-blue-600" />,
-  built_in_bbq: <Utensils className="h-5 w-5 text-blue-600" />,
-  window_screens: <Glasses className="h-5 w-5 text-blue-600" />,
-  balcony: <DoorOpen className="h-5 w-5 text-blue-600" />,
-  parking_space: <Car className="h-5 w-5 text-blue-600" />,
-  garage: <Car className="h-5 w-5 text-blue-600" />,
-  access_disabled: <Accessibility className="h-5 w-5 text-blue-600" />,
-  ev_charging: <Zap className="h-5 w-5 text-blue-600" />,
-  alarm: <Bell className="h-5 w-5 text-blue-600" />,
-  security_system: <Shield className="h-5 w-5 text-blue-600" />,
-  doorman: <UserCheck className="h-5 w-5 text-blue-600" />,
-  satellite_receiver: <Satellite className="h-5 w-5 text-blue-600" />,
-  wifi: <Wifi className="h-5 w-5 text-blue-600" />,
-  dishwasher: <Package className="h-5 w-5 text-blue-600" />,
-  laundry: <CheckCircle className="h-5 w-5 text-blue-600" />,
-  residential_zone: <MapPin className="h-5 w-5 text-blue-600" />,
-  view: <Eye className="h-5 w-5 text-blue-600" />,
-  waterfront: <Anchor className="h-5 w-5 text-blue-600" />,
-  gym: <Dumbbell className="h-5 w-5 text-blue-600" />,
-  pool: <Droplet className="h-5 w-5 text-blue-600" />,
-  roof_deck: <Sun className="h-5 w-5 text-blue-600" />,
-  pets: <Smile className="h-5 w-5 text-blue-600" />,
-  parking: <Car className="h-5 w-5 text-blue-600" />,
-  ac: <Wind className="h-5 w-5 text-blue-600" />,
-  heating: <Flame className="h-5 w-5 text-blue-600" />,
-  default: <CheckCircle className="h-5 w-5 text-blue-600" />,
-};
-
 const PropertyDetails: React.FC = () => {
   const { id, username, country, locationSlug } = useParams<{
     id?: string;
@@ -1026,80 +947,7 @@ const PropertyDetails: React.FC = () => {
 
         <PropertyDocuments documents={property.documents || []} />
 
-        {property.amenities.length > 0 && (
-          <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
-            <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
-              <h2 className="text-2xl font-bold text-slate-900 flex items-center">
-                <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-                  <Zap className="w-6 h-6 text-white" />
-                </div>
-                Amenities & Features
-              </h2>
-            </div>
-            <div className="p-8">
-              {(() => {
-                const categorizedAmenities: { [category: string]: string[] } = {};
-
-                property.amenities.forEach((amenityItem) => {
-                  const amenityId = typeof amenityItem === "string" ? amenityItem : amenityItem;
-                  let amenity = AMENITIES.find((a) => a.id === amenityId);
-
-                  if (!amenity) {
-                    amenity = AMENITIES.find((a) => a.label === amenityId);
-                  }
-
-                  if (amenity) {
-                    const category = amenity.category;
-                    if (!categorizedAmenities[category]) {
-                      categorizedAmenities[category] = [];
-                    }
-                    categorizedAmenities[category].push(amenity.id);
-                  } else {
-                    if (!categorizedAmenities.Other) {
-                      categorizedAmenities.Other = [];
-                    }
-                    categorizedAmenities.Other.push(amenityId);
-                  }
-                });
-
-                return Object.entries(categorizedAmenities).map(([category, amenityIds]) => (
-                  <div key={category} className="mb-10 last:mb-0">
-                    <h3 className="text-xl font-bold text-slate-800 mb-5 flex items-center">
-                      <div className="w-2 h-2 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full mr-3"></div>
-                      {category}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {amenityIds.map((amenityId, i) => {
-                        const amenity = AMENITIES.find((a) => a.id === amenityId);
-                        return amenity ? (
-                          <div
-                            key={i}
-                            className="flex items-center p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-                          >
-                            <div className="p-2 rounded-xl bg-white shadow-sm mr-4 border border-slate-100">
-                              {amenityIcons[amenityId] ?? amenityIcons.default}
-                            </div>
-                            <span className="text-sm font-semibold text-slate-700">{amenity.label}</span>
-                          </div>
-                        ) : (
-                          <div
-                            key={i}
-                            className="flex items-center p-4 rounded-xl bg-gradient-to-r from-slate-50 to-white border border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-300 hover:-translate-y-0.5"
-                          >
-                            <div className="p-2 rounded-xl bg-white shadow-sm mr-4 border border-slate-100">
-                              {amenityIcons.default}
-                            </div>
-                            <span className="text-sm font-semibold text-slate-700">{amenityId}</span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                ));
-              })()}
-            </div>
-          </section>
-        )}
+        <PropertyAmenities amenities={property.amenities} />
 
         <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
           <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
