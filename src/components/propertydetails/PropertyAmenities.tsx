@@ -122,43 +122,52 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
         <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Amenities</h2>
       </div>
       <div className="px-6 py-4">
-        {Object.entries(categorizedAmenities).map(([category, categoryAmenities], idx) => (
-          <div key={category}>
-            {idx > 0 && <div className="border-t border-slate-100 my-3" />}
-            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 pl-0.5">
-              {category}
-            </div>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-4 gap-y-2">
-              {categoryAmenities.map((amenity) => {
-                const isAvailable = hasAmenity(amenity.id);
-                return (
-                  <div
-                    key={amenity.id}
-                    className="flex items-center gap-2 py-0.5"
-                  >
-                    <div className="flex-shrink-0 w-3.5">
-                      {React.cloneElement(
-                        amenityIcons[amenity.id] ?? amenityIcons.default,
-                        {
-                          className: isAvailable
-                            ? "h-3.5 w-3.5 text-blue-600"
-                            : "h-3.5 w-3.5 text-slate-300",
-                        }
-                      )}
+        {Object.entries(categorizedAmenities).map(([category, categoryAmenities], idx) => {
+          // Check if this category has any selected amenities
+          const hasSelectedAmenities = categoryAmenities.some((amenity) => hasAmenity(amenity.id));
+          
+          return (
+            <div key={category}>
+              {idx > 0 && <div className="border-t border-slate-100 my-3" />}
+              <div className={`text-[10px] font-medium uppercase tracking-widest mb-2 pl-0.5 ${
+                hasSelectedAmenities 
+                  ? "text-blue-600 font-bold" 
+                  : "text-slate-400"
+              }`}>
+                {category}
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-4 gap-y-2">
+                {categoryAmenities.map((amenity) => {
+                  const isAvailable = hasAmenity(amenity.id);
+                  return (
+                    <div
+                      key={amenity.id}
+                      className="flex items-center gap-2 py-0.5"
+                    >
+                      <div className="flex-shrink-0 w-3.5">
+                        {React.cloneElement(
+                          amenityIcons[amenity.id] ?? amenityIcons.default,
+                          {
+                            className: isAvailable
+                              ? "h-3.5 w-3.5 text-blue-600"
+                              : "h-3.5 w-3.5 text-slate-300",
+                          }
+                        )}
+                      </div>
+                      <span className={`text-sm leading-tight ${
+                        isAvailable
+                          ? "text-slate-900 font-medium"
+                          : "text-slate-400 font-normal"
+                      }`}>
+                        {amenity.label}
+                      </span>
                     </div>
-                    <span className={`text-sm leading-tight ${
-                      isAvailable
-                        ? "text-slate-900 font-medium"
-                        : "text-slate-400 font-normal"
-                    }`}>
-                      {amenity.label}
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
