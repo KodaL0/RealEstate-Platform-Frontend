@@ -585,11 +585,6 @@ const MyPublicProfile: React.FC = () => {
             {/* ABOUT & CONTACT INFORMATION - MERGED */}
             <div className="px-6 pb-8 pt-6 bg-gray-50">
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
-                  <UserIcon className="h-6 w-6 text-blue-600" />
-                  About & Contact
-                </h2>
-
                 {/* Check if profile is empty */}
                 {!profileData.bio && !profileData.website && !profileData.phone && !profileData.office ? (
                   <div className="text-center py-12">

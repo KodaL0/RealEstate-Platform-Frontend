@@ -339,111 +339,99 @@ const PublicProfile: React.FC = () => {
             {/* ======================= */}
             {/* ABOUT + CONTACT + PERF */}
             {/* ======================= */}
+            {/* ABOUT & CONTACT INFORMATION - MERGED */}
             <div className="px-6 pb-8 pt-6 bg-gray-50">
-
-              {/* ABOUT SECTION */}
-              <h2 className="text-2xl font-bold text-gray-900 mb-3">About</h2>
-              <p className="text-gray-700 leading-relaxed whitespace-pre-wrap mb-8">
-                {profileData.bio || "This user hasn't added a bio yet."}
-              </p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-                {/* Contact Info */}
-                <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <Phone className="h-5 w-5 text-blue-600" />
-                    Contact Information
-                  </h3>
-
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-                    {profileData.website && (
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mt-1">
-                          <Globe className="h-5 w-5 text-blue-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Website</p>
-                          <a
-                            href={
-                              profileData.website.startsWith("http")
-                                ? profileData.website
-                                : `https://${profileData.website}`
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline break-all"
-                          >
-                            {profileData.website}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-
-                    {profileData.phone && (
-                      <div className="flex items-start gap-4">
-                        <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mt-1">
-                          <Phone className="h-5 w-5 text-green-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Phone</p>
-                          <p className="font-medium text-gray-900">{profileData.phone}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {profileData.office && (
-                      <div className="flex items-start gap-4 md:col-span-2">
-                        <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mt-1">
-                          <Building2 className="h-5 w-5 text-purple-600" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-medium text-gray-600">Office</p>
-                          <p className="font-medium text-gray-900">{profileData.office}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {!profileData.website &&
-                      !profileData.phone &&
-                      !profileData.office && (
-                        <p className="text-gray-500 italic col-span-full">
-                          No contact details provided.
-                        </p>
-                      )}
-                  </div>
-                </div>
-
-                {/* PERFORMANCE */}
-                {overallRating !== null && (
-                  <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-xl shadow-sm border border-yellow-200 p-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5 text-yellow-600" />
-                      Performance
-                    </h3>
-
-                    <div className="space-y-3">
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
-                          <span className="text-xs font-medium text-gray-600">Rating</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          {overallRating.toFixed(1)}
-                        </p>
-                      </div>
-
-                      <div className="bg-white rounded-lg p-4 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                          <MessageCircle className="h-4 w-4 text-blue-500" />
-                          <span className="text-xs font-medium text-gray-600">Reviews</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-900">
-                          {overallReviewsCount ?? 0}
-                        </p>
-                      </div>
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                {/* Check if profile is empty */}
+                {!profileData.bio && !profileData.website && !profileData.phone && !profileData.office ? (
+                  <div className="text-center py-12">
+                    <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                      <Globe className="h-8 w-8 text-gray-400" />
                     </div>
+                    <p className="text-gray-500 text-sm">
+                      This user hasn't added their profile information yet.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Bio Section */}
+                    {profileData.bio && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3">
+                          About
+                        </h3>
+                        <p className="text-gray-700 leading-relaxed whitespace-pre-wrap">
+                          {profileData.bio}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Contact Details */}
+                    {(profileData.website || profileData.phone || profileData.office) && (
+                      <div>
+                        <h3 className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">
+                          Contact Information
+                        </h3>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          {profileData.website && (
+                            <div className="flex items-start gap-4">
+                              <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center mt-1">
+                                <Globe className="h-5 w-5 text-blue-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">
+                                  Website
+                                </p>
+                                <a
+                                  href={
+                                    profileData.website.startsWith("http")
+                                      ? profileData.website
+                                      : `https://${profileData.website}`
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline break-all font-medium"
+                                >
+                                  {profileData.website}
+                                </a>
+                              </div>
+                            </div>
+                          )}
+
+                          {profileData.phone && (
+                            <div className="flex items-start gap-4">
+                              <div className="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center mt-1">
+                                <Phone className="h-5 w-5 text-green-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">
+                                  Phone
+                                </p>
+                                <p className="font-medium text-gray-900">
+                                  {profileData.phone}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+
+                          {profileData.office && (
+                            <div className="flex items-start gap-4 md:col-span-2">
+                              <div className="w-10 h-10 rounded-full bg-purple-50 flex items-center justify-center mt-1">
+                                <Building2 className="h-5 w-5 text-purple-600" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-medium text-gray-600">
+                                  Office
+                                </p>
+                                <p className="font-medium text-gray-900">
+                                  {profileData.office}
+                                </p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -456,10 +444,10 @@ const PublicProfile: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-12">
             <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Listings</h2>
-              <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+              {/* <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Sliders className="h-4 w-4 text-gray-700" />
                 <span className="text-sm font-medium text-gray-700">Filter</span>
-              </div>
+              </div> */}
             </div>
 
             <div className="px-6 pb-8 pt-4">
