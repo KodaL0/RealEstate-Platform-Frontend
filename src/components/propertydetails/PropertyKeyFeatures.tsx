@@ -142,111 +142,111 @@ const PropertyKeyFeatures: React.FC<PropertyKeyFeaturesProps> = ({ property }) =
         <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
           {allowedField("bedrooms") && hasNum(property.bedrooms) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <p className="text-blue-600 text-3xl font-bold mb-3">{Number(property.bedrooms)}</p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BEDROOMS</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
                 <Bed className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BEDROOMS</p>
-              <p className="text-blue-600 text-3xl font-bold">{Number(property.bedrooms)}</p>
             </div>
           )}
 
           {allowedField("bathrooms") && hasNum(property.bathrooms) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <p className="text-blue-600 text-3xl font-bold mb-3">{Number(property.bathrooms)}</p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BATHROOMS</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
                 <Bath className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">BATHROOMS</p>
-              <p className="text-blue-600 text-3xl font-bold">{Number(property.bathrooms)}</p>
             </div>
           )}
 
           {allowedField("area") && hasNum(property.area) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Square className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">AREA</p>
-              <p className="text-blue-600 text-3xl font-bold">
+              <p className="text-blue-600 text-3xl font-bold mb-3">
                 {Number(property.area).toLocaleString()}<span className="text-lg ml-1">m²</span>
               </p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">AREA</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
+                <Square className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           )}
 
           {allowedField("year_built") && hasText(property.year_built) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <p className="text-blue-600 text-3xl font-bold mb-3">{property.year_built}</p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">YEAR BUILT</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
                 <Calendar className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">YEAR BUILT</p>
-              <p className="text-blue-600 text-3xl font-bold">{property.year_built}</p>
             </div>
           )}
 
           {allowedField("parking_spaces") && hasNum(property.parking_spaces) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Car className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">PARKING</p>
-              <p className="text-blue-600 text-3xl font-bold">
+              <p className="text-blue-600 text-3xl font-bold mb-3">
                 {Number(property.parking_spaces)}
               </p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">PARKING</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
+                <Car className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           )}
 
           {allowedField("lot_size") && hasNum(property.lot_size) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <MapPin className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">LOT SIZE</p>
-              <p className="text-blue-600 text-3xl font-bold">
+              <p className="text-blue-600 text-3xl font-bold mb-3">
                 {Number(property.lot_size).toLocaleString()}<span className="text-lg ml-1">m²</span>
               </p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">LOT SIZE</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
+                <MapPin className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           )}
 
           {allowedField("floor_level") && hasText(property.floor_level) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <ArrowUpCircle className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">FLOOR</p>
-              <p className="text-blue-600 text-3xl font-bold">
+              <p className="text-blue-600 text-3xl font-bold mb-3">
                 {formatFloor(property.floor_level)}
               </p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">FLOOR</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
+                <ArrowUpCircle className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           )}
 
           {allowedField("total_floors") && hasNum(property.total_floors) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <p className="text-blue-600 text-3xl font-bold mb-3">{Number(property.total_floors)}</p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">TOTAL FLOORS</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
                 <Building2 className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">TOTAL FLOORS</p>
-              <p className="text-blue-600 text-3xl font-bold">{Number(property.total_floors)}</p>
             </div>
           )}
 
           {allowedField("energy_rating") && hasText(property.energy_rating) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
+              <p className="text-blue-600 text-3xl font-bold mb-3">{property.energy_rating}</p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">ENERGY</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
                 <Zap className="w-6 h-6 text-blue-600" />
               </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">ENERGY</p>
-              <p className="text-blue-600 text-3xl font-bold">{property.energy_rating}</p>
             </div>
           )}
 
           {allowedField("construction_material") && hasText(property.construction_material) && (
             <div className="text-center p-6 rounded-2xl bg-white shadow-lg border border-slate-200 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
-              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Building2 className="w-6 h-6 text-blue-600" />
-              </div>
-              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">CONSTRUCTION</p>
-              <p className="text-blue-600 text-xl font-bold">
+              <p className="text-blue-600 text-xl font-bold mb-3">
                 {property.construction_material}
               </p>
+              <p className="text-slate-600 text-xs uppercase font-bold mb-2 tracking-wide">CONSTRUCTION</p>
+              <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-cyan-100 rounded-xl flex items-center justify-center mx-auto">
+                <Building2 className="w-6 h-6 text-blue-600" />
+              </div>
             </div>
           )}
         </div>
