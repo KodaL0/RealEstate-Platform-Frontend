@@ -477,37 +477,9 @@ const MyPublicProfile: React.FC = () => {
         type="profile"
       />
 
-      {/* HERO BANNER + HEADER */}
+      {/* MAIN WRAPPER CARD (everything except listings) */}
       <div className="w-full">
-        {/* Gradient band */}
-        <div className="h-48 bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-30">
-            <svg className="w-full h-full" preserveAspectRatio="xMidYMid slice">
-              <defs>
-                <pattern
-                  id="grid"
-                  width="40"
-                  height="40"
-                  patternUnits="userSpaceOnUse"
-                >
-                  <path
-                    d="M 40 0 L 0 0 0 40"
-                    fill="none"
-                    stroke="rgba(255,255,255,0.1)"
-                    strokeWidth="0.5"
-                  />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#grid)" />
-            </svg>
-          </div>
-
-          <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500 rounded-full -translate-y-1/2 translate-x-1/2 opacity-20 blur-3xl" />
-          <div className="absolute bottom-0 left-0 w-80 h-80 bg-cyan-500 rounded-full translate-y-1/2 -translate-x-1/4 opacity-20 blur-3xl" />
-        </div>
-
-        {/* MAIN WRAPPER CARD (everything except listings) */}
-        <div className="max-w-7xl mx-auto px-6" style={{ marginTop: "-60px" }}>
+        <div className="max-w-7xl mx-auto px-6 pt-8">
           <div className="bg-white rounded-3xl shadow-2xl border border-gray-100 overflow-hidden mb-10">
             {/* TOP HEADER ROW (avatar, stats, buttons) */}
             <div className="px-6 pt-8 pb-6 border-b border-gray-100">
