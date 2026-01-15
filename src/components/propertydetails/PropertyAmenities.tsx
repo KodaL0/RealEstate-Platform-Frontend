@@ -118,30 +118,25 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
 
   return (
     <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
-      <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
-        <h2 className="text-2xl font-bold text-slate-900 flex items-center">
-          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
-            <Zap className="w-6 h-6 text-white" />
-          </div>
-          Amenities & Features
-        </h2>
+      <div className="px-6 py-4 border-b border-slate-200">
+        <h2 className="text-lg font-bold text-slate-900">Amenities & Features</h2>
       </div>
-      <div className="p-6">
+      <div className="p-4">
         {Object.entries(categorizedAmenities).map(([category, categoryAmenities]) => (
-          <div key={category} className="mb-6 last:mb-0">
-            <h3 className="text-xs font-semibold text-slate-600 uppercase tracking-wide mb-3">
+          <div key={category} className="mb-3 last:mb-0">
+            <h3 className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1.5">
               {category}
             </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-2">
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-x-1 gap-y-0.5">
               {categoryAmenities.map((amenity) => {
                 const isAvailable = hasAmenity(amenity.id);
                 return (
                   <div
                     key={amenity.id}
-                    className={`flex items-center gap-1.5 p-2 rounded-md transition-all duration-200 ${
+                    className={`flex items-center gap-1 px-1.5 py-1 ${
                       isAvailable
-                        ? "bg-blue-50 border border-blue-200 text-blue-900"
-                        : "bg-slate-50 border border-slate-200 text-slate-400"
+                        ? "text-blue-700 font-medium"
+                        : "text-slate-400"
                     }`}
                   >
                     <div className="flex-shrink-0">
@@ -149,12 +144,12 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
                         amenityIcons[amenity.id] ?? amenityIcons.default,
                         {
                           className: isAvailable
-                            ? "h-4 w-4 text-blue-600"
-                            : "h-4 w-4 text-slate-300",
+                            ? "h-3.5 w-3.5 text-blue-600"
+                            : "h-3.5 w-3.5 text-slate-300",
                         }
                       )}
                     </div>
-                    <span className="text-xs font-medium leading-tight truncate">
+                    <span className="text-xs leading-none truncate">
                       {amenity.label}
                     </span>
                   </div>
