@@ -1,7 +1,6 @@
 import { BarChart3, Calendar, Clock, Edit, Eye, EyeOff, Trash2 } from "lucide-react";
 import type React from "react";
 import type { Property } from "../../types";
-import InstagramPostButton from "../InstagramPostButton";
 import PropertyCard from "./PropertyCard";
 
 interface MyPropertyCardProps {
@@ -12,7 +11,6 @@ interface MyPropertyCardProps {
   onUnpublish: (id: string | number) => void;
   onNavigate: (id: string | number) => void;
   onViewAnalytics?: (id: string | number) => void;
-  onInstagramPostSuccess?: () => void;
 }
 
 const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
@@ -23,7 +21,6 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
   onUnpublish,
   onNavigate,
   onViewAnalytics,
-  onInstagramPostSuccess,
 }) => {
   console.log("MyPropertyCard property data:", property);
   const {
@@ -31,9 +28,6 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
     property_status,
     is_published,
     created_at,
-    instagram_posted,
-    instagram_post_count,
-    last_instagram_post,
   } = property;
 
   // Normalize fields so PropertyCard's dynamic stats work for all types.
@@ -192,31 +186,6 @@ const MyPropertyCard: React.FC<MyPropertyCardProps> = ({
             <span>{is_published ? "Currently visible to buyers" : "Hidden from public view"}</span>
           </div>
         </div>
-
-        {/* Instagram Post Button - Only show if published */}
-        {is_published && (
-          <div className="mb-4">
-            <InstagramPostButton
-              propertyId={id}
-              isPosted={instagram_posted}
-              postCount={instagram_post_count}
-              onPostSuccess={onInstagramPostSuccess}
-              className="w-full"
-            />
-            {last_instagram_post && (
-              <p className="text-xs text-gray-500 mt-2 text-center">
-                Last posted:{" "}
-                {new Date(last_instagram_post).toLocaleDateString("en-US", {
-                  month: "short",
-                  day: "numeric",
-                  year: "numeric",
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
-              </p>
-            )}
-          </div>
-        )}
 
         {/* Danger Action - Enhanced Design */}
         <button

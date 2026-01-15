@@ -709,10 +709,10 @@ const MyPublicProfile: React.FC = () => {
           <div className="bg-white rounded-3xl shadow-xl border border-gray-100 mb-12">
             <div className="px-6 py-6 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-2xl font-bold text-gray-900">Listings</h2>
-              <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
+              {/* <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer">
                 <Sliders className="h-4 w-4 text-gray-700" />
                 <span className="text-sm font-medium text-gray-700">Filter</span>
-              </div>
+              </div> */}
             </div>
 
             <div className="px-6 pb-8 pt-4">
