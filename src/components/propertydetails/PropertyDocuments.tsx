@@ -108,15 +108,17 @@ const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ documents }) => {
   const categorizedDocs = Object.entries(groupedDocs).filter(([type]) => type !== "other");
 
   return (
-    <section className="bg-white rounded-xl shadow-sm mb-8 overflow-hidden">
-      <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-        <h2 className="text-xl font-bold text-gray-900 flex items-center">
-          <FileText className="w-6 h-6 mr-2 text-gray-600" />
+    <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
+      <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+        <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+            <FileText className="w-6 h-6 text-white" />
+          </div>
           Documents
         </h2>
       </div>
 
-      <div className="p-6">
+      <div className="p-8">
         {/* Categorized Documents */}
         {categorizedDocs.map(([type, docs]) => (
           <div key={type} className="mb-6 last:mb-0">

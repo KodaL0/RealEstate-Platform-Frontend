@@ -118,10 +118,17 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
 
   return (
     <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
-      <div className="px-6 py-3 border-b border-slate-200">
-        <h2 className="text-sm font-semibold text-slate-700 uppercase tracking-wider">Amenities</h2>
+      <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
+        <h2 className="text-2xl font-bold text-slate-900 flex items-center">
+          <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-xl flex items-center justify-center mr-3 shadow-lg">
+            <svg className="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clipRule="evenodd" />
+            </svg>
+          </div>
+          Amenities
+        </h2>
       </div>
-      <div className="px-6 py-4">
+      <div className="p-8">
         {Object.entries(categorizedAmenities).map(([category, categoryAmenities], idx) => {
           // Check if this category has any selected amenities
           const hasSelectedAmenities = categoryAmenities.some((amenity) => hasAmenity(amenity.id));
