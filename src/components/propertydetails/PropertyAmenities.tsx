@@ -124,17 +124,17 @@ const PropertyAmenities: React.FC<PropertyAmenitiesProps> = ({ amenities }) => {
       <div className="px-6 py-4">
         {Object.entries(categorizedAmenities).map(([category, categoryAmenities], idx) => (
           <div key={category}>
-            {idx > 0 && <div className="border-t border-slate-100 my-2" />}
-            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-1.5 pl-0.5">
+            {idx > 0 && <div className="border-t border-slate-100 my-3" />}
+            <div className="text-[10px] font-medium text-slate-400 uppercase tracking-widest mb-2 pl-0.5">
               {category}
             </div>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-x-0 gap-y-0">
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7 gap-x-4 gap-y-2">
               {categoryAmenities.map((amenity) => {
                 const isAvailable = hasAmenity(amenity.id);
                 return (
                   <div
                     key={amenity.id}
-                    className="flex items-center gap-1.5 py-1.5"
+                    className="flex items-center gap-2 py-0.5"
                   >
                     <div className="flex-shrink-0 w-3.5">
                       {React.cloneElement(
