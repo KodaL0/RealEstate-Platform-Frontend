@@ -273,7 +273,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   // Initialize units when has_units is checked
   useEffect(() => {
-    if (isMultiUnit && (!formData.units || formData.units.length === 0)) {
+    if (!isEditing && isMultiUnit && (!formData.units || formData.units.length === 0)) {
       // Initialize with 2 default units
       const defaultUnits: PropertyUnit[] = [
         {
@@ -382,8 +382,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           if (d.has_units && (!d.units || d.units.length === 0)) {
             try {
               const unitsRes = await api.propertyUnits.list(Number(propertyId));
-              const unitsData = (unitsRes.data as { results?: PropertyUnit[] })?.results || unitsRes.data as PropertyUnit[] || [];
-              return Array.isArray(unitsData) ? unitsData : [];
+              const unitsData =
+                ((unitsRes.data as any)?.results ?? unitsRes.data) as PropertyUnit[];
+
+              const arr = Array.isArray(unitsData) ? unitsData : [];
+              console.log("Loaded units (id check):", arr.map(u => ({ id: (u as any).id, unit_number: u.unit_number })));
+              return arr;
+
             } catch (err) {
               console.warn("Failed to load units:", err);
               return [];
@@ -589,6 +594,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const saveUnits = async () => {
     const units = formData.units || [];
+    const toNumber = (v: any) => (v === "" || v === null || v === undefined ? 0 : Number(v));
 
     // 🔒 EDIT MODE: PATCH ONLY — NO CREATE PATH EXISTS
     if (isEditing) {
@@ -596,19 +602,19 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         units
           .filter(unit => typeof unit.id === "number")
           .map(unit =>
-            api.propertyUnits.update(unit.id!, {
-              unit_name: unit.unit_name,
-              bedrooms: unit.bedrooms,
-              bathrooms: unit.bathrooms,
-              area: unit.area,
-              lot_size: unit.lot_size,
-              total_floors: unit.total_floors,
-              parking_spaces: unit.parking_spaces,
-              floor_level: unit.floor_level,
-              price: unit.price,
-              status: unit.status,
-              is_published: unit.is_published,
-            })
+              api.propertyUnits.update(unit.id!, {
+                unit_name: unit.unit_name,
+                bedrooms: toNumber(unit.bedrooms),
+                bathrooms: toNumber(unit.bathrooms),
+                area: toNumber(unit.area),
+                lot_size: toNumber(unit.lot_size),
+                total_floors: toNumber(unit.total_floors),
+                parking_spaces: toNumber(unit.parking_spaces),
+                floor_level: toNumber(unit.floor_level),
+                price: toNumber(unit.price),
+                status: unit.status,
+                is_published: unit.is_published,
+              })
           )
       );
 
