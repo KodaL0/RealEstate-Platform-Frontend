@@ -674,7 +674,13 @@ const PropertyDetails: React.FC = () => {
                     <td className="px-4 py-3">{u.bedrooms ?? "—"}</td>
                     <td className="px-4 py-3">{u.bathrooms ?? "—"}</td>
                     <td className="px-4 py-3">{u.area ?? "—"}</td>
-                    <td className="px-4 py-3">{u.floor_level ?? "—"}</td>
+                    <td className="px-4 py-3">
+                      {u.floor_level !== null && u.floor_level !== undefined
+                        ? u.floor_level === 0
+                          ? "G"
+                          : u.floor_level
+                        : "—"}
+                    </td>
                     <td className="px-4 py-3">{u.parking_spaces ?? "—"}</td>
                     <td className="px-4 py-3 font-bold text-blue-600">
                       {u.price ? Math.round(u.price).toLocaleString() : "—"}
