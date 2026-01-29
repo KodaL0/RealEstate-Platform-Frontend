@@ -590,15 +590,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    // 🔒 EDIT MODE: PATCH ONLY — NO CREATE, EVER
+    // 🔒 EDIT MODE: PATCH ONLY — NO CREATE PATH EXISTS
     if (isEditing) {
       await Promise.all(
         units
           .filter(unit => typeof unit.id === "number")
           .map(unit =>
             api.propertyUnits.update(unit.id!, {
-              // ❗ DO NOT send property
-              // ❗ DO NOT send unit_number
               unit_name: unit.unit_name,
               bedrooms: unit.bedrooms,
               bathrooms: unit.bathrooms,
@@ -614,30 +612,28 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           )
       );
 
-      return; // ⛔ HARD STOP — NO CREATE BELOW
+      return; // ⛔ ABSOLUTE STOP — NO POST CAN EVER RUN
     }
 
     // 🟢 CREATE MODE ONLY (new listing)
     await Promise.all(
-      units
-        .filter(unit => unit.unit_number && unit.unit_number.trim() !== "")
-        .map(unit =>
-          api.propertyUnits.create({
-            property: Number(propertyId),
-            unit_number: unit.unit_number,
-            unit_name: unit.unit_name,
-            bedrooms: unit.bedrooms,
-            bathrooms: unit.bathrooms,
-            area: unit.area,
-            lot_size: unit.lot_size,
-            total_floors: unit.total_floors,
-            parking_spaces: unit.parking_spaces,
-            floor_level: unit.floor_level,
-            price: unit.price,
-            status: unit.status,
-            is_published: unit.is_published,
-          })
-        )
+      units.map(unit =>
+        api.propertyUnits.create({
+          property: Number(propertyId),
+          unit_number: unit.unit_number,
+          unit_name: unit.unit_name,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          area: unit.area,
+          lot_size: unit.lot_size,
+          total_floors: unit.total_floors,
+          parking_spaces: unit.parking_spaces,
+          floor_level: unit.floor_level,
+          price: unit.price,
+          status: unit.status,
+          is_published: unit.is_published,
+        })
+      )
     );
   };
 
