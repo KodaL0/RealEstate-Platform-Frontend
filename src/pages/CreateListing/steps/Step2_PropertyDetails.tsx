@@ -594,48 +594,54 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const saveUnits = async () => {
     const units = formData.units || [];
-    const toNumber = (v: any) => (v === "" || v === null || v === undefined ? 0 : Number(v));
 
-    // 🔒 EDIT MODE: PATCH ONLY — NO CREATE PATH EXISTS
+    // ✅ EDIT MODE: PATCH ONLY (never create, never delete)
     if (isEditing) {
+      const patchTargets = units.filter(u => typeof u.id === "number");
+
+      // If nothing has an id, don't try to create (that causes your 400).
+      // Just skip saving units; navigation continues.
+      if (patchTargets.length === 0) {
+        console.warn("⚠️ Edit mode: no unit IDs found, skipping unit save to avoid POST.");
+        return;
+      }
+
       await Promise.all(
-        units
-          .filter(unit => typeof unit.id === "number")
-          .map(unit =>
-              api.propertyUnits.update(unit.id!, {
-                unit_name: unit.unit_name,
-                bedrooms: toNumber(unit.bedrooms),
-                bathrooms: toNumber(unit.bathrooms),
-                area: toNumber(unit.area),
-                lot_size: toNumber(unit.lot_size),
-                total_floors: toNumber(unit.total_floors),
-                parking_spaces: toNumber(unit.parking_spaces),
-                floor_level: toNumber(unit.floor_level),
-                price: toNumber(unit.price),
-                status: unit.status,
-                is_published: unit.is_published,
-              })
-          )
+        patchTargets.map(unit =>
+          api.propertyUnits.update(unit.id!, {
+            unit_name: unit.unit_name,
+            bedrooms: Number(unit.bedrooms) || 0,
+            bathrooms: Number(unit.bathrooms) || 0,
+            area: Number(unit.area) || 0,
+            lot_size: Number(unit.lot_size) || 0,
+            total_floors: Number(unit.total_floors) || 0,
+            parking_spaces: Number(unit.parking_spaces) || 0,
+            floor_level: Number(unit.floor_level) || 0,
+            price: Number(unit.price) || 0,
+            status: unit.status,
+            is_published: unit.is_published,
+          })
+        )
       );
 
-      return; // ⛔ ABSOLUTE STOP — NO POST CAN EVER RUN
+      return; // ⛔ absolutely no POST in edit mode
     }
 
-    // 🟢 CREATE MODE ONLY (new listing)
+    // ✅ CREATE MODE ONLY: create all units
     await Promise.all(
       units.map(unit =>
         api.propertyUnits.create({
           property: Number(propertyId),
           unit_number: unit.unit_number,
           unit_name: unit.unit_name,
-          bedrooms: unit.bedrooms,
-          bathrooms: unit.bathrooms,
-          area: unit.area,
-          lot_size: unit.lot_size,
-          total_floors: unit.total_floors,
-          parking_spaces: unit.parking_spaces,
-          floor_level: unit.floor_level,
-          price: unit.price,
+          bedrooms: Number(unit.bedrooms) || 0,
+          bathrooms: Number(unit.bathrooms) || 0,
+          area: Number(unit.area) || 0,
+          lot_size: Number(unit.lot_size) || 0,
+          total_floors: Number(unit.total_floors) || 0,
+          parking_spaces: Number(unit.parking_spaces) || 0,
+          floor_level: Number(unit.floor_level) || 0,
+          price: Number(unit.price) || 0,
           status: unit.status,
           is_published: unit.is_published,
         })
