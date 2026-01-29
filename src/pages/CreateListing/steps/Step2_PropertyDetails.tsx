@@ -591,12 +591,33 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    const existingUnits = units.filter(u => u.id);
-    const newUnits = units.filter(u => !u.id);
+    const existingUnits = units.filter((unit) => typeof unit.id === "number");
+    const newUnits = units.filter((unit) => typeof unit.id !== "number");
 
+    // 🔹 PATCH existing units (price edits go here)
     await Promise.all(
-      existingUnits.map(unit =>
+      existingUnits.map((unit) =>
         api.propertyUnits.update(unit.id!, {
+          // ❗ DO NOT send unit_number on PATCH
+          unit_name: unit.unit_name,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          area: unit.area,
+          lot_size: unit.lot_size,
+          total_floors: unit.total_floors,
+          parking_spaces: unit.parking_spaces,
+          floor_level: unit.floor_level,
+          price: unit.price,
+          status: unit.status,
+          is_published: unit.is_published,
+        }),
+      ),
+    );
+
+    // 🔹 POST new units only
+    await Promise.all(
+      newUnits.map((unit) =>
+        api.propertyUnits.create({
           property: Number(propertyId),
           unit_number: unit.unit_number,
           unit_name: unit.unit_name,
@@ -610,28 +631,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           price: unit.price,
           status: unit.status,
           is_published: unit.is_published,
-        })
-      )
-    );
-
-    await Promise.all(
-      newUnits.map(unit =>
-        api.propertyUnits.create({
-          property: Number(propertyId), // ✅ INCLUDE property HERE
-          unit_number: unit.unit_number,
-          unit_name: unit.unit_name,
-          bedrooms: unit.bedrooms,
-          bathrooms: unit.bathrooms,
-          area: unit.area,
-          lot_size: unit.lot_size,
-          total_floors: unit.total_floors,
-          parking_spaces: unit.parking_spaces,
-          floor_level: unit.floor_level,
-          price: unit.price,
-          status: unit.status,
-          is_published: unit.is_published,
-        })
-      )
+        }),
+      ),
     );
   };
 
