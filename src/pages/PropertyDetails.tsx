@@ -358,6 +358,26 @@ const PropertyDetails: React.FC = () => {
     .filter(Boolean)
     .join(", ");
 
+  const units = property.units ?? [];
+  const unitPrices =
+    units.length > 0
+      ? units
+          .map((u) => (u.price != null ? Number(u.price) : NaN))
+          .filter((n) => Number.isFinite(n))
+      : [];
+  const priceDisplay =
+    unitPrices.length > 0
+      ? (() => {
+          const minP = Math.min(...unitPrices);
+          const maxP = Math.max(...unitPrices);
+          return minP === maxP
+            ? `€${minP.toLocaleString()}`
+            : `€${minP.toLocaleString()} - €${maxP.toLocaleString()}`;
+        })()
+      : `€${Number.isFinite(property.price) ? property.price.toLocaleString() : "0"}`;
+  const mortgagePrice =
+    unitPrices.length > 0 ? Math.min(...unitPrices) : property.price;
+
   return (
     <div className="pt-14 bg-gradient-to-b from-slate-50 via-white to-slate-50 min-h-screen">
       <SEO
@@ -493,22 +513,22 @@ const PropertyDetails: React.FC = () => {
               <div className="text-center md:text-left">
                 <p className="text-sm font-medium text-slate-600 mb-1">Price</p>
                 <p className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-                  €{Number.isFinite(property.price) ? property.price.toLocaleString() : "0"}
+                  {priceDisplay}
                 </p>
               </div>
               {property.property_status === "for_sale" && (
                 <div className="text-center md:text-right">
                   <button
                     onClick={() => {
-                      if (property.price && property.price > 0) {
+                      if (mortgagePrice && mortgagePrice > 0) {
                         navigate(
-                          `/mortgage-calculator?price=${property.price}&down=20&term=30&rate=5.5`,
+                          `/mortgage-calculator?price=${mortgagePrice}&down=20&term=30&rate=5.5`,
                         );
                       }
                     }}
-                    disabled={!property.price || property.price <= 0}
+                    disabled={!mortgagePrice || mortgagePrice <= 0}
                     className={`inline-flex items-center px-6 py-3 ${
-                      property.price && property.price > 0
+                      mortgagePrice && mortgagePrice > 0
                         ? "bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 shadow-lg hover:shadow-xl"
                         : "bg-slate-300 cursor-not-allowed"
                     } text-white text-sm font-bold rounded-xl transition-all duration-300 transform hover:-translate-y-0.5`}
@@ -636,7 +656,6 @@ const PropertyDetails: React.FC = () => {
                   <th className="px-4 py-3 text-sm font-semibold">Baths</th>
                   <th className="px-4 py-3 text-sm font-semibold">Area (m²)</th>
                   <th className="px-4 py-3 text-sm font-semibold">Floor</th>
-                  <th className="px-4 py-3 text-sm font-semibold">Lot Size</th>
                   <th className="px-4 py-3 text-sm font-semibold">Parking</th>
                   <th className="px-4 py-3 text-sm font-semibold">Price (€)</th>
                   <th className="px-4 py-3 text-sm font-semibold">Status</th>
@@ -656,7 +675,6 @@ const PropertyDetails: React.FC = () => {
                     <td className="px-4 py-3">{u.bathrooms ?? "—"}</td>
                     <td className="px-4 py-3">{u.area ?? "—"}</td>
                     <td className="px-4 py-3">{u.floor_level ?? "—"}</td>
-                    <td className="px-4 py-3">{u.lot_size ?? "—"}</td>
                     <td className="px-4 py-3">{u.parking_spaces ?? "—"}</td>
                     <td className="px-4 py-3 font-bold text-blue-600">
                       {u.price ? Math.round(u.price).toLocaleString() : "—"}
@@ -709,7 +727,9 @@ const PropertyDetails: React.FC = () => {
 
         <PropertyDocuments documents={property.documents || []} />
 
-        <PropertyAmenities amenities={property.amenities} />
+        {property.amenities && property.amenities.length > 0 && (
+          <PropertyAmenities amenities={property.amenities} />
+        )}
 
         <section className="bg-white rounded-3xl shadow-xl mb-10 overflow-hidden border border-slate-200">
           <div className="bg-gradient-to-r from-slate-50 to-white px-8 py-6 border-b border-slate-200">
