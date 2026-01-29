@@ -538,7 +538,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   // Unit management functions
   const handleAddUnit = () => {
     const units = formData.units || [];
-    const nextNumber = (units.length + 1).toString();
+    const maxUnitNumber = Math.max(
+      0,
+      ...units.map(u => Number(u.unit_number)).filter(n => !isNaN(n))
+    );
+
+    const nextNumber = String(maxUnitNumber + 1);
     const newUnit: PropertyUnit = {
       unit_number: nextNumber,
       unit_name: "",
@@ -562,15 +567,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       toast.error("Minimum 2 units required");
       return;
     }
-    
+
     const newUnits = units.filter((_, i) => i !== index);
-    // Renumber units sequentially
-    const renumberedUnits = newUnits.map((unit, i) => ({
-      ...unit,
-      unit_number: (i + 1).toString(),
-    }));
-    setFormData(f => ({ ...f, units: renumberedUnits }));
+
+    // ❗ DO NOT renumber
+    setFormData(f => ({ ...f, units: newUnits }));
   };
+
 
   const handleUnitChange = (index: number, field: keyof PropertyUnit, value: any) => {
     // For number fields, allow empty string (user is typing), convert to 0 only if completely empty on blur
@@ -582,6 +585,52 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         i === index ? { ...unit, [field]: processedValue } : unit
       )
     }));
+  };
+
+    // ✅ ADD THIS HERE
+  const saveUnits = async () => {
+    const units = formData.units || [];
+
+    const existingUnits = units.filter(u => u.id);
+    const newUnits = units.filter(u => !u.id);
+
+    await Promise.all(
+      existingUnits.map(unit =>
+        api.propertyUnits.update(unit.id!, {
+          unit_name: unit.unit_name,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          area: unit.area,
+          lot_size: unit.lot_size,
+          total_floors: unit.total_floors,
+          parking_spaces: unit.parking_spaces,
+          floor_level: unit.floor_level,
+          price: unit.price,
+          status: unit.status,
+          is_published: unit.is_published,
+        })
+      )
+    );
+
+    await Promise.all(
+      newUnits.map(unit =>
+        api.propertyUnits.create({
+          property: Number(propertyId), // ✅ INCLUDE property HERE
+          unit_number: unit.unit_number,
+          unit_name: unit.unit_name,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          area: unit.area,
+          lot_size: unit.lot_size,
+          total_floors: unit.total_floors,
+          parking_spaces: unit.parking_spaces,
+          floor_level: unit.floor_level,
+          price: unit.price,
+          status: unit.status,
+          is_published: unit.is_published,
+        })
+      )
+    );
   };
 
   const update = (patch: Partial<ListingForm>) =>
@@ -653,7 +702,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   };
 
   // Enhanced next handler with location validation
-  const handleNext = () => {
+  const handleNext = async () => {
     // Check basic validation first
     if (!validBasics || !validSpecs) {
       setShowValidationErrors(true);
@@ -671,9 +720,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       return;
     }
 
-    // All validations passed - proceed to next step
-    next();
+    try {
+      // ✅ THIS IS THE FIX
+      if (isMultiUnit && formData.units && formData.units.length > 0 && propertyId) {
+        await saveUnits();
+      }
+
+      // ✅ Move forward ONLY after units are saved
+      next();
+    } catch (err) {
+      console.error("❌ Failed to save units:", err);
+      toast.error("Failed to save units. Please try again.");
+    }
   };
+
 
   // Debounced PATCH update for property details
   const debouncedUpdate = useCallback(
