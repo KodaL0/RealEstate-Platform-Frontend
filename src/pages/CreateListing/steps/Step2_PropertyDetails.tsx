@@ -590,40 +590,15 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     // ✅ ADD THIS HERE
   const saveUnits = async () => {
     const units = formData.units || [];
+    let normalizedUnits = units;
 
-    // 🔒 EDIT MODE: PATCH ONLY
-    if (isEditing) {
-      const existingUnits = units.filter((unit) => typeof unit.id === "number");
+    const existingUnits = normalizedUnits.filter((unit) => unit.id);
+    const newUnits = normalizedUnits.filter((unit) => !unit.id);
 
-      await Promise.all(
-        existingUnits.map((unit) =>
-          api.propertyUnits.update(unit.id!, {
-            unit_name: unit.unit_name,
-            bedrooms: unit.bedrooms,
-            bathrooms: unit.bathrooms,
-            area: unit.area,
-            lot_size: unit.lot_size,
-            total_floors: unit.total_floors,
-            parking_spaces: unit.parking_spaces,
-            floor_level: unit.floor_level,
-            price: unit.price,
-            status: unit.status,
-            is_published: unit.is_published,
-          }),
-        ),
-      );
-
-      return; // ⛔ STOP HERE — no CREATE in edit mode
-    }
-
-    // 🟢 CREATE MODE ONLY (new listing)
-    const newUnits = units.filter(
-      (unit) => unit.unit_number && unit.unit_number.trim() !== "",
-    );
 
     await Promise.all(
-      newUnits.map((unit) =>
-        api.propertyUnits.create({
+      existingUnits.map(unit =>
+        api.propertyUnits.update(unit.id!, {
           property: Number(propertyId),
           unit_number: unit.unit_number,
           unit_name: unit.unit_name,
@@ -637,8 +612,28 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           price: unit.price,
           status: unit.status,
           is_published: unit.is_published,
-        }),
-      ),
+        })
+      )
+    );
+
+    await Promise.all(
+      newUnits.map(unit =>
+        api.propertyUnits.create({
+          property: Number(propertyId), // ✅ INCLUDE property HERE
+          unit_number: unit.unit_number,
+          unit_name: unit.unit_name,
+          bedrooms: unit.bedrooms,
+          bathrooms: unit.bathrooms,
+          area: unit.area,
+          lot_size: unit.lot_size,
+          total_floors: unit.total_floors,
+          parking_spaces: unit.parking_spaces,
+          floor_level: unit.floor_level,
+          price: unit.price,
+          status: unit.status,
+          is_published: unit.is_published,
+        })
+      )
     );
   };
 
