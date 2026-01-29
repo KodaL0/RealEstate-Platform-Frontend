@@ -587,55 +587,60 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }));
   };
 
-    // ✅ ADD THIS HERE
   const saveUnits = async () => {
     const units = formData.units || [];
-    let normalizedUnits = units;
 
-    const existingUnits = normalizedUnits.filter((unit) => unit.id);
-    const newUnits = normalizedUnits.filter((unit) => !unit.id);
+    // 🔒 EDIT MODE: PATCH ONLY — NO CREATE, EVER
+    if (isEditing) {
+      await Promise.all(
+        units
+          .filter(unit => typeof unit.id === "number")
+          .map(unit =>
+            api.propertyUnits.update(unit.id!, {
+              // ❗ DO NOT send property
+              // ❗ DO NOT send unit_number
+              unit_name: unit.unit_name,
+              bedrooms: unit.bedrooms,
+              bathrooms: unit.bathrooms,
+              area: unit.area,
+              lot_size: unit.lot_size,
+              total_floors: unit.total_floors,
+              parking_spaces: unit.parking_spaces,
+              floor_level: unit.floor_level,
+              price: unit.price,
+              status: unit.status,
+              is_published: unit.is_published,
+            })
+          )
+      );
 
+      return; // ⛔ HARD STOP — NO CREATE BELOW
+    }
 
+    // 🟢 CREATE MODE ONLY (new listing)
     await Promise.all(
-      existingUnits.map(unit =>
-        api.propertyUnits.update(unit.id!, {
-          property: Number(propertyId),
-          unit_number: unit.unit_number,
-          unit_name: unit.unit_name,
-          bedrooms: unit.bedrooms,
-          bathrooms: unit.bathrooms,
-          area: unit.area,
-          lot_size: unit.lot_size,
-          total_floors: unit.total_floors,
-          parking_spaces: unit.parking_spaces,
-          floor_level: unit.floor_level,
-          price: unit.price,
-          status: unit.status,
-          is_published: unit.is_published,
-        })
-      )
-    );
-
-    await Promise.all(
-      newUnits.map(unit =>
-        api.propertyUnits.create({
-          property: Number(propertyId), // ✅ INCLUDE property HERE
-          unit_number: unit.unit_number,
-          unit_name: unit.unit_name,
-          bedrooms: unit.bedrooms,
-          bathrooms: unit.bathrooms,
-          area: unit.area,
-          lot_size: unit.lot_size,
-          total_floors: unit.total_floors,
-          parking_spaces: unit.parking_spaces,
-          floor_level: unit.floor_level,
-          price: unit.price,
-          status: unit.status,
-          is_published: unit.is_published,
-        })
-      )
+      units
+        .filter(unit => unit.unit_number && unit.unit_number.trim() !== "")
+        .map(unit =>
+          api.propertyUnits.create({
+            property: Number(propertyId),
+            unit_number: unit.unit_number,
+            unit_name: unit.unit_name,
+            bedrooms: unit.bedrooms,
+            bathrooms: unit.bathrooms,
+            area: unit.area,
+            lot_size: unit.lot_size,
+            total_floors: unit.total_floors,
+            parking_spaces: unit.parking_spaces,
+            floor_level: unit.floor_level,
+            price: unit.price,
+            status: unit.status,
+            is_published: unit.is_published,
+          })
+        )
     );
   };
+
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
@@ -726,7 +731,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
     try {
       // ✅ THIS IS THE FIX
-      if (isMultiUnit && formData.units && formData.units.length > 0 && propertyId) {
+      if (!isEditing && isMultiUnit && formData.units?.length && propertyId) {
         await saveUnits();
       }
 
