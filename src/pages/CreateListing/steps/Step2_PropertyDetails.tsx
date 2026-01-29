@@ -731,7 +731,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
     try {
       // ✅ THIS IS THE FIX
-      if (!isEditing && isMultiUnit && formData.units?.length && propertyId) {
+      if (isMultiUnit && formData.units?.length && propertyId) {
         await saveUnits();
       }
 
