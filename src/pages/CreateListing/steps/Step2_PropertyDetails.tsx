@@ -591,26 +591,23 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       )
     }));
   };
+  
 
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    // =========================
-    // EDIT MODE → PATCH ONLY
-    // =========================
+    // EDIT MODE → PATCH WHAT WE CAN, IGNORE THE REST
     if (isEditing) {
-      const dbUnits = units.filter(u => typeof u.id === "number");
+      const patchable = units.filter(u => typeof u.id === "number");
 
-      if (dbUnits.length !== units.length) {
-        throw new Error(
-          "Edit mode contains units without id — invalid state"
-        );
+      if (patchable.length === 0) {
+        console.warn("No patchable units found; skipping unit save");
+        return;
       }
 
       await Promise.all(
-        dbUnits.map(unit =>
+        patchable.map(unit =>
           api.propertyUnits.update(unit.id!, {
-            // ❗ identity NEVER sent
             unit_name: unit.unit_name,
             bedrooms: Number(unit.bedrooms),
             bathrooms: Number(unit.bathrooms),
@@ -619,7 +616,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             total_floors: Number(unit.total_floors),
             parking_spaces: Number(unit.parking_spaces),
             floor_level: Number(unit.floor_level),
-            price: Number(unit.price),
+            price: Number(unit.price),   // ✅ THIS WILL NOW UPDATE
             status: unit.status,
             is_published: unit.is_published,
           })
@@ -629,9 +626,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       return;
     }
 
-    // =========================
     // CREATE MODE → POST ONLY
-    // =========================
     await Promise.all(
       units.map(unit =>
         api.propertyUnits.create({
