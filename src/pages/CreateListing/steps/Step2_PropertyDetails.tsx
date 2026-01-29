@@ -597,6 +597,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     await Promise.all(
       existingUnits.map(unit =>
         api.propertyUnits.update(unit.id!, {
+          property: Number(propertyId),
+          unit_number: unit.unit_number,
           unit_name: unit.unit_name,
           bedrooms: unit.bedrooms,
           bathrooms: unit.bathrooms,
@@ -1643,4 +1645,3 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 };
 
 export default memo(Step2_PropertyDetails);
-
