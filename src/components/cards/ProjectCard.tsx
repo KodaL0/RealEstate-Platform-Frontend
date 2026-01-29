@@ -206,13 +206,20 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, listingType = "sale"
 
   const formatPriceRange = (min?: number, max?: number) => {
     if (min === undefined && max === undefined) return null;
-    if (min === max) return `€${Math.round(min).toLocaleString()}`;
-    if (min && max) {
-      // Compact format: remove spaces around dash and use shorter format for 2-card layout
-      return `€${Math.round(min).toLocaleString()}-€${Math.round(max).toLocaleString()}`;
+    
+    // Round values first to avoid showing identical prices as a range
+    const roundedMin = min !== undefined ? Math.round(min) : undefined;
+    const roundedMax = max !== undefined ? Math.round(max) : undefined;
+    
+    if (roundedMin === roundedMax && roundedMin !== undefined) {
+      return `€${roundedMin.toLocaleString()}`;
     }
-    if (min) return `From €${Math.round(min).toLocaleString()}`;
-    if (max) return `Up to €${Math.round(max).toLocaleString()}`;
+    if (roundedMin && roundedMax) {
+      // Compact format: remove spaces around dash and use shorter format for 2-card layout
+      return `€${roundedMin.toLocaleString()}-€${roundedMax.toLocaleString()}`;
+    }
+    if (roundedMin) return `From €${roundedMin.toLocaleString()}`;
+    if (roundedMax) return `Up to €${roundedMax.toLocaleString()}`;
     return null;
   };
 

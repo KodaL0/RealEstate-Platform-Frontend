@@ -547,7 +547,13 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
             <div>
               <div className="flex items-baseline space-x-1">
                 <span className="text-3xl font-bold text-gray-900">
-                  €{Math.round(Number(unit_price_min)).toLocaleString()} - €{Math.round(Number(unit_price_max)).toLocaleString()}
+                  {(() => {
+                    const roundedMin = Math.round(Number(unit_price_min));
+                    const roundedMax = Math.round(Number(unit_price_max));
+                    return roundedMin === roundedMax
+                      ? `€${roundedMin.toLocaleString()}`
+                      : `€${roundedMin.toLocaleString()} - €${roundedMax.toLocaleString()}`;
+                  })()}
                 </span>
               </div>
               <div className="flex items-center gap-2 mt-1">
