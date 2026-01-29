@@ -213,9 +213,27 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
   const getCardStats = (p: Property): Stat[] => {
     const t = String(p.property_type || "").toLowerCase();
 
-    const _area = asInt(p.area);
-    const _beds = asInt(p.bedrooms);
-    const _baths = asInt(p.bathrooms);
+    // For multi-unit properties, use unit ranges instead of property-level values
+    const hasUnits = p.has_units === true;
+    
+    const _area = hasUnits 
+      ? undefined  // Don't show property-level area for multi-unit properties
+      : asInt(p.area);
+    const _beds = hasUnits 
+      ? undefined  // Don't show property-level beds for multi-unit properties
+      : asInt(p.bedrooms);
+    const _baths = hasUnits 
+      ? undefined  // Don't show property-level baths for multi-unit properties
+      : asInt(p.bathrooms);
+    
+    // Unit ranges (for multi-unit properties)
+    const _unitAreaMin = hasUnits ? asInt(p.unit_area_min) : undefined;
+    const _unitAreaMax = hasUnits ? asInt(p.unit_area_max) : undefined;
+    const _unitBedsMin = hasUnits ? asInt(p.unit_bedrooms_min) : undefined;
+    const _unitBedsMax = hasUnits ? asInt(p.unit_bedrooms_max) : undefined;
+    const _unitBathsMin = hasUnits ? asInt(p.unit_bathrooms_min) : undefined;
+    const _unitBathsMax = hasUnits ? asInt(p.unit_bathrooms_max) : undefined;
+    
     const _lot = asInt(p.lot_size);
     // Display "G" for ground floor (0), otherwise show the floor number
     const _floorRaw = asInt(p.floor_level);
@@ -223,11 +241,37 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
     const _floors = asInt(p.total_floors);
     const _year = isSet(p.year_built) ? String(p.year_built) : "";
     const _parking = asInt(p.parking_spaces);
+    
+    // Helper to format range values
+    const formatRange = (min?: number, max?: number): string | null => {
+      if (min === undefined && max === undefined) return null;
+      if (min !== undefined && max !== undefined) {
+        if (min === max) return min.toLocaleString();
+        return `${min.toLocaleString()}-${max.toLocaleString()}`;
+      }
+      if (min !== undefined) return `${min.toLocaleString()}+`;
+      if (max !== undefined) return `Up to ${max.toLocaleString()}`;
+      return null;
+    };
 
     // unified builders with colored icon bubbles — ALL values returned as strings
     const S = {
-      area: (): Stat | null =>
-        _area !== undefined
+      area: (): Stat | null => {
+        // For multi-unit properties, show unit area range
+        if (hasUnits) {
+          const rangeValue = formatRange(_unitAreaMin, _unitAreaMax);
+          return rangeValue
+            ? {
+                key: "area",
+                label: "Area m²",
+                value: rangeValue,
+                icon: <Square className="h-5 w-5 text-purple-600" />,
+                iconWrapClass: "p-2 rounded-lg bg-purple-100",
+              }
+            : null;
+        }
+        // For single properties, show property area
+        return _area !== undefined
           ? {
               key: "area",
               label: "Area m²",
@@ -235,9 +279,24 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               icon: <Square className="h-5 w-5 text-purple-600" />,
               iconWrapClass: "p-2 rounded-lg bg-purple-100",
             }
-          : null,
-      beds: (): Stat | null =>
-        _beds !== undefined
+          : null;
+      },
+      beds: (): Stat | null => {
+        // For multi-unit properties, show unit bedroom range
+        if (hasUnits) {
+          const rangeValue = formatRange(_unitBedsMin, _unitBedsMax);
+          return rangeValue
+            ? {
+                key: "beds",
+                label: "Bedrooms",
+                value: rangeValue,
+                icon: <Bed className="h-5 w-5 text-blue-600" />,
+                iconWrapClass: "p-2 rounded-lg bg-blue-100",
+              }
+            : null;
+        }
+        // For single properties, show property bedrooms
+        return _beds !== undefined
           ? {
               key: "beds",
               label: _beds === 1 ? "Bedroom" : "Bedrooms",
@@ -245,9 +304,24 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               icon: <Bed className="h-5 w-5 text-blue-600" />,
               iconWrapClass: "p-2 rounded-lg bg-blue-100",
             }
-          : null,
-      baths: (): Stat | null =>
-        _baths !== undefined
+          : null;
+      },
+      baths: (): Stat | null => {
+        // For multi-unit properties, show unit bathroom range
+        if (hasUnits) {
+          const rangeValue = formatRange(_unitBathsMin, _unitBathsMax);
+          return rangeValue
+            ? {
+                key: "baths",
+                label: "Bathrooms",
+                value: rangeValue,
+                icon: <Bath className="h-5 w-5 text-emerald-600" />,
+                iconWrapClass: "p-2 rounded-lg bg-emerald-100",
+              }
+            : null;
+        }
+        // For single properties, show property bathrooms
+        return _baths !== undefined
           ? {
               key: "baths",
               label: _baths === 1 ? "Bathroom" : "Bathrooms",
@@ -255,7 +329,8 @@ const PropertyCard: React.FC<PropertyCardProps> = ({
               icon: <Bath className="h-5 w-5 text-emerald-600" />,
               iconWrapClass: "p-2 rounded-lg bg-emerald-100",
             }
-          : null,
+          : null;
+      },
       lot: (): Stat | null =>
         _lot !== undefined
           ? {
