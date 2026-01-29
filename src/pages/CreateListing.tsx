@@ -768,9 +768,12 @@ const CreateListing: React.FC = () => {
               for (const unit of formData.units) {
               // Remove id from POST data
               const { id, ...rest } = unit;
+              const existingUnit = unit.id ? existingUnitsMap.get(unit.id) : undefined;
               const unitData = {
                 ...rest,
-                property: propertyId,
+                property: Number(propertyId),
+                unit_number: rest.unit_number ?? existingUnit?.unit_number ?? "",
+
               };
 
               if (unit.id && existingUnitsMap.has(unit.id)) {
