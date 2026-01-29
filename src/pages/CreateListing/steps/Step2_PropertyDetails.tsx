@@ -595,53 +595,57 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    // ✅ EDIT MODE: PATCH ONLY (never create, never delete)
+    // =========================
+    // EDIT MODE → PATCH ONLY
+    // =========================
     if (isEditing) {
-      const patchTargets = units.filter(u => typeof u.id === "number");
+      const dbUnits = units.filter(u => typeof u.id === "number");
 
-      // If nothing has an id, don't try to create (that causes your 400).
-      // Just skip saving units; navigation continues.
-      if (patchTargets.length === 0) {
-        console.warn("⚠️ Edit mode: no unit IDs found, skipping unit save to avoid POST.");
-        return;
+      if (dbUnits.length !== units.length) {
+        throw new Error(
+          "Edit mode contains units without id — invalid state"
+        );
       }
 
       await Promise.all(
-        patchTargets.map(unit =>
+        dbUnits.map(unit =>
           api.propertyUnits.update(unit.id!, {
+            // ❗ identity NEVER sent
             unit_name: unit.unit_name,
-            bedrooms: Number(unit.bedrooms) || 0,
-            bathrooms: Number(unit.bathrooms) || 0,
-            area: Number(unit.area) || 0,
-            lot_size: Number(unit.lot_size) || 0,
-            total_floors: Number(unit.total_floors) || 0,
-            parking_spaces: Number(unit.parking_spaces) || 0,
-            floor_level: Number(unit.floor_level) || 0,
-            price: Number(unit.price) || 0,
+            bedrooms: Number(unit.bedrooms),
+            bathrooms: Number(unit.bathrooms),
+            area: Number(unit.area),
+            lot_size: Number(unit.lot_size),
+            total_floors: Number(unit.total_floors),
+            parking_spaces: Number(unit.parking_spaces),
+            floor_level: Number(unit.floor_level),
+            price: Number(unit.price),
             status: unit.status,
             is_published: unit.is_published,
           })
         )
       );
 
-      return; // ⛔ absolutely no POST in edit mode
+      return;
     }
 
-    // ✅ CREATE MODE ONLY: create all units
+    // =========================
+    // CREATE MODE → POST ONLY
+    // =========================
     await Promise.all(
       units.map(unit =>
         api.propertyUnits.create({
           property: Number(propertyId),
           unit_number: unit.unit_number,
           unit_name: unit.unit_name,
-          bedrooms: Number(unit.bedrooms) || 0,
-          bathrooms: Number(unit.bathrooms) || 0,
-          area: Number(unit.area) || 0,
-          lot_size: Number(unit.lot_size) || 0,
-          total_floors: Number(unit.total_floors) || 0,
-          parking_spaces: Number(unit.parking_spaces) || 0,
-          floor_level: Number(unit.floor_level) || 0,
-          price: Number(unit.price) || 0,
+          bedrooms: Number(unit.bedrooms),
+          bathrooms: Number(unit.bathrooms),
+          area: Number(unit.area),
+          lot_size: Number(unit.lot_size),
+          total_floors: Number(unit.total_floors),
+          parking_spaces: Number(unit.parking_spaces),
+          floor_level: Number(unit.floor_level),
+          price: Number(unit.price),
           status: unit.status,
           is_published: unit.is_published,
         })
@@ -738,17 +742,17 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
 
     try {
-      // ✅ THIS IS THE FIX
       if (isMultiUnit && formData.units?.length && propertyId) {
         await saveUnits();
       }
-
-      // ✅ Move forward ONLY after units are saved
-      next();
     } catch (err) {
-      console.error("❌ Failed to save units:", err);
-      toast.error("Failed to save units. Please try again.");
+      // 🔥 THIS IS THE KEY DIFFERENCE
+      console.error("Unit save error (non-blocking):", err);
+      toast.error("Some unit changes could not be saved.");
     }
+
+    // ✅ ALWAYS MOVE ON (like before)
+    next();
   };
 
 
