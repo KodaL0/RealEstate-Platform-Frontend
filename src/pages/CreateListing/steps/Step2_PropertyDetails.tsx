@@ -671,18 +671,32 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     setFormData((f) => ({ ...f, units: [...units, newUnit] }));
   };
 
-  const handleRemoveUnit = (index: number) => {
+  const handleRemoveUnit = async (index: number) => {
     const units = formData.units || [];
+
     if (units.length <= 2) {
       toast.error("Minimum 2 units required");
       return;
     }
 
-    const newUnits = units.filter((_, i) => i !== index);
+    const unitToRemove = units[index];
 
-    // ❗ DO NOT renumber
+    // EDIT MODE → delete from backend
+    if (isEditing && unitToRemove?.id) {
+      try {
+        await api.propertyUnits.delete(unitToRemove.id);
+        console.log(`🗑️ Deleted unit ${unitToRemove.id}`);
+      } catch (err) {
+        toast.error("Failed to delete unit");
+        return; // ❗ don't update UI if backend delete failed
+      }
+    }
+
+    // Update UI state
+    const newUnits = units.filter((_, i) => i !== index);
     setFormData((f) => ({ ...f, units: newUnits }));
   };
+
 
   const handleUnitChange = (index: number, field: keyof PropertyUnit, value: any) => {
     // For number fields, allow empty string (user is typing), convert to 0 only if completely empty on blur
