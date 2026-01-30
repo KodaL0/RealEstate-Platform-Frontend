@@ -538,6 +538,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       const units = formData.units || [];
       if (units.length < 2) return false;
 
+      // Common validation for all units: unit_number must be present
+      const hasValidUnitNumbers = units.every(
+        (unit) => unit.unit_number && unit.unit_number.trim() !== ""
+      );
+      if (!hasValidUnitNumbers) return false;
+
       // House-specific validation
       if (ptype === "house") {
         return units.every(
@@ -780,6 +786,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     if (!showValidationErrors) return false;
 
     const value = unit[field];
+
+    // Unit number validation
+    if (field === "unit_number") {
+      return !value || (typeof value === "string" && value.trim() === "");
+    }
 
     // Common fields for all property types
     if (["area", "price"].includes(field)) {
@@ -1101,17 +1112,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               </label>
             </div>
 
-            {formData.units && formData.units.length > 0 && (
-              <p className="text-xs text-gray-600 mb-3 flex items-start">
-                <span className="mr-1">🔒</span>
-                <span>
-                  This property has {formData.units.length} unit
-                  {formData.units.length !== 1 ? "s" : ""}. The checkbox is locked to prevent
-                  accidental data loss. To change this, remove all units first.
-                </span>
-              </p>
-            )}
-
             {/* Debug logging for table visibility */}
             {isEditing && formData.has_units && (
               <>
@@ -1138,9 +1138,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                       <tr>
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Unit # <span className="text-red-500">*</span>
-                        </th>
-                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
-                          Name
                         </th>
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Area <span className="text-red-500">*</span>
@@ -1229,21 +1226,17 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                     <tbody className="divide-y">
                       {formData.units.map((unit, index) => (
                         <tr key={index} className="hover:bg-gray-50">
-                          {/* Unit Number - Read-only */}
-                          <td className="px-1 py-1.5">
-                            <span className="font-medium text-gray-700 text-xs">
-                              {unit.unit_number}
-                            </span>
-                          </td>
-
-                          {/* Name */}
+                          {/* Unit Number - Editable */}
                           <td className="px-1 py-1.5">
                             <input
                               type="text"
-                              value={unit.unit_name || ""}
-                              onChange={(e) => handleUnitChange(index, "unit_name", e.target.value)}
-                              placeholder="Main"
-                              className="w-16 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
+                              value={unit.unit_number || ""}
+                              onChange={(e) => handleUnitChange(index, "unit_number", e.target.value)}
+                              placeholder="Unit #"
+                              className={`w-16 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 font-medium text-gray-700 ${
+                                isUnitFieldInvalid(unit, "unit_number") ? "border-red-300 bg-red-50" : ""
+                              }`}
+                              required
                             />
                           </td>
 
@@ -1584,6 +1577,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                       <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
                         {formData.units.map((unit, idx) => {
                           const errors: string[] = [];
+                          if (!unit.unit_number || unit.unit_number.trim() === "") 
+                            errors.push("Unit number required");
                           if (!unit.area || unit.area <= 0) errors.push("Area required");
 
                           // House-specific errors
