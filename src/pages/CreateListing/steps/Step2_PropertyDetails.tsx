@@ -295,7 +295,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   // Initialize units when has_units is checked
   const shouldInitializeUnits = !isEditing && isMultiUnit && (!formData.units || formData.units.length === 0);
-  const shouldClearUnits = !isMultiUnit && formData.units && formData.units.length > 0;
+  // ⭐ FIX: Don't clear units in edit mode if they have IDs (means they're existing units from backend)
+  const hasExistingUnits = formData.units && formData.units.some(u => u.id !== undefined);
+  const shouldClearUnits = !isEditing && !isMultiUnit && formData.units && formData.units.length > 0 && !hasExistingUnits;
   
   useEffect(() => {
     if (shouldInitializeUnits) {
@@ -332,7 +334,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       ];
       setFormData((f) => ({ ...f, units: defaultUnits }));
     } else if (shouldClearUnits) {
-      // Clear units if unchecked
+      // Clear units if unchecked (only in create mode)
       setFormData((f) => ({ ...f, units: [] }));
     }
   }, [shouldInitializeUnits, shouldClearUnits, setFormData]);
@@ -445,6 +447,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             console.log("📦 Stored original units for change tracking:", unitsMap.size);
           }
 
+          // ⭐ FIX: If units exist, force has_units to true (backend may have stale data)
+          const hasUnitsActual = units.length > 0 ? true : (d.has_units || false);
+
           // Update form data with property details - ATOMIC UPDATE
           setFormData((prev) => {
             const newFormData = {
@@ -480,7 +485,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               videoUrl: d.video_url || "",
               images: [],
               userType: (d.user_type as UserType) || prev.userType || ("owner_agent" as UserType),
-              has_units: d.has_units || false,
+              has_units: hasUnitsActual,
               units: units,
             };
             console.log(
