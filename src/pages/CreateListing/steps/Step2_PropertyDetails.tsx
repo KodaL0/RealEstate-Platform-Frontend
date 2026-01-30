@@ -1106,7 +1106,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 type="checkbox"
                 id="has_units"
                 checked={isMultiUnit}
-                disabled={unitsCount > 0 && isMultiUnit} // 🔒 lock only when ON
+                disabled={isEditing && hasExistingUnits && isMultiUnit} // 🔒 lock only for existing properties with saved units
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setFormData((f) => ({
@@ -1129,7 +1129,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               <label
                 htmlFor="has_units"
                 className={`font-semibold text-lg text-gray-800 ${
-                  formData.units && formData.units.length > 0
+                  isEditing && hasExistingUnits
                     ? "cursor-not-allowed"
                     : "cursor-pointer"
                 }`}
@@ -1142,6 +1142,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 )}
               </label>
             </div>
+
+            {/* Help text when checkbox is locked */}
+            {isEditing && hasExistingUnits && isMultiUnit && (
+              <p className="text-xs text-gray-600 mb-3">
+                ℹ️ This property has existing units. The checkbox cannot be unchecked while saved units exist.
+              </p>
+            )}
 
             {/* Debug logging for table visibility */}
             {isEditing && formData.has_units && (
