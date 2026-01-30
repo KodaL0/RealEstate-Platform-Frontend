@@ -736,31 +736,21 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    // EDIT MODE → ONLY UPDATE MODIFIED UNITS
+    // =========================
+    // EDIT MODE
+    // =========================
     if (isEditing) {
-      const patchable = units.filter((u) => typeof u.id === "number");
+      const existingUnits = units.filter((u) => typeof u.id === "number");
+      const newUnits = units.filter((u) => u.id === undefined);
 
-      if (patchable.length === 0) {
-        console.warn("No patchable units found; skipping unit save");
-        return;
-      }
+      // 1️⃣ UPDATE existing units (only if modified)
+      const modifiedUnits = existingUnits.filter(isUnitModified);
 
-      // Filter to only modified units
-      const modifiedUnits = patchable.filter(isUnitModified);
-
-      if (modifiedUnits.length === 0) {
-        console.log("✅ No units were modified, skipping update");
-        return;
-      }
-
-      console.log(`📝 Updating ${modifiedUnits.length} of ${patchable.length} units`);
-
-      // Update only modified units with non-blocking error handling
-      const updatePromises = modifiedUnits.map((unit) =>
-        api.propertyUnits
-          .update(unit.id!, {
-            property: Number(propertyId), // Required for PUT requests
-            unit_number: unit.unit_number, // Required for PUT requests
+      if (modifiedUnits.length > 0) {
+        const updatePromises = modifiedUnits.map((unit) =>
+          api.propertyUnits.update(unit.id!, {
+            property: Number(propertyId),
+            unit_number: unit.unit_number,
             unit_name: unit.unit_name,
             bedrooms: Number(unit.bedrooms),
             bathrooms: Number(unit.bathrooms),
@@ -773,22 +763,42 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             status: unit.status,
             is_published: unit.is_published,
           })
-          .then(() => {
-            console.log(`✅ Updated unit ${unit.id}`);
-          })
-          .catch((error) => {
-            console.error(`Unit save error (non-blocking):`, error);
-            // Non-blocking - continue with other updates
-          }),
-      );
+        );
 
-      await Promise.allSettled(updatePromises);
-      console.log("✅ Unit updates complete");
+        await Promise.allSettled(updatePromises);
+        console.log(`✅ Updated ${modifiedUnits.length} existing units`);
+      }
+
+      // 2️⃣ CREATE newly added units
+      if (newUnits.length > 0) {
+        const createPromises = newUnits.map((unit) =>
+          api.propertyUnits.create({
+            property: Number(propertyId),
+            unit_number: unit.unit_number,
+            unit_name: unit.unit_name,
+            bedrooms: Number(unit.bedrooms),
+            bathrooms: Number(unit.bathrooms),
+            area: Number(unit.area),
+            lot_size: Number(unit.lot_size),
+            total_floors: Number(unit.total_floors),
+            parking_spaces: Number(unit.parking_spaces),
+            floor_level: Number(unit.floor_level),
+            price: Number(unit.price),
+            status: unit.status,
+            is_published: unit.is_published,
+          })
+        );
+
+        await Promise.allSettled(createPromises);
+        console.log(`✅ Created ${newUnits.length} new units`);
+      }
 
       return;
     }
 
-    // CREATE MODE → POST ONLY
+    // =========================
+    // CREATE MODE
+    // =========================
     await Promise.all(
       units.map((unit) =>
         api.propertyUnits.create({
@@ -805,8 +815,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           price: Number(unit.price),
           status: unit.status,
           is_published: unit.is_published,
-        }),
-      ),
+        })
+      )
     );
   };
 
