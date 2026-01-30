@@ -196,8 +196,11 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const [showValidationErrors, setShowValidationErrors] = React.useState(false);
 
   // Multi-unit state
-  const isMultiUnit = formData.has_units === true;
+// Multi-unit state (single source of truth)
+  const unitsCount = formData.units?.length ?? 0;
+  const isMultiUnit = formData.has_units === true || unitsCount > 0;
   const canHaveUnits = ptype && ["house", "apartment", "office", "shop"].includes(ptype);
+
 
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
   const showField = useCallback(
@@ -272,6 +275,24 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
   }, [isEditing, hasLoadedPropertyData, isInitialLoad]);
 
+  // 🔄 Backend sync: ensure has_units=true when units exist
+  const hasSyncedHasUnitsRef = React.useRef(false);
+  
+  useEffect(() => {
+    if (!isEditing || !propertyId || !username) return;
+    if (isInitialLoad) return;
+  
+    if (unitsCount > 0 && formData.has_units !== true && !hasSyncedHasUnitsRef.current) {
+      hasSyncedHasUnitsRef.current = true;
+  
+      api.properties
+        .updatePropertyDetails(username, Number(propertyId), { has_units: true })
+        .then(() => console.log("✅ Backend synced: has_units=true"))
+        .catch((err) => console.error("❌ Failed to sync has_units:", err));
+    }
+  }, [isEditing, propertyId, username, isInitialLoad, unitsCount, formData.has_units]);
+
+
   // Store original units for change tracking when loaded by parent
   useEffect(() => {
     if (
@@ -292,6 +313,16 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       }
     }
   }, [isEditing, formData.units]); // Re-run when units array changes
+
+    // 🔧 EDIT MODE FIX: if units exist, force has_units=true
+  useEffect(() => {
+    if (!isEditing) return;
+  
+    if (unitsCount > 0 && formData.has_units !== true) {
+      setFormData((f) => ({ ...f, has_units: true }));
+    }
+  }, [isEditing, unitsCount, formData.has_units, setFormData]);
+
 
   // Initialize units when has_units is checked
   const shouldInitializeUnits = !isEditing && isMultiUnit && (!formData.units || formData.units.length === 0);
@@ -1074,8 +1105,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               <input
                 type="checkbox"
                 id="has_units"
-                checked={isMultiUnit || (formData.units && formData.units.length > 0)}
-                disabled={formData.units && formData.units.length > 0}
+                checked={isMultiUnit}
+                disabled={unitsCount > 0 && isMultiUnit} // 🔒 lock only when ON
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setFormData((f) => ({
