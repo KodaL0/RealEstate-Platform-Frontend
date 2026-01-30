@@ -12,7 +12,13 @@ import {
   type WizardMode,
 } from "../context/ListingWizardContext";
 import { useUser } from "../context/UserContext";
-import { COUNTRY_CODES, DEFAULT_FORM_STATE, type ListingForm, type PropertyUnit, type UserType } from "../types";
+import {
+  COUNTRY_CODES,
+  DEFAULT_FORM_STATE,
+  type ListingForm,
+  type PropertyUnit,
+  type UserType,
+} from "../types";
 // ⬇️ New step order imports
 import Step1_PropertyType from "./CreateListing/steps/Step1_PropertyType";
 import Step2_PropertyDetails from "./CreateListing/steps/Step2_PropertyDetails";
@@ -377,21 +383,25 @@ const CreateListing: React.FC = () => {
         fd.append("devUnits", JSON.stringify(v));
         return;
       }
-      
+
       // Special handling for unit-level fields in multi-unit properties
       // For multi-unit properties, these fields are specified at the unit level, not property level
       // Backend expects placeholder values (0) which will be calculated from actual units
-      const unitLevelFields = ['price', 'bedrooms', 'bathrooms', 'area'];
-      if (unitLevelFields.includes(k) && formData.has_units && (v === "" || v === undefined || v === null)) {
+      const unitLevelFields = ["price", "bedrooms", "bathrooms", "area"];
+      if (
+        unitLevelFields.includes(k) &&
+        formData.has_units &&
+        (v === "" || v === undefined || v === null)
+      ) {
         fd.append(k, "0");
         return;
       }
-      
+
       if (v !== undefined && v !== null && v !== "") {
         fd.append(k, String(v));
       }
     });
-    
+
     // Add has_units flag
     if (formData.has_units) {
       fd.append("has_units", "true");
@@ -722,8 +732,8 @@ const CreateListing: React.FC = () => {
       if (res.status >= 200 && res.status < 300) {
         // Get property ID from response
         const propertyData = res.data as { id?: number };
-        const propertyId = isEditing ? Number(id) : (propertyData.id || propertyData.id);
-        
+        const propertyId = isEditing ? Number(id) : propertyData.id || propertyData.id;
+
         if (!propertyId) {
           throw new Error("Property ID not found in response");
         }

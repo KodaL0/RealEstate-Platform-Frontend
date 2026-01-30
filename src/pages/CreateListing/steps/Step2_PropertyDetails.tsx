@@ -18,7 +18,13 @@ import toast from "react-hot-toast";
 import AmenitySelector from "../../../components/AmenitySelector";
 import api from "../../../config/api";
 import { useWizardNavigation } from "../../../context/ListingWizardContext";
-import { COUNTRY_OPTIONS, type ListingForm, PROPERTY_STATUS, type PropertyUnit, type UserType } from "../../../types";
+import {
+  COUNTRY_OPTIONS,
+  type ListingForm,
+  PROPERTY_STATUS,
+  type PropertyUnit,
+  type UserType,
+} from "../../../types";
 import LocationAutocomplete from "../../LocationAutocomplete";
 
 // Debounce utility function
@@ -53,14 +59,7 @@ type Props = {
   hasLoadedPropertyData?: boolean;
 };
 
-type PT =
-  | "house"
-  | "apartment"
-  | "land"
-  | "hotel"
-  | "shop"
-  | "office"
-  | "residential_building";
+type PT = "house" | "apartment" | "land" | "hotel" | "shop" | "office" | "residential_building";
 
 // Only use keys that exist on your ListingForm
 const FIELD_MATRIX: Record<PT, Array<keyof ListingForm>> = {
@@ -166,8 +165,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   setCountryCode,
   username,
   hasLoadedPropertyData = false,
-
-
 }) => {
   // Track original units to detect changes
   const originalUnitsRef = React.useRef<Map<number, PropertyUnit>>(new Map());
@@ -189,7 +186,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       energyRating: "",
       yearBuilt: "",
     };
-
   };
 
   const { next, back } = useWizardNavigation();
@@ -198,58 +194,61 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   const [hasLoadedData, setHasLoadedData] = React.useState(false);
   const [isInitialLoad, setIsInitialLoad] = React.useState(true);
   const [showValidationErrors, setShowValidationErrors] = React.useState(false);
-  
+
   // Multi-unit state
   const isMultiUnit = formData.has_units === true;
-  const canHaveUnits = ptype && [
-    'house',
-    'apartment',
-    'office',
-    'shop'
-  ].includes(ptype);
+  const canHaveUnits = ptype && ["house", "apartment", "office", "shop"].includes(ptype);
 
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
-  const showField = useCallback((k: keyof ListingForm) => {
-    if (!show.has(k)) return false;
-    
-    // Hide single property fields if multi-unit
-    if (isMultiUnit && ['bedrooms', 'bathrooms', 'area', 'price'].includes(k)) {
-      return false;
-    }
-    
-    // Hide house-specific fields in multi-unit mode (moved to unit level)
-    if (isMultiUnit && ptype === 'house' && ['floorLevel', 'totalFloors', 'parkingSpaces', 'lotSize'].includes(k)) {
-      return false;
-    }
-    
-    // Hide apartment-specific fields in multi-unit mode (moved to unit level)
-    if (isMultiUnit && ptype === 'apartment' && ['floorLevel', 'totalFloors', 'parkingSpaces'].includes(k)) {
-      return false;
-    }
-    
-    // Hide shop-specific fields in multi-unit mode (moved to unit level)
-    if (isMultiUnit && ptype === 'shop' && ['floorLevel', 'totalFloors'].includes(k)) {
-      return false;
-    }
-    
-    // Hide office-specific fields in multi-unit mode (moved to unit level)
-    if (isMultiUnit && ptype === 'office' && ['floorLevel', 'totalFloors'].includes(k)) {
-      return false;
-    }
-    
-    return true;
-  }, [show, isMultiUnit, ptype]);
+  const showField = useCallback(
+    (k: keyof ListingForm) => {
+      if (!show.has(k)) return false;
+
+      // Hide single property fields if multi-unit
+      if (isMultiUnit && ["bedrooms", "bathrooms", "area", "price"].includes(k)) {
+        return false;
+      }
+
+      // Hide house-specific fields in multi-unit mode (moved to unit level)
+      if (
+        isMultiUnit &&
+        ptype === "house" &&
+        ["floorLevel", "totalFloors", "parkingSpaces", "lotSize"].includes(k)
+      ) {
+        return false;
+      }
+
+      // Hide apartment-specific fields in multi-unit mode (moved to unit level)
+      if (
+        isMultiUnit &&
+        ptype === "apartment" &&
+        ["floorLevel", "totalFloors", "parkingSpaces"].includes(k)
+      ) {
+        return false;
+      }
+
+      // Hide shop-specific fields in multi-unit mode (moved to unit level)
+      if (isMultiUnit && ptype === "shop" && ["floorLevel", "totalFloors"].includes(k)) {
+        return false;
+      }
+
+      // Hide office-specific fields in multi-unit mode (moved to unit level)
+      if (isMultiUnit && ptype === "office" && ["floorLevel", "totalFloors"].includes(k)) {
+        return false;
+      }
+
+      return true;
+    },
+    [show, isMultiUnit, ptype],
+  );
 
   // Debug logging for amenities visibility
   useEffect(() => {
     if (isEditing) {
       const shouldShowAmenities = showField("amenities");
-      const isInAmenitiesList = [
-        "house",
-        "apartment",
-        "hotel",
-        "residential_building",
-      ].includes(ptype);
+      const isInAmenitiesList = ["house", "apartment", "hotel", "residential_building"].includes(
+        ptype,
+      );
       console.log("🔍 Step2 Debug:", {
         ptype,
         propertyType: formData.propertyType,
@@ -275,7 +274,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   // Store original units for change tracking when loaded by parent
   useEffect(() => {
-    if (isEditing && formData.units && formData.units.length > 0 && originalUnitsRef.current.size === 0) {
+    if (
+      isEditing &&
+      formData.units &&
+      formData.units.length > 0 &&
+      originalUnitsRef.current.size === 0
+    ) {
       const unitsMap = new Map<number, PropertyUnit>();
       formData.units.forEach((unit) => {
         if (unit.id) {
@@ -287,12 +291,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         console.log("📦 Step2: Stored original units from parent load:", unitsMap.size);
       }
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isEditing, formData.units?.length]); // Only re-run if units length changes, not the array reference
+  }, [isEditing, formData.units]); // Re-run when units array changes
 
   // Initialize units when has_units is checked
+  const shouldInitializeUnits = !isEditing && isMultiUnit && (!formData.units || formData.units.length === 0);
+  const shouldClearUnits = !isMultiUnit && formData.units && formData.units.length > 0;
+  
   useEffect(() => {
-    if (!isEditing && isMultiUnit && (!formData.units || formData.units.length === 0)) {
+    if (shouldInitializeUnits) {
       // Initialize with 2 default units
       const defaultUnits: PropertyUnit[] = [
         {
@@ -306,7 +312,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           total_floors: 1,
           parking_spaces: 0,
           price: 0,
-          status: 'available',
+          status: "available",
           is_published: true,
         },
         {
@@ -320,24 +326,23 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           total_floors: 1,
           parking_spaces: 0,
           price: 0,
-          status: 'available',
+          status: "available",
           is_published: true,
         },
       ];
-      setFormData(f => ({ ...f, units: defaultUnits }));
-    } else if (!isMultiUnit && formData.units && formData.units.length > 0) {
+      setFormData((f) => ({ ...f, units: defaultUnits }));
+    } else if (shouldClearUnits) {
       // Clear units if unchecked
-      setFormData(f => ({ ...f, units: [] }));
+      setFormData((f) => ({ ...f, units: [] }));
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isMultiUnit, isEditing]); // Intentionally omit formData.units and setFormData to avoid loops
+  }, [shouldInitializeUnits, shouldClearUnits, setFormData]);
 
   // Load property details when editing (only if not already loaded by parent)
   useEffect(() => {
     if (!isEditing || !propertyId || !username || hasLoadedData || hasLoadedPropertyData) {
-      // Log why we're skipping
+      // Log why we're skipping (moved formData checks to debug render section to avoid unnecessary deps)
       if (hasLoadedPropertyData) {
-        console.log("✅ Step2: Skipping data load - parent already loaded. has_units:", formData.has_units, "units count:", formData.units?.length || 0);
+        console.log("✅ Step2: Skipping data load - parent already loaded");
       }
       return;
     }
@@ -408,13 +413,15 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           if (d.has_units && (!d.units || d.units.length === 0)) {
             try {
               const unitsRes = await api.propertyUnits.list(Number(propertyId));
-              const unitsData =
-                ((unitsRes.data as any)?.results ?? unitsRes.data) as PropertyUnit[];
+              const unitsData = ((unitsRes.data as any)?.results ??
+                unitsRes.data) as PropertyUnit[];
 
               const arr = Array.isArray(unitsData) ? unitsData : [];
-              console.log("Loaded units (id check):", arr.map(u => ({ id: (u as any).id, unit_number: u.unit_number })));
+              console.log(
+                "Loaded units (id check):",
+                arr.map((u) => ({ id: (u as any).id, unit_number: u.unit_number })),
+              );
               return arr;
-
             } catch (err) {
               console.warn("Failed to load units:", err);
               return [];
@@ -425,7 +432,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
         loadUnits().then((units) => {
           console.log(`📦 Step2: Loaded ${units.length} units, has_units flag: ${d.has_units}`);
-          
+
           // Store original units for change tracking
           if (units && units.length > 0) {
             const unitsMap = new Map<number, PropertyUnit>();
@@ -437,7 +444,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             originalUnitsRef.current = unitsMap;
             console.log("📦 Stored original units for change tracking:", unitsMap.size);
           }
-          
+
           // Update form data with property details - ATOMIC UPDATE
           setFormData((prev) => {
             const newFormData = {
@@ -476,7 +483,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               has_units: d.has_units || false,
               units: units,
             };
-            console.log("✅ Step2: Form data updated - has_units:", newFormData.has_units, "units:", newFormData.units?.length);
+            console.log(
+              "✅ Step2: Form data updated - has_units:",
+              newFormData.has_units,
+              "units:",
+              newFormData.units?.length,
+            );
             return newFormData;
           });
         });
@@ -508,71 +520,78 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const validBasics =
     !!normalizedForm.title?.trim() &&
-    (isMultiUnit || !!normalizedForm.price) &&   // <-- if multi-unit, skip price
+    (isMultiUnit || !!normalizedForm.price) && // <-- if multi-unit, skip price
     !!normalizedForm.country &&
     !!normalizedForm.location?.trim() &&
     !!normalizedForm.city?.trim() &&
     !!normalizedForm.propertyStatus &&
     !!ptype;
 
-
   const validSpecs = (() => {
     // If multi-unit, validate units instead
     if (isMultiUnit) {
       const units = formData.units || [];
       if (units.length < 2) return false;
-      
+
       // House-specific validation
-      if (ptype === 'house') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.lot_size && unit.lot_size > 0 &&
-          unit.total_floors && unit.total_floors > 0 &&
-          unit.parking_spaces !== undefined &&
-          unit.price > 0 && 
-          unit.bedrooms >= 0 && 
-          unit.bathrooms > 0
+      if (ptype === "house") {
+        return units.every(
+          (unit) =>
+            unit.area > 0 &&
+            unit.lot_size &&
+            unit.lot_size > 0 &&
+            unit.total_floors &&
+            unit.total_floors > 0 &&
+            unit.parking_spaces !== undefined &&
+            unit.price > 0 &&
+            unit.bedrooms >= 0 &&
+            unit.bathrooms > 0,
         );
       }
-      
+
       // Apartment-specific validation
-      if (ptype === 'apartment') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 && 
-          unit.bedrooms >= 0 && 
-          unit.bathrooms > 0
+      if (ptype === "apartment") {
+        return units.every(
+          (unit) =>
+            unit.area > 0 &&
+            unit.floor_level !== undefined &&
+            unit.floor_level >= 0 &&
+            unit.price > 0 &&
+            unit.bedrooms >= 0 &&
+            unit.bathrooms > 0,
         );
       }
-      
+
       // Shop-specific validation (NO bedrooms, bathrooms can be 0)
-      if (ptype === 'shop') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 &&
-          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
+      if (ptype === "shop") {
+        return units.every(
+          (unit) =>
+            unit.area > 0 &&
+            unit.floor_level !== undefined &&
+            unit.floor_level >= 0 &&
+            unit.price > 0 &&
+            unit.bathrooms !== undefined &&
+            unit.bathrooms >= 0, // Can be 0
         );
       }
-      
+
       // Office-specific validation (NO bedrooms, bathrooms can be 0)
-      if (ptype === 'office') {
-        return units.every(unit => 
-          unit.area > 0 && 
-          unit.floor_level !== undefined && unit.floor_level >= 0 &&
-          unit.price > 0 &&
-          unit.bathrooms !== undefined && unit.bathrooms >= 0  // Can be 0
+      if (ptype === "office") {
+        return units.every(
+          (unit) =>
+            unit.area > 0 &&
+            unit.floor_level !== undefined &&
+            unit.floor_level >= 0 &&
+            unit.price > 0 &&
+            unit.bathrooms !== undefined &&
+            unit.bathrooms >= 0, // Can be 0
         );
       }
-      
+
       // Other property types (fallback)
-      return units.every(unit => 
-        unit.area > 0 && 
-        unit.price > 0
-      );
+      return units.every((unit) => unit.area > 0 && unit.price > 0);
     }
-    
+
     // Single property validation
     if (["house", "apartment"].includes(ptype))
       return !!formData.area && !!formData.bedrooms && !!formData.bathrooms;
@@ -583,13 +602,12 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
   const valid = validBasics && validSpecs;
 
-  
   // Unit management functions
   const handleAddUnit = () => {
     const units = formData.units || [];
     const maxUnitNumber = Math.max(
       0,
-      ...units.map(u => Number(u.unit_number)).filter(n => !Number.isNaN(n))
+      ...units.map((u) => Number(u.unit_number)).filter((n) => !Number.isNaN(n)),
     );
 
     const nextNumber = String(maxUnitNumber + 1);
@@ -604,10 +622,10 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       total_floors: 1,
       parking_spaces: 0,
       price: 0,
-      status: 'available',
+      status: "available",
       is_published: true,
     };
-    setFormData(f => ({ ...f, units: [...units, newUnit] }));
+    setFormData((f) => ({ ...f, units: [...units, newUnit] }));
   };
 
   const handleRemoveUnit = (index: number) => {
@@ -620,22 +638,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     const newUnits = units.filter((_, i) => i !== index);
 
     // ❗ DO NOT renumber
-    setFormData(f => ({ ...f, units: newUnits }));
+    setFormData((f) => ({ ...f, units: newUnits }));
   };
-
 
   const handleUnitChange = (index: number, field: keyof PropertyUnit, value: any) => {
     // For number fields, allow empty string (user is typing), convert to 0 only if completely empty on blur
-    const processedValue = value === '' ? '' : value;
-    
-    setFormData(f => ({
+    const processedValue = value === "" ? "" : value;
+
+    setFormData((f) => ({
       ...f,
-      units: (f.units || []).map((unit, i) => 
-        i === index ? { ...unit, [field]: processedValue } : unit
-      )
+      units: (f.units || []).map((unit, i) =>
+        i === index ? { ...unit, [field]: processedValue } : unit,
+      ),
     }));
   };
-  
 
   // Helper to check if a unit has been modified
   const isUnitModified = (unit: PropertyUnit): boolean => {
@@ -644,23 +660,32 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
 
     const original = originalUnitsRef.current.get(unit.id)!;
-    
+
     // Compare relevant fields
     const fieldsToCompare: (keyof PropertyUnit)[] = [
-      'unit_number', 'unit_name', 'bedrooms', 'bathrooms', 'area',
-      'lot_size', 'total_floors', 'parking_spaces', 'floor_level',
-      'price', 'status', 'is_published'
+      "unit_number",
+      "unit_name",
+      "bedrooms",
+      "bathrooms",
+      "area",
+      "lot_size",
+      "total_floors",
+      "parking_spaces",
+      "floor_level",
+      "price",
+      "status",
+      "is_published",
     ];
 
-    return fieldsToCompare.some(field => {
+    return fieldsToCompare.some((field) => {
       const currentValue = unit[field];
       const originalValue = original[field];
-      
+
       // Normalize numbers for comparison
-      if (typeof currentValue === 'number' || typeof originalValue === 'number') {
+      if (typeof currentValue === "number" || typeof originalValue === "number") {
         return Number(currentValue || 0) !== Number(originalValue || 0);
       }
-      
+
       return currentValue !== originalValue;
     });
   };
@@ -670,7 +695,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
     // EDIT MODE → ONLY UPDATE MODIFIED UNITS
     if (isEditing) {
-      const patchable = units.filter(u => typeof u.id === "number");
+      const patchable = units.filter((u) => typeof u.id === "number");
 
       if (patchable.length === 0) {
         console.warn("No patchable units found; skipping unit save");
@@ -688,27 +713,30 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       console.log(`📝 Updating ${modifiedUnits.length} of ${patchable.length} units`);
 
       // Update only modified units with non-blocking error handling
-      const updatePromises = modifiedUnits.map(unit =>
-        api.propertyUnits.update(unit.id!, {
-          property: Number(propertyId),  // Required for PUT requests
-          unit_number: unit.unit_number,  // Required for PUT requests
-          unit_name: unit.unit_name,
-          bedrooms: Number(unit.bedrooms),
-          bathrooms: Number(unit.bathrooms),
-          area: Number(unit.area),
-          lot_size: Number(unit.lot_size),
-          total_floors: Number(unit.total_floors),
-          parking_spaces: Number(unit.parking_spaces),
-          floor_level: Number(unit.floor_level),
-          price: Number(unit.price),
-          status: unit.status,
-          is_published: unit.is_published,
-        }).then(() => {
-          console.log(`✅ Updated unit ${unit.id}`);
-        }).catch((error) => {
-          console.error(`Unit save error (non-blocking):`, error);
-          // Non-blocking - continue with other updates
-        })
+      const updatePromises = modifiedUnits.map((unit) =>
+        api.propertyUnits
+          .update(unit.id!, {
+            property: Number(propertyId), // Required for PUT requests
+            unit_number: unit.unit_number, // Required for PUT requests
+            unit_name: unit.unit_name,
+            bedrooms: Number(unit.bedrooms),
+            bathrooms: Number(unit.bathrooms),
+            area: Number(unit.area),
+            lot_size: Number(unit.lot_size),
+            total_floors: Number(unit.total_floors),
+            parking_spaces: Number(unit.parking_spaces),
+            floor_level: Number(unit.floor_level),
+            price: Number(unit.price),
+            status: unit.status,
+            is_published: unit.is_published,
+          })
+          .then(() => {
+            console.log(`✅ Updated unit ${unit.id}`);
+          })
+          .catch((error) => {
+            console.error(`Unit save error (non-blocking):`, error);
+            // Non-blocking - continue with other updates
+          }),
       );
 
       await Promise.allSettled(updatePromises);
@@ -719,7 +747,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
     // CREATE MODE → POST ONLY
     await Promise.all(
-      units.map(unit =>
+      units.map((unit) =>
         api.propertyUnits.create({
           property: Number(propertyId),
           unit_number: unit.unit_number,
@@ -734,11 +762,10 @@ const Step2_PropertyDetails: React.FC<Props> = ({
           price: Number(unit.price),
           status: unit.status,
           is_published: unit.is_published,
-        })
-      )
+        }),
+      ),
     );
   };
-
 
   const update = (patch: Partial<ListingForm>) =>
     setFormData((f: ListingForm) => ({ ...f, ...patch }));
@@ -746,65 +773,65 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   // Helper to check if unit field is invalid (only show red after submission attempt)
   const isUnitFieldInvalid = (unit: PropertyUnit, field: keyof PropertyUnit): boolean => {
     if (!showValidationErrors) return false;
-    
+
     const value = unit[field];
-    
+
     // Common fields for all property types
-    if (['area', 'price'].includes(field)) {
-      return !value || (typeof value === 'number' && value <= 0);
+    if (["area", "price"].includes(field)) {
+      return !value || (typeof value === "number" && value <= 0);
     }
-    
+
     // Bathrooms validation - property-type-specific
-    if (field === 'bathrooms') {
+    if (field === "bathrooms") {
       // Residential: bathrooms must be > 0
-      if (['house', 'apartment'].includes(ptype)) {
-        return !value || (typeof value === 'number' && value <= 0);
+      if (["house", "apartment"].includes(ptype)) {
+        return !value || (typeof value === "number" && value <= 0);
       }
       // Commercial (shop/office): bathrooms can be 0, but must be >= 0 if provided
-      if (['shop', 'office'].includes(ptype)) {
-        return value === undefined || value === null || (typeof value === 'number' && value < 0);
+      if (["shop", "office"].includes(ptype)) {
+        return value === undefined || value === null || (typeof value === "number" && value < 0);
       }
     }
-    
+
     // Bedrooms - only validate for residential properties
-    if (field === 'bedrooms') {
-      if (['house', 'apartment'].includes(ptype)) {
-        return typeof value === 'number' && value < 0;
+    if (field === "bedrooms") {
+      if (["house", "apartment"].includes(ptype)) {
+        return typeof value === "number" && value < 0;
       }
-      return false;  // Don't validate bedrooms for commercial
+      return false; // Don't validate bedrooms for commercial
     }
-    
+
     // House-specific fields
-    if (ptype === 'house') {
-      if (field === 'lot_size' || field === 'total_floors') {
-        return !value || (typeof value === 'number' && value <= 0);
+    if (ptype === "house") {
+      if (field === "lot_size" || field === "total_floors") {
+        return !value || (typeof value === "number" && value <= 0);
       }
-      if (field === 'parking_spaces') {
+      if (field === "parking_spaces") {
         return value === undefined;
       }
     }
-    
+
     // Apartment-specific fields
-    if (ptype === 'apartment') {
-      if (field === 'floor_level') {
-        return value === undefined || value === null || value === '';
+    if (ptype === "apartment") {
+      if (field === "floor_level") {
+        return value === undefined || value === null || value === "";
       }
     }
-    
+
     // Shop-specific fields
-    if (ptype === 'shop') {
-      if (field === 'floor_level') {
-        return value === undefined || value === null || value === '';
+    if (ptype === "shop") {
+      if (field === "floor_level") {
+        return value === undefined || value === null || value === "";
       }
     }
-    
+
     // Office-specific fields
-    if (ptype === 'office') {
-      if (field === 'floor_level') {
-        return value === undefined || value === null || value === '';
+    if (ptype === "office") {
+      if (field === "floor_level") {
+        return value === undefined || value === null || value === "";
       }
     }
-    
+
     return false;
   };
 
@@ -840,7 +867,6 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     // ✅ ALWAYS MOVE ON (like before)
     next();
   };
-
 
   // Debounced PATCH update for property details
   const debouncedUpdate = useCallback(
@@ -984,7 +1010,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Region</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+            Region
+          </label>
           <input
             type="text"
             name="region"
@@ -996,7 +1024,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Postal Code</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+            Postal Code
+          </label>
           <input
             type="text"
             name="postal_code"
@@ -1008,7 +1038,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         </div>
 
         <div>
-          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Street Address</label>
+          <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+            Street Address
+          </label>
           <input
             type="text"
             name="street"
@@ -1026,38 +1058,52 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               <input
                 type="checkbox"
                 id="has_units"
-                checked={isMultiUnit}
-                disabled={isEditing && formData.units && formData.units.length > 0}
+                checked={isMultiUnit || (formData.units && formData.units.length > 0)}
+                disabled={formData.units && formData.units.length > 0}
                 onChange={(e) => {
                   const checked = e.target.checked;
-                  setFormData(f => ({
+                  setFormData((f) => ({
                     ...f,
                     has_units: checked,
-                    units: checked ? (f.units || []) : [],
+                    units: checked ? f.units || [] : [],
                     // Clear single property fields if enabling units
-                    ...(checked ? {
-                      bedrooms: '',
-                      bathrooms: '',
-                      area: '',
-                      price: '',
-                    } : {}),
+                    ...(checked
+                      ? {
+                          bedrooms: "",
+                          bathrooms: "",
+                          area: "",
+                          price: "",
+                        }
+                      : {}),
                   }));
                 }}
-                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500"
+                className="w-5 h-5 text-blue-600 rounded focus:ring-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               />
-              <label htmlFor="has_units" className="font-semibold text-lg cursor-pointer text-gray-800">
+              <label
+                htmlFor="has_units"
+                className={`font-semibold text-lg text-gray-800 ${
+                  formData.units && formData.units.length > 0
+                    ? "cursor-not-allowed"
+                    : "cursor-pointer"
+                }`}
+              >
                 This property has multiple units
-                {isEditing && formData.units && formData.units.length > 0 && (
-                  <span className="ml-2 text-sm font-normal text-gray-600">
+                {formData.units && formData.units.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-blue-600">
                     ({formData.units.length} units)
                   </span>
                 )}
               </label>
             </div>
-            
-            {isEditing && formData.units && formData.units.length > 0 && (
-              <p className="text-xs text-gray-600 mb-3">
-                ℹ️ This property has existing units. The checkbox cannot be unchecked while units exist.
+
+            {formData.units && formData.units.length > 0 && (
+              <p className="text-xs text-gray-600 mb-3 flex items-start">
+                <span className="mr-1">🔒</span>
+                <span>
+                  This property has {formData.units.length} unit
+                  {formData.units.length !== 1 ? "s" : ""}. The checkbox is locked to prevent
+                  accidental data loss. To change this, remove all units first.
+                </span>
               </p>
             )}
 
@@ -1069,7 +1115,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   has_units: formData.has_units,
                   unitsExists: !!formData.units,
                   unitsLength: formData.units?.length || 0,
-                  willRender: isMultiUnit && formData.units && formData.units.length > 0
+                  willRender: isMultiUnit && formData.units && formData.units.length > 0,
                 })}
               </>
             )}
@@ -1088,27 +1134,29 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Unit # <span className="text-red-500">*</span>
                         </th>
-                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Name</th>
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          Name
+                        </th>
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Area <span className="text-red-500">*</span>
                         </th>
-                        
+
                         {/* House-specific: Lot Size */}
-                        {ptype === 'house' && (
+                        {ptype === "house" && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Lot <span className="text-red-500">*</span>
                           </th>
                         )}
-                        
+
                         {/* Apartment-specific: Floor Level */}
-                        {ptype === 'apartment' && (
+                        {ptype === "apartment" && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Floor <span className="text-red-500">*</span>
                           </th>
                         )}
-                        
+
                         {/* Shop-specific: Floor Level and Total Floors */}
-                        {ptype === 'shop' && (
+                        {ptype === "shop" && (
                           <>
                             <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                               Floor <span className="text-red-500">*</span>
@@ -1118,9 +1166,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             </th>
                           </>
                         )}
-                        
+
                         {/* Office-specific: Floor Level and Total Floors */}
-                        {ptype === 'office' && (
+                        {ptype === "office" && (
                           <>
                             <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                               Floor <span className="text-red-500">*</span>
@@ -1130,44 +1178,46 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                             </th>
                           </>
                         )}
-                        
+
                         {/* House-specific: Floors in unit */}
-                        {ptype === 'house' && (
+                        {ptype === "house" && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Floor <span className="text-red-500">*</span>
                           </th>
                         )}
-                        
+
                         {/* Bedrooms - ONLY for residential (house, apartment) */}
-                        {['house', 'apartment'].includes(ptype) && (
+                        {["house", "apartment"].includes(ptype) && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Beds <span className="text-red-500">*</span>
                           </th>
                         )}
-                        
+
                         {/* Bathrooms - ALL property types */}
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Baths <span className="text-red-500">*</span>
                         </th>
-                        
+
                         {/* House-specific: Parking (required) */}
-                        {ptype === 'house' && (
+                        {ptype === "house" && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Parking <span className="text-red-500">*</span>
                           </th>
                         )}
-                        
+
                         {/* Apartment/Shop/Office: Parking (optional) */}
-                        {['apartment', 'shop', 'office'].includes(ptype) && (
+                        {["apartment", "shop", "office"].includes(ptype) && (
                           <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                             Parking
                           </th>
                         )}
-                        
+
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
                           Price (€) <span className="text-red-500">*</span>
                         </th>
-                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">Status</th>
+                        <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700 whitespace-nowrap">
+                          Status
+                        </th>
                         <th className="px-1 py-1.5 text-left text-xs font-semibold text-gray-700"></th>
                       </tr>
                     </thead>
@@ -1176,219 +1226,315 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                         <tr key={index} className="hover:bg-gray-50">
                           {/* Unit Number - Read-only */}
                           <td className="px-1 py-1.5">
-                            <span className="font-medium text-gray-700 text-xs">{unit.unit_number}</span>
+                            <span className="font-medium text-gray-700 text-xs">
+                              {unit.unit_number}
+                            </span>
                           </td>
-                          
+
                           {/* Name */}
                           <td className="px-1 py-1.5">
                             <input
                               type="text"
-                              value={unit.unit_name || ''}
-                              onChange={(e) => handleUnitChange(index, 'unit_name', e.target.value)}
+                              value={unit.unit_name || ""}
+                              onChange={(e) => handleUnitChange(index, "unit_name", e.target.value)}
                               placeholder="Main"
                               className="w-16 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                             />
                           </td>
-                          
+
                           {/* Area */}
                           <td className="px-1 py-1.5">
                             <input
                               type="number"
-                              value={unit.area || ''}
-                              onChange={(e) => handleUnitChange(index, 'area', e.target.value === '' ? '' : Number(e.target.value))}
+                              value={unit.area || ""}
+                              onChange={(e) =>
+                                handleUnitChange(
+                                  index,
+                                  "area",
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                                )
+                              }
                               className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                isUnitFieldInvalid(unit, 'area') ? 'border-red-300 bg-red-50' : ''
+                                isUnitFieldInvalid(unit, "area") ? "border-red-300 bg-red-50" : ""
                               }`}
                               min="0"
                               required
                             />
                           </td>
-                          
+
                           {/* House-specific: Lot Size */}
-                          {ptype === 'house' && (
+                          {ptype === "house" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.lot_size || ''}
-                                onChange={(e) => handleUnitChange(index, 'lot_size', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.lot_size || ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "lot_size",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-14 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'lot_size') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "lot_size")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Apartment-specific: Floor Level */}
-                          {ptype === 'apartment' && (
+                          {ptype === "apartment" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.floor_level ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'floor_level', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.floor_level ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "floor_level",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'floor_level') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "floor_level")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Shop-specific: Floor Level (required) */}
-                          {ptype === 'shop' && (
+                          {ptype === "shop" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.floor_level ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'floor_level', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.floor_level ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "floor_level",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'floor_level') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "floor_level")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Shop-specific: Total Floors (optional) */}
-                          {ptype === 'shop' && (
+                          {ptype === "shop" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.total_floors || ''}
-                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.total_floors || ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "total_floors",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className="w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                                 min="1"
                               />
                             </td>
                           )}
-                          
+
                           {/* Office-specific: Floor Level (required) */}
-                          {ptype === 'office' && (
+                          {ptype === "office" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.floor_level ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'floor_level', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.floor_level ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "floor_level",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'floor_level') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "floor_level")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Office-specific: Total Floors (optional) */}
-                          {ptype === 'office' && (
+                          {ptype === "office" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.total_floors || ''}
-                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.total_floors || ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "total_floors",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className="w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                                 min="1"
                               />
                             </td>
                           )}
-                          
+
                           {/* House-specific: Total Floors */}
-                          {ptype === 'house' && (
+                          {ptype === "house" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.total_floors || ''}
-                                onChange={(e) => handleUnitChange(index, 'total_floors', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.total_floors || ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "total_floors",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'total_floors') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "total_floors")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="1"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Bedrooms - ONLY for residential (house, apartment) */}
-                          {['house', 'apartment'].includes(ptype) && (
+                          {["house", "apartment"].includes(ptype) && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.bedrooms ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'bedrooms', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.bedrooms ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "bedrooms",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'bedrooms') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "bedrooms")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Bathrooms */}
                           <td className="px-1 py-1.5">
                             <input
                               type="number"
                               step="0.5"
-                              value={unit.bathrooms || ''}
-                              onChange={(e) => handleUnitChange(index, 'bathrooms', e.target.value === '' ? '' : Number(e.target.value))}
+                              value={unit.bathrooms || ""}
+                              onChange={(e) =>
+                                handleUnitChange(
+                                  index,
+                                  "bathrooms",
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                                )
+                              }
                               className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                isUnitFieldInvalid(unit, 'bathrooms') ? 'border-red-300 bg-red-50' : ''
+                                isUnitFieldInvalid(unit, "bathrooms")
+                                  ? "border-red-300 bg-red-50"
+                                  : ""
                               }`}
                               min="0"
                               required
                             />
                           </td>
-                          
+
                           {/* House-specific: Parking Spaces (required) */}
-                          {ptype === 'house' && (
+                          {ptype === "house" && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.parking_spaces ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'parking_spaces', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.parking_spaces ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "parking_spaces",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className={`w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                  isUnitFieldInvalid(unit, 'parking_spaces') ? 'border-red-300 bg-red-50' : ''
+                                  isUnitFieldInvalid(unit, "parking_spaces")
+                                    ? "border-red-300 bg-red-50"
+                                    : ""
                                 }`}
                                 min="0"
                                 required
                               />
                             </td>
                           )}
-                          
+
                           {/* Apartment/Shop/Office: Parking Spaces (optional) */}
-                          {['apartment', 'shop', 'office'].includes(ptype) && (
+                          {["apartment", "shop", "office"].includes(ptype) && (
                             <td className="px-1 py-1.5">
                               <input
                                 type="number"
-                                value={unit.parking_spaces ?? ''}
-                                onChange={(e) => handleUnitChange(index, 'parking_spaces', e.target.value === '' ? '' : Number(e.target.value))}
+                                value={unit.parking_spaces ?? ""}
+                                onChange={(e) =>
+                                  handleUnitChange(
+                                    index,
+                                    "parking_spaces",
+                                    e.target.value === "" ? "" : Number(e.target.value),
+                                  )
+                                }
                                 className="w-12 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                                 min="0"
                               />
                             </td>
                           )}
-                          
+
                           {/* Price */}
                           <td className="px-1 py-1.5">
                             <input
                               type="number"
-                              value={unit.price || ''}
-                              onChange={(e) => handleUnitChange(index, 'price', e.target.value === '' ? '' : Number(e.target.value))}
+                              value={unit.price || ""}
+                              onChange={(e) =>
+                                handleUnitChange(
+                                  index,
+                                  "price",
+                                  e.target.value === "" ? "" : Number(e.target.value),
+                                )
+                              }
                               className={`w-24 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500 ${
-                                isUnitFieldInvalid(unit, 'price') ? 'border-red-300 bg-red-50' : ''
+                                isUnitFieldInvalid(unit, "price") ? "border-red-300 bg-red-50" : ""
                               }`}
                               min="0"
                               required
                             />
                           </td>
-                          
+
                           {/* Status */}
                           <td className="px-3 py-2">
                             <select
                               value={unit.status}
-                              onChange={(e) => handleUnitChange(index, 'status', e.target.value)}
+                              onChange={(e) => handleUnitChange(index, "status", e.target.value)}
                               className="w-24 px-1 py-1 border rounded text-xs focus:ring-1 focus:ring-blue-500"
                             >
                               <option value="available">Available</option>
@@ -1396,7 +1542,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               <option value="sold">Sold</option>
                             </select>
                           </td>
-                          
+
                           {/* Delete Button */}
                           <td className="px-3 py-2">
                             <button
@@ -1404,9 +1550,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                               onClick={() => handleRemoveUnit(index)}
                               disabled={formData.units && formData.units.length <= 2}
                               className={`text-red-600 hover:text-red-800 disabled:text-gray-300 disabled:cursor-not-allowed ${
-                                formData.units && formData.units.length <= 2 ? 'opacity-50' : ''
+                                formData.units && formData.units.length <= 2 ? "opacity-50" : ""
                               }`}
-                              title={formData.units && formData.units.length <= 2 ? 'Minimum 2 units required' : 'Remove unit'}
+                              title={
+                                formData.units && formData.units.length <= 2
+                                  ? "Minimum 2 units required"
+                                  : "Remove unit"
+                              }
                             >
                               <Trash2 className="w-4 h-4" />
                             </button>
@@ -1418,67 +1568,70 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 </div>
 
                 {/* Validation Summary - only show after submission attempt */}
-                {showValidationErrors && !validSpecs && formData.units && formData.units.length >= 2 && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <p className="text-sm text-red-800 font-semibold mb-2">
-                      Please fix the following issues:
-                    </p>
-                    <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
-                      {formData.units.map((unit, idx) => {
-                        const errors: string[] = [];
-                        if (!unit.area || unit.area <= 0) errors.push('Area required');
-                        
-                        // House-specific errors
-                        if (ptype === 'house') {
-                          if (!unit.lot_size || unit.lot_size <= 0) 
-                            errors.push('Lot size required');
-                          if (!unit.total_floors || unit.total_floors <= 0) 
-                            errors.push('Floors required');
-                          if (unit.parking_spaces === undefined) 
-                            errors.push('Parking required');
-                        }
-                        
-                        // Apartment-specific errors
-                        if (ptype === 'apartment') {
-                          if (unit.floor_level === undefined || unit.floor_level === null) 
-                            errors.push('Floor level required');
-                        }
-                        
-                        // Shop-specific errors
-                        if (ptype === 'shop') {
-                          if (unit.floor_level === undefined || unit.floor_level === null) 
-                            errors.push('Floor level required');
-                          if (unit.bathrooms !== undefined && unit.bathrooms < 0)
-                            errors.push('Bathrooms cannot be negative');
-                        }
-                        
-                        // Office-specific errors
-                        if (ptype === 'office') {
-                          if (unit.floor_level === undefined || unit.floor_level === null) 
-                            errors.push('Floor level required');
-                          if (unit.bathrooms !== undefined && unit.bathrooms < 0)
-                            errors.push('Bathrooms cannot be negative');
-                        }
-                        
-                        // Bathrooms validation - property-type-specific
-                        if (['house', 'apartment'].includes(ptype)) {
-                          if (!unit.bathrooms || unit.bathrooms <= 0) errors.push('Bathrooms required');
-                        }
-                        
-                        if (!unit.price || unit.price <= 0) errors.push('Price required');
-                        
-                        if (errors.length > 0) {
-                          return (
-                            <li key={idx}>
-                              <strong>Unit {unit.unit_number}:</strong> {errors.join(', ')}
-                            </li>
-                          );
-                        }
-                        return null;
-                      })}
-                    </ul>
-                  </div>
-                )}
+                {showValidationErrors &&
+                  !validSpecs &&
+                  formData.units &&
+                  formData.units.length >= 2 && (
+                    <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                      <p className="text-sm text-red-800 font-semibold mb-2">
+                        Please fix the following issues:
+                      </p>
+                      <ul className="text-sm text-red-700 list-disc list-inside space-y-1">
+                        {formData.units.map((unit, idx) => {
+                          const errors: string[] = [];
+                          if (!unit.area || unit.area <= 0) errors.push("Area required");
+
+                          // House-specific errors
+                          if (ptype === "house") {
+                            if (!unit.lot_size || unit.lot_size <= 0)
+                              errors.push("Lot size required");
+                            if (!unit.total_floors || unit.total_floors <= 0)
+                              errors.push("Floors required");
+                            if (unit.parking_spaces === undefined) errors.push("Parking required");
+                          }
+
+                          // Apartment-specific errors
+                          if (ptype === "apartment") {
+                            if (unit.floor_level === undefined || unit.floor_level === null)
+                              errors.push("Floor level required");
+                          }
+
+                          // Shop-specific errors
+                          if (ptype === "shop") {
+                            if (unit.floor_level === undefined || unit.floor_level === null)
+                              errors.push("Floor level required");
+                            if (unit.bathrooms !== undefined && unit.bathrooms < 0)
+                              errors.push("Bathrooms cannot be negative");
+                          }
+
+                          // Office-specific errors
+                          if (ptype === "office") {
+                            if (unit.floor_level === undefined || unit.floor_level === null)
+                              errors.push("Floor level required");
+                            if (unit.bathrooms !== undefined && unit.bathrooms < 0)
+                              errors.push("Bathrooms cannot be negative");
+                          }
+
+                          // Bathrooms validation - property-type-specific
+                          if (["house", "apartment"].includes(ptype)) {
+                            if (!unit.bathrooms || unit.bathrooms <= 0)
+                              errors.push("Bathrooms required");
+                          }
+
+                          if (!unit.price || unit.price <= 0) errors.push("Price required");
+
+                          if (errors.length > 0) {
+                            return (
+                              <li key={idx}>
+                                <strong>Unit {unit.unit_number}:</strong> {errors.join(", ")}
+                              </li>
+                            );
+                          }
+                          return null;
+                        })}
+                      </ul>
+                    </div>
+                  )}
 
                 {/* Add Unit Button */}
                 <button
@@ -1487,8 +1640,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   disabled={formData.units && formData.units.length >= 100}
                   className={`w-full py-3 border-2 border-dashed rounded-lg transition-colors flex items-center justify-center space-x-2 ${
                     formData.units && formData.units.length >= 100
-                      ? 'border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed'
-                      : 'border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-600'
+                      ? "border-gray-300 bg-gray-50 text-gray-400 cursor-not-allowed"
+                      : "border-gray-300 hover:border-blue-500 hover:bg-blue-50 text-gray-600 hover:text-blue-600"
                   }`}
                 >
                   <Plus className="w-5 h-5" />
@@ -1501,7 +1654,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             ) : isMultiUnit && isEditing ? (
               <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                 <p className="text-sm text-yellow-800">
-                  ⚠️ Loading units... (has_units: {String(formData.has_units)}, units: {formData.units?.length || 0})
+                  ⚠️ Loading units... (has_units: {String(formData.has_units)}, units:{" "}
+                  {formData.units?.length || 0})
                 </p>
               </div>
             ) : null}
@@ -1553,7 +1707,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Lot Size */}
         {showField("lotSize") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Lot Area (m²)</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Lot Area (m²)
+            </label>
             <div className="relative">
               <Layers
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1574,7 +1730,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Bedrooms */}
         {showField("bedrooms") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Bedrooms</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Bedrooms
+            </label>
             <div className="relative">
               <Bed className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1592,7 +1750,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Bathrooms */}
         {showField("bathrooms") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Bathrooms</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Bathrooms
+            </label>
             <div className="relative">
               <Bath className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1610,7 +1770,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Floor */}
         {showField("floorLevel") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Floor</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Floor
+            </label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1627,7 +1789,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Total Floors */}
         {showField("totalFloors") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Total Floors</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Total Floors
+            </label>
             <div className="relative">
               <Hash className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" size={18} />
               <input
@@ -1645,7 +1809,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Parking */}
         {showField("parkingSpaces") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Parking Spaces</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Parking Spaces
+            </label>
             <div className="relative">
               <ParkingCircle
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1666,7 +1832,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Energy Rating */}
         {showField("energyRating") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Energy Rating</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Energy Rating
+            </label>
             <select
               name="energyRating"
               value={formData.energyRating || ""}
@@ -1686,7 +1854,9 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         {/* Year Built */}
         {showField("yearBuilt") && (
           <div>
-            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">Year Built</label>
+            <label className="block text-xs sm:text-sm font-semibold text-gray-700 mb-1">
+              Year Built
+            </label>
             <div className="relative">
               <Calendar
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
@@ -1706,9 +1876,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         )}
 
         {/* Amenities */}
-        {["house", "apartment", "hotel", "residential_building"].includes(
-          ptype,
-        ) &&
+        {["house", "apartment", "hotel", "residential_building"].includes(ptype) &&
           (showField("amenities") || (isEditing && formData.propertyType)) && (
             <div className="lg:col-span-2">
               <label className="block text-sm font-semibold text-gray-700 mb-3">
