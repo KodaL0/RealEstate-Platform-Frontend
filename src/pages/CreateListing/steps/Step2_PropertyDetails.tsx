@@ -273,6 +273,23 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     }
   }, [isEditing, hasLoadedPropertyData, isInitialLoad]);
 
+  // Store original units for change tracking when loaded by parent
+  useEffect(() => {
+    if (isEditing && formData.units && formData.units.length > 0 && originalUnitsRef.current.size === 0) {
+      const unitsMap = new Map<number, PropertyUnit>();
+      formData.units.forEach((unit) => {
+        if (unit.id) {
+          unitsMap.set(unit.id, { ...unit });
+        }
+      });
+      if (unitsMap.size > 0) {
+        originalUnitsRef.current = unitsMap;
+        console.log("📦 Step2: Stored original units from parent load:", unitsMap.size);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isEditing, formData.units?.length]); // Only re-run if units length changes, not the array reference
+
   // Initialize units when has_units is checked
   useEffect(() => {
     if (!isEditing && isMultiUnit && (!formData.units || formData.units.length === 0)) {
@@ -312,13 +329,20 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       // Clear units if unchecked
       setFormData(f => ({ ...f, units: [] }));
     }
-  }, [isMultiUnit]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isMultiUnit, isEditing]); // Intentionally omit formData.units and setFormData to avoid loops
 
   // Load property details when editing (only if not already loaded by parent)
   useEffect(() => {
-    if (!isEditing || !propertyId || !username || hasLoadedData || hasLoadedPropertyData) return;
+    if (!isEditing || !propertyId || !username || hasLoadedData || hasLoadedPropertyData) {
+      // Log why we're skipping
+      if (hasLoadedPropertyData) {
+        console.log("✅ Step2: Skipping data load - parent already loaded. has_units:", formData.has_units, "units count:", formData.units?.length || 0);
+      }
+      return;
+    }
 
-    console.log("🔄 Step2: Loading property data...");
+    console.log("🔄 Step2: Loading property data (parent didn't load)...");
     setHasLoadedData(true);
 
     api.properties
@@ -400,6 +424,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         };
 
         loadUnits().then((units) => {
+          console.log(`📦 Step2: Loaded ${units.length} units, has_units flag: ${d.has_units}`);
+          
           // Store original units for change tracking
           if (units && units.length > 0) {
             const unitsMap = new Map<number, PropertyUnit>();
@@ -412,43 +438,47 @@ const Step2_PropertyDetails: React.FC<Props> = ({
             console.log("📦 Stored original units for change tracking:", unitsMap.size);
           }
           
-          // Update form data with property details
-          setFormData((prev) => ({
-            ...prev,
-            title: d.title || "",
-            description: d.description || "",
-            price: d.price?.toString() || "",
-            location: d.location || "",
-            country: d.country || "Cyprus",
-            region: d.region || "",
-            city: d.city || "",
-            postal_code: d.postal_code || "",
-            street: d.street || "",
-            latitude: d.latitude?.toString() || "",
-            longitude: d.longitude?.toString() || "",
-            propertyType: d.property_type || "",
-            bedrooms: d.bedrooms?.toString() || "",
-            bathrooms: d.bathrooms?.toString() || "",
-            area: d.area?.toString() || "",
-            amenities: Array.isArray(d.amenities) ? d.amenities : [],
-            yearBuilt: d.year_built?.toString() || "",
-            parkingSpaces: d.parking_spaces?.toString() || "",
-            lotSize: d.lot_size?.toString() || "",
-            propertyStatus,
-            energyRating: d.energy_rating || "",
-            constructionMaterial: d.construction_material || "",
-            floorLevel: d.floor_level?.toString() || "",
-            totalFloors: d.total_floors?.toString() || "",
-            availableFrom: d.available_from || "",
-            contactPhone: phone,
-            contactEmail: d.contact_email || "",
-            virtualTourUrl: d.virtual_tour_url || "",
-            videoUrl: d.video_url || "",
-            images: [],
-            userType: (d.user_type as UserType) || prev.userType || ("owner_agent" as UserType),
-            has_units: d.has_units || false,
-            units: units,
-          }));
+          // Update form data with property details - ATOMIC UPDATE
+          setFormData((prev) => {
+            const newFormData = {
+              ...prev,
+              title: d.title || "",
+              description: d.description || "",
+              price: d.price?.toString() || "",
+              location: d.location || "",
+              country: d.country || "Cyprus",
+              region: d.region || "",
+              city: d.city || "",
+              postal_code: d.postal_code || "",
+              street: d.street || "",
+              latitude: d.latitude?.toString() || "",
+              longitude: d.longitude?.toString() || "",
+              propertyType: d.property_type || "",
+              bedrooms: d.bedrooms?.toString() || "",
+              bathrooms: d.bathrooms?.toString() || "",
+              area: d.area?.toString() || "",
+              amenities: Array.isArray(d.amenities) ? d.amenities : [],
+              yearBuilt: d.year_built?.toString() || "",
+              parkingSpaces: d.parking_spaces?.toString() || "",
+              lotSize: d.lot_size?.toString() || "",
+              propertyStatus,
+              energyRating: d.energy_rating || "",
+              constructionMaterial: d.construction_material || "",
+              floorLevel: d.floor_level?.toString() || "",
+              totalFloors: d.total_floors?.toString() || "",
+              availableFrom: d.available_from || "",
+              contactPhone: phone,
+              contactEmail: d.contact_email || "",
+              virtualTourUrl: d.virtual_tour_url || "",
+              videoUrl: d.video_url || "",
+              images: [],
+              userType: (d.user_type as UserType) || prev.userType || ("owner_agent" as UserType),
+              has_units: d.has_units || false,
+              units: units,
+            };
+            console.log("✅ Step2: Form data updated - has_units:", newFormData.has_units, "units:", newFormData.units?.length);
+            return newFormData;
+          });
         });
 
         // Call callback to let parent handle images and other data
@@ -559,7 +589,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
     const units = formData.units || [];
     const maxUnitNumber = Math.max(
       0,
-      ...units.map(u => Number(u.unit_number)).filter(n => !isNaN(n))
+      ...units.map(u => Number(u.unit_number)).filter(n => !Number.isNaN(n))
     );
 
     const nextNumber = String(maxUnitNumber + 1);
@@ -997,6 +1027,7 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                 type="checkbox"
                 id="has_units"
                 checked={isMultiUnit}
+                disabled={isEditing && formData.units && formData.units.length > 0}
                 onChange={(e) => {
                   const checked = e.target.checked;
                   setFormData(f => ({
@@ -1016,10 +1047,34 @@ const Step2_PropertyDetails: React.FC<Props> = ({
               />
               <label htmlFor="has_units" className="font-semibold text-lg cursor-pointer text-gray-800">
                 This property has multiple units
+                {isEditing && formData.units && formData.units.length > 0 && (
+                  <span className="ml-2 text-sm font-normal text-gray-600">
+                    ({formData.units.length} units)
+                  </span>
+                )}
               </label>
             </div>
+            
+            {isEditing && formData.units && formData.units.length > 0 && (
+              <p className="text-xs text-gray-600 mb-3">
+                ℹ️ This property has existing units. The checkbox cannot be unchecked while units exist.
+              </p>
+            )}
 
-            {isMultiUnit && formData.units && formData.units.length > 0 && (
+            {/* Debug logging for table visibility */}
+            {isEditing && formData.has_units && (
+              <>
+                {console.log("🔍 Table render check:", {
+                  isMultiUnit,
+                  has_units: formData.has_units,
+                  unitsExists: !!formData.units,
+                  unitsLength: formData.units?.length || 0,
+                  willRender: isMultiUnit && formData.units && formData.units.length > 0
+                })}
+              </>
+            )}
+
+            {isMultiUnit && formData.units && formData.units.length > 0 ? (
               <div className="space-y-3">
                 <p className="text-xs sm:text-sm text-gray-700 mb-2">
                   <strong>Multi-unit property:</strong> Specify details for each unit below.
@@ -1443,7 +1498,13 @@ const Step2_PropertyDetails: React.FC<Props> = ({
                   )}
                 </button>
               </div>
-            )}
+            ) : isMultiUnit && isEditing ? (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                <p className="text-sm text-yellow-800">
+                  ⚠️ Loading units... (has_units: {String(formData.has_units)}, units: {formData.units?.length || 0})
+                </p>
+              </div>
+            ) : null}
           </div>
         )}
 

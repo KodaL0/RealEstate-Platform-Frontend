@@ -514,7 +514,26 @@ const CreateListing: React.FC = () => {
       }
       setCountryCode(cc);
 
-      // Update form data with property details
+      // Load units separately if property has units
+      const loadUnits = async () => {
+        if (d.has_units) {
+          try {
+            const unitsRes = await api.propertyUnits.list(Number(id));
+            const unitsData = ((unitsRes.data as any)?.results ?? unitsRes.data) as PropertyUnit[];
+            const arr = Array.isArray(unitsData) ? unitsData : [];
+            console.log("✅ Loaded units in parent:", arr.length);
+            return arr;
+          } catch (err) {
+            console.warn("Failed to load units in parent:", err);
+            return [];
+          }
+        }
+        return [];
+      };
+
+      const units = await loadUnits();
+
+      // Update form data with property details INCLUDING units
       setFormData((prev) => ({
         ...prev,
         title: d.title || "",
@@ -548,6 +567,8 @@ const CreateListing: React.FC = () => {
         videoUrl: d.video_url || "",
         images: [],
         userType: (d.user_type as UserType) || prev.userType || ("owner" as UserType),
+        has_units: d.has_units || false,
+        units: units,
       }));
 
       // Handle images
