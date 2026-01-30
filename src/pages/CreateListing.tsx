@@ -679,7 +679,39 @@ const CreateListing: React.FC = () => {
           throw new Error("Property ID not found in response");
         }
 
-        // Phase 2: If we uploaded new images in edit mode, reorder all images to match UI order
+        // Phase 2: Create units for new multi-unit properties
+        if (!isEditing && formData.has_units && formData.units && formData.units.length > 0) {
+          try {
+            console.log(`📝 Creating ${formData.units.length} units for new property ${propertyId}`);
+            
+            await Promise.all(
+              formData.units.map((unit) =>
+                api.propertyUnits.create({
+                  property: propertyId,
+                  unit_number: unit.unit_number,
+                  unit_name: unit.unit_name,
+                  area: unit.area || 0,
+                  bedrooms: unit.bedrooms || 0,
+                  bathrooms: unit.bathrooms || 0,
+                  floor_level: unit.floor_level || 0,
+                  lot_size: unit.lot_size || 0,
+                  total_floors: unit.total_floors || 0,
+                  parking_spaces: unit.parking_spaces || 0,
+                  price: unit.price || 0,
+                  status: unit.status || "available",
+                  is_published: unit.is_published ?? true,
+                })
+              )
+            );
+            
+            console.log(`✅ Successfully created ${formData.units.length} units`);
+          } catch (unitError: unknown) {
+            console.error("Failed to create units:", unitError);
+            toast.error("Property created but units failed to save. Please edit the property to add units.");
+          }
+        }
+
+        // Phase 3: If we uploaded new images in edit mode, reorder all images to match UI order
         if (isEditing && formData.images.length > 0) {
           try {
             // Fetch updated property to get new image IDs
