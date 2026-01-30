@@ -169,6 +169,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 
 
 }) => {
+  // Track original units to detect changes
+  const originalUnitsRef = React.useRef<Map<number, PropertyUnit>>(new Map());
 
   // ⭐ NORMALIZE SINGLE-PROPERTY FIELDS IN MULTI-UNIT MODE
   const normalizeMultiUnitFields = (form: ListingForm): ListingForm => {
@@ -398,6 +400,18 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         };
 
         loadUnits().then((units) => {
+          // Store original units for change tracking
+          if (units && units.length > 0) {
+            const unitsMap = new Map<number, PropertyUnit>();
+            units.forEach((unit) => {
+              if (unit.id) {
+                unitsMap.set(unit.id, { ...unit });
+              }
+            });
+            originalUnitsRef.current = unitsMap;
+            console.log("📦 Stored original units for change tracking:", unitsMap.size);
+          }
+          
           // Update form data with property details
           setFormData((prev) => ({
             ...prev,
@@ -593,10 +607,38 @@ const Step2_PropertyDetails: React.FC<Props> = ({
   };
   
 
+  // Helper to check if a unit has been modified
+  const isUnitModified = (unit: PropertyUnit): boolean => {
+    if (!unit.id || !originalUnitsRef.current.has(unit.id)) {
+      return true; // New unit or not tracked
+    }
+
+    const original = originalUnitsRef.current.get(unit.id)!;
+    
+    // Compare relevant fields
+    const fieldsToCompare: (keyof PropertyUnit)[] = [
+      'unit_number', 'unit_name', 'bedrooms', 'bathrooms', 'area',
+      'lot_size', 'total_floors', 'parking_spaces', 'floor_level',
+      'price', 'status', 'is_published'
+    ];
+
+    return fieldsToCompare.some(field => {
+      const currentValue = unit[field];
+      const originalValue = original[field];
+      
+      // Normalize numbers for comparison
+      if (typeof currentValue === 'number' || typeof originalValue === 'number') {
+        return Number(currentValue || 0) !== Number(originalValue || 0);
+      }
+      
+      return currentValue !== originalValue;
+    });
+  };
+
   const saveUnits = async () => {
     const units = formData.units || [];
 
-    // EDIT MODE → PATCH WHAT WE CAN, IGNORE THE REST
+    // EDIT MODE → ONLY UPDATE MODIFIED UNITS
     if (isEditing) {
       const patchable = units.filter(u => typeof u.id === "number");
 
@@ -605,25 +647,42 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         return;
       }
 
-      await Promise.all(
-        patchable.map(unit =>
-          api.propertyUnits.update(unit.id!, {
-            property: Number(propertyId),  // Required for PUT requests
-            unit_number: unit.unit_number,  // Required for PUT requests
-            unit_name: unit.unit_name,
-            bedrooms: Number(unit.bedrooms),
-            bathrooms: Number(unit.bathrooms),
-            area: Number(unit.area),
-            lot_size: Number(unit.lot_size),
-            total_floors: Number(unit.total_floors),
-            parking_spaces: Number(unit.parking_spaces),
-            floor_level: Number(unit.floor_level),
-            price: Number(unit.price),   // ✅ THIS WILL NOW UPDATE
-            status: unit.status,
-            is_published: unit.is_published,
-          })
-        )
+      // Filter to only modified units
+      const modifiedUnits = patchable.filter(isUnitModified);
+
+      if (modifiedUnits.length === 0) {
+        console.log("✅ No units were modified, skipping update");
+        return;
+      }
+
+      console.log(`📝 Updating ${modifiedUnits.length} of ${patchable.length} units`);
+
+      // Update only modified units with non-blocking error handling
+      const updatePromises = modifiedUnits.map(unit =>
+        api.propertyUnits.update(unit.id!, {
+          property: Number(propertyId),  // Required for PUT requests
+          unit_number: unit.unit_number,  // Required for PUT requests
+          unit_name: unit.unit_name,
+          bedrooms: Number(unit.bedrooms),
+          bathrooms: Number(unit.bathrooms),
+          area: Number(unit.area),
+          lot_size: Number(unit.lot_size),
+          total_floors: Number(unit.total_floors),
+          parking_spaces: Number(unit.parking_spaces),
+          floor_level: Number(unit.floor_level),
+          price: Number(unit.price),
+          status: unit.status,
+          is_published: unit.is_published,
+        }).then(() => {
+          console.log(`✅ Updated unit ${unit.id}`);
+        }).catch((error) => {
+          console.error(`Unit save error (non-blocking):`, error);
+          // Non-blocking - continue with other updates
+        })
       );
+
+      await Promise.allSettled(updatePromises);
+      console.log("✅ Unit updates complete");
 
       return;
     }
