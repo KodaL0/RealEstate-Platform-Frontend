@@ -787,7 +787,14 @@ const CreateListing: React.FC = () => {
         }
 
         // Clear saved form data on successful submission
-        // The wizard context will handle mode-specific cleanup
+        if (!isEditing) {
+          // Clear all create mode localStorage before navigating
+          localStorage.removeItem("createListing_formData");
+          localStorage.removeItem("createListing_locationCoords");
+          localStorage.removeItem("createListing_countryCode");
+          localStorage.removeItem("createListing_availableFromDate");
+          localStorage.removeItem("createListing_currentStep");
+        }
         toast.success(isEditing ? "Listing updated!" : "Listing created!");
         navigate("/my-profile");
       } else {
