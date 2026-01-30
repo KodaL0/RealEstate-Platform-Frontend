@@ -468,10 +468,11 @@ const CreateListing: React.FC = () => {
       const loadUnits = async () => {
         if (d.has_units) {
           try {
-            const unitsRes = await api.propertyUnits.list(Number(id));
+            // Include unpublished units when editing (owner view)
+            const unitsRes = await api.propertyUnits.list(Number(id), true);
             const unitsData = ((unitsRes.data as any)?.results ?? unitsRes.data) as PropertyUnit[];
             const arr = Array.isArray(unitsData) ? unitsData : [];
-            console.log("✅ Loaded units in parent:", arr.length);
+            console.log("✅ Loaded units in parent:", arr.length, "(including unpublished)");
             return arr;
           } catch (err) {
             console.warn("Failed to load units in parent:", err);

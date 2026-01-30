@@ -445,13 +445,14 @@ const Step2_PropertyDetails: React.FC<Props> = ({
         const loadUnits = async () => {
           if (d.has_units && (!d.units || d.units.length === 0)) {
             try {
-              const unitsRes = await api.propertyUnits.list(Number(propertyId));
+              // Include unpublished units when editing (owner view)
+              const unitsRes = await api.propertyUnits.list(Number(propertyId), true);
               const unitsData = ((unitsRes.data as any)?.results ??
                 unitsRes.data) as PropertyUnit[];
 
               const arr = Array.isArray(unitsData) ? unitsData : [];
               console.log(
-                "Loaded units (id check):",
+                "Loaded units (id check, including unpublished):",
                 arr.map((u) => ({ id: (u as any).id, unit_number: u.unit_number })),
               );
               return arr;

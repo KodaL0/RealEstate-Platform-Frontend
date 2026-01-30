@@ -336,10 +336,16 @@ const api = {
   },
 
   propertyUnits: {
-    list: (propertyId?: number) => {
-      const url = propertyId
+    list: (propertyId?: number, includeUnpublished = false) => {
+      let url = propertyId
         ? `properties/property-units/?property=${propertyId}`
         : `properties/property-units/`;
+      
+      // Add parameter to include unpublished units (for owner/editing view)
+      if (includeUnpublished) {
+        url += propertyId ? '&include_unpublished=true' : '?include_unpublished=true';
+      }
+      
       return apiGet(url);
     },
     get: (id: number) => apiGet(`properties/property-units/${id}/`),
