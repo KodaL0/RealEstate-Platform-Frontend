@@ -608,6 +608,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
       await Promise.all(
         patchable.map(unit =>
           api.propertyUnits.update(unit.id!, {
+            property: Number(propertyId),  // Required for PUT requests
+            unit_number: unit.unit_number,  // Required for PUT requests
             unit_name: unit.unit_name,
             bedrooms: Number(unit.bedrooms),
             bathrooms: Number(unit.bathrooms),
