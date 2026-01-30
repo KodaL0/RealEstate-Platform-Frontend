@@ -164,6 +164,17 @@ function MyListings() {
     setAnalyticsPropertyId(Number(id));
   };
 
+  const handleCreateNewListing = () => {
+    // Clear all create listing cache to ensure a fresh form
+    localStorage.removeItem("createListing_formData");
+    localStorage.removeItem("createListing_locationCoords");
+    localStorage.removeItem("createListing_countryCode");
+    localStorage.removeItem("createListing_availableFromDate");
+    localStorage.removeItem("createListing_currentStep");
+    
+    navigate("/create-listing");
+  };
+
   /* early states */
   if (userLoading || loading)
     return (
@@ -207,7 +218,7 @@ function MyListings() {
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900">My Listings</h1>
           <button
-            onClick={() => navigate("/create-listing")}
+            onClick={handleCreateNewListing}
             className="bg-blue-600 hover:bg-blue-700 text-white p-3 rounded-full"
           >
             <Plus className="h-8 w-8" />
@@ -221,7 +232,7 @@ function MyListings() {
             <h2 className="text-2xl font-bold text-gray-900 mb-3">No Properties Listed Yet</h2>
             <p className="text-gray-600 mb-8">Get started by creating your first listing.</p>
             <button
-              onClick={() => navigate("/create-listing")}
+              onClick={handleCreateNewListing}
               className="inline-flex items-center px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-md"
             >
               <Plus className="w-5 h-5 mr-2" />

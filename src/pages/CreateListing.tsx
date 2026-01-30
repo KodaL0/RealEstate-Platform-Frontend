@@ -191,19 +191,11 @@ const CreateListing: React.FC = () => {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // Initialize form data from localStorage or default
+  // Initialize form data - always use fresh DEFAULT_FORM_STATE for create mode
+  // localStorage caching has been removed to ensure users always get a clean form
   const [formData, setFormData] = useState<ListingForm>(() => {
-    if (isEditing) return DEFAULT_FORM_STATE;
-    const saved = localStorage.getItem("createListing_formData");
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        return { ...DEFAULT_FORM_STATE, ...parsed };
-      } catch (e) {
-        console.warn("Failed to parse saved form data:", e);
-        return DEFAULT_FORM_STATE;
-      }
-    }
+    // Always start with default state for both create and edit mode
+    // Edit mode will load data via API in useEffect below
     return DEFAULT_FORM_STATE;
   });
 
@@ -218,79 +210,27 @@ const CreateListing: React.FC = () => {
   // Document state
   const [documents, setDocuments] = useState<any[]>([]);
   const [existingDocuments, setExistingDocuments] = useState<any[]>([]);
-  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(() => {
-    if (isEditing) return null;
-    const saved = localStorage.getItem("createListing_locationCoords");
-    if (saved) {
-      try {
-        return JSON.parse(saved);
-      } catch (e) {
-        console.warn("Failed to parse saved location coords:", e);
-        return null;
-      }
-    }
-    return null;
-  });
+  
+  // Location coords - always start fresh, no localStorage caching
+  const [locationCoords, setLocationCoords] = useState<{ lat: number; lng: number } | null>(null);
 
   // Data loading state
   const [hasLoadedPropertyData, setHasLoadedPropertyData] = useState(false);
 
-  const [countryCode, setCountryCode] = useState(() => {
-    if (isEditing) return COUNTRY_CODES[0].code;
-    const saved = localStorage.getItem("createListing_countryCode");
-    return saved || COUNTRY_CODES[0].code;
-  });
+  // Country code - always start with default, no localStorage caching
+  const [countryCode, setCountryCode] = useState(COUNTRY_CODES[0].code);
 
   const [previewImages, setPreviewImages] = useState<string[]>([]);
   const [primaryIndex, setPrimaryIndex] = useState(0);
   const [existingImageIds, setExistingImageIds] = useState<string[]>([]);
 
-  // Step 2 date picker states
-  const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(() => {
-    if (isEditing) return undefined;
-    const saved = localStorage.getItem("createListing_availableFromDate");
-    if (saved) {
-      try {
-        return new Date(saved);
-      } catch (e) {
-        console.warn("Failed to parse saved date:", e);
-        return undefined;
-      }
-    }
-    return undefined;
-  });
+  // Step 2 date picker states - always start fresh, no localStorage caching
+  const [availableFromDate, setAvailableFromDate] = useState<Date | undefined>(undefined);
   const [showCalendar, setShowCalendar] = useState(false);
 
-  // Save form data to localStorage whenever it changes
-  useEffect(() => {
-    if (!isEditing) {
-      localStorage.setItem("createListing_formData", JSON.stringify(formData));
-    }
-  }, [formData, isEditing]);
-
-  // Save location coords to localStorage whenever it changes
-  useEffect(() => {
-    if (!isEditing) {
-      localStorage.setItem("createListing_locationCoords", JSON.stringify(locationCoords));
-    }
-  }, [locationCoords, isEditing]);
-
-  // Save country code to localStorage whenever it changes
-  useEffect(() => {
-    if (!isEditing) {
-      localStorage.setItem("createListing_countryCode", countryCode);
-    }
-  }, [countryCode, isEditing]);
-
-  // Save available from date to localStorage whenever it changes
-  useEffect(() => {
-    if (!isEditing) {
-      localStorage.setItem(
-        "createListing_availableFromDate",
-        availableFromDate?.toISOString() || "",
-      );
-    }
-  }, [availableFromDate, isEditing]);
+  // Note: localStorage caching has been removed to ensure users always get a fresh form
+  // Previously, form data, location coords, country code, and available from date were cached
+  // This caused issues where users would see old data when creating new listings
 
   const handleInputChange = (e: React.ChangeEvent<any>) => {
     const { name, value } = e.target;

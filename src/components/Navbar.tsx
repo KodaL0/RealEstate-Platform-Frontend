@@ -80,8 +80,15 @@ const Navbar: React.FC = () => {
   };
 
   const handleCreateListing = () => {
-  setIsSidebarOpen(false);
-  navigate("/create-listing");
+    // Clear all create listing cache to ensure a fresh form
+    localStorage.removeItem("createListing_formData");
+    localStorage.removeItem("createListing_locationCoords");
+    localStorage.removeItem("createListing_countryCode");
+    localStorage.removeItem("createListing_availableFromDate");
+    localStorage.removeItem("createListing_currentStep");
+    
+    setIsSidebarOpen(false);
+    navigate("/create-listing");
   };
 
 
