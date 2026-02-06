@@ -198,6 +198,12 @@ const CreateListing: React.FC = () => {
     // Edit mode will load data via API in useEffect below
     return DEFAULT_FORM_STATE;
   });
+  // ---- MULTI-UNIT DERIVED STATE (single source of truth) ----
+  const units: PropertyUnit[] = formData.units ?? [];
+
+  const isMultiUnitSubmit: boolean =
+    formData.has_units === true || units.length > 0;
+
 
   // Ensure userType has a safe default for the 5-step wizard
   useEffect(() => {
@@ -330,7 +336,7 @@ const CreateListing: React.FC = () => {
       const unitLevelFields = ["price", "bedrooms", "bathrooms", "area"];
       if (
         unitLevelFields.includes(k) &&
-        formData.has_units &&
+        isMultiUnitSubmit &&
         (v === "" || v === undefined || v === null)
       ) {
         fd.append(k, "0");
@@ -343,7 +349,7 @@ const CreateListing: React.FC = () => {
     });
 
     // Add has_units flag
-    if (formData.has_units) {
+    if (isMultiUnitSubmit) {
       fd.append("has_units", "true");
     }
   }
@@ -399,6 +405,7 @@ const CreateListing: React.FC = () => {
       const d = res.data as {
         owner?: { username?: string };
         property_status?: string;
+        has_units?: boolean;
         contact_phone?: string;
         title?: string;
         description?: string;
@@ -680,12 +687,12 @@ const CreateListing: React.FC = () => {
         }
 
         // Phase 2: Create units for new multi-unit properties
-        if (!isEditing && formData.has_units && formData.units && formData.units.length > 0) {
+        if (!isEditing && isMultiUnitSubmit && units.length > 0) {
           try {
-            console.log(`📝 Creating ${formData.units.length} units for new property ${propertyId}`);
+            console.log(`📝 Creating ${units.length} units for new property ${propertyId}`);
             
             await Promise.all(
-              formData.units.map((unit) =>
+              units.map((unit) =>
                 api.propertyUnits.create({
                   property: propertyId,
                   unit_number: unit.unit_number,
@@ -704,7 +711,7 @@ const CreateListing: React.FC = () => {
               )
             );
             
-            console.log(`✅ Successfully created ${formData.units.length} units`);
+            console.log(`✅ Successfully created ${units.length} units`);
           } catch (unitError: unknown) {
             console.error("Failed to create units:", unitError);
             toast.error("Property created but units failed to save. Please edit the property to add units.");

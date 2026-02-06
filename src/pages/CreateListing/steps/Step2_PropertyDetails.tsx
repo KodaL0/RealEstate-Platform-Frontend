@@ -199,7 +199,8 @@ const Step2_PropertyDetails: React.FC<Props> = ({
 // Multi-unit state (single source of truth)
   const unitsCount = formData.units?.length ?? 0;
   const isMultiUnit = formData.has_units === true || unitsCount > 0;
-  const canHaveUnits = ptype && ["house", "apartment", "office", "shop"].includes(ptype);
+  const canHaveUnits = ptype && ["house", "apartment", "office", "shop", "residential_building"].includes(ptype);
+
 
 
   const show = useMemo(() => new Set(FIELD_MATRIX[ptype] ?? []), [ptype]);
