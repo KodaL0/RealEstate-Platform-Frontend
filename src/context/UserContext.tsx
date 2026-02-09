@@ -78,8 +78,12 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const syncLocalConsentToBackend = useCallback(async (userId: number) => {
     try {
       // Check if user has local consents stored (from cookie banner)
-      const localConsents = localStorage.getItem("propertpro-cookie-preferences");
-      if (!localConsents) return;
+      // Use the same key as ConsentManager.ts: "propertpro_gdpr_consents"
+      const localConsents = localStorage.getItem("propertpro_gdpr_consents");
+      if (!localConsents) {
+        console.log("[UserContext] No local consents found to sync");
+        return;
+      }
 
       const consents = JSON.parse(localConsents);
       console.log("[UserContext] Syncing local consents to backend for user", userId, consents);
