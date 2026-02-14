@@ -545,6 +545,24 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           sort_by: sortOption,
           results_count: count,
         });
+        analytics.trackSearchToBackend({
+          search_term: undefined,
+          property_type: filters.propertyType !== "Any" ? filters.propertyType : undefined,
+          min_price: filters.minPrice ? Number(filters.minPrice) : undefined,
+          max_price: filters.maxPrice ? Number(filters.maxPrice) : undefined,
+          bedrooms:
+            filters.bedrooms && filters.bedrooms !== "Any"
+              ? Number(filters.bedrooms.replace("+", ""))
+              : undefined,
+          bathrooms:
+            filters.bathrooms && filters.bathrooms !== "Any"
+              ? Number(filters.bathrooms.replace("+", ""))
+              : undefined,
+          location: filters.location,
+          property_status: listingType,
+          sort_by: sortOption,
+          results_count: count,
+        });
       } catch (err) {
         console.error(`Error fetching ${listingType.toUpperCase()} properties:`, err);
         setError("Failed to fetch properties. Please try again.");

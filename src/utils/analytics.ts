@@ -41,6 +41,26 @@ const canTrack = (): boolean => {
   return true;
 };
 
+/** Check if backend tracking is allowed (consent only - no GA dependency) */
+const canTrackBackend = (): boolean => consentManager.isAnalyticsEnabled();
+
+/**
+ * Send event to backend analytics (UserEvent). Non-blocking, fails silently.
+ */
+async function trackToBackend(payload: {
+  event_type: string;
+  property_id?: number;
+  project_id?: number;
+  metadata?: Record<string, unknown>;
+}): Promise<void> {
+  if (!canTrackBackend()) return;
+  try {
+    await api.post("/analytics/events/", payload);
+  } catch (error) {
+    console.warn("Failed to track to backend:", error);
+  }
+}
+
 // ============================================================================
 // PROPERTY EVENTS
 // ============================================================================
@@ -56,6 +76,8 @@ export interface PropertyViewParams {
   property_status: string;
   owner_username?: string;
   is_featured?: boolean;
+  source?: string;
+  project_id?: string;
 }
 
 export const trackPropertyView = (params: PropertyViewParams) => {
@@ -91,6 +113,18 @@ export const trackPropertyView = (params: PropertyViewParams) => {
     area: params.area,
     is_featured: params.is_featured,
   });
+
+  // Backend: UserEvent for funnel, retention, listing performance
+  const payload: Parameters<typeof trackToBackend>[0] = {
+    event_type: "property_view",
+    metadata: { source: params.source || "direct" },
+  };
+  if (params.project_id) {
+    payload.project_id = parseInt(params.project_id, 10);
+  } else {
+    payload.property_id = parseInt(params.property_id, 10);
+  }
+  trackToBackend(payload);
 };
 
 export const trackPropertyImageView = (
@@ -144,6 +178,7 @@ export const trackPropertyFavorite = (
   propertyId: string,
   action: "add" | "remove",
   propertyType?: string,
+  itemType?: "property" | "project",
 ) => {
   if (!canTrack()) return;
 
@@ -154,6 +189,20 @@ export const trackPropertyFavorite = (
     property_type: propertyType,
     event_category: "engagement",
   });
+
+  // Backend: UserEvent for funnel, engagement
+  const eventType = action === "add" ? "property_favorite" : "property_unfavorite";
+  const numericId = parseInt(String(propertyId), 10);
+  const payload: Parameters<typeof trackToBackend>[0] = {
+    event_type: eventType,
+    metadata: { action },
+  };
+  if (itemType === "project") {
+    payload.project_id = numericId;
+  } else {
+    payload.property_id = numericId;
+  }
+  trackToBackend(payload);
 };
 
 export const trackDocumentView = (
@@ -212,6 +261,28 @@ export const trackPropertySearch = (params: SearchParams) => {
     property_status: params.property_status,
     sort_by: params.sort_by,
     results_count: params.results_count,
+  });
+};
+
+/**
+ * Send search_performed to backend for funnel and discovery metrics.
+ */
+export const trackSearchToBackend = (params: SearchParams) => {
+  if (!canTrackBackend()) return;
+  trackToBackend({
+    event_type: "search_performed",
+    metadata: {
+      search_term: params.search_term,
+      property_type: params.property_type,
+      min_price: params.min_price,
+      max_price: params.max_price,
+      bedrooms: params.bedrooms,
+      bathrooms: params.bathrooms,
+      location: params.location,
+      property_status: params.property_status,
+      sort_by: params.sort_by,
+      results_count: params.results_count,
+    },
   });
 };
 
@@ -505,6 +576,7 @@ const analytics = {
 
   // Search events
   trackPropertySearch,
+  trackSearchToBackend,
   trackFilterChange,
   trackSortChange,
 

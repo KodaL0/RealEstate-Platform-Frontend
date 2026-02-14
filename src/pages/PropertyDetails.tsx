@@ -9,7 +9,7 @@ import {
   X,
 } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams, useSearchParams } from "react-router-dom";
 import ChatButton from "../components/ChatButton";
 import FavouriteButton from "../components/FavouriteButton";
 import { geocodePropertyLocation } from "../components/geocode";
@@ -113,7 +113,7 @@ const PropertyDetails: React.FC = () => {
     country?: string;
     locationSlug?: string;
   }>();
-
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const propertyId = id || (locationSlug ? locationSlug.split("-").pop() : null);
   const numericId = propertyId ? Number(propertyId) : 0;
@@ -191,6 +191,7 @@ const PropertyDetails: React.FC = () => {
           area: mapped.area,
           property_status: mapped.property_status,
           owner_username: mapped.owner?.username,
+          source: searchParams.get("source") || undefined,
         });
 
         if (mapped.latitude != null && mapped.longitude != null) {

@@ -87,11 +87,11 @@ const FavouriteButton: React.FC<FavouriteButtonProps> = ({
         // Call appropriate callback based on the action
         if (previousLikedState === false && actualLikedState === true) {
           // Item was liked
-          analytics.trackPropertyFavorite(String(numericItemId), "add");
+          analytics.trackPropertyFavorite(String(numericItemId), "add", undefined, effectiveItemType);
           onLikeSuccess?.(numericItemId);
         } else if (previousLikedState === true && actualLikedState === false) {
           // Item was unliked
-          analytics.trackPropertyFavorite(String(numericItemId), "remove");
+          analytics.trackPropertyFavorite(String(numericItemId), "remove", undefined, effectiveItemType);
           onUnlikeSuccess?.(numericItemId);
         }
       } catch (error) {
