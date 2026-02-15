@@ -87,15 +87,12 @@ function AppContent() {
       return;
     }
 
-    // User has loaded (or confirmed no user)
-    setIsInitializing(false);
-
     // Decision tree: which modal to show?
     if (user) {
-      // LOGGED IN USER
-      // - Don't show consent banner (legitimate interest applies)
-      // - Check if legal docs need acceptance
-      console.log("[App] User is logged in, checking legal document acceptance status");
+      // LOGGED IN USER - consent stored in user record, no session sync needed
+      setIsInitializing(false);
+      setShowConsentBanner(false);
+      setShowDocumentsModal(false);
 
       if (needsAcceptance && acceptanceStatus) {
         const hasRequiredDocs = (acceptanceStatus.needs_acceptance_required?.length || 0) > 0;
@@ -106,32 +103,26 @@ function AppContent() {
             required: acceptanceStatus.needs_acceptance_required,
             optional: acceptanceStatus.needs_acceptance_optional,
           });
-          setShowConsentBanner(false);
           setShowDocumentsModal(true);
           return;
         }
       }
 
-      // User is logged in and has accepted all docs
       console.log("[App] User is logged in and has accepted all documents");
-      setShowConsentBanner(false);
-      setShowDocumentsModal(false);
-      consentManager.initializeOnLoad();
+      void consentManager.initializeOnLoad();
     } else {
       // ANONYMOUS USER
-      // - Show consent banner if needed
-      // - Never show legal docs modal
-      console.log("[App] Anonymous user, checking consent status");
       const needsConsent = !consentManager.hasConsent();
       setShowConsentBanner(needsConsent);
       setShowDocumentsModal(false);
 
       if (!needsConsent) {
-        console.log("[App] Anonymous user has already given consent");
-        consentManager.initializeOnLoad();
-      } else {
-        console.log("[App] Anonymous user needs to give consent");
+        console.log("[App] Anonymous user has already given consent - syncing to backend before showing app");
+        // CRITICAL: Await sync so backend session has consent before any events fire.
+        // Without this, returning anonymous users' events were dropped (race condition).
+        await consentManager.initializeOnLoad();
       }
+      setIsInitializing(false);
     }
   }, [isLoading, user, needsAcceptance, acceptanceStatus]);
 

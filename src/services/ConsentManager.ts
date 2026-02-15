@@ -263,16 +263,20 @@ class ConsentManager {
   /**
    * Initialize analytics on page load if consent already given
    * Call this once when app starts
+   * Returns a Promise that resolves when session sync is complete (important for anonymous users)
    */
-  initializeOnLoad(): void {
+  async initializeOnLoad(): Promise<void> {
     if (this.hasConsent()) {
       const consents = this.getConsents();
       this.updateAnalyticsState(consents);
 
-      // Sync anonymous consent to backend (non-blocking)
-      this.syncAnonymousConsent().catch((error) => {
+      // Sync anonymous consent to backend session - MUST await so backend has consent
+      // before any events are sent (fixes race where events were dropped for returning anon users)
+      try {
+        await this.syncAnonymousConsent();
+      } catch (error) {
         console.warn("Failed to sync anonymous consent on load:", error);
-      });
+      }
     }
   }
 
