@@ -732,7 +732,7 @@ const PropertyDetails: React.FC = () => {
           </div>
         </section>
 
-        <PropertyDocuments documents={property.documents || []} />
+        <PropertyDocuments documents={property.documents || []} propertyId={String(property.id)} />
 
         {property.amenities && property.amenities.length > 0 && (
           <PropertyAmenities amenities={property.amenities} />

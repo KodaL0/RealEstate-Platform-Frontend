@@ -269,6 +269,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         ...newFilters,
         amenities: [...(newFilters.amenities || [])],
       });
+      analytics.trackFiltersApplied(newFilters);
     }, 500);
   }, []);
 
@@ -926,13 +927,20 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                     onClick={() => {
                       try {
                         if (navigator.sendBeacon) {
-                          const data = JSON.stringify({
-                            property_id: item.id,
+                          const isProject = item._type === "project";
+                          const payload = {
                             position: index + 1,
                             item_type: item._type || "property",
                             search_event_id: searchEventId,
+                          };
+                          if (isProject) {
+                            (payload as Record<string, unknown>).project_id = item.id;
+                          } else {
+                            (payload as Record<string, unknown>).property_id = item.id;
+                          }
+                          const blob = new Blob([JSON.stringify(payload)], {
+                            type: "application/json",
                           });
-                          const blob = new Blob([data], { type: "application/json" });
                           navigator.sendBeacon("/api/analytics/search/click/", blob);
                         }
                       } catch (err) {

@@ -1,5 +1,6 @@
 import { File, FileText, FileType2, Image, Sheet } from "lucide-react";
 import type React from "react";
+import analytics from "../../utils/analytics";
 
 interface PropertyDocument {
   id: number;
@@ -88,10 +89,24 @@ const DocumentCard: React.FC<{ doc: PropertyDocument; onClick: () => void }> = (
   );
 };
 
-const PropertyDocuments: React.FC<PropertyDocumentsProps> = ({ documents }) => {
+interface PropertyDocumentsWithPropertyIdProps extends PropertyDocumentsProps {
+  propertyId?: string;
+}
+
+const PropertyDocuments: React.FC<PropertyDocumentsWithPropertyIdProps> = ({
+  documents,
+  propertyId,
+}) => {
   if (!documents || documents.length === 0) return null;
 
   const handleDownload = (doc: PropertyDocument) => {
+    if (propertyId) {
+      analytics.trackDocumentView(
+        propertyId,
+        doc.document_type || "other",
+        doc.title || "Document",
+      );
+    }
     window.open(doc.document, "_blank");
   };
 

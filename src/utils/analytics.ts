@@ -218,6 +218,14 @@ export const trackDocumentView = (
     document_name: documentName,
     event_category: "engagement",
   });
+
+  if (canTrackBackend()) {
+    trackToBackend({
+      event_type: "property_document_view",
+      property_id: parseInt(propertyId, 10),
+      metadata: { document_type: documentType, document_name: documentName },
+    });
+  }
 };
 
 export const trackMapInteraction = (propertyId: string, action: "open" | "zoom" | "drag") => {
@@ -299,6 +307,17 @@ export const trackFilterChange = (
     results_count: resultsCount,
     event_category: "search",
   });
+
+  if (canTrackBackend()) {
+    trackToBackend({
+      event_type: "filter_applied",
+      metadata: {
+        filter_name: filterName,
+        filter_value: String(filterValue),
+        results_count: resultsCount,
+      },
+    });
+  }
 };
 
 export const trackSortChange = (sortBy: string, resultsCount?: number) => {
@@ -308,6 +327,28 @@ export const trackSortChange = (sortBy: string, resultsCount?: number) => {
     sort_by: sortBy,
     results_count: resultsCount,
     event_category: "search",
+  });
+
+  if (canTrackBackend()) {
+    trackToBackend({
+      event_type: "sort_changed",
+      metadata: { sort_by: sortBy, results_count: resultsCount },
+    });
+  }
+};
+
+/**
+ * Track batch filter application (when user applies multiple filters at once).
+ * Sends filter_applied to backend with full filter state in metadata.
+ */
+export const trackFiltersApplied = (
+  filters: Record<string, unknown>,
+  resultsCount?: number,
+) => {
+  if (!canTrackBackend()) return;
+  trackToBackend({
+    event_type: "filter_applied",
+    metadata: { filters, results_count: resultsCount },
   });
 };
 
@@ -513,6 +554,12 @@ export const trackPerformance = (metricName: string, value: number, unit: string
 // SOCIAL SHARING
 // ============================================================================
 
+export interface ShareParams {
+  propertyId?: string;
+  projectId?: string;
+  method: string;
+}
+
 export const trackShare = (
   contentType: "property" | "profile" | "project",
   contentId: string,
@@ -525,6 +572,19 @@ export const trackShare = (
     item_id: contentId,
     method: method,
   });
+
+  if (canTrackBackend() && (contentType === "property" || contentType === "project")) {
+    const payload: Parameters<typeof trackToBackend>[0] = {
+      event_type: "property_share",
+      metadata: { share_method: method },
+    };
+    if (contentType === "property") {
+      payload.property_id = parseInt(contentId, 10);
+    } else {
+      payload.project_id = parseInt(contentId, 10);
+    }
+    trackToBackend(payload);
+  }
 };
 
 export const trackInstagramPost = (propertyId: string, success: boolean) => {
@@ -579,6 +639,7 @@ const analytics = {
   trackSearchToBackend,
   trackFilterChange,
   trackSortChange,
+  trackFiltersApplied,
 
   // User events
   trackUserRegistration,
