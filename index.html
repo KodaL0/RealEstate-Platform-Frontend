@@ -37,7 +37,7 @@
     <script>
       // Initialize dataLayer and gtag placeholder
       window.dataLayer = window.dataLayer || [];
-      function gtag(...args) { dataLayer.push(...args); }
+      function gtag(){ window.dataLayer.push(arguments); }
       
       // Flag to track if GA has been initialized
       window.gaInitialized = false;
