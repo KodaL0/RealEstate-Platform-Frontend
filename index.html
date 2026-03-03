@@ -69,6 +69,8 @@
             'allow_google_signals': false,  // Disable cross-device tracking by default
             'allow_ad_personalization_signals': false  // Disable ad personalization
           });
+
+          gtag('event', 'page_view'); // ✅ minimal + safe
           
           window.gaInitialized = true;
           console.log('Google Analytics initialized successfully');
