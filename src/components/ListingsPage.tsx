@@ -269,7 +269,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
         ...newFilters,
         amenities: [...(newFilters.amenities || [])],
       });
-      analytics.trackFiltersApplied(newFilters);
+      analytics.trackFiltersApplied(newFilters as Record<string, unknown>);
     }, 500);
   }, []);
 
@@ -338,10 +338,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
       window.scrollTo({ top: 200, left: 0, behavior: "smooth" });
     }
   }, []);
-
-  // Stringify amenities for dependency to avoid unnecessary re-renders
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const _amenitiesKey = filters.amenities?.join(",") || "";
 
   // Hydrate filters from URL when slug changes (but prevent loops)
   useEffect(() => {
@@ -500,7 +496,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
           const unifiedItem = item as UnifiedListingItem;
           if (unifiedItem._type === "property") {
             const normalizedProperty = normalizePropertyData(
-              unifiedItem as Partial<Property> & Record<string, unknown>,
+              unifiedItem as unknown as Partial<Property> & Record<string, unknown>,
             );
             return { ...normalizedProperty, _type: "property" as const } as UnifiedListingItem;
           }
@@ -573,7 +569,6 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     };
 
     fetchProperties();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     sortOption,
     filters.location,
@@ -586,7 +581,7 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
     currentPage,
     listingType,
     filters.amenities,
-    // syncCanonicalUrl removed - it's only called after fetch completes, not used in fetch logic
+    syncCanonicalUrl,
   ]);
 
   const canonicalPath = location.pathname || `/${listingRouteType}`;
@@ -957,6 +952,13 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                         project={{
                           ...item,
                           id: typeof item.id === "string" ? parseInt(item.id, 10) : item.id,
+                          images: Array.isArray(item.images)
+                            ? item.images.map((img) =>
+                                typeof img === "string"
+                                  ? { image: img, is_primary: false, display_order: 0 }
+                                  : img,
+                              )
+                            : undefined,
                         }}
                         listingType={listingType}
                       />
