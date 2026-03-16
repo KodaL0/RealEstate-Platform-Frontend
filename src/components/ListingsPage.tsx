@@ -918,7 +918,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                 transition={{ duration: 0.4, ease: "easeOut" }}
                 className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8"
               >
-                {displayed.map((item, index) => (
+                {displayed.map((item, index) => {
+                  // Global position in full result set (1-indexed), not just page-local
+                  const globalPosition = (currentPage - 1) * PAGE_SIZE + index + 1;
+                  return (
                   <motion.div
                     key={item.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -926,10 +929,10 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                     transition={{ delay: index * 0.05, duration: 0.4 }}
                     onClick={() => {
                       try {
-                        if (navigator.sendBeacon) {
+                        if (navigator.sendBeacon && searchEventId) {
                           const isProject = item._type === "project";
                           const payload = {
-                            position: index + 1,
+                            position: globalPosition,
                             item_type: item._type || "property",
                             search_event_id: searchEventId,
                           };
@@ -961,7 +964,8 @@ const ListingsPage: React.FC<ListingsPageProps> = ({ listingType }) => {
                       <PropertyCard property={item as Property} />
                     )}
                   </motion.div>
-                ))}
+                  );
+                })}
               </motion.div>
             </AnimatePresence>
           )}

@@ -186,44 +186,56 @@ const api = {
 
   listings: {
     buy: (p?: Record<string, unknown>) =>
-      apiGet<{ count: number; next: string | null; previous: string | null; results: unknown[] }>(
-        "listings/buy",
-        { params: p },
-      ).then((res) => {
+      apiGet<{
+        count: number;
+        next: string | null;
+        previous: string | null;
+        results: unknown[];
+        search_event_id?: number;
+      }>("listings/buy", { params: p }).then((res) => {
         const d = res.data;
         return {
           results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
           count: d.count || (Array.isArray(d) ? d.length : 0),
           next: d.next,
           previous: d.previous,
+          search_event_id: d.search_event_id,
         };
       }),
 
     rent: (p?: Record<string, unknown>) =>
-      apiGet<{ count: number; next: string | null; previous: string | null; results: unknown[] }>(
-        "listings/rent",
-        { params: p },
-      ).then((res) => {
+      apiGet<{
+        count: number;
+        next: string | null;
+        previous: string | null;
+        results: unknown[];
+        search_event_id?: number;
+      }>("listings/rent", { params: p }).then((res) => {
         const d = res.data;
         return {
           results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
           count: d.count || (Array.isArray(d) ? d.length : 0),
           next: d.next,
           previous: d.previous,
+          search_event_id: d.search_event_id,
         };
       }),
 
     search: (p?: Record<string, unknown>) =>
-      apiGet<{ count: number; next: string | null; previous: string | null; results: unknown[] }>(
-        "listings/search",
-        { params: p },
-      ).then((res) => {
+      apiGet<{
+        count: number;
+        next: string | null;
+        previous: string | null;
+        results: unknown[];
+        search_event_id?: number;
+      }>("listings/search", { params: p }).then((res) => {
         const d = res.data;
         return {
           results: Array.isArray(d.results) ? d.results : Array.isArray(d) ? d : [],
           count: d.count || (Array.isArray(d) ? d.length : 0),
           next: d.next,
           previous: d.previous,
+          search_event_id: d.search_event_id,
         };
       }),
   },
