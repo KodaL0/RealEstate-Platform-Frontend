@@ -25,3 +25,7 @@ dist-ssr
 
 # Development scripts
 scripts/
+# Local environment configuration
+.env
+.env.*
+!.env.example
